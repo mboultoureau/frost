@@ -20,7 +20,7 @@ namespace Frost
 		std::string title;
 	};
 
-	class FT_API Application : public NoCopy
+	class FT_API Application : NoCopy
 	{
 	public:
 		Application(const ApplicationEntryPoint& entryPoint);

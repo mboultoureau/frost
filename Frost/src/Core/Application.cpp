@@ -39,6 +39,7 @@ namespace Frost
 
 	Application& Application::Get()
 	{
+		assert(_singleton);
 		return *_singleton;
 	}
 }
