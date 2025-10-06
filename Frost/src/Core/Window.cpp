@@ -10,19 +10,7 @@ namespace Frost
         _title = std::wstring(settings.title.begin(), settings.title.end());
 
         _AppRegisterClass();
-
-        _hwnd = CreateWindowEx(
-            0, _CLASS_NAME, _title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-            settings.width, settings.height, NULL, NULL, GetModuleHandle(NULL), this
-        );
-
-        if (_hwnd == NULL) {
-            MessageBox(NULL, L"Window Creation Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
-            return;
-        }
-
-        ShowWindow(_hwnd, SW_SHOWNORMAL);
-        UpdateWindow(_hwnd);
+        _CreateWindow(settings);
 	}
 
 	ATOM Window::_AppRegisterClass()
@@ -49,6 +37,22 @@ namespace Frost
         }
         return result;
 	}
+
+    void Window::_CreateWindow(const WindowSettings& settings)
+    {
+        _hwnd = CreateWindowEx(
+            0, _CLASS_NAME, _title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+            settings.width, settings.height, NULL, NULL, GetModuleHandle(NULL), this
+        );
+
+        if (_hwnd == NULL) {
+            MessageBox(NULL, L"Window Creation Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+            return;
+        }
+
+        ShowWindow(_hwnd, SW_SHOWNORMAL);
+        UpdateWindow(_hwnd);
+    }
 
     LRESULT CALLBACK Window::_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {

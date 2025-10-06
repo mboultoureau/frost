@@ -27,6 +27,7 @@ namespace Frost
 
 	private:
 		ATOM _AppRegisterClass();
+		void _CreateWindow(const WindowSettings& settings);
 		static LRESULT CALLBACK _WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 		HWND _hwnd;
