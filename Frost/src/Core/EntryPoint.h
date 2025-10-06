@@ -1,0 +1,28 @@
+#pragma once
+
+#ifdef FT_PLATFORM_WINDOWS
+
+#include "Core/Application.h"
+
+#include <iostream>
+#include <Windows.h>
+
+extern Frost::Application* Frost::CreateApplication(Frost::ApplicationEntryPoint entryPoint);
+
+int WINAPI wWinMain(
+	_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ PWSTR pCmdLine,
+	_In_ int nCmdShow
+)
+{
+	std::cout << "Frost Engine (version 0.0.1)" << std::endl;
+
+	Frost::ApplicationEntryPoint entryPoint{ hInstance, hPrevInstance, pCmdLine, nCmdShow };
+
+	auto application = Frost::CreateApplication(entryPoint);
+	application->Run();
+	delete application;
+}
+
+#endif
