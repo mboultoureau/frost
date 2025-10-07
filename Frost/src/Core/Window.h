@@ -50,5 +50,6 @@ namespace Frost
 		static constexpr const wchar_t* _CLASS_NAME = L"FrostEngine";
 
 		friend class Device;
+		friend class Application;
 	};
 }
