@@ -1,5 +1,6 @@
 workspace "Frost"
     architecture "x64"
+    startproject "Lab"
 
     configurations
     {
@@ -12,7 +13,7 @@ output_dir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 project "Frost"
     location "Frost"
-    kind "SharedLib"
+    kind "StaticLib"
     language "C++"
 
     targetdir ("bin/" .. output_dir .. "/%{prj.name}")
@@ -29,6 +30,10 @@ project "Frost"
         "Frost/src"
     }
 
+    links
+    {
+        "d3d11.lib"
+    }
 
     filter "system:windows"
         cppdialect "C++23"
@@ -39,11 +44,6 @@ project "Frost"
         {
             "FT_PLATFORM_WINDOWS",
             "FT_BUILD_DLL"
-        }
-
-        postbuildcommands
-        {
-            ("{COPYFILE} %{cfg.buildtarget.relpath} \"../bin/" .. output_dir .. "/Lab/\"")
         }
 
     filter "configurations:Debug"

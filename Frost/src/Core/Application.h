@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Core/Core.h"
 #include "Utils/NoCopy.h"
 #include "Core/Window.h"
 
@@ -20,7 +19,7 @@ namespace Frost
 		std::string title;
 	};
 
-	class FT_API Application : NoCopy
+	class Application : NoCopy
 	{
 	public:
 		Application(const ApplicationEntryPoint& entryPoint);
@@ -28,6 +27,11 @@ namespace Frost
 		void Run();
 	
 		static Application& Get();
+
+		enum {
+			DEFAULT_WIDTH = 640,
+			DEFAULT_HEIGHT = 480
+		};
 
 	private:
 		HINSTANCE _hInstance;

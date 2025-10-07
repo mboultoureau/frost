@@ -13,7 +13,7 @@ namespace Frost
 		assert(!_singleton);
 		_singleton = this;
 
-		WindowSettings settings{ entryPoint.title, 640, 480};
+		WindowSettings settings{ entryPoint.title, Application::DEFAULT_WIDTH, Application::DEFAULT_HEIGHT};
 		_window = std::make_unique<Window>(settings);
 	}
 	

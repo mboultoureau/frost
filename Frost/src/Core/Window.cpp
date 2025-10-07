@@ -3,14 +3,18 @@
 
 namespace Frost
 {
+    class WindowRegistrationFailed {};
+    class WindowCreationFailed {};
+    class WindowGetDimensionsFailed{};
 
-	Window::Window(const WindowSettings& settings)
+
+	Window::Window(const WindowSettings& settings): _isWindowed{ true }
 	{
-
         _title = std::wstring(settings.title.begin(), settings.title.end());
 
         _AppRegisterClass();
         _CreateWindow(settings);
+        _CreateRenderer();
 	}
 
 	ATOM Window::_AppRegisterClass()
@@ -33,7 +37,7 @@ namespace Frost
 
         if (!result) {
             MessageBox(NULL, L"Window Registration Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
-            return 1;
+            throw WindowRegistrationFailed{};
         }
         return result;
 	}
@@ -42,16 +46,21 @@ namespace Frost
     {
         _hwnd = CreateWindowEx(
             0, _CLASS_NAME, _title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-            settings.width, settings.height, NULL, NULL, GetModuleHandle(NULL), this
+            settings.dimensions.width, settings.dimensions.height, NULL, NULL, GetModuleHandle(NULL), this
         );
 
         if (_hwnd == NULL) {
             MessageBox(NULL, L"Window Creation Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
-            return;
+            throw WindowCreationFailed{};
         }
 
         ShowWindow(_hwnd, SW_SHOWNORMAL);
         UpdateWindow(_hwnd);
+    }
+
+    void Window::_CreateRenderer()
+    {
+        _renderer = std::make_unique<Renderer>(this);
     }
 
     LRESULT CALLBACK Window::_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -76,5 +85,21 @@ namespace Frost
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
         return 0;
+    }
+
+    WindowDimensions Window::GetDimensions()
+    {
+        WindowDimensions dimensions;
+        RECT rect;
+        
+        if (!GetWindowRect(_hwnd, &rect)) {
+            MessageBox(NULL, L"Window Get Dimensions Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+            throw WindowGetDimensionsFailed{};
+        }
+
+        dimensions.width = rect.right - rect.left;
+        dimensions.height = rect.bottom - rect.top;
+
+        return dimensions;
     }
 }

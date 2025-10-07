@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Core/Core.h"
-
-class FT_API NoCopy
+class NoCopy
 {
 public:
 	NoCopy(const NoCopy&) = delete;
