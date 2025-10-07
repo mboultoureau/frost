@@ -34,6 +34,9 @@ namespace Frost
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
+
+			// Draw frame
+			_window->_renderer->DrawFrame();
 		}
 	}
 

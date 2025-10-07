@@ -14,6 +14,7 @@ namespace Frost
 	{
 	public:
 		Renderer(Window* window);
+		void DrawFrame();
 
 	private:
 		Window* _window;

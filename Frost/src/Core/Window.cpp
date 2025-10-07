@@ -70,14 +70,8 @@ namespace Frost
             PostQuitMessage(0);
             break;
         case WM_PAINT: {
-            // This message is sent when the window needs to be repainted.
             PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-
-            // Draw text on the window
-            const wchar_t text[] = L"Hello, Windows World!";
-            TextOut(hdc, 10, 10, text, static_cast<int>(wcslen(text)));
-
+            BeginPaint(hWnd, &ps);
             EndPaint(hWnd, &ps);
             break;
         }
