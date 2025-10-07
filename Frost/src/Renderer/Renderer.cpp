@@ -2,14 +2,8 @@
 
 namespace Frost
 {
-	Renderer::Renderer()
+	Renderer::Renderer(Window* window) : _window { window }
 	{
-
-	}
-
-	Renderer& Renderer::Get()
-	{
-		static Renderer instance;
-		return instance;
+		_device = std::make_unique<Device>(_window);
 	}
 }

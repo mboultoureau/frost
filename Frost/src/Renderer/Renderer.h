@@ -1,16 +1,23 @@
 #pragma once
 
-#include "Utils/NoCopy.h"
+#include "Core/Window.h"
+#include "Renderer/Device.h"
+
+#include <memory>
 
 namespace Frost
 {
-	class Renderer : NoCopy
-	{
-	private:
-		Renderer();
+	class Window;
+	class Device;
 
+	class Renderer
+	{
 	public:
-		static Renderer& Get();
+		Renderer(Window* window);
+
+	private:
+		Window* _window;
+		std::unique_ptr<Device> _device;
 	};
 }
 
