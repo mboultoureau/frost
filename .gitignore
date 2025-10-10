@@ -429,6 +429,7 @@ FodyWeavers.xsd
 
 *.sln
 *.vcxproj
+*.vcxproj.user
 *.vcxproj.filters
 
 /bin
