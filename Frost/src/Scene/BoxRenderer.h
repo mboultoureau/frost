@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Component.h"
+#include "Scene/ECS/Component.h"
 
 namespace Frost
 {

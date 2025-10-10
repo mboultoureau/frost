@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <d3d11.h>
+#include <wrl/client.h>
 
 namespace Frost
 {
@@ -22,13 +23,13 @@ namespace Frost
 		void _CreateDepthBuffer();
 
 		Window* _window;
-		IDXGISwapChain* _swapChain;
-		ID3D11Device* _device;
-		ID3D11DeviceContext* _immediateContext;
-		ID3D11RasterizerState* _rasterizerState;
-		ID3D11Texture2D* _depthTexture;
-		ID3D11DepthStencilView* _depthStencilView;
-		ID3D11RenderTargetView* _renderTargetView;
+		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain;
+		Microsoft::WRL::ComPtr<ID3D11Device> _device;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext> _immediateContext;
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> _rasterizerState;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> _depthTexture;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> _depthStencilView;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
 	};
 }
 

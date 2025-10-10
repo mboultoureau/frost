@@ -94,8 +94,7 @@ namespace Frost
 
 		_CreateDepthBuffer();
 
-		_immediateContext->OMSetRenderTargets(1, &_renderTargetView, NULL);
-		_renderTargetView->Release();
+		_immediateContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), NULL);
 		D3D11_VIEWPORT viewport = {};
 		viewport.TopLeftX = 0.0f;
 		viewport.TopLeftY = 0.0f;
@@ -121,7 +120,7 @@ namespace Frost
 		rasterizerDesc.AntialiasedLineEnable = FALSE;
 
 		_device->CreateRasterizerState(&rasterizerDesc, &_rasterizerState);
-		_immediateContext->RSSetState(_rasterizerState);
+		_immediateContext->RSSetState(_rasterizerState.Get());
 	}
 
 	void Device::_CreateDepthBuffer()
@@ -152,7 +151,7 @@ namespace Frost
 		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthStencilViewDesc.Texture2D.MipSlice = 0;
 
-		result = _device->CreateDepthStencilView(_depthTexture, &depthStencilViewDesc, &_depthStencilView);
+		result = _device->CreateDepthStencilView(_depthTexture.Get(), &depthStencilViewDesc, &_depthStencilView);
 		if (result != S_OK)
 		{
 			MessageBox(NULL, L"Failed to create depth stencil view!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
@@ -163,8 +162,8 @@ namespace Frost
 	void Device::DrawFrame()
 	{
 		const FLOAT clearColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-		_immediateContext->ClearRenderTargetView(_renderTargetView, clearColor);
-		_immediateContext->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		_immediateContext->ClearRenderTargetView(_renderTargetView.Get(), clearColor);
+		_immediateContext->ClearDepthStencilView(_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 		_swapChain->Present(1, 0);
 	}
 }
