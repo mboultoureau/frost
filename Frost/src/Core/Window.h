@@ -47,7 +47,7 @@ namespace Frost
 		HWND _hwnd;
 		std::wstring _title;
 		std::unique_ptr<Renderer> _renderer;
-		static constexpr const wchar_t* _CLASS_NAME = L"FrostEngine";
+		static constexpr const wchar_t _CLASS_NAME[] = L"FrostEngine";
 
 		friend class Device;
 		friend class Application;
