@@ -5,22 +5,34 @@
 
 namespace Frost
 {
-	class VertexBuffer
+	class Buffer
 	{
 	public:
-		void Bind();
+		virtual void Create(const void* data, UINT dataSize) = 0;
+		virtual void Bind() = 0;
 
-	private:
+	protected:
 		Microsoft::WRL::ComPtr<ID3D11Buffer> _buffer;
 	};
 
-	class IndexBuffer
+	class VertexBuffer : public Buffer
 	{
 	public:
+		void Create(const void* data, UINT dataSize);
 		void Bind();
-
-	private:
-		Microsoft::WRL::ComPtr<ID3D11Buffer> _buffer;
 	};
 
+	class IndexBuffer : public Buffer
+	{
+	public:
+		void Create(const void* data, UINT dataSize);
+		void Bind();
+	};
+
+	class ConstantBuffer : public Buffer
+	{
+	public:
+		void Create(const void* data, UINT dataSize);
+		void Bind();
+	};
 }

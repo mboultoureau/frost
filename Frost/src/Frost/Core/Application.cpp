@@ -19,7 +19,10 @@ namespace Frost
 		_window = std::make_unique<Window>(settings);
 	}
 	
-	Application::~Application() {}
+	Application::~Application()
+	{
+		std::cout << "Application shutting down..." << std::endl;
+	}
 
 	void Application::PushLayer(Layer* layer)
 	{
@@ -49,7 +52,9 @@ namespace Frost
 
 			for (Layer* layer : _layerStack._layers)
 			{
+				layer->OnFixedUpdate(0.0f);
 				layer->OnUpdate(0.0f);
+				layer->OnLateUpdate(0.0f);
 			}
 		}
 	}

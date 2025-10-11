@@ -32,7 +32,8 @@ project "Frost"
 
     links
     {
-        "d3d11.lib"
+        "d3d11.lib",
+        "d3dcompiler.lib"
     }
 
     filter "system:windows"
