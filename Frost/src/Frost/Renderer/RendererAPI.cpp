@@ -7,11 +7,6 @@ namespace Frost
 		Get().ClearColor(r, g, b, a);
 	}
 
-	void RendererAPI::DrawMesh(const MeshRenderer& mesh, const WorldTransform& transform)
-	{
-
-	}
-
 	Renderer& RendererAPI::Get()
 	{
 		static Renderer _renderer;

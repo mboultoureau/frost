@@ -3,6 +3,7 @@
 #include "Frost/Utils/NoCopy.h"
 #include "Frost/Core/Window.h"
 #include "Frost/Core/LayerStack.h"
+#include "Frost/Renderer/Mesh.h"
 
 #include <Windows.h>
 #include <memory>
@@ -34,6 +35,8 @@ namespace Frost
 		std::unique_ptr<Window>& GetWindow() { return _window; }
 		const std::unique_ptr<Window>& GetWindow() const { return _window; }
 
+		MeshLibrary& GetMeshLibrary() { return _meshLibrary; }
+
 		enum {
 			DEFAULT_WIDTH = 640,
 			DEFAULT_HEIGHT = 480
@@ -44,6 +47,8 @@ namespace Frost
 		std::unique_ptr<Window> _window;
 		bool _running;
 		LayerStack _layerStack;
+
+		MeshLibrary _meshLibrary;
 
 		static Application* _singleton;
 		
