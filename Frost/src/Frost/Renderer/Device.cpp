@@ -1,4 +1,4 @@
-#include "Device.h"
+﻿#include "Device.h"
 #include "Frost/Core/Application.h"
 
 #include <array>
@@ -22,6 +22,13 @@ namespace Frost
 		_CreateRasterizer();
 	}
 
+	Device::~Device()
+	{
+#ifdef FT_DEBUG
+		_ReportLiveObjects();
+#endif
+	}
+
 	void Device::_CreateDevice()
 	{
 		WindowDimensions dimensions = _window->GetDimensions();
@@ -43,10 +50,10 @@ namespace Frost
 		swapChainDesc.BufferDesc = bufferDesc;
 		swapChainDesc.SampleDesc = { 1, 0 };
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferCount = 1;
+		swapChainDesc.BufferCount = 2;
 		swapChainDesc.OutputWindow = _window->_hwnd;
 		swapChainDesc.Windowed = _window->_isWindowed;
-		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 		const std::array<D3D_FEATURE_LEVEL, 1> featuresLevels = {
@@ -73,11 +80,15 @@ namespace Frost
 			MessageBox(NULL, L"Device creation failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
 			throw DeviceCreationFailed{};
 		}
+
+#ifdef FT_DEBUG
+		_SetupDebug();
+#endif
 	}
 
 	void Device::_CreateRenderTargetView()
 	{
-		ID3D11Texture2D* backBuffer = nullptr;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
 		HRESULT result = _swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer);
 		if (result != S_OK)
 		{
@@ -85,8 +96,8 @@ namespace Frost
 			throw GetBackBufferFailed{};
 		}
 
-		result = _device->CreateRenderTargetView(backBuffer, NULL, &_renderTargetView);
-		backBuffer->Release();
+		result = _device->CreateRenderTargetView(backBuffer.Get(), NULL, &_renderTargetView);
+
 		if (result != S_OK)
 		{
 			MessageBox(NULL, L"Failed to create render target view!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
@@ -95,7 +106,7 @@ namespace Frost
 
 		_CreateDepthBuffer();
 
-		_immediateContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), NULL);
+		_immediateContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), _depthStencilView.Get());
 		D3D11_VIEWPORT viewport = {};
 		viewport.TopLeftX = 0.0f;
 		viewport.TopLeftY = 0.0f;
@@ -157,6 +168,56 @@ namespace Frost
 		{
 			MessageBox(NULL, L"Failed to create depth stencil view!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
 			throw DepthStencilBufferCreationFailed{};
+		}
+	}
+
+	void Device::_SetupDebug()
+	{
+		ID3D11Debug* d3dDebug = nullptr;
+		HRESULT hr = _device->QueryInterface(__uuidof(ID3D11Debug), (void**)&d3dDebug);
+
+		if (SUCCEEDED(hr))
+		{
+			ID3D11InfoQueue* d3dInfoQueue = nullptr;
+			hr = d3dDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue);
+
+			if (SUCCEEDED(hr))
+			{
+				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, TRUE);
+				// d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, TRUE);
+
+				std::array<D3D11_MESSAGE_ID, 0> hide = {
+					// D3D11_MESSAGE_ID_DEVICE_CREATE_INFO,
+					// D3D11_MESSAGE_ID_IDXGISwapChain_Present_BlitModel
+				};
+				D3D11_INFO_QUEUE_FILTER filter = {};
+				filter.DenyList.NumIDs = static_cast<UINT>(hide.size());
+				filter.DenyList.pIDList = hide.data();
+				d3dInfoQueue->AddStorageFilterEntries(&filter);
+
+				d3dInfoQueue->Release();
+			}
+			d3dDebug->Release();
+		}
+	}
+
+	void Device::_ReportLiveObjects()
+	{
+		ID3D11Debug* d3dDebug = nullptr;
+
+		if (_device.Get() && SUCCEEDED(_device->QueryInterface(__uuidof(ID3D11Debug), (void**)&d3dDebug)))
+		{
+			ID3D11InfoQueue* d3dInfoQueue = nullptr;
+
+			if (SUCCEEDED(d3dDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue)))
+			{
+				d3dInfoQueue->ClearStoredMessages();
+				d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+
+				d3dInfoQueue->Release();
+			}
+			d3dDebug->Release();
 		}
 	}
 }

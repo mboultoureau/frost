@@ -12,6 +12,8 @@ namespace Frost
 	public:
 		Mesh(const std::string& filepath);
 		const std::string& GetFilepath() const { return _filepath; }
+		VertexBuffer& GetVertexBuffer() { return _vertexBuffer; }
+		IndexBuffer& GetIndexBuffer() { return _indexBuffer; }
 
 	private:
 		std::string _filepath;

@@ -4,6 +4,7 @@
 #include "Frost/Core/Window.h"
 #include "Frost/Core/LayerStack.h"
 #include "Frost/Renderer/Mesh.h"
+#include "Frost/Event/EventManager.h"
 
 #include <Windows.h>
 #include <memory>
@@ -36,6 +37,13 @@ namespace Frost
 		const std::unique_ptr<Window>& GetWindow() const { return _window; }
 
 		MeshLibrary& GetMeshLibrary() { return _meshLibrary; }
+		const MeshLibrary& GetMeshLibrary() const { return _meshLibrary; }
+
+		EventManager& GetEventManager() { return _eventManager; }
+		const EventManager& GetEventManager() const { return _eventManager; }
+
+		LayerStack& GetLayerStack() { return _layerStack; }
+		const LayerStack& GetLayerStack() const { return _layerStack; }
 
 		enum {
 			DEFAULT_WIDTH = 640,
@@ -46,8 +54,9 @@ namespace Frost
 		HINSTANCE _hInstance;
 		std::unique_ptr<Window> _window;
 		bool _running;
-		LayerStack _layerStack;
 
+		EventManager _eventManager;
+		LayerStack _layerStack;
 		MeshLibrary _meshLibrary;
 
 		static Application* _singleton;
