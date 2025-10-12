@@ -1,5 +1,6 @@
 #include "Frost/Core/Window.h"
 #include "Frost/Core/Application.h"
+#include "Frost/Event/WindowCloseEvent.h"
 
 namespace Frost
 {
@@ -57,21 +58,30 @@ namespace Frost
         UpdateWindow(_hwnd);
     }
 
+    void Window::Destroy()
+    {
+        DestroyWindow(_hwnd);
+	}
+
     LRESULT CALLBACK Window::_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
-        switch (message) {
+        switch (message)
+        {
+        case WM_CLOSE:
+			Application::Get().GetEventManager().PushEvent<Frost::WindowCloseEvent>();
+            break;
         case WM_DESTROY:
             PostQuitMessage(0);
             break;
-        case WM_PAINT: {
+        case WM_PAINT:
             PAINTSTRUCT ps;
             BeginPaint(hWnd, &ps);
             EndPaint(hWnd, &ps);
             break;
-        }
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
+
         return 0;
     }
 

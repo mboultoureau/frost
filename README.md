@@ -10,10 +10,39 @@ To install and run the project, you must be running Windows and have Visual Stud
 
 - [Game Programming Patterns](https://gameprogrammingpatterns.com/)
 - [Real-Time Rendering](https://www.realtimerendering.com/)
-- [Game Engine series by The Cherno](https://youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)
+- [h-deb - Patrice Roy](https://h-deb.ca/)
+- [Game Engine Series - The Cherno](https://youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)
 
 ## Docs
+
+### Build system 
 
 Why use Premake instead of CMake?
 
 > Premake files are easier to read and write and offer features not available in CMake (such as choosing the location of intermediate files).
+
+Sources :
+
+- [Premake | Game Engine Series - The Cherno](https://youtu.be/sULV3aB2qeU)
+- [Hazel](https://github.com/TheCherno/Hazel)
+
+### Entity Component System
+
+### Event System
+
+Sources :
+
+- [Event Queue - Game Programming Patterns](https://gameprogrammingpatterns.com/event-queue.html)
+- [Event System - Denys Kryvytskyi](https://denyskryvytskyi.github.io/event-system)
+
+## Utils
+
+Voici les différentes classes utilitaires présentes dans le projet :
+
+- NoCopy : peut-être utiliser comme héritage pour bloquer le constructeur de copie et l'opérateur d'affectation public.
+- UUID : permet de générer un identifiant unique. L'UUID est pour le moment sur 64 bits et repose pour le moment sur un générateur aléatoire non cryptographique. Il existe un risque de collisions (qui est environ de 50% après 2**32 générations).
+
+Sources :
+
+- [Code de grande personne – bloquer la copie - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Incopiable.html)
+- [Génération de nombres pseudoaléatoires avec C++ - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/prng.html)

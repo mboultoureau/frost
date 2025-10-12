@@ -14,21 +14,24 @@ namespace Frost
 	{
 	public:
 		Device(Window* window);
+		~Device();
 
 	private:
 		void _CreateDevice();
 		void _CreateRenderTargetView();
 		void _CreateRasterizer();
 		void _CreateDepthBuffer();
+		void _SetupDebug();
+		void _ReportLiveObjects();
 
 		Window* _window;
-		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain;
-		Microsoft::WRL::ComPtr<ID3D11Device> _device;
-		Microsoft::WRL::ComPtr<ID3D11DeviceContext> _immediateContext;
-		Microsoft::WRL::ComPtr<ID3D11RasterizerState> _rasterizerState;
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> _depthTexture;
-		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> _depthStencilView;
-		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
+		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain{};
+		Microsoft::WRL::ComPtr<ID3D11Device> _device{};
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext> _immediateContext{};
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> _rasterizerState{};
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> _depthTexture{};
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> _depthStencilView{};
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView{};
 
 		friend class Renderer;
 	};

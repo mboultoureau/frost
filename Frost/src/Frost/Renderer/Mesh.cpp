@@ -2,11 +2,13 @@
 
 #include <DirectXMath.h>
 
+#include "Frost/Renderer/Vertex.h"
+
 namespace Frost
 {
 	Mesh::Mesh(const std::string& filepath) : _filepath{ filepath }
 	{
-		const uint16_t index_bloc[36] = {
+		const uint32_t index_bloc[36] = {
 			0,1,2,
 			0,2,3,
 			5,6,7,
@@ -53,42 +55,42 @@ namespace Frost
 			const DirectX::XMFLOAT2& coordTex;
 		};
 
-		CSommetBloc sommets[24] =
+		Frost::Vertex sommets[24] =
 		{
 			// Le devant du bloc
-			CSommetBloc(point[0], n0, DirectX::XMFLOAT2(0.0f, 0.0f)),
-			CSommetBloc(point[1], n0, DirectX::XMFLOAT2(1.0f, 0.0f)),
-			CSommetBloc(point[2], n0, DirectX::XMFLOAT2(1.0f, 1.0f)),
-			CSommetBloc(point[3], n0, DirectX::XMFLOAT2(0.0f, 1.0f)),
+			{ point[0], n0, DirectX::XMFLOAT2(0.0f, 0.0f) },
+			{ point[1], n0, DirectX::XMFLOAT2(1.0f, 0.0f) },
+			{ point[2], n0, DirectX::XMFLOAT2(1.0f, 1.0f) },
+			{ point[3], n0, DirectX::XMFLOAT2(0.0f, 1.0f) },
 			// L’arrière du bloc
-			CSommetBloc(point[4], n1, DirectX::XMFLOAT2(0.0f, 1.0f)),
-			CSommetBloc(point[5], n1, DirectX::XMFLOAT2(0.0f, 0.0f)),
-			CSommetBloc(point[6], n1, DirectX::XMFLOAT2(1.0f, 0.0f)),
-			CSommetBloc(point[7], n1, DirectX::XMFLOAT2(1.0f, 1.0f)),
+			{ point[4], n1, DirectX::XMFLOAT2(0.0f, 1.0f) },
+			{ point[5], n1, DirectX::XMFLOAT2(0.0f, 0.0f) },
+			{ point[6], n1, DirectX::XMFLOAT2(1.0f, 0.0f) },
+			{ point[7], n1, DirectX::XMFLOAT2(1.0f, 1.0f) },
 			// Le dessous du bloc
-			CSommetBloc(point[3], n2, DirectX::XMFLOAT2(0.0f, 0.0f)),
-			CSommetBloc(point[2], n2, DirectX::XMFLOAT2(1.0f, 0.0f)),
-			CSommetBloc(point[6], n2, DirectX::XMFLOAT2(1.0f, 1.0f)),
-			CSommetBloc(point[5], n2, DirectX::XMFLOAT2(0.0f, 1.0f)),
+			{ point[3], n2, DirectX::XMFLOAT2(0.0f, 0.0f) },
+			{ point[2], n2, DirectX::XMFLOAT2(1.0f, 0.0f) },
+			{ point[6], n2, DirectX::XMFLOAT2(1.0f, 1.0f) },
+			{ point[5], n2, DirectX::XMFLOAT2(0.0f, 1.0f) },
 			// Le dessus du bloc
-			CSommetBloc(point[0], n3, DirectX::XMFLOAT2(0.0f, 1.0f)),
-			CSommetBloc(point[4], n3, DirectX::XMFLOAT2(0.0f, 0.0f)),
-			CSommetBloc(point[7], n3, DirectX::XMFLOAT2(1.0f, 0.0f)),
-			CSommetBloc(point[1], n3, DirectX::XMFLOAT2(1.0f, 1.0f)),
+			{ point[0], n3, DirectX::XMFLOAT2(0.0f, 1.0f) },
+			{ point[4], n3, DirectX::XMFLOAT2(0.0f, 0.0f) },
+			{ point[7], n3, DirectX::XMFLOAT2(1.0f, 0.0f) },
+			{ point[1], n3, DirectX::XMFLOAT2(1.0f, 1.0f) },
 			// La face gauche
-			CSommetBloc(point[0], n4, DirectX::XMFLOAT2(0.0f, 0.0f)),
-			CSommetBloc(point[3], n4, DirectX::XMFLOAT2(1.0f, 0.0f)),
-			CSommetBloc(point[5], n4, DirectX::XMFLOAT2(1.0f, 1.0f)),
-			CSommetBloc(point[4], n4, DirectX::XMFLOAT2(0.0f, 1.0f)),
+			{ point[0], n4, DirectX::XMFLOAT2(0.0f, 0.0f) },
+			{ point[3], n4, DirectX::XMFLOAT2(1.0f, 0.0f) },
+			{ point[5], n4, DirectX::XMFLOAT2(1.0f, 1.0f) },
+			{ point[4], n4, DirectX::XMFLOAT2(0.0f, 1.0f) },
 			// La face droite
-			CSommetBloc(point[1], n5, DirectX::XMFLOAT2(0.0f, 0.0f)),
-			CSommetBloc(point[7], n5, DirectX::XMFLOAT2(1.0f, 0.0f)),
-			CSommetBloc(point[6], n5, DirectX::XMFLOAT2(1.0f, 1.0f)),
-			CSommetBloc(point[2], n5, DirectX::XMFLOAT2(0.0f, 1.0f))
+			{ point[1], n5, DirectX::XMFLOAT2(0.0f, 0.0f) },
+			{ point[7], n5, DirectX::XMFLOAT2(1.0f, 0.0f) },
+			{ point[6], n5, DirectX::XMFLOAT2(1.0f, 1.0f) },
+			{ point[2], n5, DirectX::XMFLOAT2(0.0f, 1.0f) }
 		};
 
 		_vertexBuffer.Create(sommets, sizeof(sommets));
-		_indexBuffer.Create(index_bloc, sizeof(index_bloc));
+		_indexBuffer.Create(index_bloc, sizeof(index_bloc), 36);
 	}
 
 	Mesh* MeshLibrary::Get(const std::string& filepath)

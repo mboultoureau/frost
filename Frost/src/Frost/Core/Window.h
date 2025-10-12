@@ -37,6 +37,8 @@ namespace Frost
 		Window(const WindowSettings& settings);
 		WindowDimensions GetDimensions();
 
+		void Destroy();
+
 	private:
 		ATOM _AppRegisterClass();
 		void _CreateWindow(const WindowSettings& settings);

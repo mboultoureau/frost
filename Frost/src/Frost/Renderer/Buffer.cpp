@@ -23,8 +23,10 @@ namespace Frost
 
 	}
 
-	void IndexBuffer::Create(const void* data, UINT dataSize)
+	void IndexBuffer::Create(const void* data, UINT dataSize, UINT dataCount)
 	{
+		_count = dataCount;
+
 		D3D11_BUFFER_DESC descriptor{};
 		descriptor.Usage = D3D11_USAGE_IMMUTABLE;
 		descriptor.ByteWidth = dataSize;
@@ -53,7 +55,7 @@ namespace Frost
 		D3D11_SUBRESOURCE_DATA subresource_data;
 		subresource_data.pSysMem = data;
 		
-		RendererAPI::Get().CreateBuffer(&descriptor, &subresource_data, &_buffer);
+		RendererAPI::Get().CreateBuffer(&descriptor, nullptr, &_buffer);
 	}
 
 	void ConstantBuffer::Bind()

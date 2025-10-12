@@ -36,5 +36,6 @@ float4 PSMain(PixelInput input) : SV_TARGET
     }
 
     float4 finalColor = ambientTerm + diffuseTerm + specularTerm;
+    
     return finalColor;
-}
+}

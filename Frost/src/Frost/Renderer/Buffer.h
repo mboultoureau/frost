@@ -8,7 +8,7 @@ namespace Frost
 	class Buffer
 	{
 	public:
-		virtual void Create(const void* data, UINT dataSize) = 0;
+		virtual ID3D11Buffer* Get() { return _buffer.Get(); }
 		virtual void Bind() = 0;
 
 	protected:
@@ -25,8 +25,12 @@ namespace Frost
 	class IndexBuffer : public Buffer
 	{
 	public:
-		void Create(const void* data, UINT dataSize);
+		void Create(const void* data, UINT dataSize, UINT dataCount);
 		void Bind();
+		UINT GetCount() const { return _count; }
+
+	private:
+		UINT _count;
 	};
 
 	class ConstantBuffer : public Buffer

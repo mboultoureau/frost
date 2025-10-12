@@ -2,6 +2,9 @@
 
 #include "Frost/Core/Window.h"
 #include "Frost/Renderer/Device.h"
+#include "Frost/Renderer/Viewport.h"
+#include "Frost/Renderer/Buffer.h"
+#include "Frost/Renderer/Shader.h"
 
 #include <memory>
 #include <d3d11.h>
@@ -15,9 +18,27 @@ namespace Frost
 	{
 	public:
 		Renderer();
+		
 		void Init();
-		void DrawFrame();
+
+		void Present();
+		void DrawIndexed(UINT indexCount, UINT startIndexLocation, INT baseVertexLocation);
 		void ClearColor(float r, float g, float b, float a = 1.0f);
+
+		void SetViewport(const Viewport& viewport);
+		void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
+		void SetVertexBuffer(VertexBuffer& buffer, UINT stride, UINT offset);
+		void SetIndexBuffer(IndexBuffer& buffer, UINT offset);
+		void SetInputLayout(ID3D11InputLayout* inputLayout);
+
+		void EnableVertexShader(VertexShader& vertexShader);
+		void EnablePixelShader(PixelShader& pixelShader);
+
+		void UpdateSubresource(ID3D11Buffer* buffer, const void* data, UINT dataSize);
+		void SetVertexConstantBuffer(UINT slot, ID3D11Buffer* buffer);
+		void SetPixelConstantBuffer(UINT slot, ID3D11Buffer* buffer);
+
+		void SetGeometryShader();
 
 		void CreateBuffer(const D3D11_BUFFER_DESC* descriptor, const D3D11_SUBRESOURCE_DATA* subresourceData, ID3D11Buffer** buffer);
 		void CreateVertexShader(const void* shaderBytecode, SIZE_T bytecodeLength, ID3D11VertexShader** vertexShader);

@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include "Frost/Renderer/RendererAPI.h"
+#include "Frost/Event/WindowCloseEvent.h"
 
 #include <cassert>
 #include <iostream>
@@ -17,10 +18,19 @@ namespace Frost
 
 		WindowSettings settings{ entryPoint.title, Application::DEFAULT_WIDTH, Application::DEFAULT_HEIGHT};
 		_window = std::make_unique<Window>(settings);
+
+		UUID closeHandlerID = _eventManager.Subscribe<WindowCloseEvent>(
+			[&](WindowCloseEvent& e) -> bool
+			{
+				_running = false;
+				_window->Destroy();
+				return true;
+			});
 	}
 	
 	Application::~Application()
 	{
+		_layerStack.Clear();
 		std::cout << "Application shutting down..." << std::endl;
 	}
 
@@ -38,12 +48,15 @@ namespace Frost
 	{
 		while (_running)
 		{
+			_eventManager.ProcessEvents();
+
 			MSG msg;
 			if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
 				if (msg.message == WM_QUIT)
 				{
 					_running = false;
+					return;
 				}
 
 				TranslateMessage(&msg);
@@ -56,6 +69,8 @@ namespace Frost
 				layer->OnUpdate(0.0f);
 				layer->OnLateUpdate(0.0f);
 			}
+
+			RendererAPI::Present();
 		}
 	}
 

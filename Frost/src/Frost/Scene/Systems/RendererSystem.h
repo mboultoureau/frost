@@ -2,6 +2,7 @@
 
 #include "Frost/Scene/ECS/System.h"
 #include "Frost/Renderer/Shader.h"
+#include "Frost/Renderer/Buffer.h"
 
 namespace Frost
 {
@@ -16,5 +17,6 @@ namespace Frost
 		
         VertexShader _vertexShader;
 		PixelShader _pixelShader;
+		ConstantBuffer _constantBuffer;
     };
 }
