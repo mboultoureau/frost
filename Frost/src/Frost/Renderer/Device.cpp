@@ -69,6 +69,7 @@ namespace Frost
 			D3D_FEATURE_LEVEL_11_0
 		};
 
+		ID3D11DeviceContext* context0 = nullptr;
 		HRESULT result = D3D11CreateDeviceAndSwapChain(
 			NULL,
 			D3D_DRIVER_TYPE_HARDWARE,
@@ -81,12 +82,30 @@ namespace Frost
 			&_swapChain,
 			&_device,
 			NULL,
-			&_immediateContext
+			&context0
 		);
 
 		if (result != S_OK)
 		{
 			MessageBox(NULL, L"Device creation failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+			throw DeviceCreationFailed{};
+		}
+
+		if (context0)
+		{
+			Microsoft::WRL::ComPtr<ID3D11DeviceContext> baseContext;
+			baseContext.Attach(context0);
+
+			HRESULT hr = baseContext.As(&_immediateContext);
+			if (FAILED(hr))
+			{
+				MessageBox(NULL, L"Immediate context creation failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+				throw DeviceCreationFailed{};
+			}
+		}
+		else
+		{
+			MessageBox(NULL, L"Immediate context creation failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
 			throw DeviceCreationFailed{};
 		}
 

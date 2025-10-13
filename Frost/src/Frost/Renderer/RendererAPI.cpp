@@ -7,6 +7,11 @@ namespace Frost
 		Get().ClearColor(r, g, b, a);
 	}
 
+	void RendererAPI::ClearColor(const Viewport& viewport, float r, float g, float b, float a)
+	{
+		Get().ClearColor(viewport, r, g, b, a);
+	}
+
 	void RendererAPI::Present()
 	{
 		Get().Present();

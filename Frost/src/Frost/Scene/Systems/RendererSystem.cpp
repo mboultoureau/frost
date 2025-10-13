@@ -43,6 +43,8 @@ namespace Frost
 
 	void RendererSystem::Render(ECS& ecs)
     {
+		RendererAPI::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
 		const WindowDimensions currentWindowDimensions = Application::Get().GetWindow()->GetDimensions();
 		if (currentWindowDimensions.width == 0 || currentWindowDimensions.height == 0)
 		{
@@ -90,7 +92,7 @@ namespace Frost
 
 			if (camera.clearOnRender)
 			{
-				RendererAPI::ClearColor(camera.backgroundColor[0], camera.backgroundColor[1], camera.backgroundColor[2], camera.backgroundColor[3]);
+				RendererAPI::ClearColor(camera.viewport, camera.backgroundColor[0], camera.backgroundColor[1], camera.backgroundColor[2], camera.backgroundColor[3]);
 			}
 
 			const auto& renderers = ecs.GetDataArray<MeshRenderer>();

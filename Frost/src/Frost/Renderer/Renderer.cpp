@@ -2,6 +2,7 @@
 #include "Frost/Core/Application.h"
 
 #include <cassert>
+#include <d3d11_1.h>
 
 namespace Frost
 {
@@ -38,6 +39,20 @@ namespace Frost
 		float clearColor[4] = { r, g, b, a };
 		_device->_immediateContext->ClearRenderTargetView(_device->_renderTargetView.Get(), clearColor);
 		_device->_immediateContext->ClearDepthStencilView(_device->_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+
+	void Renderer::ClearColor(const Viewport& viewport, float r, float g, float b, float a)
+	{
+		assert(_device != nullptr);
+		D3D11_RECT vp;
+		vp.left = viewport.x * Application::Get().GetWindow()->GetDimensions().width;
+		vp.top = viewport.y * Application::Get().GetWindow()->GetDimensions().height;
+		vp.right = vp.left + (viewport.width * Application::Get().GetWindow()->GetDimensions().width);
+		vp.bottom = vp.top + (viewport.height * Application::Get().GetWindow()->GetDimensions().height);
+
+		float clearColor[4] = { r, g, b, a };
+		
+		_device->_immediateContext->ClearView(_device->_renderTargetView.Get(), clearColor, &vp, 1);
 	}
 
 	void Renderer::SetViewport(const Viewport& viewport)

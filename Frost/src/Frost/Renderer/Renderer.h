@@ -24,6 +24,7 @@ namespace Frost
 		void Present();
 		void DrawIndexed(UINT indexCount, UINT startIndexLocation, INT baseVertexLocation);
 		void ClearColor(float r, float g, float b, float a = 1.0f);
+		void ClearColor(const Viewport& viewport, float r, float g, float b, float a = 1.0f);
 
 		void SetViewport(const Viewport& viewport);
 		void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
