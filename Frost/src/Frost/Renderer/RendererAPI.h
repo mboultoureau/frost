@@ -13,6 +13,7 @@ namespace Frost
 	{
 	public:
 		static void ClearColor(float r, float g, float b, float a = 1.0f);
+		static void ClearColor(const Viewport& viewport, float r, float g, float b, float a = 1.0f);
 		static void DrawIndexed(UINT indexCount, UINT startIndexLocation, INT baseVertexLocation);
 		static void Present();
 

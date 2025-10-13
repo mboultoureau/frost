@@ -69,7 +69,12 @@ MainLayer::MainLayer() : Layer("MainLayer")
 	_scene->AddComponent<Frost::Camera>(camera2);
 
 	auto cameraComp2 = _scene->GetComponent<Frost::Camera>(camera2);
-	cameraComp2->clearOnRender = false;
+	cameraComp2->backgroundColor[0] = 0.4f;
+	cameraComp2->backgroundColor[1] = 0.3f;
+	cameraComp2->backgroundColor[2] = 0.2f;
+	cameraComp2->backgroundColor[3] = 1.0f;
+	cameraComp2->clearOnRender = true;
+	cameraComp2->viewport = Frost::Viewport(0.5f, 0.0f, 0.5f, 0.5f);
 }
 
 void MainLayer::OnUpdate(float deltaTime)
