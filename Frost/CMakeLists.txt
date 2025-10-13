@@ -1,6 +1,13 @@
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(vendor/assimp)
+set_target_properties(
+    uninstall
+    unit
+    UpdateAssimpLibsDebugSymbolsAndDLLs
+    zlibstatic
+    PROPERTIES FOLDER "Hidden Targets"
+)
 set_property(TARGET assimp PROPERTY FOLDER "Dependencies")
 
 if(WIN32)
