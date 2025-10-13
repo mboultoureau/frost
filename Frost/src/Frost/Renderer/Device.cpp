@@ -1,5 +1,6 @@
 ﻿#include "Device.h"
 #include "Frost/Core/Application.h"
+#include "Frost/Event/WindowResizeEvent.h"
 
 #include <array>
 #include <cassert>
@@ -18,8 +19,16 @@ namespace Frost
 		assert(_window != nullptr);
 
 		_CreateDevice();
-		_CreateRenderTargetView();
+		WindowDimensions dimensions = _window->GetDimensions();
+		_CreateViewsAndViewport(dimensions.width, dimensions.height);
 		_CreateRasterizer();
+
+		Application::Get().GetEventManager().Subscribe<WindowResizeEvent>(
+			[&](WindowResizeEvent& e) -> bool
+			{
+				HandleWindowResize(e.GetWidth(), e.GetHeight());
+				return true;
+			});
 	}
 
 	Device::~Device()
@@ -86,36 +95,31 @@ namespace Frost
 #endif
 	}
 
-	void Device::_CreateRenderTargetView()
+	void Device::_CreateViewsAndViewport(UINT width, UINT height)
 	{
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
 		HRESULT result = _swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer);
-		if (result != S_OK)
-		{
-			MessageBox(NULL, L"Failed to get back buffer!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
-			throw GetBackBufferFailed{};
-		}
 
 		result = _device->CreateRenderTargetView(backBuffer.Get(), NULL, &_renderTargetView);
-
 		if (result != S_OK)
 		{
 			MessageBox(NULL, L"Failed to create render target view!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
 			throw RenderTargetViewCreationFailed{};
 		}
 
-		_CreateDepthBuffer();
-
+		_CreateDepthBuffer(width, height);
 		_immediateContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), _depthStencilView.Get());
+
 		D3D11_VIEWPORT viewport = {};
 		viewport.TopLeftX = 0.0f;
 		viewport.TopLeftY = 0.0f;
-		viewport.Width = static_cast<FLOAT>(_window->GetDimensions().width);
-		viewport.Height = static_cast<FLOAT>(_window->GetDimensions().height);
+		viewport.Width = static_cast<FLOAT>(width);
+		viewport.Height = static_cast<FLOAT>(height);
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
 		_immediateContext->RSSetViewports(1, &viewport);
 	}
+
 
 	void Device::_CreateRasterizer()
 	{
@@ -135,11 +139,11 @@ namespace Frost
 		_immediateContext->RSSetState(_rasterizerState.Get());
 	}
 
-	void Device::_CreateDepthBuffer()
+	void Device::_CreateDepthBuffer(UINT width, UINT height)
 	{
 		D3D11_TEXTURE2D_DESC depthBufferDesc = {};
-		depthBufferDesc.Width = _window->GetDimensions().width;
-		depthBufferDesc.Height = _window->GetDimensions().height;
+		depthBufferDesc.Width = width;
+		depthBufferDesc.Height = height;
 		depthBufferDesc.MipLevels = 1;
 		depthBufferDesc.ArraySize = 1;
 		depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -220,4 +224,52 @@ namespace Frost
 			d3dDebug->Release();
 		}
 	}
+
+	void Device::_ReleaseViews()
+	{
+		if (_immediateContext)
+		{
+			_immediateContext->OMSetRenderTargets(0, 0, 0);
+		}
+
+		_renderTargetView.Reset();
+		_depthStencilView.Reset();
+		_depthTexture.Reset();
+
+		if (_immediateContext)
+		{
+			_immediateContext->ClearState();
+		}
+	}
+
+	void Device::HandleWindowResize(UINT width, UINT height)
+	{
+		if (!_swapChain)
+			return;
+
+		if (width == 0 || height == 0)
+		{
+			return;
+		}
+
+		_ReleaseViews();
+
+		HRESULT hr = _swapChain->ResizeBuffers(
+			0,
+			width,
+			height,
+			DXGI_FORMAT_UNKNOWN,
+			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
+		);
+
+		if (FAILED(hr))
+		{
+			MessageBox(NULL, L"Failed to resize swap chain buffers!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+			throw DeviceCreationFailed{}; // Throwing a generic error for now
+		}
+
+		_CreateViewsAndViewport(width, height);
+	}
+
+
 }

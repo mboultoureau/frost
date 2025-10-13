@@ -4,7 +4,7 @@ Frost is a game engine created by the Uno team ([Elias Del Pozo](https://depot.d
 
 ## Installation
 
-To install and run the project, you must be running Windows and have Visual Studio 2022 and Python installed. Then run the `Setup.bat` script in the scripts folder to generate the project.
+To install and run the project, you must be running Windows and have Visual Studio 2022 and CMake installed. Then run the `Setup.bat` script to generate the project.
 
 ## Resources
 
@@ -14,17 +14,6 @@ To install and run the project, you must be running Windows and have Visual Stud
 - [Game Engine Series - The Cherno](https://youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)
 
 ## Docs
-
-### Build system 
-
-Why use Premake instead of CMake?
-
-> Premake files are easier to read and write and offer features not available in CMake (such as choosing the location of intermediate files).
-
-Sources :
-
-- [Premake | Game Engine Series - The Cherno](https://youtu.be/sULV3aB2qeU)
-- [Hazel](https://github.com/TheCherno/Hazel)
 
 ### Entity Component System
 

@@ -30,7 +30,7 @@ namespace Frost
 		UINT GetCount() const { return _count; }
 
 	private:
-		UINT _count;
+		UINT _count{};
 	};
 
 	class ConstantBuffer : public Buffer

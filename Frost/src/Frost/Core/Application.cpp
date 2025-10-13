@@ -50,6 +50,11 @@ namespace Frost
 		{
 			_eventManager.ProcessEvents();
 
+			if (!_running)
+			{
+				break;
+			}
+
 			MSG msg;
 			if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{

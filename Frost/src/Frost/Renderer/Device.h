@@ -16,13 +16,16 @@ namespace Frost
 		Device(Window* window);
 		~Device();
 
+		void HandleWindowResize(UINT width, UINT height);
+
 	private:
 		void _CreateDevice();
-		void _CreateRenderTargetView();
 		void _CreateRasterizer();
-		void _CreateDepthBuffer();
+		void _CreateViewsAndViewport(UINT width, UINT height);
+		void _CreateDepthBuffer(UINT width, UINT height);
 		void _SetupDebug();
 		void _ReportLiveObjects();
+		void _ReleaseViews();
 
 		Window* _window;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain{};
