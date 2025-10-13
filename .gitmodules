@@ -1,3 +1,6 @@
 [submodule "Frost/vendor/assimp"]
 	path = Frost/vendor/assimp
 	url = https://github.com/assimp/assimp
+[submodule "Frost/vendor/JoltPhysics"]
+	path = Frost/vendor/JoltPhysics
+	url = https://github.com/jrouwe/JoltPhysics.git

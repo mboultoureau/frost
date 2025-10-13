@@ -1,5 +1,6 @@
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+# Assimp
 add_subdirectory(vendor/assimp)
 set_target_properties(
     uninstall
@@ -21,6 +22,22 @@ if(WIN32)
     )
 endif()
 
+# Jolt Physics
+add_subdirectory(vendor/JoltPhysics/Build)
+set_property(TARGET Jolt PROPERTY FOLDER "Dependencies")
+
+if(WIN32)
+    set_target_properties(Jolt PROPERTIES 
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+
+    target_compile_options(Jolt PRIVATE
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+    )
+endif()
+
+# Frost
 file(GLOB_RECURSE FROST_SOURCES
     "src/**.h"
     "src/**.cpp"
@@ -49,6 +66,7 @@ target_link_libraries(Frost PRIVATE
     d3d11.lib
     d3dcompiler.lib
     assimp
+    Jolt
 )
 
 if(WIN32)
