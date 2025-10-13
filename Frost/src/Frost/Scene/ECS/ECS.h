@@ -2,6 +2,8 @@
 
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Scene/ECS/ComponentArray.h"
+#include "Frost/Scene/Components/Script.h"
+#include "Frost/Scene/Components/Scriptable.h"
 
 #include <vector>
 #include <memory>
@@ -19,6 +21,8 @@ namespace Frost
         GameObject::Id CreateGameObject();
         void DestroyGameObject(GameObject::Id id);
 
+        void AddScript(GameObject::Id id, std::unique_ptr<Script> script);
+
         template <typename T, typename... Args>
         void AddComponent(GameObject::Id id, Args&&... args);
 
@@ -27,6 +31,9 @@ namespace Frost
 
         template <typename T>
         T* GetComponent(GameObject::Id id);
+
+        template <typename T>
+        bool HasComponent(GameObject::Id id);
 
         template <typename T>
         const std::vector<T>& GetDataArray() const;
@@ -92,6 +99,13 @@ namespace Frost
             return &array->data[index];
         }
         return nullptr;
+    }
+
+    template <typename T>
+    bool ECS::HasComponent(GameObject::Id id)
+    {
+        ComponentArray<T>* array = GetComponents<T>();
+        return array->entityToIndex.count(id) > 0;
     }
 
     template <typename T>

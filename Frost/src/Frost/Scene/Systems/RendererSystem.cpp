@@ -57,13 +57,19 @@ namespace Frost
 			const Camera& camera = cameras[c];
 			GameObject::Id cameraId = cameraEntities[c];
 
+			const WorldTransform* cameraTransform = ecs.GetComponent<WorldTransform>(cameraId);
+			if (!cameraTransform)
+			{
+				continue;
+			}
+
 			// Calculate viewport
 			float width = camera.viewport.width * currentWindowDimensions.width;
 			float height = camera.viewport.height * currentWindowDimensions.height;
 			float viewportAspectRatio = width / height;
 
 			DirectX::XMMATRIX view;
-			DirectX::XMFLOAT4 actualCameraPosition = { 0.0f, 0.0f, -10.0f, 1.0f };
+			DirectX::XMFLOAT4 actualCameraPosition = { cameraTransform->position.x, cameraTransform->position.y, cameraTransform->position.z, 1.0f };
 
 			view = DirectX::XMMatrixLookAtLH(
 				DirectX::XMVectorSet(actualCameraPosition.x, actualCameraPosition.y, actualCameraPosition.z, 1.0f),

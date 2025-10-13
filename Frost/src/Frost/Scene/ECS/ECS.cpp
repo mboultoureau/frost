@@ -28,4 +28,14 @@ namespace Frost
             _activeGameObjects.end()
         );
     }
+
+    void ECS::AddScript(GameObject::Id id, std::unique_ptr<Script> script)
+    {
+        if (!HasComponent<Scriptable>(id))
+        {
+            AddComponent<Scriptable>(id);
+        }
+
+        GetComponent<Scriptable>(id)->_scripts.push_back(std::move(script));
+    }
 }

@@ -2,6 +2,7 @@
 
 #include "Frost/Scene/Systems/RendererSystem.h"
 #include "Frost/Scene/Systems/WorldTransformSystem.h"
+#include "Frost/Scene/Systems/ScriptableSystem.h"
 #include "Frost/Scene/Components/GameObjectInfo.h"
 
 namespace Frost
@@ -32,6 +33,7 @@ namespace Frost
     {
 		_systems.push_back(std::make_unique<WorldTransformSystem>());
         _systems.push_back(std::make_unique<RendererSystem>());
+		_systems.push_back(std::make_unique<ScriptableSystem>());
     }
 
     void Scene::Update(float deltaTime)

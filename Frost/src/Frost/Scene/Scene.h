@@ -24,6 +24,9 @@ namespace Frost
 		void LateUpdate(float deltaTime);
 
 		template <typename T, typename... Args>
+		void AddScript(GameObject::Id id, Args&&... args);
+
+		template <typename T, typename... Args>
 		void AddComponent(GameObject::Id id, Args&&... args)
 		{
 			_ecs.AddComponent<T>(id, std::forward<Args>(args)...);
@@ -46,4 +49,12 @@ namespace Frost
 		std::vector<std::unique_ptr<System>> _systems;
 		void _InitializeSystems();
 	};
+
+	template <typename T, typename... Args>
+	void Scene::AddScript(GameObject::Id id, Args&&... args)
+	{
+		static_assert(std::is_base_of<Script, T>::value, "Type T must inherit from Frost::Script.");
+		std::unique_ptr<Script> script = std::make_unique<T>(std::forward<Args>(args)...);
+		_ecs.AddScript(id, std::move(script));
+	}
 }
