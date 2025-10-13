@@ -20,16 +20,6 @@ namespace Frost
 		VertexBuffer _vertexBuffer;
 		IndexBuffer _indexBuffer;
 	};
-
-	class MeshLibrary
-	{
-	public:
-		Mesh* Get(const std::string& filepath);
-		bool Exists(const std::string& filepath) const;
-
-	private:
-		std::unordered_map<std::string, Mesh> _meshes;
-	};
 }
 
 

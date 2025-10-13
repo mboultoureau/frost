@@ -3,7 +3,7 @@
 #include "Frost/Utils/NoCopy.h"
 #include "Frost/Core/Window.h"
 #include "Frost/Core/LayerStack.h"
-#include "Frost/Renderer/Mesh.h"
+#include "Frost/Renderer/MeshLibrary.h"
 #include "Frost/Event/EventManager.h"
 
 #include <Windows.h>

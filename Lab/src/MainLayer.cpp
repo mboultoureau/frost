@@ -17,13 +17,13 @@ MainLayer::MainLayer() : Layer("MainLayer")
 	_scene = std::make_unique<Frost::Scene>();
 
 	auto sphere = _scene->CreateGameObject("Sphere");
-	_scene->AddComponent<Frost::Transform>(sphere, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
+	_scene->AddComponent<Frost::Transform>(sphere, Frost::Transform::Vector3{ 0.0f, 0.0f, 500.0f });
 	_scene->AddComponent<Frost::WorldTransform>(sphere, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
-	_scene->AddComponent<Frost::MeshRenderer>(sphere, "Sphere.fbx");
+	_scene->AddComponent<Frost::MeshRenderer>(sphere, "./resources/meshes/bust.obj");
 	
 	auto camera = _scene->CreateGameObject("Camera");
 	_scene->AddComponent<Frost::Transform>(camera, Frost::Transform::Vector3{ -5.0f, 0.0f, -5.0f });
-	_scene->AddComponent<Frost::WorldTransform>(camera, Frost::Transform::Vector3{ 0.0f, 0.0f, -5.0f });
+	_scene->AddComponent<Frost::WorldTransform>(camera, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
 	_scene->AddComponent<Frost::Camera>(camera);
 
 	// Modify the color of the camera component

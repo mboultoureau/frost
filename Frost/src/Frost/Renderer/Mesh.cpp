@@ -1,109 +1,81 @@
 #include "Mesh.h"
 
 #include <DirectXMath.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include "Frost/Renderer/Vertex.h"
 
 namespace Frost
 {
+	class MeshLoading{};
+
 	Mesh::Mesh(const std::string& filepath) : _filepath{ filepath }
 	{
-		const uint32_t index_bloc[36] = {
-			0,1,2,
-			0,2,3,
-			5,6,7,
-			5,7,4,
-			8,9,10,
-			8,10,11, 
-			13,14,15,
-			13,15,12,
-			19,16,17,
-			19,17,18,
-			20,21,22,
-			20,22,23 
-		};
+		Assimp::Importer importer;
 
-		float dx = 1.0f;
-		float dy = 1.0f;
-		float dz = 1.0f;
-
-		DirectX::XMFLOAT3 point[8] =
+		const aiScene* scene = importer.ReadFile(filepath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
-			DirectX::XMFLOAT3(-dx / 2, dy / 2, -dz / 2),
-			DirectX::XMFLOAT3(dx / 2, dy / 2, -dz / 2),
-			DirectX::XMFLOAT3(dx / 2, -dy / 2, -dz / 2),
-			DirectX::XMFLOAT3(-dx / 2, -dy / 2, -dz / 2),
-			DirectX::XMFLOAT3(-dx / 2, dy / 2, dz / 2),
-			DirectX::XMFLOAT3(-dx / 2, -dy / 2, dz / 2),
-			DirectX::XMFLOAT3(dx / 2, -dy / 2, dz / 2),
-			DirectX::XMFLOAT3(dx / 2, dy / 2, dz / 2)
-		};
-
-
-		// Calculer les normales
-		DirectX::XMFLOAT3 n0(0.0f, 0.0f, -1.0f); // devant
-		DirectX::XMFLOAT3 n1(0.0f, 0.0f, 1.0f); // arrière
-		DirectX::XMFLOAT3 n2(0.0f, -1.0f, 0.0f); // dessous
-		DirectX::XMFLOAT3 n3(0.0f, 1.0f, 0.0f); // dessus
-		DirectX::XMFLOAT3 n4(-1.0f, 0.0f, 0.0f); // face gauche
-		DirectX::XMFLOAT3 n5(1.0f, 0.0f, 0.0f); // face droite 
-
-		struct CSommetBloc
-		{
-			const DirectX::XMFLOAT3& position;
-			const DirectX::XMFLOAT3& normal;
-			const DirectX::XMFLOAT2& coordTex;
-		};
-
-		Frost::Vertex sommets[24] =
-		{
-			// Le devant du bloc
-			{ point[0], n0, DirectX::XMFLOAT2(0.0f, 0.0f) },
-			{ point[1], n0, DirectX::XMFLOAT2(1.0f, 0.0f) },
-			{ point[2], n0, DirectX::XMFLOAT2(1.0f, 1.0f) },
-			{ point[3], n0, DirectX::XMFLOAT2(0.0f, 1.0f) },
-			// L’arrière du bloc
-			{ point[4], n1, DirectX::XMFLOAT2(0.0f, 1.0f) },
-			{ point[5], n1, DirectX::XMFLOAT2(0.0f, 0.0f) },
-			{ point[6], n1, DirectX::XMFLOAT2(1.0f, 0.0f) },
-			{ point[7], n1, DirectX::XMFLOAT2(1.0f, 1.0f) },
-			// Le dessous du bloc
-			{ point[3], n2, DirectX::XMFLOAT2(0.0f, 0.0f) },
-			{ point[2], n2, DirectX::XMFLOAT2(1.0f, 0.0f) },
-			{ point[6], n2, DirectX::XMFLOAT2(1.0f, 1.0f) },
-			{ point[5], n2, DirectX::XMFLOAT2(0.0f, 1.0f) },
-			// Le dessus du bloc
-			{ point[0], n3, DirectX::XMFLOAT2(0.0f, 1.0f) },
-			{ point[4], n3, DirectX::XMFLOAT2(0.0f, 0.0f) },
-			{ point[7], n3, DirectX::XMFLOAT2(1.0f, 0.0f) },
-			{ point[1], n3, DirectX::XMFLOAT2(1.0f, 1.0f) },
-			// La face gauche
-			{ point[0], n4, DirectX::XMFLOAT2(0.0f, 0.0f) },
-			{ point[3], n4, DirectX::XMFLOAT2(1.0f, 0.0f) },
-			{ point[5], n4, DirectX::XMFLOAT2(1.0f, 1.0f) },
-			{ point[4], n4, DirectX::XMFLOAT2(0.0f, 1.0f) },
-			// La face droite
-			{ point[1], n5, DirectX::XMFLOAT2(0.0f, 0.0f) },
-			{ point[7], n5, DirectX::XMFLOAT2(1.0f, 0.0f) },
-			{ point[6], n5, DirectX::XMFLOAT2(1.0f, 1.0f) },
-			{ point[2], n5, DirectX::XMFLOAT2(0.0f, 1.0f) }
-		};
-
-		_vertexBuffer.Create(sommets, sizeof(sommets));
-		_indexBuffer.Create(index_bloc, sizeof(index_bloc), 36);
-	}
-
-	Mesh* MeshLibrary::Get(const std::string& filepath)
-	{
-		if (!Exists(filepath))
-		{
-			_meshes.emplace(filepath, Mesh(filepath));
+			// Display error message in MessageBox
+			MessageBoxA(NULL, importer.GetErrorString(), "Error loading model", MB_OK | MB_ICONERROR);
+			throw MeshLoading{};
 		}
-		return &_meshes.at(filepath);
-	}
 
-	bool MeshLibrary::Exists(const std::string& filepath) const
-	{
-		return _meshes.contains(filepath);
+		if (scene->mNumMeshes == 0)
+		{
+			MessageBoxA(NULL, "No meshes found in the model.", "Error loading model", MB_OK | MB_ICONERROR);
+			throw MeshLoading{};
+		}
+
+		const aiMesh* mesh = scene->mMeshes[0];
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+
+		vertices.reserve(mesh->mNumVertices);
+		for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
+		{
+			Vertex vertex;
+			// Positions
+			vertex.position.x = mesh->mVertices[i].x;
+			vertex.position.y = mesh->mVertices[i].y;
+			vertex.position.z = mesh->mVertices[i].z;
+			// Normals
+			if (mesh->HasNormals())
+			{
+				vertex.normal.x = mesh->mNormals[i].x;
+				vertex.normal.y = mesh->mNormals[i].y;
+				vertex.normal.z = mesh->mNormals[i].z;
+			}
+			else
+			{
+				vertex.normal = { 0.0f, 0.0f, 0.0f };
+			}
+			// Texture Coordinates
+			if (mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
+			{
+				vertex.texCoord.x = mesh->mTextureCoords[0][i].x;
+				vertex.texCoord.y = mesh->mTextureCoords[0][i].y;
+			}
+			else
+			{
+				vertex.texCoord = { 0.0f, 0.0f };
+			}
+			vertices.push_back(vertex);
+		}
+
+		indices.reserve(mesh->mNumFaces * 3);
+		for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+		{
+			aiFace face = mesh->mFaces[i];
+			for (unsigned int j = 0; j < face.mNumIndices; ++j)
+			{
+				indices.push_back(face.mIndices[j]);
+			}
+		}
+
+		_vertexBuffer.Create(vertices.data(), static_cast<UINT>(vertices.size() * sizeof(Vertex)));
+		_indexBuffer.Create(indices.data(), static_cast<UINT>(indices.size() * sizeof(uint32_t)), indices.size());
 	}
 }

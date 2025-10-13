@@ -1,0 +1,3 @@
+[submodule "Frost/vendor/assimp"]
+	path = Frost/vendor/assimp
+	url = https://github.com/assimp/assimp

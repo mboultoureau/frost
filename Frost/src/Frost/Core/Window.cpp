@@ -1,6 +1,8 @@
 #include "Frost/Core/Window.h"
+
 #include "Frost/Core/Application.h"
 #include "Frost/Event/WindowCloseEvent.h"
+#include "Frost/Event/WindowResizeEvent.h"
 
 namespace Frost
 {
@@ -69,6 +71,14 @@ namespace Frost
         {
         case WM_CLOSE:
 			Application::Get().GetEventManager().PushEvent<Frost::WindowCloseEvent>();
+            break;
+        case WM_SIZE:
+            if (wParam != SIZE_MINIMIZED) {
+                UINT width = LOWORD(lParam);
+                UINT height = HIWORD(lParam);
+
+                Application::Get().GetEventManager().PushEvent<Frost::WindowResizeEvent>(width, height);
+            }
             break;
         case WM_DESTROY:
             PostQuitMessage(0);
