@@ -1,6 +1,6 @@
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# Assimp
+# assimp
 add_subdirectory(vendor/assimp)
 set_target_properties(
     uninstall
@@ -37,6 +37,53 @@ if(WIN32)
     )
 endif()
 
+# imgui
+set(IMGUI_DIR "vendor/imgui")
+
+set(IMGUI_SOURCES
+    "${IMGUI_DIR}/imgui.cpp"
+    "${IMGUI_DIR}/imgui_draw.cpp"
+    "${IMGUI_DIR}/imgui_widgets.cpp"
+    "${IMGUI_DIR}/imgui_tables.cpp"
+    "${IMGUI_DIR}/imgui_demo.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_win32.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_dx11.cpp"
+)
+
+add_library(ImGui STATIC
+    ${IMGUI_SOURCES}
+)
+
+set_property(TARGET ImGui PROPERTY FOLDER "Dependencies")
+
+target_include_directories(ImGui PUBLIC
+    "${IMGUI_DIR}"
+    "${IMGUI_DIR}/backends"
+)
+
+set_target_properties(ImGui PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/ImGui"
+    PDB_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/ImGui"
+    RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/ImGui"
+    LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/ImGui"
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+)
+
+if(WIN32)
+    target_compile_definitions(ImGui PRIVATE
+        IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
+    )
+    
+    target_compile_options(ImGui PRIVATE
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+    )
+
+    target_link_libraries(ImGui PRIVATE
+        d3d11.lib
+    )
+endif()
+
 # Frost
 file(GLOB_RECURSE FROST_SOURCES
     "src/**.h"
@@ -67,6 +114,7 @@ target_link_libraries(Frost PRIVATE
     d3dcompiler.lib
     assimp
     Jolt
+	ImGui
 )
 
 if(WIN32)
