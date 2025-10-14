@@ -66,7 +66,7 @@ namespace Frost
 		swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 		const std::array<D3D_FEATURE_LEVEL, 1> featuresLevels = {
-			D3D_FEATURE_LEVEL_11_0
+			D3D_FEATURE_LEVEL_11_1
 		};
 
 		ID3D11DeviceContext* context0 = nullptr;
