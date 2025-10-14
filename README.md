@@ -15,6 +15,17 @@ To install and run the project, you must be running Windows and have Visual Stud
 
 ## Docs
 
+### Dependencies
+
+Here are the dependencies present in the engine:
+- [assimp](https://github.com/assimp/assimp): importing 3D models
+- [imgui](https://github.com/ocornut/imgui): debug interface
+- [JoltPhysics](https://github.com/jrouwe/JoltPhysics): physics engine
+
+The various dependencies are located in Frost/vendor for dependencies specific to the engine and Lab/vendor for dependencies specific to the Lab using git submodule.
+To update dependencies to their latest versions, you can use: git submodule update
+
+
 ### Entity Component System
 
 ### Event System
@@ -24,7 +35,7 @@ Sources :
 - [Event Queue - Game Programming Patterns](https://gameprogrammingpatterns.com/event-queue.html)
 - [Event System - Denys Kryvytskyi](https://denyskryvytskyi.github.io/event-system)
 
-## Utils
+### Utils
 
 Voici les différentes classes utilitaires présentes dans le projet :
 
@@ -35,3 +46,4 @@ Sources :
 
 - [Code de grande personne – bloquer la copie - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Incopiable.html)
 - [Génération de nombres pseudoaléatoires avec C++ - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/prng.html)
+
