@@ -1,6 +1,10 @@
 [submodule "Frost/vendor/assimp"]
 	path = Frost/vendor/assimp
-	url = https://github.com/assimp/assimp
+	url = https://github.com/assimp/assimp.git
 [submodule "Frost/vendor/JoltPhysics"]
 	path = Frost/vendor/JoltPhysics
 	url = https://github.com/jrouwe/JoltPhysics.git
+[submodule "Frost/vendor/imgui"]
+	path = Frost/vendor/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
