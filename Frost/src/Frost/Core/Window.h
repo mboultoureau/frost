@@ -38,6 +38,7 @@ namespace Frost
 		WindowDimensions GetDimensions();
 
 		void Destroy();
+		HWND GetHWND() const { return _hwnd; }
 
 	private:
 		ATOM _AppRegisterClass();

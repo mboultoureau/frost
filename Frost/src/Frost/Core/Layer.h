@@ -9,7 +9,11 @@ namespace Frost
 	class Layer
 	{
 	public:
-		Layer(const std::string& name) : _name(name) {}
+		using LayerName = std::string;
+		using LayerPriority = uint32_t;
+
+		Layer(const LayerName& name) : _name(name), _priority{ 0 } {}
+		Layer(const LayerName& name, LayerPriority priority) : _name(name), _priority{ priority } {}
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
@@ -18,12 +22,11 @@ namespace Frost
 		virtual void OnFixedUpdate(float fixedDeltaTime) {}
 		virtual void OnLateUpdate(float deltaTime) {}
 
-		const std::string& GetName() const { return _name; }
+		const LayerName& GetName() const { return _name; }
 
 	private:
-#ifdef FT_DEBUG
-		std::string _name;
-#endif
+		LayerName _name;
+		LayerPriority _priority;
 	};
 }
 

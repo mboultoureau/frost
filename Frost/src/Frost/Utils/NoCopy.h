@@ -1,11 +1,15 @@
 #pragma once
 
-class NoCopy
+namespace Frost
 {
-public:
-	NoCopy(const NoCopy&) = delete;
-	NoCopy& operator=(const NoCopy&) = delete;
-protected:
-	constexpr NoCopy() = default;
-	~NoCopy() = default;
-};
+	class NoCopy
+	{
+	public:
+		NoCopy(const NoCopy&) = delete;
+		NoCopy& operator=(const NoCopy&) = delete;
+
+	protected:
+		constexpr NoCopy() = default;
+		~NoCopy() = default;
+	};
+}

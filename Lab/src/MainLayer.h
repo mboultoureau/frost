@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Frost.h"
+#include "Frost/Core/Layer.h"
+#include "Frost/Scene/Scene.h"
+#include "LabApp.h"
 
 #include <memory>
 
@@ -12,6 +14,5 @@ public:
 	void OnUpdate(float deltaTime) override;
 
 private:
-	std::unique_ptr<Frost::Scene> _scene;
 };
 

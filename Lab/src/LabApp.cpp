@@ -1,21 +1,21 @@
+#include "LabApp.h"
+
 #include <Frost.h>
 #include <Frost/Core/EntryPoint.h>
+#include <Frost/Debug/DebugLayer.h>
 #include <iostream>
 
 #include "MainLayer.h"
 
-class Lab : public Frost::Application
+Lab::Lab(Frost::ApplicationEntryPoint entryPoint) : Frost::Application(entryPoint)
 {
-public:
-	Lab(Frost::ApplicationEntryPoint entryPoint) : Frost::Application{ entryPoint }
-	{
-		PushLayer(new MainLayer());
-	}
+	_game = std::make_unique<Game>(this);
+}
 
-	~Lab()
-	{
-	}
-};
+Lab::~Lab()
+{
+}
+
 
 Frost::Application* Frost::CreateApplication(ApplicationEntryPoint entryPoint)
 {

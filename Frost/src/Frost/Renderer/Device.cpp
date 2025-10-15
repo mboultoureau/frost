@@ -1,6 +1,7 @@
 ﻿#include "Device.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Event/WindowResizeEvent.h"
+#include "Frost/Event/DebugOptionChangedEvent.h"
 
 #include <array>
 #include <cassert>
@@ -13,6 +14,7 @@ namespace Frost
 	class RenderTargetViewCreationFailed {};
 	class DepthStencilViewCreationFailed {};
 	class DepthStencilBufferCreationFailed {};
+	class RasterizerStateCreationFailed {};
 
 	Device::Device(Window* window) : _window{ window }
 	{
@@ -22,12 +24,35 @@ namespace Frost
 		WindowDimensions dimensions = _window->GetDimensions();
 		_CreateViewsAndViewport(dimensions.width, dimensions.height);
 		_CreateRasterizer();
+		_CreateWireframeRasterizer();
 
 		Application::Get().GetEventManager().Subscribe<WindowResizeEvent>(
 			[&](WindowResizeEvent& e) -> bool
 			{
 				HandleWindowResize(e.GetWidth(), e.GetHeight());
 				return true;
+			});
+
+		Application::Get().GetEventManager().Subscribe<DebugOptionChangedEvent>(
+			[&](DebugOptionChangedEvent& e) -> bool
+			{
+				if (e.GetOptionName() == "Wireframe")
+				{
+					if (std::holds_alternative<bool>(e.GetNewValue()))
+					{
+						bool enabled = std::get<bool>(e.GetNewValue());
+						_isWireframeEnabled = enabled;
+
+						if (enabled)
+							EnableWireframe();
+						else
+							DisableWireframe();
+
+						return true;
+					}
+				}
+
+				return false;
 			});
 	}
 
@@ -154,8 +179,36 @@ namespace Frost
 		rasterizerDesc.MultisampleEnable = FALSE;
 		rasterizerDesc.AntialiasedLineEnable = FALSE;
 
-		_device->CreateRasterizerState(&rasterizerDesc, &_rasterizerState);
+		HRESULT result = _device->CreateRasterizerState(&rasterizerDesc, &_rasterizerState);
+		if (result != S_OK)
+		{
+			MessageBox(NULL, L"Failed to create rasterizer state!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+			throw RasterizerStateCreationFailed{};
+		}
+
 		_immediateContext->RSSetState(_rasterizerState.Get());
+	}
+
+	void Device::_CreateWireframeRasterizer()
+	{
+		D3D11_RASTERIZER_DESC wireframeRasterizerDesc = {};
+		wireframeRasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
+		wireframeRasterizerDesc.CullMode = D3D11_CULL_BACK;
+		wireframeRasterizerDesc.FrontCounterClockwise = FALSE;
+		wireframeRasterizerDesc.DepthBias = 0;
+		wireframeRasterizerDesc.DepthBiasClamp = 0.0f;
+		wireframeRasterizerDesc.SlopeScaledDepthBias = 0.0f;
+		wireframeRasterizerDesc.DepthClipEnable = TRUE;
+		wireframeRasterizerDesc.ScissorEnable = FALSE;
+		wireframeRasterizerDesc.MultisampleEnable = FALSE;
+		wireframeRasterizerDesc.AntialiasedLineEnable = FALSE;
+
+		HRESULT result = _device->CreateRasterizerState(&wireframeRasterizerDesc, &_wireframeRasterizerState);
+		if (result != S_OK)
+		{
+			MessageBox(NULL, L"Failed to create wireframe rasterizer state!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+			throw RasterizerStateCreationFailed{};
+		}
 	}
 
 	void Device::_CreateDepthBuffer(UINT width, UINT height)
@@ -288,7 +341,24 @@ namespace Frost
 		}
 
 		_CreateViewsAndViewport(width, height);
+		_isWireframeEnabled ? EnableWireframe() : DisableWireframe();
 	}
 
+	void Device::EnableWireframe()
+	{
+		if (_immediateContext && _wireframeRasterizerState)
+		{
+			_immediateContext->RSSetState(_wireframeRasterizerState.Get());
+			_isWireframeEnabled = true;
+		}
+	}
 
+	void Device::DisableWireframe()
+	{
+		if (_immediateContext && _rasterizerState)
+		{
+			_immediateContext->RSSetState(_rasterizerState.Get());
+			_isWireframeEnabled = false;
+		}
+	}
 }

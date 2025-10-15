@@ -30,6 +30,7 @@ namespace Frost
 		void Run();
 		void PushLayer(Layer* layer);
 		void PopLayer(Layer* layer);
+		Layer* GetLayer(const Layer::LayerName& name);
 	
 		static Application& Get();
 

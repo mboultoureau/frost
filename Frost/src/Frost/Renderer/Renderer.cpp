@@ -173,4 +173,16 @@ namespace Frost
 		assert(_device != nullptr);
 		_device->_immediateContext->GSSetShader(nullptr, nullptr, 0);
 	}
+
+	ID3D11Device* Renderer::Get3DDevice() const
+	{
+		assert(_device != nullptr);
+		return _device->_device.Get();
+	}
+
+	ID3D11DeviceContext1* Renderer::GetImmediateContext() const
+	{
+		assert(_device != nullptr);
+		return _device->_immediateContext.Get();
+	}
 }

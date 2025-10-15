@@ -54,6 +54,12 @@ namespace Frost
             return GetStaticComponentArrayRef<T>().get();
         }
 
+        // Get active game objects
+        std::vector<GameObject::Id>& GetActiveGameObjects()
+        {
+            return _activeGameObjects;
+        }
+
     private:
         GameObject::Id _nextId = GameObject::InvalidId + 1;
         std::vector<GameObject::Id> _activeGameObjects;

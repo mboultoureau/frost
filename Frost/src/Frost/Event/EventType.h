@@ -7,6 +7,7 @@ namespace Frost
 		None = 0,
 		WindowClose,
 		WindowResize,
+		DebugOptionChanged,
 		_COUNT
 	};
 }

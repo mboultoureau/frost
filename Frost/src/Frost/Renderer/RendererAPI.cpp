@@ -72,6 +72,17 @@ namespace Frost
 		Get().SetGeometryShader();
 	}
 
+	ID3D11Device* RendererAPI::Get3DDevice()
+	{
+		return Get().Get3DDevice();
+	}
+
+	ID3D11DeviceContext1* RendererAPI::GetImmediateContext()
+	{
+		return Get().GetImmediateContext();
+	}
+
+
 	Renderer& RendererAPI::Get()
 	{
 		static Renderer _renderer;
