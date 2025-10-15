@@ -17,10 +17,14 @@ namespace Frost
 		~Device();
 
 		void HandleWindowResize(UINT width, UINT height);
+		void EnableWireframe();
+		void DisableWireframe();
+		bool IsWireframeEnabled() const { return _isWireframeEnabled; }
 
 	private:
 		void _CreateDevice();
 		void _CreateRasterizer();
+		void _CreateWireframeRasterizer();
 		void _CreateViewsAndViewport(UINT width, UINT height);
 		void _CreateDepthBuffer(UINT width, UINT height);
 		void _SetupDebug();
@@ -32,9 +36,12 @@ namespace Frost
 		Microsoft::WRL::ComPtr<ID3D11Device> _device{};
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext1> _immediateContext{};
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> _rasterizerState{};
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> _wireframeRasterizerState{};
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> _depthTexture{};
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> _depthStencilView{};
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView{};
+
+		bool _isWireframeEnabled = false;
 
 		friend class Renderer;
 	};

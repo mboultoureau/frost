@@ -13,7 +13,7 @@ namespace Frost
 	class Scene
 	{
 	public:
-		Scene();
+		Scene(std::string&& name);
 
 		GameObject::Id CreateGameObject();
 		GameObject::Id CreateGameObject(std::string name);
@@ -44,8 +44,12 @@ namespace Frost
 			return _ecs.GetComponent<T>(id);
 		}
 
+		const std::string& GetName() const { return _name; }
+		ECS& GetECS() { return _ecs; }
+
 	private:
 		ECS _ecs;
+		std::string _name;
 		std::vector<std::unique_ptr<System>> _systems;
 		void _InitializeSystems();
 	};

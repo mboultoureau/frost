@@ -7,6 +7,8 @@
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Shader.h"
 
+#include <d3d11_1.h>
+
 namespace Frost
 {
 	class RendererAPI
@@ -32,6 +34,9 @@ namespace Frost
 		static void SetPixelConstantBuffer(UINT slot, ID3D11Buffer* buffer);
 
 		static void SetGeometryShader();
+
+		static ID3D11Device* Get3DDevice();
+		static ID3D11DeviceContext1* GetImmediateContext();
 
 		static Renderer& Get();
 	};

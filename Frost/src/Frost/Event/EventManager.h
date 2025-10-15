@@ -26,7 +26,7 @@ namespace Frost
 		void Unsubscribe(EventType type, UUID handlerID);
 
 		template<typename T, typename... Args>
-		void PushEvent(Args&&... args)
+		void Emit(Args&&... args)
 		{
 			static_assert(std::is_base_of<Event, T>::value, "T must inherit from Frost::Event");
 			_eventQueue.push_back(std::make_unique<T>(std::forward<Args>(args)...));

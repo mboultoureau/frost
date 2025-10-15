@@ -4,6 +4,8 @@
 #include "Frost/Event/WindowCloseEvent.h"
 #include "Frost/Event/WindowResizeEvent.h"
 
+#include <imgui_impl_win32.h>
+
 namespace Frost
 {
     class WindowRegistrationFailed {};
@@ -67,17 +69,21 @@ namespace Frost
 
     LRESULT CALLBACK Window::_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
+        extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+        if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+            return true;
+
         switch (message)
         {
         case WM_CLOSE:
-			Application::Get().GetEventManager().PushEvent<Frost::WindowCloseEvent>();
+			Application::Get().GetEventManager().Emit<Frost::WindowCloseEvent>();
             break;
         case WM_SIZE:
             if (wParam != SIZE_MINIMIZED) {
                 UINT width = LOWORD(lParam);
                 UINT height = HIWORD(lParam);
 
-                Application::Get().GetEventManager().PushEvent<Frost::WindowResizeEvent>(width, height);
+                Application::Get().GetEventManager().Emit<Frost::WindowResizeEvent>(width, height);
             }
             break;
         case WM_DESTROY:

@@ -7,7 +7,7 @@
 
 namespace Frost
 {
-    Scene::Scene()
+    Scene::Scene(std::string&& name) : _name{ std::move(name) }
     {
         _InitializeSystems();
     }

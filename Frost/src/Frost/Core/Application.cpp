@@ -43,6 +43,17 @@ namespace Frost
 	{
 		_layerStack.PopLayer(layer);
 	}
+
+	Layer* Application::GetLayer(const Layer::LayerName& name)
+	{
+		for (Layer* layer : _layerStack._layers)
+		{
+			if (layer->GetName() == name)
+			{
+				return layer;
+			}
+		}
+	}
 	
 	void Application::Run()
 	{
@@ -75,6 +86,7 @@ namespace Frost
 				layer->OnLateUpdate(0.0f);
 			}
 
+			
 			RendererAPI::Present();
 		}
 	}

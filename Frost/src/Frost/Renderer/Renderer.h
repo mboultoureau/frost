@@ -7,7 +7,7 @@
 #include "Frost/Renderer/Shader.h"
 
 #include <memory>
-#include <d3d11.h>
+#include <d3d11_1.h>
 
 namespace Frost
 {
@@ -45,6 +45,10 @@ namespace Frost
 		void CreateVertexShader(const void* shaderBytecode, SIZE_T bytecodeLength, ID3D11VertexShader** vertexShader);
 		void CreateInputLayout(const D3D11_INPUT_ELEMENT_DESC* inputElementDescs, UINT numElements, const void* shaderBytecode, SIZE_T bytecodeLength, ID3D11InputLayout** inputLayout);
 		void CreatePixelShader(const void* shaderBytecode, SIZE_T bytecodeLength, ID3D11PixelShader** pixelShader);
+
+		ID3D11Device* Get3DDevice() const;
+		ID3D11DeviceContext1* GetImmediateContext() const;
+		Device* GetDevice() const { return _device.get(); }
 
 	private:
 		std::shared_ptr<Window> _window;
