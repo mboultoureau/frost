@@ -2,7 +2,6 @@
 
 #include <Frost.h>
 #include <Frost/Core/EntryPoint.h>
-#include <Frost/Debug/DebugLayer.h>
 #include <iostream>
 
 #include "MainLayer.h"

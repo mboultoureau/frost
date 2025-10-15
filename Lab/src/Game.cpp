@@ -2,7 +2,7 @@
 
 #include "MainLayer.h"
 
-#include "Frost/Debug/DebugLayer.h"
+#include "Frost/Debugging/DebugLayer.h"
 
 #include <cassert>
 
