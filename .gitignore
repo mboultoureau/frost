@@ -448,4 +448,4 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
-*.imgui.ini
+imgui.ini
