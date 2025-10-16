@@ -1,0 +1,61 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "vcpkg-ninja",
+      "displayName": "Vcpkg Toolchain with Ninja",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "vs-root-build",
+      "displayName": "Visual Studio (Root Build, Vcpkg in Vendor)",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}",
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostArch": "x64"
+        }
+      },
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vendor/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vendor/installed",
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;Dist",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vcpkg-ninja",
+      "displayName": "Vcpkg Toolchain with Ninja",
+      "configurePreset": "vcpkg-ninja"
+    },
+    {
+      "name": "vs-root-build",
+      "displayName": "Visual Studio (Root Build, Vcpkg in Vendor)",
+      "configurePreset": "vs-root-build"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "vcpkg-ninja",
+      "displayName": "Vcpkg Toolchain with Ninja",
+      "configurePreset": "vcpkg-ninja",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "vs-root-build",
+      "displayName": "Visual Studio (Root Build, Vcpkg in Vendor)",
+      "configurePreset": "vs-root-build",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
