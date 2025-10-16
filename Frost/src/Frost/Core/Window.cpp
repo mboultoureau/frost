@@ -3,6 +3,7 @@
 #include "Frost/Core/Application.h"
 #include "Frost/Event/WindowCloseEvent.h"
 #include "Frost/Event/WindowResizeEvent.h"
+#include "Frost/Input/Input.cpp"
 
 #include <imgui_impl_win32.h>
 
@@ -19,6 +20,8 @@ namespace Frost
 
         _AppRegisterClass();
         _CreateWindow(settings);
+
+        InitializeInput();
 	}
 
 	ATOM Window::_AppRegisterClass()
@@ -72,6 +75,8 @@ namespace Frost
         extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
         if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
             return true;
+
+        ProcessInput(hWnd);
 
         switch (message)
         {

@@ -1,5 +1,8 @@
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+# gameinput
+find_package(gameinput CONFIG REQUIRED)
+
 # assimp
 add_subdirectory(vendor/assimp)
 set_target_properties(
@@ -115,6 +118,7 @@ target_link_libraries(Frost PRIVATE
     assimp
     Jolt
 	ImGui
+    Microsoft::GameInput
 )
 
 if(WIN32)
