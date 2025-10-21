@@ -148,7 +148,9 @@ namespace Frost
 		{
 			if (ImGui::Checkbox("Show wireframe", &showWireframe))
 			{
-				Application::Get().GetEventManager().Emit<DebugOptionChangedEvent>("Wireframe", showWireframe);
+				Application::Get().GetEventManager().Emit<DebugOptionChangedEvent>(
+					Frost::DebugOptionChangedEvent::Options::SHOW_WIREFRAME, showWireframe
+				);
 				showWireframe = !showWireframe;
 			}
 		}

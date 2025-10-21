@@ -23,7 +23,8 @@ Here are the dependencies present in the engine:
 - [JoltPhysics](https://github.com/jrouwe/JoltPhysics): physics engine
 
 The various dependencies are located in Frost/vendor for dependencies specific to the engine and Lab/vendor for dependencies specific to the Lab using git submodule.
-To update dependencies to their latest versions, you can use: git submodule update
+
+To update dependencies to their latest versions, you can use: `git submodule update --remote --merge`.
 
 
 ### Entity Component System

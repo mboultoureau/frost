@@ -10,8 +10,18 @@ namespace Frost
 	class DebugOptionChangedEvent : public Event
 	{
 	public:
-		DebugOptionChangedEvent(const std::string& optionName, const std::variant<int, float, bool, std::string>& newValue)
-			: _optionName(optionName), _newValue(newValue) {
+		enum Options
+		{
+			NONE = 0,
+			SHOW_WIREFRAME,
+			_COUNT
+		};
+
+		using OptionType = Options;
+		using NewValueType = std::variant<int, float, bool, std::string>;
+
+		DebugOptionChangedEvent(OptionType _optionType, const NewValueType& newValue)
+			: _optionType{ _optionType }, _newValue(newValue) {
 		}
 
 		EventType GetEventType() const override { return GetStaticType(); }
@@ -19,11 +29,11 @@ namespace Frost
 
 		static EventType GetStaticType() { return EventType::DebugOptionChanged; }
 
-		const std::string& GetOptionName() const { return _optionName; }
-		const std::variant<int, float, bool, std::string>& GetNewValue() const { return _newValue; }
+		const OptionType& GetOptionType() const { return _optionType; }
+		const NewValueType& GetNewValue() const { return _newValue; }
 
 	private:
-		std::string _optionName;
-		std::variant<int, float, bool, std::string> _newValue;
+		OptionType _optionType;
+		NewValueType _newValue;
 	};
 }

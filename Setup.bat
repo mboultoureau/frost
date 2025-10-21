@@ -6,7 +6,7 @@ echo ---------------------------------------
 echo 1. Updating/Initializing Git Submodules
 echo ---------------------------------------
 
-git submodule update --init --recursive
+git submodule update --recursive
 
 if errorlevel 1 (
     echo.

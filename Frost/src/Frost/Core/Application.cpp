@@ -8,6 +8,8 @@
 
 namespace Frost
 {
+	class NoLayerWithThisName {};
+
 	Application* Application::_singleton = nullptr;
 
 	Application::Application(const ApplicationEntryPoint& entryPoint):
@@ -53,6 +55,8 @@ namespace Frost
 				return layer;
 			}
 		}
+
+		throw NoLayerWithThisName{};
 	}
 	
 	void Application::Run()
