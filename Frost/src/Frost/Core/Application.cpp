@@ -87,32 +87,34 @@ namespace Frost
 				DispatchMessage(&msg);
 			}
 
-			for (Layer* layer : _layerStack._layers)
+			Timer::Duration _physicsDuration = _physicsTimer.GetDuration();
+			if (_physicsDuration >= _physicsRefreshDuration)
 			{
-				Timer::Duration _physicsDuration = _physicsTimer.GetDuration();
-				if (_physicsDuration >= _physicsRefreshDuration)
+				_physicsTimer.Start();
+
+				for (Layer* layer : _layerStack._layers)
 				{
 					float fixedDeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_physicsDuration).count();
-					
-					layer->OnFixedUpdate(fixedDeltaTime);
-					
-					_physicsTimer.Start();
-				}
 
-				Timer::Duration _renderDuration = _renderTimer.GetDuration();
-				if (_renderDuration >= _renderRefreshDuration)
-				{
-					float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_renderDuration).count();
-					
-					layer->OnUpdate(deltaTime);
-					layer->OnLateUpdate(deltaTime);
-					
-					_renderTimer.Start();
+					layer->OnFixedUpdate(fixedDeltaTime);
 				}
 			}
 
-			
-			RendererAPI::Present();
+			Timer::Duration _renderDuration = _renderTimer.GetDuration();
+			if (_renderDuration >= _renderRefreshDuration)
+			{
+				_renderTimer.Start();
+
+				for (Layer* layer : _layerStack._layers)
+				{
+					float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_renderDuration).count();
+
+					layer->OnUpdate(deltaTime);
+					layer->OnLateUpdate(deltaTime);
+				}
+
+				RendererAPI::Present();
+			}
 		}
 	}
 
