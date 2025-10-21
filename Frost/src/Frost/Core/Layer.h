@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Event/Event.h"
+#include "Frost/Core/Timer.h"
 
 #include <string>
 

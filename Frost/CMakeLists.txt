@@ -1,8 +1,5 @@
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# gameinput
-find_package(gameinput CONFIG REQUIRED)
-
 # assimp
 add_subdirectory(vendor/assimp)
 set_target_properties(
@@ -24,6 +21,15 @@ if(WIN32)
         $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
     )
 endif()
+
+# GameInput
+add_library(Microsoft::GameInput STATIC IMPORTED)
+
+set_target_properties(Microsoft::GameInput PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/GameInput/include"
+    IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/vendor/GameInput/lib/x64/GameInput.lib"
+    FOLDER "Dependencies"
+)
 
 # Jolt Physics
 add_subdirectory(vendor/JoltPhysics/Build)
