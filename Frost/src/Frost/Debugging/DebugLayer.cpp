@@ -140,10 +140,59 @@ namespace Frost
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
+		float frameTimeMs = deltaTime * 1000.0f;
+
+		// Update history buffer (circular buffer)
+		m_FrameTimes[m_FrameTimeHistoryIndex] = frameTimeMs;
+		m_FrameTimeHistoryIndex = (m_FrameTimeHistoryIndex + 1) % FRAME_TIME_HISTORY_SIZE;
+
+		// Update max frame time for graph scaling
+		m_MaxFrameTime = 0.0f;
+		for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i)
+		{
+			if (m_FrameTimes[i] > m_MaxFrameTime)
+			{
+				m_MaxFrameTime = m_FrameTimes[i];
+			}
+		}
+
 		bool debug = true;
-		bool showWireframe = RendererAPI::Get().GetDevice()->IsWireframeEnabled();
 
 		ImGui::Begin("Debug", &debug);
+		
+		_DrawPerformancePanel();
+		_DrawRenderingOptionsPanel();
+		_DrawSceneHierarchyPanel();
+
+		ImGui::End();
+	}
+
+	void DebugLayer::OnLateUpdate(float deltaTime)
+	{
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	}
+
+	void DebugLayer::OnFixedUpdate(float fixedDeltaTime)
+	{
+		// Record time in milliseconds
+		float timeMs = fixedDeltaTime * 1000.0f;
+
+		// Update history buffer (circular buffer)
+		m_FixedUpdateTimes[m_FixedUpdateTimeHistoryIndex] = timeMs;
+		m_FixedUpdateTimeHistoryIndex = (m_FixedUpdateTimeHistoryIndex + 1) % FRAME_TIME_HISTORY_SIZE;
+
+		// Update max time for graph scaling
+		if (timeMs > m_MaxFixedUpdateTime)
+		{
+			m_MaxFixedUpdateTime = timeMs;
+		}
+	}
+
+	void DebugLayer::_DrawRenderingOptionsPanel()
+	{
+		bool showWireframe = RendererAPI::Get().GetDevice()->IsWireframeEnabled();
+
 		if (ImGui::CollapsingHeader("Rendering"))
 		{
 			if (ImGui::Checkbox("Show wireframe", &showWireframe))
@@ -154,7 +203,10 @@ namespace Frost
 				showWireframe = !showWireframe;
 			}
 		}
+	}
 
+	void DebugLayer::_DrawSceneHierarchyPanel()
+	{
 		if (ImGui::CollapsingHeader("Scenes"))
 		{
 			if (_scenes.empty())
@@ -319,16 +371,67 @@ namespace Frost
 					ImGui::TreePop();
 				}
 			}
-
-
 		}
-
-		ImGui::End();
 	}
 
-	void DebugLayer::OnLateUpdate(float deltaTime)
+	// In Frost/Debugging/DebugLayer.cpp
+
+	void DebugLayer::_DrawPerformancePanel()
 	{
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		if (ImGui::CollapsingHeader("Performance"))
+		{
+			// =========================================================
+			// Frame Time Graph (OnUpdate/Rendering Time) - (Existing Code)
+			// =========================================================
+			float currentFrameTime = m_FrameTimes[(m_FrameTimeHistoryIndex - 1 + FRAME_TIME_HISTORY_SIZE) % FRAME_TIME_HISTORY_SIZE];
+			float fps = (currentFrameTime > 0.0f) ? (1000.0f / currentFrameTime) : 0.0f;
+
+			ImGui::Text("Frame Time (Total): %.2f ms (FPS: %.0f)", currentFrameTime, fps);
+			// ... (rest of Frame Time graph drawing)
+
+			float averageFrameTime = 0.0f;
+			for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i) averageFrameTime += m_FrameTimes[i];
+			averageFrameTime /= FRAME_TIME_HISTORY_SIZE;
+			std::string overlayFrame = "Avg: " + std::to_string(static_cast<int>(averageFrameTime)) + "ms | Max: " + std::to_string(static_cast<int>(m_MaxFrameTime)) + "ms";
+
+			ImGui::PlotLines("Frame Time (ms)", m_FrameTimes, FRAME_TIME_HISTORY_SIZE,
+				m_FrameTimeHistoryIndex, overlayFrame.c_str(),
+				0.0f, m_MaxFrameTime * 1.2f, ImVec2(0, 80.0f));
+
+			ImGui::Separator();
+
+			// =========================================================
+			// Physics Time Graph (OnFixedUpdate Time) - (NEW CODE)
+			// =========================================================
+			float currentFixedTime = m_FixedUpdateTimes[(m_FixedUpdateTimeHistoryIndex - 1 + FRAME_TIME_HISTORY_SIZE) % FRAME_TIME_HISTORY_SIZE];
+
+			ImGui::Text("Physics Update: %.2f ms", currentFixedTime);
+
+			// Calculate average fixed update time for the label
+			float averageFixedUpdateTime = 0.0f;
+			for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i)
+			{
+				averageFixedUpdateTime += m_FixedUpdateTimes[i];
+			}
+			averageFixedUpdateTime /= FRAME_TIME_HISTORY_SIZE;
+
+			// Create an overlay text string for the plot
+			std::string overlayFixed = "Avg: " + std::to_string(static_cast<int>(averageFixedUpdateTime)) + "ms | Max: " + std::to_string(static_cast<int>(m_MaxFixedUpdateTime)) + "ms";
+
+			// Draw the physics time graph
+			ImGui::PlotLines(
+				"Physics Time (ms)",             // Label
+				m_FixedUpdateTimes,              // Array of values
+				FRAME_TIME_HISTORY_SIZE,         // Number of values
+				m_FixedUpdateTimeHistoryIndex,   // History offset (circular buffer)
+				overlayFixed.c_str(),            // Overlay text
+				0.0f,                            // Scale min
+				m_MaxFixedUpdateTime * 1.2f,     // Scale max (20% buffer above max)
+				ImVec2(0, 80.0f)                 // Graph size
+			);
+
+			// Optional: Target fixed timestep line (e.g., 60 Hz physics = 16.67ms)
+			ImGui::TextDisabled("Physics Timestep Target: 16.67 ms (60 Hz)");
+		}
 	}
 }
