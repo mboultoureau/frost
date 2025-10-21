@@ -36,7 +36,7 @@ namespace Frost
 		Application::Get().GetEventManager().Subscribe<DebugOptionChangedEvent>(
 			[&](DebugOptionChangedEvent& e) -> bool
 			{
-				if (e.GetOptionName() == "Wireframe")
+				if (e.GetOptionType() == DebugOptionChangedEvent::Options::SHOW_WIREFRAME)
 				{
 					if (std::holds_alternative<bool>(e.GetNewValue()))
 					{
