@@ -449,3 +449,4 @@ _deps
 CMakeUserPresets.json
 
 imgui.ini
+/vendor

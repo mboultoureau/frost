@@ -2,7 +2,7 @@
 
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Event/DebugOptionChangedEvent.h"
+#include "Frost/Event/Events/DebugOptionChangedEvent.h"
 #include "Frost/Scene/Components/GameObjectInfo.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"

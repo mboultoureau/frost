@@ -1,7 +1,7 @@
 #include "Application.h"
 
 #include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Event/WindowCloseEvent.h"
+#include "Frost/Event/Events/WindowCloseEvent.h"
 
 #include <cassert>
 #include <iostream>
@@ -63,6 +63,7 @@ namespace Frost
 	{
 		while (_running)
 		{
+			_playerInput.ProcessInput();
 			_eventManager.ProcessEvents();
 
 			if (!_running)

@@ -1,7 +1,7 @@
 ﻿#include "Device.h"
 #include "Frost/Core/Application.h"
-#include "Frost/Event/WindowResizeEvent.h"
-#include "Frost/Event/DebugOptionChangedEvent.h"
+#include "Frost/Event/Events/WindowResizeEvent.h"
+#include "Frost/Event/Events/DebugOptionChangedEvent.h"
 
 #include <array>
 #include <cassert>
