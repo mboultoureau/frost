@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Utils/NoCopy.h"
+#include "Frost/Core/Timer.h"
 #include "Frost/Core/Window.h"
 #include "Frost/Core/LayerStack.h"
 #include "Frost/Renderer/MeshLibrary.h"
@@ -10,6 +11,8 @@
 #include <Windows.h>
 #include <memory>
 #include <string>
+
+using namespace std::chrono_literals;
 
 namespace Frost
 {
@@ -61,6 +64,12 @@ namespace Frost
 		LayerStack _layerStack;
 		MeshLibrary _meshLibrary;
 		WindowsPlayerInput _playerInput;
+
+		Timer _renderTimer;
+		Timer _physicsTimer;
+
+		Timer::Duration _renderRefreshDuration = 16ms;
+		Timer::Duration _physicsRefreshDuration = 16ms;
 
 		static Application* _singleton;
 		

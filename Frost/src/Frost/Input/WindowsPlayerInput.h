@@ -6,7 +6,7 @@
 #include <wrl.h>
 #include <vector>
 
-using namespace GameInput::v2;
+using namespace GameInput::v3;
 
 class WindowsPlayerInput
 {

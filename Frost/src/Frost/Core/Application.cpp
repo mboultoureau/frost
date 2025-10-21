@@ -61,6 +61,9 @@ namespace Frost
 	
 	void Application::Run()
 	{
+		_renderTimer.Start();
+		_physicsTimer.Start();
+
 		while (_running)
 		{
 			_playerInput.ProcessInput();
@@ -86,9 +89,26 @@ namespace Frost
 
 			for (Layer* layer : _layerStack._layers)
 			{
-				layer->OnFixedUpdate(0.0f);
-				layer->OnUpdate(0.0f);
-				layer->OnLateUpdate(0.0f);
+				Timer::Duration _physicsDuration = _physicsTimer.GetDuration();
+				if (_physicsDuration >= _physicsRefreshDuration)
+				{
+					float fixedDeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_physicsDuration).count();
+					
+					layer->OnFixedUpdate(fixedDeltaTime);
+					
+					_physicsTimer.Start();
+				}
+
+				Timer::Duration _renderDuration = _renderTimer.GetDuration();
+				if (_renderDuration >= _renderRefreshDuration)
+				{
+					float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_renderDuration).count();
+					
+					layer->OnUpdate(deltaTime);
+					layer->OnLateUpdate(deltaTime);
+					
+					_renderTimer.Start();
+				}
 			}
 
 			

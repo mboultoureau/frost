@@ -20,17 +20,17 @@ public:
 	void OnUpdate(float deltaTime) override
 	{
 		auto camera = GetECS()->GetComponent<Frost::Camera>(GetGameObject());
-		camera->backgroundColor[0] += 0.01f;
+		camera->backgroundColor[0] += 0.01f * deltaTime;
 	}
 };
 
 class Log2 : public Frost::Script
 {
 public:
-	void OnUpdate(float deltaTime) override
+	void OnFixedUpdate(float deltaTime) override
 	{
 		auto transform = GetECS()->GetComponent<Frost::Transform>(GetGameObject());
-		transform->position.x += 0.05f;
+		transform->position.x += 5.0f * deltaTime;
 	}
 };
 
@@ -86,4 +86,11 @@ void MainLayer::OnUpdate(float deltaTime)
 	Frost::Scene& _scene = Game::GetScene();
 
 	_scene.Update(deltaTime);
+}
+
+void MainLayer::OnFixedUpdate(float deltaTime)
+{
+	Frost::Scene& _scene = Game::GetScene();
+
+	_scene.FixedUpdate(deltaTime);
 }
