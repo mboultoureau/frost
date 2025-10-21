@@ -1,7 +1,7 @@
 #include "Application.h"
 
 #include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Event/WindowCloseEvent.h"
+#include "Frost/Event/Events/WindowCloseEvent.h"
 
 #include <cassert>
 #include <iostream>
@@ -53,12 +53,15 @@ namespace Frost
 				return layer;
 			}
 		}
+
+		return nullptr;
 	}
 	
 	void Application::Run()
 	{
 		while (_running)
 		{
+			_playerInput.ProcessInput();
 			_eventManager.ProcessEvents();
 
 			if (!_running)
