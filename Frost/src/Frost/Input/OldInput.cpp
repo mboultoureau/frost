@@ -5,7 +5,7 @@
 #include <wrl.h>          // For Microsoft::WRL::ComPtr
 #include <corecrt_wstdio.h>
 
-using namespace GameInput::v2;
+using namespace GameInput::v3;
 
 // Global GameInput interface pointer (using a smart pointer for automatic cleanup)
 Microsoft::WRL::ComPtr<IGameInput> g_gameInput;

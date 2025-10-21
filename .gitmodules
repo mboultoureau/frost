@@ -8,3 +8,6 @@
 	path = Frost/vendor/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "Frost/vendor/GameInput"]
+	path = Frost/vendor/GameInput
+	url = https://github.com/microsoftconnect/GameInput.git

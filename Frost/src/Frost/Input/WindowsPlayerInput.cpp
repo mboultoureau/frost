@@ -2,11 +2,17 @@
 
 #include <WinUser.h>
 
-using namespace GameInput::v2;
+using namespace GameInput::v3;
+
+class GameInputCreateFailed{};
 
 WindowsPlayerInput::WindowsPlayerInput()
 {
-	GameInputCreate(_gameInput.GetAddressOf());
+    HRESULT hr = GameInputCreate(_gameInput.GetAddressOf());
+    if (FAILED(hr))
+    {
+        throw GameInputCreateFailed{};
+    }
 }
 
 WindowsPlayerInput::~WindowsPlayerInput()

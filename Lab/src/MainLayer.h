@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Core/Layer.h"
+#include "Frost/Core/Timer.h"
 #include "Frost/Scene/Scene.h"
 #include "LabApp.h"
 
@@ -12,6 +13,7 @@ public:
 	MainLayer();
 
 	void OnUpdate(float deltaTime) override;
+	void OnFixedUpdate(float deltaTime) override;
 
 private:
 };
