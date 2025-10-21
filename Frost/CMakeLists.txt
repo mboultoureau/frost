@@ -1,5 +1,8 @@
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+# gameinput
+find_package(gameinput CONFIG REQUIRED)
+
 # assimp
 add_subdirectory(vendor/assimp)
 set_target_properties(
@@ -107,6 +110,7 @@ set_target_properties(Frost PROPERTIES
 
 target_include_directories(Frost PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    $<TARGET_PROPERTY:Microsoft::GameInput,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 target_link_libraries(Frost PRIVATE
@@ -114,7 +118,8 @@ target_link_libraries(Frost PRIVATE
     d3dcompiler.lib
     assimp
     Jolt
-	ImGui
+    ImGui
+    Microsoft::GameInput
 )
 
 if(WIN32)
