@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Timer.h"
 #include "Frost/Scene/ECS/ECS.h"
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Scene/ECS/System.h"
