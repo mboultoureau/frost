@@ -82,9 +82,12 @@ namespace Frost
         switch (message)
         {
         case WM_CLOSE:
+        {
             Application::Get().GetEventManager().Emit<Frost::WindowCloseEvent>();
             break;
+        }
         case WM_SIZE:
+        {
             if (wParam != SIZE_MINIMIZED) {
                 UINT width = LOWORD(lParam);
                 UINT height = HIWORD(lParam);
@@ -92,20 +95,37 @@ namespace Frost
                 Application::Get().GetEventManager().Emit<Frost::WindowResizeEvent>(width, height);
             }
             break;
+        }
         case WM_DESTROY:
+        {
             PostQuitMessage(0);
             break;
+        }
         case WM_PAINT:
+        {
             PAINTSTRUCT ps;
             BeginPaint(hWnd, &ps);
             EndPaint(hWnd, &ps);
             break;
-        case WM_MOUSEHWHEEL:
-            Input::GetMouse().SetScroll(Mouse::MouseScroll {
-                static_cast<int16_t>(GET_X_LPARAM(lParam)),
-                static_cast<int16_t>(GET_Y_LPARAM(lParam))
+        }
+        case WM_MOUSEWHEEL:
+        {
+            int16_t delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            Input::GetMouse().SetScroll(Mouse::MouseScroll{
+                Input::GetMouse().GetScroll().scrollX,
+                delta
             });
             break;
+        }
+        case WM_MOUSEHWHEEL:
+        {
+            int16_t delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            Input::GetMouse().SetScroll(Mouse::MouseScroll{
+                delta,
+                Input::GetMouse().GetScroll().scrollY
+            });
+            break;
+        }
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
