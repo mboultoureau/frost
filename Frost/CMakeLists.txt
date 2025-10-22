@@ -1,10 +1,11 @@
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # assimp
+set(ASSIMP_BUILD_TESTS OFF)
+
 add_subdirectory(vendor/assimp)
 set_target_properties(
     uninstall
-    unit
     UpdateAssimpLibsDebugSymbolsAndDLLs
     zlibstatic
     PROPERTIES FOLDER "Hidden Targets"
