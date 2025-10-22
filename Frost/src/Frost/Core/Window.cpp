@@ -1,11 +1,12 @@
 #include "Frost/Core/Window.h"
 
 #include "Frost/Core/Application.h"
-#include "Frost/Event/Events/WindowCloseEvent.h"
-#include "Frost/Event/Events/WindowResizeEvent.h"
-// #include "Frost/Input/Input.cpp"
+#include "Frost/Event/Events/Window/WindowCloseEvent.h"
+#include "Frost/Event/Events/Window/WindowResizeEvent.h"
+#include "Frost/Input/Input.h"
 
 #include <imgui_impl_win32.h>
+#include <windowsx.h>
 
 namespace Frost
 {
@@ -81,7 +82,7 @@ namespace Frost
         switch (message)
         {
         case WM_CLOSE:
-			Application::Get().GetEventManager().Emit<Frost::WindowCloseEvent>();
+            Application::Get().GetEventManager().Emit<Frost::WindowCloseEvent>();
             break;
         case WM_SIZE:
             if (wParam != SIZE_MINIMIZED) {
@@ -98,6 +99,12 @@ namespace Frost
             PAINTSTRUCT ps;
             BeginPaint(hWnd, &ps);
             EndPaint(hWnd, &ps);
+            break;
+        case WM_MOUSEHWHEEL:
+            Input::GetMouse().SetScroll(Mouse::MouseScroll {
+                static_cast<int16_t>(GET_X_LPARAM(lParam)),
+                static_cast<int16_t>(GET_Y_LPARAM(lParam))
+            });
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);

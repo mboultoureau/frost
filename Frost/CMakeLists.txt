@@ -22,15 +22,6 @@ if(WIN32)
     )
 endif()
 
-# GameInput
-add_library(Microsoft::GameInput STATIC IMPORTED)
-
-set_target_properties(Microsoft::GameInput PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/GameInput/include"
-    IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/vendor/GameInput/lib/x64/GameInput.lib"
-    FOLDER "Dependencies"
-)
-
 # Jolt Physics
 add_subdirectory(vendor/JoltPhysics/Build)
 set_property(TARGET Jolt PROPERTY FOLDER "Dependencies")
@@ -116,7 +107,6 @@ set_target_properties(Frost PROPERTIES
 
 target_include_directories(Frost PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    $<TARGET_PROPERTY:Microsoft::GameInput,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 target_link_libraries(Frost PRIVATE
@@ -125,7 +115,6 @@ target_link_libraries(Frost PRIVATE
     assimp
     Jolt
     ImGui
-    Microsoft::GameInput
 )
 
 if(WIN32)

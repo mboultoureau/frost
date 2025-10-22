@@ -4,21 +4,6 @@
 
 namespace Frost
 {
-	void EventManager::SubscribeInternal(EventType type, std::shared_ptr<EventHandlerInterface> handler)
-	{
-		if (!handler) return;
-
-		auto& handlers = _handlers[type];
-
-		if (std::any_of(handlers.begin(), handlers.end(),
-			[&handler](const auto& h) { return h->GetID() == handler->GetID(); }))
-		{
-			return;
-		}
-
-		handlers.push_back(std::move(handler));
-	}
-
 	void EventManager::Unsubscribe(EventType type, UUID handlerID)
 	{
 		if (_handlers.count(type) == 0)

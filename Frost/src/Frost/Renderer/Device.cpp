@@ -1,7 +1,6 @@
 ﻿#include "Device.h"
 #include "Frost/Core/Application.h"
-#include "Frost/Event/Events/WindowResizeEvent.h"
-#include "Frost/Event/Events/DebugOptionChangedEvent.h"
+#include "Frost/Event/Event.h"
 
 #include <array>
 #include <cassert>
@@ -26,34 +25,8 @@ namespace Frost
 		_CreateRasterizer();
 		_CreateWireframeRasterizer();
 
-		Application::Get().GetEventManager().Subscribe<WindowResizeEvent>(
-			[&](WindowResizeEvent& e) -> bool
-			{
-				HandleWindowResize(e.GetWidth(), e.GetHeight());
-				return true;
-			});
-
-		Application::Get().GetEventManager().Subscribe<DebugOptionChangedEvent>(
-			[&](DebugOptionChangedEvent& e) -> bool
-			{
-				if (e.GetOptionType() == DebugOptionChangedEvent::Options::SHOW_WIREFRAME)
-				{
-					if (std::holds_alternative<bool>(e.GetNewValue()))
-					{
-						bool enabled = std::get<bool>(e.GetNewValue());
-						_isWireframeEnabled = enabled;
-
-						if (enabled)
-							EnableWireframe();
-						else
-							DisableWireframe();
-
-						return true;
-					}
-				}
-
-				return false;
-			});
+		Application::Get().GetEventManager().Subscribe<WindowResizeEvent>(FROST_BIND_EVENT_FN(_OnWindowResize));
+		Application::Get().GetEventManager().Subscribe<DebugOptionChangedEvent>(FROST_BIND_EVENT_FN(_OnDebugOptionChanged));
 	}
 
 	Device::~Device()
@@ -312,6 +285,30 @@ namespace Frost
 		{
 			_immediateContext->ClearState();
 		}
+	}
+
+	bool Device::_OnWindowResize(WindowResizeEvent& e)
+	{
+		HandleWindowResize(e.GetWidth(), e.GetHeight());
+		return true;
+	}
+
+	bool Device::_OnDebugOptionChanged(DebugOptionChangedEvent& e)
+	{
+		if (e.GetOptionType() == DebugOptionChangedEvent::Options::SHOW_WIREFRAME)
+		{
+			if (std::holds_alternative<bool>(e.GetNewValue()))
+			{
+				bool enabled = std::get<bool>(e.GetNewValue());
+				_isWireframeEnabled = enabled;
+				if (enabled)
+					EnableWireframe();
+				else
+					DisableWireframe();
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void Device::HandleWindowResize(UINT width, UINT height)

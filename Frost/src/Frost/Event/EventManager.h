@@ -18,11 +18,28 @@ namespace Frost
 
 			auto handler = std::make_shared<EventHandler<EventType>>(callback);
 			UUID handlerID = handler->GetID();
+			auto& handlers = _handlers[EventType::GetStaticType()];
 
-			SubscribeInternal(EventType::GetStaticType(), std::move(handler));
+			handlers.push_back(std::move(handler));
 
 			return handlerID;
 		}
+
+		template<typename EventType>
+		UUID SubscribeFront(const typename EventHandler<EventType>::EventCallback& callback)
+		{
+			static_assert(std::is_base_of<Event, EventType>::value, "EventType must inherit from Frost::Event");
+			
+			auto handler = std::make_shared<EventHandler<EventType>>(callback);
+			UUID handlerID = handler->GetID();
+			auto& handlers = _handlers[EventType::GetStaticType()];
+
+			handlers.insert(handlers.begin(), std::move(handler));
+
+			return handlerID;
+		}
+
+
 		void Unsubscribe(EventType type, UUID handlerID);
 
 		template<typename T, typename... Args>
@@ -36,8 +53,6 @@ namespace Frost
 
 	private:
 		using HandlerList = std::vector<std::shared_ptr<EventHandlerInterface>>;
-
-		void SubscribeInternal(EventType type, std::shared_ptr<EventHandlerInterface> handler);
 
 		std::vector<std::unique_ptr<Event>> _eventQueue;
 		std::unordered_map<EventType, HandlerList> _handlers;
