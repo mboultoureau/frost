@@ -20,7 +20,7 @@ namespace Frost
 		void Pause();
 		void Resume();
 		
-		Duration GetDuration();
+		Duration GetDuration() const;
 
 		template<typename DurationT>
 		DurationT GetDurationAs() const

@@ -5,6 +5,8 @@
 
 #include <string>
 
+#define FROST_BIND_EVENT_FN(fn) [this](auto& e) { return this->fn(e); }
+
 namespace Frost
 {
 	class Event : NoCopy

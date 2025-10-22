@@ -8,6 +8,17 @@ namespace Frost
 		WindowClose,
 		WindowResize,
 		DebugOptionChanged,
+		KeyPressed,
+		KeyReleased,
+		MouseButtonPressed,
+		MouseButtonReleased,
+		MouseMoved,
+		MouseScrolled,
+		GamepadButtonPressed,
+		GamepadButtonReleased,
+		GamepadAxisMoved,
+		GamepadConnected,
+		GamepadDisconnected,
 		_COUNT
 	};
 }

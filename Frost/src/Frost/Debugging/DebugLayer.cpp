@@ -2,19 +2,21 @@
 
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Event/Events/DebugOptionChangedEvent.h"
+#include "Frost/Event/Event.h"
 #include "Frost/Scene/Components/GameObjectInfo.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/MeshRenderer.h"
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/Scriptable.h"
+#include "Frost/Input/Input.h"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 #include <sstream>
 #include <imgui_internal.h>
+#include <chrono>
 
 namespace Frost
 {
@@ -112,7 +114,6 @@ namespace Frost
 		return open;
 	}
 
-
 	void DebugLayer::OnAttach()
 	{
 		IMGUI_CHECKVERSION();
@@ -125,6 +126,15 @@ namespace Frost
 		// Setup Platform/Renderer backends
 		ImGui_ImplWin32_Init(Application::Get().GetWindow()->GetHWND());
 		ImGui_ImplDX11_Init(RendererAPI::Get3DDevice(), RendererAPI::GetImmediateContext());
+
+		_logTimer.Start();
+
+		Application::Get().GetEventManager().SubscribeFront<DebugOptionChangedEvent>(
+			FROST_BIND_EVENT_FN(DebugLayer::_OnDebugOptionChanged));
+		Application::Get().GetEventManager().SubscribeFront<WindowCloseEvent>(
+			FROST_BIND_EVENT_FN(DebugLayer::_OnWindowClose));
+		Application::Get().GetEventManager().SubscribeFront<WindowResizeEvent>(
+			FROST_BIND_EVENT_FN(DebugLayer::_OnWindowResize));
 	}
 
 	void DebugLayer::OnDetach()
@@ -132,6 +142,8 @@ namespace Frost
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
+
+		_logTimer.Pause();
 	}
 
 	void DebugLayer::OnUpdate(float deltaTime)
@@ -143,16 +155,16 @@ namespace Frost
 		float frameTimeMs = deltaTime * 1000.0f;
 
 		// Update history buffer (circular buffer)
-		m_FrameTimes[m_FrameTimeHistoryIndex] = frameTimeMs;
-		m_FrameTimeHistoryIndex = (m_FrameTimeHistoryIndex + 1) % FRAME_TIME_HISTORY_SIZE;
+		_frameTimes[_frameTimeHistoryIndex] = frameTimeMs;
+		_frameTimeHistoryIndex = (_frameTimeHistoryIndex + 1) % FRAME_TIME_HISTORY_SIZE;
 
 		// Update max frame time for graph scaling
-		m_MaxFrameTime = 0.0f;
+		_maxFrameTime = 0.0f;
 		for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i)
 		{
-			if (m_FrameTimes[i] > m_MaxFrameTime)
+			if (_frameTimes[i] > _maxFrameTime)
 			{
-				m_MaxFrameTime = m_FrameTimes[i];
+				_maxFrameTime = _frameTimes[i];
 			}
 		}
 
@@ -160,6 +172,8 @@ namespace Frost
 
 		ImGui::Begin("Debug", &debug);
 		
+		_DrawEventLogPanel();
+		_DrawInputPanel();
 		_DrawPerformancePanel();
 		_DrawRenderingOptionsPanel();
 		_DrawSceneHierarchyPanel();
@@ -179,13 +193,13 @@ namespace Frost
 		float timeMs = fixedDeltaTime * 1000.0f;
 
 		// Update history buffer (circular buffer)
-		m_FixedUpdateTimes[m_FixedUpdateTimeHistoryIndex] = timeMs;
-		m_FixedUpdateTimeHistoryIndex = (m_FixedUpdateTimeHistoryIndex + 1) % FRAME_TIME_HISTORY_SIZE;
+		_fixedUpdateTimes[_fixedUpdateTimeHistoryIndex] = timeMs;
+		_fixedUpdateTimeHistoryIndex = (_fixedUpdateTimeHistoryIndex + 1) % FRAME_TIME_HISTORY_SIZE;
 
 		// Update max time for graph scaling
-		if (timeMs > m_MaxFixedUpdateTime)
+		if (timeMs > _maxFixedUpdateTime)
 		{
-			m_MaxFixedUpdateTime = timeMs;
+			_maxFixedUpdateTime = timeMs;
 		}
 	}
 
@@ -374,64 +388,203 @@ namespace Frost
 		}
 	}
 
-	// In Frost/Debugging/DebugLayer.cpp
+	void DebugLayer::_DrawEventLogPanel()
+	{
+		if (ImGui::CollapsingHeader("Event Log"))
+		{
+			if (ImGui::Button("Clear Log"))
+			{
+				_eventLog.clear();
+			}
+
+			ImGui::BeginChild("EventScrollRegion");
+
+			for (const auto& entry : _eventLog)
+			{
+				ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+				if (entry.type == EventType::WindowClose) color = ImVec4(1.0f, 0.5f, 0.5f, 1.0f);
+				else if (entry.type == EventType::WindowResize) color = ImVec4(0.5f, 0.5f, 1.0f, 1.0f);
+
+				ImGui::PushStyleColor(ImGuiCol_Text, color);
+				ImGui::Text("[%0.3f] [%d] %s", entry.timestamp, (int)entry.type, entry.message.c_str());
+				ImGui::PopStyleColor();
+			}
+
+			ImGui::EndChild();
+		}
+	}
+
+	void DebugLayer::_DrawInputPanel()
+	{
+		bool isCursorVisible = Input::GetMouse().IsCursorVisible();
+
+		if (ImGui::CollapsingHeader("Input"))
+		{
+			if (ImGui::Checkbox("Show Mouse Cursor", &isCursorVisible))
+			{
+				if (isCursorVisible)
+				{
+					Input::GetMouse().ShowCursor();
+				}
+				else
+				{
+					Input::GetMouse().HideCursor();
+				}
+			}
+
+			ImGui::Separator();
+
+			// Position and Scroll
+			Mouse::MousePosition mousePosition = Input::GetMouse().GetPosition();
+			Mouse::MouseViewportPosition mousePositionViewport = Input::GetMouse().GetViewportPosition();
+			Mouse::MouseScroll mouseScroll = Input::GetMouse().GetScroll();
+
+			if (ImGui::TreeNode("Position and Scroll"))
+			{
+				ImGui::Text("Screen Position: (%u, %u)", mousePosition.x, mousePosition.y);
+				ImGui::Text("Viewport Position: (%.2f, %.2f)", mousePositionViewport.x, mousePositionViewport.y);
+				ImGui::Text("Scroll Wheel: X=%d, Y=%d", mouseScroll.scrollX, mouseScroll.scrollY);
+
+				ImGui::TreePop();
+			}
+
+			ImGui::Separator();
+
+			// Button states
+			if (ImGui::TreeNode("Button States"))
+			{
+				auto GetButtonStateString = [](Mouse::ButtonState state) -> const char*
+					{
+						switch (state)
+						{
+						case Mouse::ButtonState::Released: return "Released";
+						case Mouse::ButtonState::Hold:     return "Hold";
+						case Mouse::ButtonState::Pressed:  return "Pressed (Down)";
+						case Mouse::ButtonState::Up:       return "Up (Just Released)";
+						default:                           return "Unknown";
+						}
+					};
+
+				auto GetButtonName = [](Mouse::MouseBoutton button) -> const char*
+					{
+						switch (button)
+						{
+						case Mouse::MouseBoutton::Left:    return "Left";
+						case Mouse::MouseBoutton::Middle:  return "Middle";
+						case Mouse::MouseBoutton::Right:   return "Right";
+						case Mouse::MouseBoutton::XButton1: return "XButton1";
+						case Mouse::MouseBoutton::XButton2: return "XButton2";
+						case Mouse::MouseBoutton::Count:   return "Count"; // Should not happen
+						default:                           return "???";
+						}
+					};
+
+				for (uint8_t i = 0; i < (uint8_t)Mouse::MouseBoutton::Count; ++i)
+				{
+					Mouse::MouseBoutton button = (Mouse::MouseBoutton)i;
+					Mouse::ButtonState state = Input::GetMouse().GetButtonState(button);
+
+					const char* stateStr = GetButtonStateString(state);
+					const char* buttonName = GetButtonName(button);
+
+					// Default: White, Pressed: Green, Hold: Yellow
+					ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+					if (state == Mouse::ButtonState::Pressed)
+					{
+						color = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+					}
+					else if (state == Mouse::ButtonState::Hold)
+					{
+						color = ImVec4(1.0f, 1.0f, 0.2f, 1.0f);
+					}
+
+					ImGui::PushStyleColor(ImGuiCol_Text, color);
+					ImGui::Text("%s: %s", buttonName, stateStr);
+					ImGui::PopStyleColor();
+				}
+				ImGui::TreePop();
+			}
+		}
+	}
 
 	void DebugLayer::_DrawPerformancePanel()
 	{
 		if (ImGui::CollapsingHeader("Performance"))
 		{
-			// =========================================================
-			// Frame Time Graph (OnUpdate/Rendering Time) - (Existing Code)
-			// =========================================================
-			float currentFrameTime = m_FrameTimes[(m_FrameTimeHistoryIndex - 1 + FRAME_TIME_HISTORY_SIZE) % FRAME_TIME_HISTORY_SIZE];
+			float currentFrameTime = _frameTimes[(_frameTimeHistoryIndex - 1 + FRAME_TIME_HISTORY_SIZE) % FRAME_TIME_HISTORY_SIZE];
 			float fps = (currentFrameTime > 0.0f) ? (1000.0f / currentFrameTime) : 0.0f;
 
 			ImGui::Text("Frame Time (Total): %.2f ms (FPS: %.0f)", currentFrameTime, fps);
-			// ... (rest of Frame Time graph drawing)
 
 			float averageFrameTime = 0.0f;
-			for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i) averageFrameTime += m_FrameTimes[i];
+			for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i) averageFrameTime += _frameTimes[i];
 			averageFrameTime /= FRAME_TIME_HISTORY_SIZE;
-			std::string overlayFrame = "Avg: " + std::to_string(static_cast<int>(averageFrameTime)) + "ms | Max: " + std::to_string(static_cast<int>(m_MaxFrameTime)) + "ms";
+			std::string overlayFrame = "Avg: " + std::to_string(static_cast<int>(averageFrameTime)) + "ms | Max: " + std::to_string(static_cast<int>(_maxFrameTime)) + "ms";
 
-			ImGui::PlotLines("Frame Time (ms)", m_FrameTimes, FRAME_TIME_HISTORY_SIZE,
-				m_FrameTimeHistoryIndex, overlayFrame.c_str(),
-				0.0f, m_MaxFrameTime * 1.2f, ImVec2(0, 80.0f));
+			ImGui::PlotLines("Frame Time (ms)", _frameTimes, FRAME_TIME_HISTORY_SIZE,
+				_frameTimeHistoryIndex, overlayFrame.c_str(),
+				0.0f, _maxFrameTime * 1.2f, ImVec2(0, 80.0f));
 
 			ImGui::Separator();
 
-			// =========================================================
-			// Physics Time Graph (OnFixedUpdate Time) - (NEW CODE)
-			// =========================================================
-			float currentFixedTime = m_FixedUpdateTimes[(m_FixedUpdateTimeHistoryIndex - 1 + FRAME_TIME_HISTORY_SIZE) % FRAME_TIME_HISTORY_SIZE];
+			float currentFixedTime = _fixedUpdateTimes[(_fixedUpdateTimeHistoryIndex - 1 + FRAME_TIME_HISTORY_SIZE) % FRAME_TIME_HISTORY_SIZE];
 
 			ImGui::Text("Physics Update: %.2f ms", currentFixedTime);
 
-			// Calculate average fixed update time for the label
 			float averageFixedUpdateTime = 0.0f;
 			for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i)
 			{
-				averageFixedUpdateTime += m_FixedUpdateTimes[i];
+				averageFixedUpdateTime += _fixedUpdateTimes[i];
 			}
 			averageFixedUpdateTime /= FRAME_TIME_HISTORY_SIZE;
 
-			// Create an overlay text string for the plot
-			std::string overlayFixed = "Avg: " + std::to_string(static_cast<int>(averageFixedUpdateTime)) + "ms | Max: " + std::to_string(static_cast<int>(m_MaxFixedUpdateTime)) + "ms";
+			std::string overlayFixed = "Avg: " + std::to_string(static_cast<int>(averageFixedUpdateTime)) + "ms | Max: " + std::to_string(static_cast<int>(_maxFixedUpdateTime)) + "ms";
 
-			// Draw the physics time graph
 			ImGui::PlotLines(
-				"Physics Time (ms)",             // Label
-				m_FixedUpdateTimes,              // Array of values
-				FRAME_TIME_HISTORY_SIZE,         // Number of values
-				m_FixedUpdateTimeHistoryIndex,   // History offset (circular buffer)
-				overlayFixed.c_str(),            // Overlay text
-				0.0f,                            // Scale min
-				m_MaxFixedUpdateTime * 1.2f,     // Scale max (20% buffer above max)
-				ImVec2(0, 80.0f)                 // Graph size
+				"Physics Time (ms)",
+				_fixedUpdateTimes,
+				FRAME_TIME_HISTORY_SIZE,
+				_fixedUpdateTimeHistoryIndex,
+				overlayFixed.c_str(),
+				0.0f,
+				_maxFixedUpdateTime * 1.2f,
+				ImVec2(0, 80.0f)
 			);
-
-			// Optional: Target fixed timestep line (e.g., 60 Hz physics = 16.67ms)
-			ImGui::TextDisabled("Physics Timestep Target: 16.67 ms (60 Hz)");
 		}
+	}
+
+	void DebugLayer::_LogEvent(const Event& e, const std::string& message)
+	{
+		using float_seconds = std::chrono::duration<float>;
+		float currentTime = _logTimer.GetDurationAs<float_seconds>().count();
+		
+		if (_eventLog.size() >= MAX_LOG_ENTRIES)
+		{
+			_eventLog.pop_front();
+		}
+
+		_eventLog.emplace_back(LogEntry{ currentTime, message, e.GetEventType() });
+	}
+
+	bool DebugLayer::_OnDebugOptionChanged(DebugOptionChangedEvent& e)
+	{
+		std::stringstream ss;
+		ss << "Option: " << (int)e.GetOptionType() << " changed.";
+		_LogEvent(e, ss.str());
+		return false; // Don't handle the event, just log it
+	}
+
+	bool DebugLayer::_OnWindowClose(WindowCloseEvent& e)
+	{
+		_LogEvent(e, "Window received close request.");
+		return false;
+	}
+
+	bool DebugLayer::_OnWindowResize(WindowResizeEvent& e)
+	{
+		std::stringstream ss;
+		ss << "Window resized to " << e.GetWidth() << "x" << e.GetHeight() << ".";
+		_LogEvent(e, ss.str());
+		return false;
 	}
 }
