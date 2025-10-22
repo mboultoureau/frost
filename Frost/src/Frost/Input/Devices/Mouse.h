@@ -54,7 +54,7 @@ namespace Frost
 		MouseViewportPosition GetViewportPosition() const;
 
 		// Scroll wheel
-		void ResetScroll();
+		void _ResetScroll();
 		void SetScroll(MouseScroll scroll);
 		MouseScroll GetScroll() const;
 

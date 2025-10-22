@@ -9,10 +9,13 @@
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Shader.h"
+#include "Frost/Utils/Math/Angle.h"
 
 #include <vector>
 #include <array>
 #include <d3d11.h>
+
+using namespace Frost;
 
 class Log1 : public Frost::Script
 {
@@ -53,7 +56,7 @@ MainLayer::MainLayer() : Layer("MainLayer")
 	_scene.AddComponent<Frost::MeshRenderer>(sphere2, "./resources/meshes/Sphere.fbx");
 
 	auto camera = _scene.CreateGameObject("Camera");
-	_scene.AddComponent<Frost::Transform>(camera, Frost::Transform::Vector3{ -5.0f, 0.0f, -5.0f });
+	_scene.AddComponent<Frost::Transform>(camera, Frost::Transform::Vector3{ 0.0f, 0.0f, -10.0f });
 	_scene.AddComponent<Frost::WorldTransform>(camera, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
 	_scene.AddComponent<Frost::Camera>(camera);
 	_scene.AddScript<Log1>(camera);
@@ -65,14 +68,15 @@ MainLayer::MainLayer() : Layer("MainLayer")
 	cameraComp->backgroundColor[3] = 1.0f;
 
 	auto camera2 = _scene.CreateGameObject("Camera2");
-	_scene.AddComponent<Frost::Transform>(camera2, Frost::Transform::Vector3{ -10.0f, 0.0f, -5.0f });
+	_scene.AddComponent<Frost::Transform>(camera2, Frost::Transform::Vector3{ 0.0f, 0.0f, -10.0f });
 	_scene.AddComponent<Frost::WorldTransform>(camera2, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
 	_scene.AddComponent<Frost::Camera>(camera2);
 
 	auto camera2Transform = _scene.GetComponent<Frost::Transform>(camera2);
-	camera2Transform->rotation.y = 90.0f;
+	camera2Transform->rotation.z = Frost::Angle<Frost::Degree>(90.0_deg).value();
 
 	auto cameraComp2 = _scene.GetComponent<Frost::Camera>(camera2);
+	cameraComp2->projectionType = Frost::Camera::ProjectionType::Orthographic;
 	cameraComp2->backgroundColor[0] = 0.4f;
 	cameraComp2->backgroundColor[1] = 0.3f;
 	cameraComp2->backgroundColor[2] = 0.2f;

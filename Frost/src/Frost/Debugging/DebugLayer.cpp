@@ -310,7 +310,9 @@ namespace Frost
 
 									if (camera->projectionType == Camera::ProjectionType::Perspective)
 									{
-										ImGui::DragFloat("FOV", &camera->perspectiveFOV, 0.5f, 30.0f, 120.0f);
+										float currentFOVDegrees = camera->perspectiveFOV.value();
+										ImGui::DragFloat("FOV", &currentFOVDegrees, 0.5f, 30.0f, 120.0f);
+										camera->perspectiveFOV = currentFOVDegrees;
 									}
 									else
 									{
