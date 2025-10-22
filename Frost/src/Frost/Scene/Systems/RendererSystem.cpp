@@ -3,9 +3,9 @@
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/MeshRenderer.h"
 #include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Utils/Math/Angle.h"
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/Vertex.h"
-#include "WorldTransformSystem.h"
 
 namespace Frost
 {
@@ -73,20 +73,48 @@ namespace Frost
 			DirectX::XMMATRIX view;
 			DirectX::XMFLOAT4 actualCameraPosition = { cameraTransform->position.x, cameraTransform->position.y, cameraTransform->position.z, 1.0f };
 
-			view = DirectX::XMMatrixLookAtLH(
+			// Calculate up vector from rotation
+			DirectX::XMVECTOR worldUp = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+			DirectX::XMMATRIX cameraRotationMatrix = 
+				DirectX::XMMatrixRotationRollPitchYaw(
+					Angle<Radian>(cameraTransform->rotation.x).value(),
+					Angle<Radian>(cameraTransform->rotation.y).value(),
+					Angle<Radian>(cameraTransform->rotation.z).value()
+				);
+
+			DirectX::XMVECTOR cameraUp = DirectX::XMVector3TransformNormal(worldUp, cameraRotationMatrix);
+
+			// Calculate forward vector from rotation
+			DirectX::XMVECTOR worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+			DirectX::XMVECTOR cameraDirection = DirectX::XMVector3TransformNormal(worldForward, cameraRotationMatrix);
+
+			view = DirectX::XMMatrixLookToLH(
 				DirectX::XMVectorSet(actualCameraPosition.x, actualCameraPosition.y, actualCameraPosition.z, 1.0f),
-				DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f),
-				DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f)
+				cameraDirection,
+				cameraUp
 			);
 
 			DirectX::XMMATRIX projection;
-			projection = DirectX::XMMatrixPerspectiveFovLH(
-				DirectX::XM_PI / 4,
-				viewportAspectRatio,
-				camera.nearClip,
-				camera.farClip
-			);
-
+			if (camera.projectionType == Camera::ProjectionType::Orthographic)
+			{
+				float orthoWidth = camera.orthographicSize * viewportAspectRatio;
+				float orthoHeight = camera.orthographicSize;
+				projection = DirectX::XMMatrixOrthographicLH(
+					orthoWidth * 2.0f,
+					orthoHeight * 2.0f,
+					camera.nearClip,
+					camera.farClip
+				);
+			}
+			else
+			{
+				projection = DirectX::XMMatrixPerspectiveFovLH(
+					Angle<Radian>(camera.perspectiveFOV).value(),
+					viewportAspectRatio,
+					camera.nearClip,
+					camera.farClip
+				);
+			}
 
 			RendererAPI::SetViewport(camera.viewport);
 

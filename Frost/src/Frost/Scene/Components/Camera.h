@@ -2,6 +2,7 @@
 
 #include "Frost/Scene/ECS/Component.h"
 #include "Frost/Renderer/Viewport.h"
+#include "Frost/Utils/Math/Angle.h"
 
 namespace Frost
 {
@@ -14,7 +15,7 @@ namespace Frost
 		};
 
 		ProjectionType projectionType = ProjectionType::Perspective;
-		float perspectiveFOV = 60.0f;
+		Angle<Degree> perspectiveFOV = 60.0_deg;
 		float orthographicSize = 10.0f;
 		float nearClip = 0.1f;
 		float farClip = 1000.0f;

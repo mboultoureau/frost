@@ -39,7 +39,7 @@ namespace Frost
 	}
 
 	// Scroll wheel
-	void Mouse::ResetScroll()
+	void Mouse::_ResetScroll()
 	{
 		_scroll.scrollX = 0;
 		_scroll.scrollY = 0;
@@ -47,7 +47,7 @@ namespace Frost
 
 	void Mouse::SetScroll(Mouse::MouseScroll scroll)
 	{
-		scroll = _scroll;
+		_scroll = scroll;
 	}
 
 	Mouse::MouseScroll Mouse::GetScroll() const
@@ -87,6 +87,7 @@ namespace Frost
 	{
 		_UpdatePosition();
 		_UpdateButtonStates();
+		_ResetScroll();
 	}
 
 	void Mouse::_UpdatePosition()
