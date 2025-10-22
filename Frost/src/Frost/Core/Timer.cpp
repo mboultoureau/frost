@@ -30,7 +30,7 @@ namespace Frost
 		_lastTime = Clock::now();
 	}
 
-	Timer::Duration Timer::GetDuration()
+	Timer::Duration Timer::GetDuration() const
 	{
 		return Clock::now() - _lastTime + _duration;
 	}

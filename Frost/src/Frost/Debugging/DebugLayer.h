@@ -2,8 +2,13 @@
 
 #include "Frost/Core/Layer.h"
 #include "Frost/Scene/Scene.h"
+#include "Frost/Core/Timer.h"
+#include "Frost/Event/Events/Debugging/DebugOptionChangedEvent.h"
+#include "Frost/Event/Events/Window/WindowCloseEvent.h"
+#include "Frost/Event/Events/Window/WindowResizeEvent.h"
 
 #include <vector>
+#include <deque>
 
 namespace Frost
 {
@@ -25,18 +30,37 @@ namespace Frost
 	private:
 		std::vector<Scene*> _scenes;
 
-		static constexpr int FRAME_TIME_HISTORY_SIZE = 100; // Number of frames to track
-		float m_FrameTimes[FRAME_TIME_HISTORY_SIZE] = {};
-		int m_FrameTimeHistoryIndex = 0;
-		float m_MaxFrameTime = 0.0f;
+		// Render update graph
+		static constexpr int FRAME_TIME_HISTORY_SIZE = 100;
+		float _frameTimes[FRAME_TIME_HISTORY_SIZE] = {};
+		int _frameTimeHistoryIndex = 0;
+		float _maxFrameTime = 0.0f;
 
-		// Physics Time Graph Data (NEW)
-		float m_FixedUpdateTimes[FRAME_TIME_HISTORY_SIZE] = {};
-		int m_FixedUpdateTimeHistoryIndex = 0;
-		float m_MaxFixedUpdateTime = 0.0f;
+		// Physics update graph
+		float _fixedUpdateTimes[FRAME_TIME_HISTORY_SIZE] = {};
+		int _fixedUpdateTimeHistoryIndex = 0;
+		float _maxFixedUpdateTime = 0.0f;
 
-		// ... existing private methods
-		void _DrawPerformancePanel(); // New private method for the graph
+		struct LogEntry
+		{
+			float timestamp;
+			std::string message;
+			EventType type;
+		};
+
+		static constexpr size_t MAX_LOG_ENTRIES = 100;
+		std::deque<LogEntry> _eventLog;
+		Timer _logTimer;
+
+		void _LogEvent(const Event& e, const std::string& message);
+
+		bool _OnDebugOptionChanged(DebugOptionChangedEvent& e);
+		bool _OnWindowClose(WindowCloseEvent& e);
+		bool _OnWindowResize(WindowResizeEvent& e);
+
+		void _DrawEventLogPanel();
+		void _DrawInputPanel();
+		void _DrawPerformancePanel();
 		void _DrawRenderingOptionsPanel();
 		void _DrawSceneHierarchyPanel();
 	};

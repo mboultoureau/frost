@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Frost/Core/Window.h"
+#include "Frost/Event/Events/Window/WindowResizeEvent.h"
+#include "Frost/Event/Events/Debugging/DebugOptionChangedEvent.h"
 
 #include <memory>
 #include <d3d11_1.h>
@@ -30,6 +32,9 @@ namespace Frost
 		void _SetupDebug();
 		void _ReportLiveObjects();
 		void _ReleaseViews();
+
+		bool _OnWindowResize(WindowResizeEvent& e);
+		bool _OnDebugOptionChanged(DebugOptionChangedEvent& e);
 
 		Window* _window;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain{};

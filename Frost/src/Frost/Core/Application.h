@@ -6,7 +6,6 @@
 #include "Frost/Core/LayerStack.h"
 #include "Frost/Renderer/MeshLibrary.h"
 #include "Frost/Event/EventManager.h"
-#include "Frost/Input/WindowsPlayerInput.h"
 
 #include <Windows.h>
 #include <memory>
@@ -63,7 +62,6 @@ namespace Frost
 		EventManager _eventManager;
 		LayerStack _layerStack;
 		MeshLibrary _meshLibrary;
-		WindowsPlayerInput _playerInput;
 
 		Timer _renderTimer;
 		Timer _physicsTimer;
