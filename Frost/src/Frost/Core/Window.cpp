@@ -7,22 +7,25 @@
 
 #include <imgui_impl_win32.h>
 #include <windowsx.h>
+#include <iostream>
 
 namespace Frost
 {
     class WindowRegistrationFailed {};
     class WindowCreationFailed {};
     class WindowGetDimensionsFailed{};
+	class WindowConsoleCreationFailed {};
 
-
-	Window::Window(const WindowSettings& settings): _isWindowed{ true }
+	Window::Window(const WindowSettings& settings) : _isWindowed{ true }, _hasConsole{ false }
 	{
+#ifdef FT_DEBUG
+		_CreateConsoleWindow();
+#endif
+
         _title = std::wstring(settings.title.begin(), settings.title.end());
 
         _AppRegisterClass();
         _CreateWindow(settings);
-
-        // InitializeInput();
 	}
 
 	ATOM Window::_AppRegisterClass()
@@ -66,9 +69,40 @@ namespace Frost
         UpdateWindow(_hwnd);
     }
 
+    void Window::_CreateConsoleWindow()
+    {
+        if (AllocConsole()) {
+            FILE* consoleStdout = nullptr;
+            FILE* consoleStderr = nullptr;
+
+            if (freopen_s(&consoleStdout, "CONOUT$", "w", stdout) != 0) {
+				throw WindowConsoleCreationFailed{};
+            }
+
+            if (freopen_s(&consoleStderr, "CONOUT$", "w", stderr) != 0) {
+                throw WindowConsoleCreationFailed{};
+            }
+
+            std::cout.clear();
+            std::cerr.clear();
+
+			_hasConsole = true;
+
+            SetConsoleTitle(L"Frost Engine Console");
+
+			std::cout << "Frost Engine Console Initialized!" << std::endl;
+        }
+    }
+
     void Window::Destroy()
     {
         DestroyWindow(_hwnd);
+
+#ifdef _DEBUG
+        if (_hasConsole) {
+            FreeConsole();
+        }
+#endif
 	}
 
     LRESULT CALLBACK Window::_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
