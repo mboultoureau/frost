@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <WinUser.h>
 #include <cassert>
+#include <iostream>
 
 namespace Frost
 {
@@ -130,6 +131,7 @@ namespace Frost
 			if (!wasPressed && isPressed)
 			{
 				_buttonStates[i] = ButtonState::Pressed;
+				std::cout << "Mouse button " << static_cast<int>(i) << " pressed.\n";
 			}
 			else if (wasPressed && isPressed)
 			{

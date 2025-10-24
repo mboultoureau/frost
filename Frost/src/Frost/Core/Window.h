@@ -43,8 +43,10 @@ namespace Frost
 	private:
 		ATOM _AppRegisterClass();
 		void _CreateWindow(const WindowSettings& settings);
+		void _CreateConsoleWindow();
 		static LRESULT CALLBACK _WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+		bool _hasConsole;
 		bool _isWindowed;
 		HWND _hwnd;
 		std::wstring _title;
