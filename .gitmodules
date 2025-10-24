@@ -8,3 +8,6 @@
 	path = Frost/vendor/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "Frost/vendor/spdlog"]
+	path = Frost/vendor/spdlog
+	url = https://github.com/gabime/spdlog.git
