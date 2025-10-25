@@ -30,6 +30,7 @@ if(WIN32)
     target_compile_options(Lab PRIVATE
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
         $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+		$<$<CXX_COMPILER_ID:MSVC>:/utf-8>
     )
     target_compile_definitions(Lab PUBLIC
         FT_PLATFORM_WINDOWS

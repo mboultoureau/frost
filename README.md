@@ -6,26 +6,60 @@ Frost is a game engine created by the Uno team ([Elias Del Pozo](https://depot.d
 
 To install and run the project, you must be running Windows and have Visual Studio 2022 and CMake installed. Then run the `Setup.bat` script to generate the project.
 
+## Features
+
+- [x] ECS
+- [x] Rendering (DirectX 11)
+- [x] Physics (Jolt)
+- [ ] Input (mouse, keyboard, gamepad)
+- [x] Debugging (logger, debugging interface)
+- [x] Easily extensible
+
 ## Resources
 
 - [Game Programming Patterns](https://gameprogrammingpatterns.com/)
 - [Real-Time Rendering](https://www.realtimerendering.com/)
+- [Game Engine Architecture](https://www.gameenginebook.com/)
 - [h-deb - Patrice Roy](https://h-deb.ca/)
 - [Game Engine Series - The Cherno](https://youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)
 
-## Docs
-
-### Dependencies
+## Dependencies
 
 Here are the dependencies present in the engine:
 - [assimp](https://github.com/assimp/assimp): importing 3D models
 - [imgui](https://github.com/ocornut/imgui): debug interface
 - [JoltPhysics](https://github.com/jrouwe/JoltPhysics): physics engine
+- [spdlog](https://github.com/gabime/spdlog): logging
 
 The various dependencies are located in Frost/vendor for dependencies specific to the engine and Lab/vendor for dependencies specific to the Lab using git submodule.
 
 To update dependencies to their latest versions, you can use: `git submodule update --remote --merge`.
 
+## Docs
+
+### Logger and Asserts
+
+The engine uses spdlog for logging. There are two loggers available: one for the engine and one for the game. The loggers support different log levels: trace, info, warn, error and critical.
+
+```cpp
+// Engine logger
+FT_ENGINE_TRACE("Initializing renderer subsystem...");
+FT_ENGINE_INFO("Mouse button {} pressed", mouseButton);
+FT_ENGINE_WARN("Frame time is high: {} ms", 18.3f);
+FT_ENGINE_ERROR("Failed to load shader '{}'", "water_reflection");
+FT_ENGINE_CRITICAL("Renderer crashed! Error code: {}", -1);
+
+// Game logger
+FT_TRACE("Player {} entered the world", playerName);
+FT_INFO("Player health: {}", health);
+FT_WARN("Player {} is lagging (connected: {})", playerName, isConnected);
+FT_ERROR("Cannot spawn entity ID {}", 42);
+FT_CRITICAL("Fatal error: out of memory!");
+
+// Asserts
+FT_ENGINE_ASSERT(_buttonStates[i] != ButtonState::Pressed);
+FT_ASSERT(_buttonStates[i] != ButtonState::Pressed, "Button state should be Pressed after pressing the button");
+```
 
 ### Entity Component System
 
@@ -38,13 +72,12 @@ Sources :
 
 ### Utils
 
-Voici les différentes classes utilitaires présentes dans le projet :
-
-- NoCopy : peut-être utiliser comme héritage pour bloquer le constructeur de copie et l'opérateur d'affectation public.
-- UUID : permet de générer un identifiant unique. L'UUID est pour le moment sur 64 bits et repose pour le moment sur un générateur aléatoire non cryptographique. Il existe un risque de collisions (qui est environ de 50% après 2**32 générations).
+Here are the different utility classes included in the project:
+- NoCopy: can be used as inheritance to block the copy constructor and public assignment operator.
+- UUID: allows you to generate a unique identifier.
+- Maths utilities: function to manage angle conversion or approximation between two floats.
 
 Sources :
 
 - [Code de grande personne – bloquer la copie - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Incopiable.html)
-- [Génération de nombres pseudoaléatoires avec C++ - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/prng.html)
-
+- [Implémenter des conversions de référentiels - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Implementer-changement-referentiel.html)

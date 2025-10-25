@@ -85,6 +85,29 @@ if(WIN32)
     )
 endif()
 
+# spdlog
+set(SPDLOG_DIR "vendor/spdlog")
+
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "Build shared library" FORCE)
+set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "Use external fmt library instead of bundled" FORCE)
+set(SPDLOG_FMT_EXTERNAL_HO OFF CACHE BOOL "Use external fmt header-only library instead of bundled" FORCE)
+set(SPDLOG_NO_EXCEPTIONS OFF CACHE BOOL "Compile with -fno-exceptions" FORCE)
+
+add_subdirectory("${SPDLOG_DIR}")
+
+set_property(TARGET spdlog PROPERTY FOLDER "Dependencies")
+
+if(WIN32)
+    set_target_properties(spdlog PROPERTIES 
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+
+    target_compile_options(spdlog PRIVATE
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+    )
+endif()
+
 # Frost
 file(GLOB_RECURSE FROST_SOURCES
     "src/**.h"
@@ -108,6 +131,7 @@ set_target_properties(Frost PROPERTIES
 
 target_include_directories(Frost PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+	${SPDLOG_DIR}/include
 )
 
 target_link_libraries(Frost PRIVATE
@@ -116,6 +140,7 @@ target_link_libraries(Frost PRIVATE
     assimp
     Jolt
     ImGui
+	spdlog::spdlog
 )
 
 if(WIN32)
@@ -124,6 +149,7 @@ if(WIN32)
     target_compile_options(Frost PRIVATE
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
         $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+		$<$<CXX_COMPILER_ID:MSVC>:/utf-8>
     )
 
     target_compile_definitions(Frost PUBLIC

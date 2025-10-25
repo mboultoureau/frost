@@ -1,4 +1,6 @@
 #include "Frost/Input/Devices/Mouse.h"
+#include "Frost/Debugging/Logger.h"
+#include "Frost/Debugging/Assert.h"
 
 #include <Windows.h>
 #include <WinUser.h>
@@ -131,7 +133,9 @@ namespace Frost
 			if (!wasPressed && isPressed)
 			{
 				_buttonStates[i] = ButtonState::Pressed;
-				std::cout << "Mouse button " << static_cast<int>(i) << " pressed.\n";
+				FT_ENGINE_TRACE("Mouse button {} pressed", static_cast<int>(i));
+				FT_ENGINE_ASSERT(_buttonStates[i] != ButtonState::Pressed);
+				FT_ENGINE_ASSERT(_buttonStates[i] != ButtonState::Pressed, "Button state should be Pressed after pressing the button");
 			}
 			else if (wasPressed && isPressed)
 			{
