@@ -1,6 +1,7 @@
 #include "Frost/Core/Window.h"
 
 #include "Frost/Core/Application.h"
+#include "Frost/Debugging/Logger.h"
 #include "Frost/Event/Events/Window/WindowCloseEvent.h"
 #include "Frost/Event/Events/Window/WindowResizeEvent.h"
 #include "Frost/Input/Input.h"
@@ -26,6 +27,9 @@ namespace Frost
 
         _AppRegisterClass();
         _CreateWindow(settings);
+
+        Logger::Init();
+        FT_ENGINE_INFO("FROST ENGINE");
 	}
 
 	ATOM Window::_AppRegisterClass()
@@ -89,8 +93,6 @@ namespace Frost
 			_hasConsole = true;
 
             SetConsoleTitle(L"Frost Engine Console");
-
-			std::cout << "Frost Engine Console Initialized!" << std::endl;
         }
     }
 
