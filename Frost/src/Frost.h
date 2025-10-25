@@ -6,6 +6,8 @@
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/Logger.h"
 
+#include "Frost/Input/Input.h"
+
 #include "Frost/Scene/Scene.h"
 
 #include "Frost/Renderer/RendererAPI.h"

@@ -134,8 +134,6 @@ namespace Frost
 			{
 				_buttonStates[i] = ButtonState::Pressed;
 				FT_ENGINE_TRACE("Mouse button {} pressed", static_cast<int>(i));
-				FT_ENGINE_ASSERT(_buttonStates[i] != ButtonState::Pressed);
-				FT_ENGINE_ASSERT(_buttonStates[i] != ButtonState::Pressed, "Button state should be Pressed after pressing the button");
 			}
 			else if (wasPressed && isPressed)
 			{
