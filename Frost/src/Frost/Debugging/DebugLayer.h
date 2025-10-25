@@ -6,6 +6,10 @@
 #include "Frost/Event/Events/Debugging/DebugOptionChangedEvent.h"
 #include "Frost/Event/Events/Window/WindowCloseEvent.h"
 #include "Frost/Event/Events/Window/WindowResizeEvent.h"
+#include "Frost/Event/Events/Input/GamepadConnectedEvent.h"
+#include "Frost/Event/Events/Input/GamepadDisconnectedEvent.h"
+
+#include "Frost.h"
 
 #include <vector>
 #include <deque>
@@ -57,11 +61,17 @@ namespace Frost
 		bool _OnDebugOptionChanged(DebugOptionChangedEvent& e);
 		bool _OnWindowClose(WindowCloseEvent& e);
 		bool _OnWindowResize(WindowResizeEvent& e);
+		bool _OnGamepadConnected(GamepadConnectedEvent& e);
+		bool _OnGamepadDisconnected(GamepadDisconnectedEvent& e);
 
 		void _DrawEventLogPanel();
 		void _DrawInputPanel();
 		void _DrawPerformancePanel();
 		void _DrawRenderingOptionsPanel();
 		void _DrawSceneHierarchyPanel();
+		void _DrawGamepadPanel(Gamepad& gamepad);
+		void _DrawMousePanel();
+		void _DrawJoystickVisual(const char* label, const Frost::Gamepad::Joystick& joy, float radius);
+		bool _DrawTransformControl(const char* label, Frost::Gamepad::Transform& currentTransform);
 	};
 }
