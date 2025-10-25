@@ -137,6 +137,7 @@ target_include_directories(Frost PUBLIC
 target_link_libraries(Frost PRIVATE
     d3d11.lib
     d3dcompiler.lib
+	Xinput.lib
     assimp
     Jolt
     ImGui

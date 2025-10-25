@@ -1,4 +1,4 @@
-#include "Frost/Debugging/DebugLayer.h"
+﻿#include "Frost/Debugging/DebugLayer.h"
 
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/RendererAPI.h"
@@ -135,6 +135,10 @@ namespace Frost
 			FROST_BIND_EVENT_FN(DebugLayer::_OnWindowClose));
 		Application::Get().GetEventManager().SubscribeFront<WindowResizeEvent>(
 			FROST_BIND_EVENT_FN(DebugLayer::_OnWindowResize));
+		Application::Get().GetEventManager().SubscribeFront<GamepadConnectedEvent>(
+			FROST_BIND_EVENT_FN(DebugLayer::_OnGamepadConnected));
+		Application::Get().GetEventManager().SubscribeFront<GamepadDisconnectedEvent>(
+			FROST_BIND_EVENT_FN(DebugLayer::_OnGamepadDisconnected));
 	}
 
 	void DebugLayer::OnDetach()
@@ -416,11 +420,11 @@ namespace Frost
 		}
 	}
 
-	void DebugLayer::_DrawInputPanel()
+	void DebugLayer::_DrawMousePanel()
 	{
 		bool isCursorVisible = Input::GetMouse().IsCursorVisible();
 
-		if (ImGui::CollapsingHeader("Input"))
+		if (ImGui::TreeNode("Mouse"))
 		{
 			if (ImGui::Checkbox("Show Mouse Cursor", &isCursorVisible))
 			{
@@ -506,7 +510,287 @@ namespace Frost
 				}
 				ImGui::TreePop();
 			}
+
+			ImGui::TreePop();
 		}
+	}
+
+	void DebugLayer::_DrawInputPanel()
+	{
+		if(ImGui::CollapsingHeader("Input"))
+		{
+			_DrawMousePanel();
+			ImGui::Separator();
+
+			if (ImGui::TreeNode("Gamepads"))
+			{
+				for (uint8_t i = 0; i < Frost::Gamepad::MAX_GAMEPADS; ++i)
+				{
+					Frost::Gamepad& gamepad = Input::GetGamepad(i);
+					_DrawGamepadPanel(gamepad);
+				}
+				ImGui::TreePop();
+			}
+		}
+	}
+
+	bool DebugLayer::_DrawTransformControl(const char* label, Frost::Gamepad::Transform& currentTransform)
+	{
+		const char* transformTypes[] = { "Linear (f(x)=x)", "Quadratic (f(x)=x^2)", "Cubic (f(x)=x^3)", "Square Root (f(x)=sqrt(x))" };
+		int currentType = (int)currentTransform;
+		if (ImGui::Combo(label, &currentType, transformTypes, IM_ARRAYSIZE(transformTypes)))
+		{
+			currentTransform = (Frost::Gamepad::Transform)currentType;
+			return true;
+		}
+		return false;
+	}
+
+	void DebugLayer::_DrawGamepadPanel(Frost::Gamepad& gamepad)
+	{
+		ImGui::PushID(gamepad.GetId());
+		std::string name = "Controller " + std::to_string(gamepad.GetId());
+		if (ImGui::CollapsingHeader(name.c_str()))
+		{
+			if (!gamepad.IsConnected())
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Status: Disconnected");
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Status: Connected");
+
+				ImGui::Separator();
+				if (ImGui::TreeNode("Buttons"))
+				{
+					// Simple representation of XInput buttons
+					ImGui::Columns(4, "ButtonCols", false);
+					auto DrawButtonState = [&](Frost::Gamepad::Buttons button, const char* name) {
+						ImGui::TextColored(gamepad.IsButtonPressed(button) ? ImVec4(1.0f, 0.8f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f),
+							"%s: %s", name, gamepad.IsButtonPressed(button) ? "PRESS" : "UP");
+						ImGui::NextColumn();
+						};
+
+					DrawButtonState(Frost::Gamepad::BUTTON_A, "A");
+					DrawButtonState(Frost::Gamepad::BUTTON_B, "B");
+					DrawButtonState(Frost::Gamepad::BUTTON_X, "X");
+					DrawButtonState(Frost::Gamepad::BUTTON_Y, "Y");
+
+					DrawButtonState(Frost::Gamepad::BUTTON_DPAD_UP, "D-Up");
+					DrawButtonState(Frost::Gamepad::BUTTON_DPAD_DOWN, "D-Down");
+					DrawButtonState(Frost::Gamepad::BUTTON_DPAD_LEFT, "D-Left");
+					DrawButtonState(Frost::Gamepad::BUTTON_DPAD_RIGHT, "D-Right");
+
+					DrawButtonState(Frost::Gamepad::BUTTON_START, "Start");
+					DrawButtonState(Frost::Gamepad::BUTTON_BACK, "Back");
+					DrawButtonState(Frost::Gamepad::BUTTON_LEFT_SHOULDER, "LB");
+					DrawButtonState(Frost::Gamepad::BUTTON_RIGHT_SHOULDER, "RB");
+
+					DrawButtonState(Frost::Gamepad::BUTTON_LEFT_THUMB, "L-Stick");
+					DrawButtonState(Frost::Gamepad::BUTTON_RIGHT_THUMB, "R-Stick");
+
+					ImGui::Columns(1);
+					ImGui::TreePop();
+				}
+
+				ImGui::Separator();
+				if (ImGui::TreeNode("Joysticks & Triggers"))
+				{
+					Frost::Gamepad::Joystick leftJoy = gamepad.GetLeftJoystick();
+					Frost::Gamepad::Joystick rightJoy = gamepad.GetRightJoystick();
+					Frost::Gamepad::Trigger leftTrig = gamepad.GetLeftTrigger();
+					Frost::Gamepad::Trigger rightTrig = gamepad.GetRightTrigger();
+
+					// Joysticks
+					ImGui::BeginGroup();
+					_DrawJoystickVisual("Left Stick", leftJoy, 40.0f);
+					ImGui::EndGroup();
+					ImGui::SameLine(0.0f, ImGui::GetStyle().ItemSpacing.x * 4.0f);
+
+					ImGui::BeginGroup();
+					_DrawJoystickVisual("Right Stick", rightJoy, 40.0f);
+					ImGui::EndGroup();
+
+					ImGui::Text("Left Stick (Norm): (%.2f, %.2f) | Mag: %.2f", leftJoy.normalizedX, leftJoy.normalizedY, leftJoy.normalizedMagnitude);
+					ImGui::Text("Right Stick (Norm): (%.2f, %.2f) | Mag: %.2f", rightJoy.normalizedX, rightJoy.normalizedY, rightJoy.normalizedMagnitude);
+
+					ImGui::SeparatorText("Joystick Deadzones (Max Raw: 32767)");
+
+					// Joysticks deadzones
+					int currentLStickDZ = leftJoy.deadZone;
+					if (ImGui::SliderInt("L Stick Deadzone (Raw)", &currentLStickDZ, 0, 32767))
+					{
+						gamepad.SetDeadZoneLeftJoystick(currentLStickDZ);
+					}
+
+					int currentRStickDZ = rightJoy.deadZone;
+					if (ImGui::SliderInt("R Stick Deadzone (Raw)", &currentRStickDZ, 0, 32767))
+					{
+						gamepad.SetDeadZoneRightJoystick(currentRStickDZ);
+					}
+
+					ImGui::Text("Current Deadzone: L:%d (%.2f%%) | R:%d (%.2f%%)",
+						leftJoy.deadZone, (float)leftJoy.deadZone / 32767.0f * 100.0f,
+						rightJoy.deadZone, (float)rightJoy.deadZone / 32767.0f * 100.0f);
+
+					ImGui::SameLine();
+					if (ImGui::Button("Reset Sticks DZ"))
+					{
+						gamepad.SetDeadZoneLeftJoystick(Gamepad::DEADZONE_DEFAULT_LEFT_STICK);
+						gamepad.SetDeadZoneRightJoystick(Gamepad::DEADZONE_DEFAULT_RIGHT_STICK);
+					}
+
+					// Joysticks transforms
+					ImGui::SeparatorText("Joystick Transforms");
+
+					Gamepad::Transform currentLStickTransform = gamepad.GetTransformLeftJoystick();
+					if (_DrawTransformControl("L Stick Transform", currentLStickTransform))
+					{
+						gamepad.SetTransformLeftJoystick(currentLStickTransform);
+					}
+
+					Gamepad::Transform currentRStickTransform = gamepad.GetTransformRightJoystick();
+					if (_DrawTransformControl("R Stick Transform", currentRStickTransform))
+					{
+						gamepad.SetTransformRightJoystick(currentRStickTransform);
+					}
+
+					ImGui::Separator();
+
+					// Triggers
+					char overlayL[32];
+					snprintf(overlayL, sizeof(overlayL), "%.2f", leftTrig.normalizedValue);
+					ImGui::Text("Left Trigger (LT)");
+					ImVec2 p_lt = ImGui::GetCursorScreenPos();
+					ImGui::ProgressBar(leftTrig.normalizedValue, ImVec2(-1.0f, 20.0f), overlayL);
+
+					ImDrawList* draw_list = ImGui::GetWindowDrawList();
+					float deadZoneNormL = (float)leftTrig.deadZone / 255.0f;
+					float barWidth = ImGui::GetContentRegionAvail().x + ImGui::GetStyle().FramePadding.x * 2.0f; // Total width of the progress bar area
+					float deadZoneWidthL = barWidth * deadZoneNormL;
+
+					draw_list->AddRectFilled(
+						ImVec2(p_lt.x, p_lt.y),
+						ImVec2(p_lt.x + deadZoneWidthL, p_lt.y + 20.0f),
+						IM_COL32(255, 50, 50, 100)
+					);
+
+					char overlayR[32];
+					snprintf(overlayR, sizeof(overlayR), "%.2f", rightTrig.normalizedValue);
+					ImGui::Text("Right Trigger (RT)");
+					ImVec2 p_rt = ImGui::GetCursorScreenPos();
+					ImGui::ProgressBar(rightTrig.normalizedValue, ImVec2(-1.0f, 20.0f), overlayR);
+
+					float deadZoneNormR = (float)rightTrig.deadZone / 255.0f;
+					float deadZoneWidthR = barWidth * deadZoneNormR;
+
+					draw_list->AddRectFilled(
+						ImVec2(p_rt.x, p_rt.y),
+						ImVec2(p_rt.x + deadZoneWidthR, p_rt.y + 20.0f),
+						IM_COL32(255, 50, 50, 100)
+					);
+
+					ImGui::SeparatorText("Trigger Deadzones (Max Raw: 255)");
+
+					// Triggers deadzones
+					int currentLTriggerDZ = leftTrig.deadZone;
+					if (ImGui::SliderInt("L Trigger Deadzone (Raw)", &currentLTriggerDZ, 0, 255))
+					{
+						gamepad.SetDeadZoneLeftTrigger(currentLTriggerDZ);
+					}
+
+					int currentRTriggerDZ = rightTrig.deadZone;
+					if (ImGui::SliderInt("R Trigger Deadzone (Raw)", &currentRTriggerDZ, 0, 255))
+					{
+						gamepad.SetDeadZoneRightTrigger(currentRTriggerDZ);
+					}
+
+					ImGui::Text("Current Deadzone: L:%d (%.2f%%) | R:%d (%.2f%%)",
+						leftTrig.deadZone, (float)leftTrig.deadZone / 255.0f * 100.0f,
+						rightTrig.deadZone, (float)rightTrig.deadZone / 255.0f * 100.0f);
+
+					ImGui::SameLine();
+					if (ImGui::Button("Reset Triggers DZ"))
+					{
+						gamepad.SetDeadZoneLeftTrigger(Gamepad::DEADZONE_DEFAULT_TRIGGER);
+						gamepad.SetDeadZoneRightTrigger(Gamepad::DEADZONE_DEFAULT_TRIGGER);
+					}
+
+					ImGui::TreePop();
+				}
+
+				ImGui::Separator();
+				if (ImGui::TreeNode("Vibration (Motors)"))
+				{
+					// Use a normalized float (0.0f to 1.0f) for easier UI control
+					float leftNorm = gamepad.GetLeftMotorSpeed() / 65535.0f;
+					float rightNorm = gamepad.GetRightMotorSpeed() / 65535.0f;
+
+					ImGui::Text("Motor Speeds (0-65535): L:%hu | R:%hu", gamepad.GetLeftMotorSpeed(), gamepad.GetRightMotorSpeed());
+
+					// Sliders for control
+					if (ImGui::SliderFloat("Left Motor (Heavy)", &leftNorm, 0.0f, 1.0f, "%.2f"))
+					{
+						gamepad.VibrateNormalized(leftNorm, rightNorm);
+					}
+
+					if (ImGui::SliderFloat("Right Motor (Light)", &rightNorm, 0.0f, 1.0f, "%.2f"))
+					{
+						gamepad.VibrateNormalized(leftNorm, rightNorm);
+					}
+
+					if (ImGui::Button("Stop Vibration"))
+					{
+						gamepad.StopVibration();
+					}
+
+					ImGui::TreePop();
+				}
+			}
+		}
+		ImGui::PopID();
+	}
+
+	/**
+	* @see https://github.com/ocornut/imgui/issues/5186
+	*/
+	void DebugLayer::_DrawJoystickVisual(const char* label, const Frost::Gamepad::Joystick& joy, float radius)
+	{
+		ImGui::Text("%s", label);
+
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		ImVec2 p = ImGui::GetCursorScreenPos();
+		ImGuiStyle& style = ImGui::GetStyle();
+
+		float draw_size = radius * 2.0f + style.FramePadding.x * 2.0f;
+		ImGui::Dummy(ImVec2(draw_size, draw_size));
+
+		ImVec2 center(p.x + radius + style.FramePadding.x, p.y + radius + style.FramePadding.y);
+
+		draw_list->AddCircleFilled(center, radius, IM_COL32(50, 50, 50, 150), 24);
+
+		constexpr float MAX_RAW_STICK_VALUE = 32767.0f;
+		float deadZoneRadius = radius * ((float)joy.deadZone / MAX_RAW_STICK_VALUE);
+
+		draw_list->AddCircleFilled(center, deadZoneRadius, IM_COL32(255, 100, 0, 100), 12);
+		draw_list->AddCircle(center, deadZoneRadius, IM_COL32(255, 100, 0, 200), 12, 1.0f);
+
+		float crosshair_len = 5.0f;
+		draw_list->AddLine(ImVec2(center.x - crosshair_len, center.y), ImVec2(center.x + crosshair_len, center.y), IM_COL32(150, 150, 150, 255));
+		draw_list->AddLine(ImVec2(center.x, center.y - crosshair_len), ImVec2(center.x, center.y + crosshair_len), IM_COL32(150, 150, 150, 255));
+
+		float stick_x = center.x + joy.normalizedX * radius;
+		float stick_y = center.y - joy.normalizedY * radius;
+		float stick_radius = 8.0f;
+
+		ImU32 stick_color = IM_COL32(
+			(int)(100 + 155 * joy.normalizedMagnitude),
+			(int)(200 - 100 * joy.normalizedMagnitude),
+			(int)(50),
+			255
+		);
+
+		draw_list->AddCircleFilled(ImVec2(stick_x, stick_y), stick_radius, stick_color, 12);
 	}
 
 	void DebugLayer::_DrawPerformancePanel()
@@ -586,6 +870,22 @@ namespace Frost
 	{
 		std::stringstream ss;
 		ss << "Window resized to " << e.GetWidth() << "x" << e.GetHeight() << ".";
+		_LogEvent(e, ss.str());
+		return false;
+	}
+
+	bool DebugLayer::_OnGamepadConnected(GamepadConnectedEvent& e)
+	{
+		std::stringstream ss;
+		ss << "Gamepad " << static_cast<int>(e.GetGamepadId()) << " connected.";
+		_LogEvent(e, ss.str());
+		return false;
+	}
+
+	bool DebugLayer::_OnGamepadDisconnected(GamepadDisconnectedEvent& e)
+	{
+		std::stringstream ss;
+		ss << "Gamepad " << static_cast<int>(e.GetGamepadId()) << " disconnected.";
 		_LogEvent(e, ss.str());
 		return false;
 	}
