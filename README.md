@@ -37,6 +37,20 @@ To update dependencies to their latest versions, you can use: `git submodule upd
 
 ## Docs
 
+### Gamepads
+
+Our game engine supports up to 4 game controllers simultaneously. The following features are implemented:
+
+- Buttons
+- Joysticks
+- Triggers
+- Deadzones (for joysticks and triggers)
+- Transformations (Linear, Quadratic, Cubic, Square Root)
+- Raw or normalized input values
+- Vibration support
+- Debug menu
+- Controller connection and disconnection events
+
 ### Logger and Asserts
 
 The engine uses spdlog for logging. There are two loggers available: one for the engine and one for the game. The loggers support different log levels: trace, info, warn, error and critical.
