@@ -71,6 +71,7 @@ namespace Frost
 		void _DrawSceneHierarchyPanel();
 		void _DrawGamepadPanel(Gamepad& gamepad);
 		void _DrawMousePanel();
+		void _DrawKeyboardPanel();
 		void _DrawJoystickVisual(const char* label, const Frost::Gamepad::Joystick& joy, float radius);
 		bool _DrawTransformControl(const char* label, Frost::Gamepad::Transform& currentTransform);
 	};

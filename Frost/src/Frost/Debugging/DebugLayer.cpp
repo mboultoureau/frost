@@ -515,11 +515,165 @@ namespace Frost
 		}
 	}
 
+	void DebugLayer::_DrawKeyboardPanel()
+	{
+		if (ImGui::TreeNode("Keyboard"))
+		{
+			auto GetKeyStateString = [](Frost::KeyState state) -> const char*
+				{
+					switch (state)
+					{
+					case Frost::KeyState::DOWN:     return "DOWN (Pressed)";
+					case Frost::KeyState::REPEATED: return "HOLDING";
+					case Frost::KeyState::UP:       return "IDLE/UP";
+					default:                        return "UNKNOWN";
+					}
+				};
+
+			auto DrawKeyState = [&](Frost::VirtualKeyCode keyCode, const char* name)
+				{
+					Frost::KeyState state = Input::GetKeyboard().GetKeyState(keyCode);
+
+					ImVec4 color;
+					if (state == Frost::KeyState::DOWN)
+						color = ImVec4(1.0f, 0.8f, 0.0f, 1.0f);
+					else if (state == Frost::KeyState::REPEATED)
+						color = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+					else // UP
+						color = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+
+					ImGui::PushStyleColor(ImGuiCol_Text, color);
+					ImGui::Text("%s: %s", name, GetKeyStateString(state));
+					ImGui::PopStyleColor();
+					ImGui::NextColumn();
+				};
+
+			ImGui::Columns(4, "KeyCols", false);
+
+			ImGui::SeparatorText("Mouse Buttons");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			DrawKeyState(Frost::VirtualKeyCode::K_LBUTTON, "L-Click");
+			DrawKeyState(Frost::VirtualKeyCode::K_RBUTTON, "R-Click");
+			DrawKeyState(Frost::VirtualKeyCode::K_MBUTTON, "M-Click");
+			DrawKeyState(Frost::VirtualKeyCode::K_XBUTTON1, "XButton1");
+			DrawKeyState(Frost::VirtualKeyCode::K_XBUTTON2, "XButton2");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			ImGui::SeparatorText("Alphabet (A-Z)");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			for (char c = 'A'; c <= 'Z'; ++c)
+			{
+				DrawKeyState((Frost::VirtualKeyCode)c, std::string(1, c).c_str());
+			}
+
+			ImGui::NextColumn();  ImGui::NextColumn();
+			ImGui::SeparatorText("Numbers (0-9)");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+			for (char c = '0'; c <= '9'; ++c)
+			{
+				DrawKeyState((Frost::VirtualKeyCode)c, std::string(1, c).c_str());
+			}
+			ImGui::NextColumn(); ImGui::NextColumn();
+
+			ImGui::SeparatorText("Function Keys (F1-F24)");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			for (int i = 1; i <= 24; ++i)
+			{
+				DrawKeyState((Frost::VirtualKeyCode)(Frost::VirtualKeyCode::K_F1 + i - 1),
+					("F" + std::to_string(i)).c_str());
+			}
+
+			ImGui::SeparatorText("Numpad");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD0, "Numpad 0");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD1, "Numpad 1");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD2, "Numpad 2");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD3, "Numpad 3");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD4, "Numpad 4");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD5, "Numpad 5");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD6, "Numpad 6");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD7, "Numpad 7");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD8, "Numpad 8");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMPAD9, "Numpad 9");
+			DrawKeyState(Frost::VirtualKeyCode::K_MULTIPLY, "Multiply");
+			DrawKeyState(Frost::VirtualKeyCode::K_ADD, "Add");
+			DrawKeyState(Frost::VirtualKeyCode::K_SEPARATOR, "Separator");
+			DrawKeyState(Frost::VirtualKeyCode::K_SUBTRACT, "Subtract");
+			DrawKeyState(Frost::VirtualKeyCode::K_DECIMAL, "Decimal");
+			DrawKeyState(Frost::VirtualKeyCode::K_DIVIDE, "Divide");
+
+			ImGui::SeparatorText("Control & Modifiers");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			DrawKeyState(Frost::VirtualKeyCode::K_LSHIFT, "L-Shift");
+			DrawKeyState(Frost::VirtualKeyCode::K_RSHIFT, "R-Shift");
+			DrawKeyState(Frost::VirtualKeyCode::K_LCONTROL, "L-Ctrl");
+			DrawKeyState(Frost::VirtualKeyCode::K_RCONTROL, "R-Ctrl");
+			DrawKeyState(Frost::VirtualKeyCode::K_LMENU, "L-Alt");
+			DrawKeyState(Frost::VirtualKeyCode::K_RMENU, "R-Alt");
+			DrawKeyState(Frost::VirtualKeyCode::K_LWIN, "L-Win");
+			DrawKeyState(Frost::VirtualKeyCode::K_RWIN, "R-Win");
+			DrawKeyState(Frost::VirtualKeyCode::K_SPACE, "Space");
+			DrawKeyState(Frost::VirtualKeyCode::K_TAB, "Tab");
+			DrawKeyState(Frost::VirtualKeyCode::K_RETURN, "Enter");
+			DrawKeyState(Frost::VirtualKeyCode::K_ESCAPE, "Esc");
+			DrawKeyState(Frost::VirtualKeyCode::K_CAPITAL, "Caps Lock");
+			DrawKeyState(Frost::VirtualKeyCode::K_NUMLOCK, "Num Lock");
+			DrawKeyState(Frost::VirtualKeyCode::K_SCROLL, "Scroll Lock");
+			DrawKeyState(Frost::VirtualKeyCode::K_SNAPSHOT, "Print Screen");
+
+			ImGui::SeparatorText("Navigation");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			DrawKeyState(Frost::VirtualKeyCode::K_LEFT, "Arrow Left");
+			DrawKeyState(Frost::VirtualKeyCode::K_UP, "Arrow Up");
+			DrawKeyState(Frost::VirtualKeyCode::K_RIGHT, "Arrow Right");
+			DrawKeyState(Frost::VirtualKeyCode::K_DOWN, "Arrow Down");
+			DrawKeyState(Frost::VirtualKeyCode::K_HOME, "Home");
+			DrawKeyState(Frost::VirtualKeyCode::K_END, "End");
+			DrawKeyState(Frost::VirtualKeyCode::K_PRIOR, "Page Up");
+			DrawKeyState(Frost::VirtualKeyCode::K_NEXT, "Page Down");
+			DrawKeyState(Frost::VirtualKeyCode::K_INSERT, "Insert");
+			DrawKeyState(Frost::VirtualKeyCode::K_DELETE, "Delete");
+			DrawKeyState(Frost::VirtualKeyCode::K_BACK, "Backspace");
+			DrawKeyState(Frost::VirtualKeyCode::K_PAUSE, "Pause");
+
+			ImGui::SeparatorText("Media & OEM (Partial)");
+			ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn(); ImGui::NextColumn();
+
+			DrawKeyState(Frost::VirtualKeyCode::K_VOLUME_MUTE, "Mute");
+			DrawKeyState(Frost::VirtualKeyCode::K_VOLUME_DOWN, "Volume Down");
+			DrawKeyState(Frost::VirtualKeyCode::K_VOLUME_UP, "Volume Up");
+			DrawKeyState(Frost::VirtualKeyCode::K_MEDIA_PLAY_PAUSE, "Play/Pause");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_PLUS, "+ / =");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_MINUS, "- / _");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_COMMA, ", / <");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_PERIOD, ". / >");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_1, "; / :");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_2, "/ / ?");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_3, "` / ~");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_4, "[ / {");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_5, "\\ / |");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_6, "] / }");
+			DrawKeyState(Frost::VirtualKeyCode::K_OEM_7, "' / \"");
+
+			ImGui::Columns(1);
+			ImGui::TreePop();
+		}
+	}
+
 	void DebugLayer::_DrawInputPanel()
 	{
 		if(ImGui::CollapsingHeader("Input"))
 		{
 			_DrawMousePanel();
+			ImGui::Separator();
+
+			_DrawKeyboardPanel();
 			ImGui::Separator();
 
 			if (ImGui::TreeNode("Gamepads"))

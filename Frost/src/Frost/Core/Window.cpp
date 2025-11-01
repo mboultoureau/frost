@@ -117,6 +117,23 @@ namespace Frost
 
         switch (message)
         {
+        case WM_KEYDOWN:
+        {
+            if (lParam & (1 << 30))
+            {
+                Input::GetKeyboard().SetKeyState(static_cast<VirtualKeyCode>(wParam), KeyState::REPEATED);
+            }
+            else
+            {
+                Input::GetKeyboard().SetKeyState(static_cast<VirtualKeyCode>(wParam), KeyState::DOWN);
+            }
+            break;
+        }
+        case WM_KEYUP:
+        {
+            Input::GetKeyboard().SetKeyState(static_cast<VirtualKeyCode>(wParam), KeyState::UP);
+            break;
+        }
         case WM_CLOSE:
         {
             Application::Get().GetEventManager().Emit<Frost::WindowCloseEvent>();
