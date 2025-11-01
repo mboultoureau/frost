@@ -2,6 +2,7 @@
 
 #include "Frost/Input/Devices/Gamepad.h"
 #include "Frost/Input/Devices/Mouse.h"
+#include "Frost/Input/Devices/Keyboard.h"
 #include "Frost/Utils/NoCopy.h"
 
 #include <array>
@@ -13,6 +14,7 @@ namespace Frost
 	public:
 		static Input& Get();
 		static Mouse& GetMouse();
+		static Keyboard& GetKeyboard();
 		static Gamepad& GetGamepad(const Gamepad::GamepadId id);
 
 		static void Update();
@@ -22,6 +24,7 @@ namespace Frost
 
 	private:
 		Mouse _mouse;
+		Keyboard _keyboard;
 		std::array<Gamepad, Gamepad::MAX_GAMEPADS> _gamepads {
 			Gamepad(0),
 			Gamepad(1),
