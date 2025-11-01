@@ -15,6 +15,11 @@ namespace Frost
 		return Get()._mouse;
 	}
 
+	Keyboard& Input::GetKeyboard()
+	{
+		return Get()._keyboard;
+	}
+
 	Gamepad& Input::GetGamepad(const Gamepad::GamepadId id)
 	{
 		FT_ENGINE_ASSERT(id < Gamepad::MAX_GAMEPADS, "Gamepad ID must be between 0 and 3 (inclusive).");
