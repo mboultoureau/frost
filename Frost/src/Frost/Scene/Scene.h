@@ -18,6 +18,7 @@ namespace Frost
 
 		GameObject::Id CreateGameObject();
 		GameObject::Id CreateGameObject(std::string name);
+		GameObject::Id CreateGameObject(std::string name, GameObject::Id parentId);
 		void DestroyGameObject(GameObject::Id id);
 
 		void Update(float deltaTime);

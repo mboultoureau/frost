@@ -8,7 +8,7 @@ namespace Frost
 	class Buffer
 	{
 	public:
-		virtual ID3D11Buffer* Get() { return _buffer.Get(); }
+		virtual ID3D11Buffer* Get() const { return _buffer.Get(); }
 		virtual void Bind() = 0;
 
 	protected:

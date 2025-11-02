@@ -108,6 +108,14 @@ if(WIN32)
     )
 endif()
 
+# stb
+add_library(stb INTERFACE)
+set_property(TARGET stb PROPERTY FOLDER "Dependencies")
+
+target_include_directories(stb INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb"
+)
+
 # Frost
 file(GLOB_RECURSE FROST_SOURCES
     "src/**.h"
@@ -137,11 +145,12 @@ target_include_directories(Frost PUBLIC
 target_link_libraries(Frost PRIVATE
     d3d11.lib
     d3dcompiler.lib
-	Xinput.lib
+    Xinput.lib
     assimp
     Jolt
     ImGui
-	spdlog::spdlog
+    spdlog::spdlog
+    stb
 )
 
 if(WIN32)

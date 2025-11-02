@@ -11,3 +11,6 @@
 [submodule "Frost/vendor/spdlog"]
 	path = Frost/vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "Frost/vendor/stb"]
+	path = Frost/vendor/stb
+	url = https://github.com/nothings/stb
