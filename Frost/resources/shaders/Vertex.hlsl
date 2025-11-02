@@ -8,12 +8,16 @@ cbuffer Constants
     float4 DiffuseColor;
     
     float4 CameraPosition;
+    
+    int numberDiffuseTextures;
+    float3 padding;
 }
 
 struct VertexInput
 {
     float4 position : POSITION;
     float3 normal : NORMAL;
+    float2 texCoord : TEXCOORD0;
 };
 
 
@@ -23,6 +27,7 @@ struct PixelInput
     float3 normal : NORMAL;
     float3 lightDirection : TEXCOORD0;
     float3 cameraDirection : TEXCOORD1;
+    float2 texCoord : TEXCOORD2;
 };
 
 PixelInput VSMain(VertexInput input)
@@ -34,6 +39,7 @@ PixelInput VSMain(VertexInput input)
     float3 worldPosition = mul(input.position, World).xyz;
     output.lightDirection = LightPosition.xyz - worldPosition;
     output.cameraDirection = CameraPosition.xyz - worldPosition;
+    output.texCoord = input.texCoord;
     
     return output;
 }

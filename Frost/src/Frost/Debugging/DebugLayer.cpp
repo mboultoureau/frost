@@ -6,7 +6,7 @@
 #include "Frost/Scene/Components/GameObjectInfo.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
-#include "Frost/Scene/Components/MeshRenderer.h"
+#include "Frost/Scene/Components/ModelRenderer.h"
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Input/Input.h"
@@ -24,10 +24,21 @@ namespace Frost
 	{
 	}
 
-	static bool DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
+	static bool DrawVec3Control_Internal(const std::string& label, DirectX::XMFLOAT3& values, float resetValue, float columnWidth, bool isRotation)
 	{
+		DirectX::XMFLOAT3 displayValues = values;
+		std::string format = "%.2f";
+
+		if (isRotation)
+		{
+			displayValues.x = angle_traits<Degree>::from_neutral(values.x);
+			displayValues.y = angle_traits<Degree>::from_neutral(values.y);
+			displayValues.z = angle_traits<Degree>::from_neutral(values.z);
+			format += " deg";
+		}
+
 		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
+		auto boldFont = io.Fonts->Fonts.Size > 0 ? io.Fonts->Fonts[0] : nullptr;
 
 		bool modified = false;
 
@@ -48,17 +59,17 @@ namespace Frost
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushFont(boldFont);
+		if (boldFont) ImGui::PushFont(boldFont);
 		if (ImGui::Button("X", buttonSize))
 		{
-			values.x = resetValue;
+			displayValues.x = resetValue;
 			modified = true;
 		}
-		ImGui::PopFont();
+		if (boldFont) ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f")) modified = true;
+		if (ImGui::DragFloat("##X", &displayValues.x, 0.1f, 0.0f, 0.0f, format.c_str())) modified = true;
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -66,17 +77,17 @@ namespace Frost
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushFont(boldFont);
+		if (boldFont) ImGui::PushFont(boldFont);
 		if (ImGui::Button("Y", buttonSize))
 		{
-			values.y = resetValue;
+			displayValues.y = resetValue;
 			modified = true;
 		}
-		ImGui::PopFont();
+		if (boldFont) ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f")) modified = true;
+		if (ImGui::DragFloat("##Y", &displayValues.y, 0.1f, 0.0f, 0.0f, format.c_str())) modified = true;
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -84,17 +95,17 @@ namespace Frost
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushFont(boldFont);
+		if (boldFont) ImGui::PushFont(boldFont);
 		if (ImGui::Button("Z", buttonSize))
 		{
-			values.z = resetValue;
+			displayValues.z = resetValue;
 			modified = true;
 		}
-		ImGui::PopFont();
+		if (boldFont) ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f")) modified = true;
+		if (ImGui::DragFloat("##Z", &displayValues.z, 0.1f, 0.0f, 0.0f, format.c_str())) modified = true;
 		ImGui::PopItemWidth();
 
 		ImGui::PopStyleVar();
@@ -102,7 +113,32 @@ namespace Frost
 		ImGui::Columns(1);
 		ImGui::PopID();
 
+		if (modified)
+		{
+			if (isRotation)
+			{
+				values.x = angle_traits<Degree>::to_neutral(displayValues.x);
+				values.y = angle_traits<Degree>::to_neutral(displayValues.y);
+				values.z = angle_traits<Degree>::to_neutral(displayValues.z);
+			}
+			else
+			{
+				values = displayValues;
+			}
+		}
+
 		return modified;
+	}
+
+
+	static bool DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
+	{
+		return DrawVec3Control_Internal(label, values, resetValue, columnWidth, false);
+	}
+
+	static bool DrawRotationControl(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
+	{
+		return DrawVec3Control_Internal(label, values, resetValue, columnWidth, true);
 	}
 
 	static bool DrawComponentHeader(const char* name)
@@ -243,7 +279,8 @@ namespace Frost
 						static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 						ImGuiTreeNodeFlags node_flags = base_flags;
 
-						bool is_root = (info && info->parentId == GameObject::InvalidId);
+						//bool is_root = (info && info->parentId == GameObject::InvalidId);
+						bool is_root = true;
 						if (!is_root) node_flags |= ImGuiTreeNodeFlags_Leaf;
 
 						const bool is_open = ImGui::TreeNodeEx((void*)(intptr_t)gameObjectId, node_flags, "%s (ID: %llu)", info->name.c_str(), gameObjectId);
@@ -272,7 +309,7 @@ namespace Frost
 								if (DrawComponentHeader("Transform (Local)"))
 								{
 									DrawVec3Control("Position", transform->position);
-									DrawVec3Control("Rotation", transform->rotation);
+									DrawRotationControl("Rotation", transform->rotation);
 									DrawVec3Control("Scale", transform->scale, 1.0f);
 									ImGui::TreePop();
 								}
@@ -291,12 +328,12 @@ namespace Frost
 								}
 							}
 
-							if (MeshRenderer* meshRenderer = scene->GetECS().GetComponent<MeshRenderer>(gameObjectId))
+							if (ModelRenderer* meshRenderer = scene->GetECS().GetComponent<ModelRenderer>(gameObjectId))
 							{
 								if (DrawComponentHeader("Mesh Renderer"))
 								{
-									ImGui::Text("Filepath: %s", meshRenderer->meshFilepath.c_str());
-									ImGui::Text("Mesh Status: %s", (meshRenderer->mesh ? "Loaded" : "Not Loaded (Error or null)"));
+									ImGui::Text("Filepath: %s", meshRenderer->modelFilepath.c_str());
+									ImGui::Text("Mesh Status: %s", (meshRenderer->model ? "Loaded" : "Not Loaded (Error or null)"));
 									ImGui::TreePop();
 								}
 							}

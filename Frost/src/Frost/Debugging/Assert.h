@@ -34,9 +34,19 @@ namespace Frost
     } while(0)
 
 #define FT_EXPAND(x) x
-#define FT_GET_THIRD_ARG(arg1, arg2, arg3, ...) arg3
+#define FT_PICK_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, NAME, ...) NAME
 #define FT_CHOOSE_ASSERT_MACRO(...) \
-    FT_EXPAND(FT_GET_THIRD_ARG(__VA_ARGS__, FT_ASSERT_INTERNAL_WITH_MSG, FT_ASSERT_INTERNAL_NO_MSG))
+    FT_EXPAND(FT_PICK_MACRO(__VA_ARGS__, \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_WITH_MSG,  \
+        FT_ASSERT_INTERNAL_NO_MSG     \
+    ))
 
 #define FT_ASSERT(...) \
     FT_EXPAND(FT_CHOOSE_ASSERT_MACRO(__VA_ARGS__)(::Frost::FT_CRITICAL, __VA_ARGS__))
