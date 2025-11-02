@@ -1,7 +1,7 @@
 ﻿#include "Frost/Scene/Systems/RendererSystem.h"
 
 #include "Frost/Scene/Components/Camera.h"
-#include "Frost/Scene/Components/MeshRenderer.h"
+#include "Frost/Scene/Components/ModelRenderer.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Renderer/RendererAPI.h"
@@ -9,7 +9,8 @@
 
 namespace Frost
 {
-	struct ShadersParams
+	// The shader must be align as 16 bytes
+	struct alignas(16) ShadersParams
 	{
 		DirectX::XMMATRIX worldViewProjection;
 		DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
@@ -19,8 +20,10 @@ namespace Frost
 		DirectX::XMFLOAT4 diffuseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 		DirectX::XMFLOAT4 cameraPosition{ 0.0f, 0.0f, -10.0f, 1.0f };
-	};
 
+		int numberDiffuseTextures = 0;
+		int padding[3];
+	};
 
 	RendererSystem::RendererSystem()
     {
@@ -34,6 +37,18 @@ namespace Frost
         _vertexShader.Create(L"../Frost/resources/shaders/Vertex.hlsl", inputLayout, _countof(inputLayout));
         _pixelShader.Create(L"../Frost/resources/shaders/Pixel.hlsl");
 		_constantBuffer.Create(nullptr, sizeof(ShadersParams));
+
+		D3D11_SAMPLER_DESC samplerDesc = {};
+		samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.MaxAnisotropy = D3D11_DEFAULT_MAX_ANISOTROPY;
+		samplerDesc.MipLODBias = 0.0f;
+		samplerDesc.MinLOD = 0;
+		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+		RendererAPI::CreateSamplerState(&samplerDesc, _samplerState.GetAddressOf());
 	}
 
 	void RendererSystem::Update(Frost::ECS& ecs, float deltaTime)
@@ -123,41 +138,82 @@ namespace Frost
 				RendererAPI::ClearColor(camera.viewport, camera.backgroundColor[0], camera.backgroundColor[1], camera.backgroundColor[2], camera.backgroundColor[3]);
 			}
 
-			const auto& renderers = ecs.GetDataArray<MeshRenderer>();
-			const auto& rendererEntities = ecs.GetIndexMap<MeshRenderer>();
+			const auto& renderers = ecs.GetDataArray<ModelRenderer>();
+			const auto& rendererEntities = ecs.GetIndexMap<ModelRenderer>();
 
 			for (size_t i = 0; i < renderers.size(); ++i)
 			{
-				const MeshRenderer& mesh = renderers[i];
+				const ModelRenderer& modelRenderer = renderers[i];
 				GameObject::Id id = rendererEntities[i];
 
 				WorldTransform* transform = ecs.GetComponent<WorldTransform>(id);
 
-				if (transform)
+				if (transform && modelRenderer.model)
 				{
+					DirectX::XMMATRIX matScale = DirectX::XMMatrixScaling(
+						transform->scale.x,
+						transform->scale.y,
+						transform->scale.z
+					);
+
+					DirectX::XMMATRIX matRotation = DirectX::XMMatrixRotationRollPitchYaw(
+						Angle<Radian>(transform->rotation.x).value(),
+						Angle<Radian>(transform->rotation.y).value(),
+						Angle<Radian>(transform->rotation.z).value()
+					);
+
+					DirectX::XMMATRIX matTranslation = DirectX::XMMatrixTranslation(
+						transform->position.x,
+						transform->position.y,
+						transform->position.z
+					);
+
 					RendererAPI::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-					const UINT stride = sizeof(Vertex);
-					const UINT offset = 0;
-					RendererAPI::SetVertexBuffer(mesh.mesh->GetVertexBuffer(), stride, offset);
-					RendererAPI::SetIndexBuffer(mesh.mesh->GetIndexBuffer(), 0);
 					RendererAPI::SetInputLayout(_vertexShader.GetInputLayout());
 					RendererAPI::EnableVertexShader(_vertexShader);
+					RendererAPI::SetGeometryShader();
+					RendererAPI::EnablePixelShader(_pixelShader);
+					RendererAPI::SetPixelSampler(0, _samplerState.Get());
+
+					const UINT stride = sizeof(Vertex);
+					const UINT offset = 0;
 
 					ShadersParams sp = {};
+					DirectX::XMMATRIX matWorld = matScale * matRotation * matTranslation;
 					DirectX::XMMATRIX viewProj = view * projection;
-					DirectX::XMMATRIX matWorld = DirectX::XMMatrixIdentity();
-					matWorld = DirectX::XMMatrixTranslation(transform->position.x, transform->position.y, transform->position.z);
-
 					sp.worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixMultiply(matWorld, viewProj));
 					sp.world = XMMatrixTranspose(matWorld);
 					sp.cameraPosition = actualCameraPosition;
 
-					RendererAPI::UpdateSubresource(_constantBuffer.Get(), &sp, sizeof(ShadersParams));
-					RendererAPI::SetVertexConstantBuffer(0, _constantBuffer.Get());
-					RendererAPI::SetGeometryShader();
-					RendererAPI::EnablePixelShader(_pixelShader);
-					RendererAPI::SetPixelConstantBuffer(0, _constantBuffer.Get());
-					RendererAPI::DrawIndexed(mesh.mesh->GetIndexBuffer().GetCount(), 0, 0);
+					const Model& model = *modelRenderer.model;
+					for (const Mesh& mesh : model.GetMeshes())
+					{
+						const Material& material = model.GetMaterials()[mesh.GetMaterialIndex()];
+						sp.diffuseColor = { material.diffuseColor.x, material.diffuseColor.y, material.diffuseColor.z, 1.0f };
+
+						if (material.diffuseTextures.size() > 0)
+						{
+							sp.numberDiffuseTextures = 1;
+							RendererAPI::SetPixelShaderResource(0, material.diffuseTextures[0]->GetTextureView());
+						}
+						else
+						{
+							sp.numberDiffuseTextures = 0;
+							RendererAPI::SetPixelShaderResource(0, nullptr);
+						}
+
+						RendererAPI::UpdateSubresource(_constantBuffer.Get(), &sp, sizeof(ShadersParams));
+						RendererAPI::SetVertexConstantBuffer(0, _constantBuffer.Get());
+						RendererAPI::SetPixelConstantBuffer(0, _constantBuffer.Get());
+
+						const UINT stride = sizeof(Vertex);
+						const UINT offset = 0;
+
+						RendererAPI::SetVertexBuffer(mesh.GetVertexBuffer(), stride, offset);
+						RendererAPI::SetIndexBuffer(mesh.GetIndexBuffer(), 0);
+						
+						RendererAPI::DrawIndexed(mesh.GetIndexCount(), 0, 0);
+					}
 				}
 			}
         }

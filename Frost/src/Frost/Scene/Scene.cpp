@@ -19,6 +19,13 @@ namespace Frost
         return id;
     }
 
+    GameObject::Id Scene::CreateGameObject(std::string name, GameObject::Id parentId)
+    {
+        auto id = _ecs.CreateGameObject();
+        _ecs.AddComponent<GameObjectInfo>(id, id, parentId, name);
+        return id;
+    }
+
     GameObject::Id Scene::CreateGameObject()
     {
         return _ecs.CreateGameObject();

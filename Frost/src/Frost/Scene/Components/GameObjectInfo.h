@@ -17,5 +17,10 @@ namespace Frost
 			: id(id), name(name)
 		{
 		}
+
+		GameObjectInfo(GameObject::Id id, GameObject::Id parentId, const std::string& name)
+			: id(id), name(name), parentId(parentId)
+		{
+		}
 	};
 }
