@@ -15,3 +15,4 @@ set(INT_BASE_DIR "bin-int")
 
 add_subdirectory(Frost)
 add_subdirectory(Lab)
+add_subdirectory(Jolt3)
