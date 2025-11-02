@@ -1,8 +1,11 @@
 #include "Application.h"
 
 #include "Frost/Renderer/RendererAPI.h"
+
+#include "Frost/Physics/Physics.h"
 #include "Frost/Event/Events/Window/WindowCloseEvent.h"
 #include "Frost/Input/Input.h"
+
 
 #include <cassert>
 #include <iostream>
@@ -29,6 +32,7 @@ namespace Frost
 				_window->Destroy();
 				return true;
 			});
+		Physics::InitPhysics();
 	}
 	
 	Application::~Application()
