@@ -11,7 +11,7 @@ To install and run the project, you must be running Windows and have Visual Stud
 - [x] ECS
 - [x] Rendering (DirectX 11)
 - [x] Physics (Jolt)
-- [ ] Input (mouse, keyboard, gamepad)
+- [x] Input (mouse, keyboard, gamepad)
 - [x] Debugging (logger, debugging interface)
 - [x] Easily extensible
 
@@ -30,6 +30,7 @@ Here are the dependencies present in the engine:
 - [imgui](https://github.com/ocornut/imgui): debug interface
 - [JoltPhysics](https://github.com/jrouwe/JoltPhysics): physics engine
 - [spdlog](https://github.com/gabime/spdlog): logging
+- [stb](https://github.com/nothings/stb): image loading
 
 The various dependencies are located in Frost/vendor for dependencies specific to the engine and Lab/vendor for dependencies specific to the Lab using git submodule.
 

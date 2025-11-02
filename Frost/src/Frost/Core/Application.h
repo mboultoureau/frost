@@ -4,7 +4,7 @@
 #include "Frost/Core/Timer.h"
 #include "Frost/Core/Window.h"
 #include "Frost/Core/LayerStack.h"
-#include "Frost/Renderer/MeshLibrary.h"
+#include "Frost/Renderer/ModelLibrary.h"
 #include "Frost/Event/EventManager.h"
 
 #include <Windows.h>
@@ -40,8 +40,8 @@ namespace Frost
 		std::unique_ptr<Window>& GetWindow() { return _window; }
 		const std::unique_ptr<Window>& GetWindow() const { return _window; }
 
-		MeshLibrary& GetMeshLibrary() { return _meshLibrary; }
-		const MeshLibrary& GetMeshLibrary() const { return _meshLibrary; }
+		ModelLibrary& GetModelLibrary() { return _meshLibrary; }
+		const ModelLibrary& GetModelLibrary() const { return _meshLibrary; }
 
 		EventManager& GetEventManager() { return _eventManager; }
 		const EventManager& GetEventManager() const { return _eventManager; }
@@ -61,7 +61,7 @@ namespace Frost
 
 		EventManager _eventManager;
 		LayerStack _layerStack;
-		MeshLibrary _meshLibrary;
+		ModelLibrary _meshLibrary;
 
 		Timer _renderTimer;
 		Timer _physicsTimer;

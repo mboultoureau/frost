@@ -28,8 +28,8 @@ namespace Frost
 
 		void SetViewport(const Viewport& viewport);
 		void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY topology);
-		void SetVertexBuffer(VertexBuffer& buffer, UINT stride, UINT offset);
-		void SetIndexBuffer(IndexBuffer& buffer, UINT offset);
+		void SetVertexBuffer(const VertexBuffer& buffer, UINT stride, UINT offset);
+		void SetIndexBuffer(const IndexBuffer& buffer, UINT offset);
 		void SetInputLayout(ID3D11InputLayout* inputLayout);
 
 		void EnableVertexShader(VertexShader& vertexShader);
@@ -45,6 +45,13 @@ namespace Frost
 		void CreateVertexShader(const void* shaderBytecode, SIZE_T bytecodeLength, ID3D11VertexShader** vertexShader);
 		void CreateInputLayout(const D3D11_INPUT_ELEMENT_DESC* inputElementDescs, UINT numElements, const void* shaderBytecode, SIZE_T bytecodeLength, ID3D11InputLayout** inputLayout);
 		void CreatePixelShader(const void* shaderBytecode, SIZE_T bytecodeLength, ID3D11PixelShader** pixelShader);
+
+		bool CreateTexture2D(const D3D11_TEXTURE2D_DESC* descriptor, const D3D11_SUBRESOURCE_DATA* subresourceData, ID3D11Texture2D** texture);
+		bool CreateShaderResourceView(ID3D11Resource* resource, const D3D11_SHADER_RESOURCE_VIEW_DESC* srvDesc, ID3D11ShaderResourceView** shaderResourceView);
+		void SetPixelSampler(UINT slot, ID3D11SamplerState* samplerState);
+		void SetPixelShaderResource(UINT slot, ID3D11ShaderResourceView* shaderResourceView);
+
+		void CreateSamplerState(const D3D11_SAMPLER_DESC* samplerDesc, ID3D11SamplerState** samplerState);
 
 		ID3D11Device* Get3DDevice() const;
 		ID3D11DeviceContext1* GetImmediateContext() const;

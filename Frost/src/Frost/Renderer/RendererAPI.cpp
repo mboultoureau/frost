@@ -27,12 +27,12 @@ namespace Frost
 		Get().SetPrimitiveTopology(topology);
 	}
 
-	void RendererAPI::SetVertexBuffer(VertexBuffer& buffer, UINT stride, UINT offset)
+	void RendererAPI::SetVertexBuffer(const VertexBuffer& buffer, UINT stride, UINT offset)
 	{
 		Get().SetVertexBuffer(buffer, stride, offset);
 	}
 
-	void RendererAPI::SetIndexBuffer(IndexBuffer& buffer, UINT offset)
+	void RendererAPI::SetIndexBuffer(const IndexBuffer& buffer, UINT offset)
 	{
 		Get().SetIndexBuffer(buffer, offset);
 	}
@@ -67,9 +67,34 @@ namespace Frost
 		Get().SetPixelConstantBuffer(slot, buffer);
 	}
 
+	bool RendererAPI::CreateTexture2D(const D3D11_TEXTURE2D_DESC* descriptor, const D3D11_SUBRESOURCE_DATA* subresourceData, ID3D11Texture2D** texture)
+	{
+		return Get().CreateTexture2D(descriptor, subresourceData, texture);
+	}
+
+	bool RendererAPI::CreateShaderResourceView(ID3D11Resource* resource, const D3D11_SHADER_RESOURCE_VIEW_DESC* srvDesc, ID3D11ShaderResourceView** shaderResourceView)
+	{
+		return Get().CreateShaderResourceView(resource, srvDesc, shaderResourceView);
+	}
+
+	void RendererAPI::CreateSamplerState(const D3D11_SAMPLER_DESC* samplerDesc, ID3D11SamplerState** samplerState)
+	{
+		Get().CreateSamplerState(samplerDesc, samplerState);
+	}
+
 	void RendererAPI::SetGeometryShader()
 	{
 		Get().SetGeometryShader();
+	}
+
+	void RendererAPI::SetPixelSampler(UINT slot, ID3D11SamplerState* samplerState)
+	{
+		Get().SetPixelSampler(slot, samplerState);
+	}
+
+	void RendererAPI::SetPixelShaderResource(UINT slot, ID3D11ShaderResourceView* shaderResourceView)
+	{
+		Get().SetPixelShaderResource(slot, shaderResourceView);
 	}
 
 	ID3D11Device* RendererAPI::Get3DDevice()
@@ -81,7 +106,6 @@ namespace Frost
 	{
 		return Get().GetImmediateContext();
 	}
-
 
 	Renderer& RendererAPI::Get()
 	{
