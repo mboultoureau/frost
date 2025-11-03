@@ -18,7 +18,7 @@ namespace Frost
 		for (size_t i = 0; i < transforms.size(); ++i)
 		{
 			GameObject::Id id = transformEntities[i];
-			const Transform& transform = transforms[i];
+			const Transform& localTransform = transforms[i];
 
 			GameObjectInfo* info = ecs.GetComponent<GameObjectInfo>(id);
 			WorldTransform* worldTransform = ecs.GetComponent<WorldTransform>(id);
@@ -32,30 +32,44 @@ namespace Frost
 			if (info && info->parentId != GameObject::InvalidId)
 			{
 				WorldTransform* parentTransform = ecs.GetComponent<WorldTransform>(info->parentId);
+
 				if (parentTransform)
 				{
-					worldTransform->position = {
-						parentTransform->position.x + transform.position.x,
-						parentTransform->position.y + transform.position.y,
-						parentTransform->position.z + transform.position.z
-					};
-					worldTransform->rotation = {
-						parentTransform->rotation.x + transform.rotation.x,
-						parentTransform->rotation.y + transform.rotation.y,
-						parentTransform->rotation.z + transform.rotation.z
-					};
-					worldTransform->scale = {
-						parentTransform->scale.x * transform.scale.x,
-						parentTransform->scale.y * transform.scale.y,
-						parentTransform->scale.z * transform.scale.z
-					};
+					DirectX::XMVECTOR parentRotation = DirectX::XMLoadFloat4(&parentTransform->rotation);
+
+					// 2. Load the local Transform's Position (Vector)
+					DirectX::XMVECTOR localPosition = DirectX::XMLoadFloat3(&localTransform.position);
+
+					// 3. Rotate the local position by the parent's world rotation
+					// This is the correct way to transform a child's position into world space relative to its parent.
+					DirectX::XMVECTOR rotatedPosition = DirectX::XMVector3Rotate(localPosition, parentRotation);
+
+					// 4. Calculate World Position: parent.position + (rotated)local.position
+					DirectX::XMVECTOR parentPosition = DirectX::XMLoadFloat3(&parentTransform->position);
+					DirectX::XMVECTOR worldPosition = DirectX::XMVectorAdd(parentPosition, rotatedPosition);
+
+					// 5. Calculate World Rotation: parent.rotation * local.rotation (Quaternion Multiplication)
+					// Note: Order matters! parent * local is standard for object hierarchies.
+					DirectX::XMVECTOR localRotation = DirectX::XMLoadFloat4(&localTransform.rotation);
+					DirectX::XMVECTOR worldRotation = DirectX::XMQuaternionMultiply(parentRotation, localRotation);
+
+					// 6. Calculate World Scale: parent.scale * local.scale (Component-wise Multiplication)
+					DirectX::XMVECTOR parentScale = DirectX::XMLoadFloat3(&parentTransform->scale);
+					DirectX::XMVECTOR localScale = DirectX::XMLoadFloat3(&localTransform.scale);
+					DirectX::XMVECTOR worldScale = DirectX::XMVectorMultiply(parentScale, localScale);
+
+					// 7. Store the results back into the WorldTransform component
+					DirectX::XMStoreFloat3(&worldTransform->position, worldPosition);
+					DirectX::XMStoreFloat4(&worldTransform->rotation, worldRotation); // Store as XMFLOAT4
+					DirectX::XMStoreFloat3(&worldTransform->scale, worldScale);
+
 					continue;
 				}
 			}
 
-			worldTransform->position = transform.position;
-			worldTransform->rotation = transform.rotation;
-			worldTransform->scale = transform.scale;
+			worldTransform->position = localTransform.position;
+			worldTransform->rotation = localTransform.rotation;
+			worldTransform->scale = localTransform.scale;
 		}
 	}
 }

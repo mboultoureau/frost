@@ -14,10 +14,9 @@ Game::Game(Lab* app) : _app{ app }
 	_singleton = this;
 
 	_scene = std::make_unique<Frost::Scene>("Scene");
-
 	_app->PushLayer(new MainLayer());
 	
-	// Memory leak
+	// TODO: Memory leak on destroy
 	Frost::DebugLayer* debugLayer = new Frost::DebugLayer{};
 	_app->PushLayer(debugLayer);
 	debugLayer->AddScene(_scene.get());

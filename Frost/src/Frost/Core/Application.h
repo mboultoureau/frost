@@ -6,6 +6,7 @@
 #include "Frost/Core/LayerStack.h"
 #include "Frost/Renderer/ModelLibrary.h"
 #include "Frost/Event/EventManager.h"
+#include "Frost/Physics/PhysicsConfig.h"
 
 #include <Windows.h>
 #include <memory>
@@ -30,9 +31,14 @@ namespace Frost
 	public:
 		Application(const ApplicationEntryPoint& entryPoint);
 		virtual ~Application();
+		
+		void ConfigurePhysics(const PhysicsConfig& config);
+		void Setup();
 		void Run();
 		void PushLayer(Layer* layer);
 		void PopLayer(Layer* layer);
+		virtual void OnApplicationReady() {};
+
 		Layer* GetLayer(const Layer::LayerName& name);
 	
 		static Application& Get();
@@ -62,6 +68,8 @@ namespace Frost
 		EventManager _eventManager;
 		LayerStack _layerStack;
 		ModelLibrary _meshLibrary;
+		PhysicsConfig _physicsConfig;
+		bool _physicsConfigured = false;
 
 		Timer _renderTimer;
 		Timer _physicsTimer;

@@ -6,6 +6,8 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "Frost/Physics/Physics.h"
 
+#include "Frost/Scene/Components/RigidBody2.h"
+
 class RigidBodyCannotHaveParents {};
 
 Frost::PhysicSystem::PhysicSystem()
@@ -19,52 +21,46 @@ void Frost::PhysicSystem::FixedUpdate(ECS& ecs, float deltaTime)
 	physic.UpdatePhysics();
 
 	UpdateAllJoltBodies(ecs, deltaTime);
+	UpdateAllJoltBodies2(ecs, deltaTime);
 
 	//Awake and sleep
-	auto& scriptables = ecs.GetDataArray<Scriptable>();
-
 	std::for_each(physic.bodiesOnAwake.begin(), physic.bodiesOnAwake.end(), [&](const auto& bodyId) {
-		auto& bodyScripts = scriptables[bodyId]._scripts;
-		std::for_each(bodyScripts.begin(), bodyScripts.end(), [&](auto& script) {
+		auto scriptables = ecs.GetComponent<Scriptable>(bodyId);
+		if (scriptables == nullptr) return;
+
+		auto& scripts = scriptables->_scripts;
+
+		std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
 			script->OnAwake();
-			});
 		});
+	});
 	physic.bodiesOnAwake.clear();
 
 	std::for_each(physic.bodiesOnSleep.begin(), physic.bodiesOnSleep.end(), [&](const auto& bodyId) {
-		auto& bodyScripts = scriptables[bodyId]._scripts;
-		std::for_each(bodyScripts.begin(), bodyScripts.end(), [&](auto& script) {
+		auto scriptables = ecs.GetComponent<Scriptable>(bodyId);
+		if (scriptables == nullptr) return;
+
+		auto& scripts = scriptables->_scripts;
+
+		std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
 			script->OnSleep();
-			});
 		});
+	});
 	physic.bodiesOnSleep.clear();
 	
 	//Collisions
 	auto v = physic.bodiesOnCollisionEnter;
 	_HandleCollisionVector(physic.bodiesOnCollisionEnter, ecs, deltaTime, [](auto& script, const auto& bodyIdPair) {
-		script->OnCollisionEnter(bodyIdPair.second);
-		});
+		script->OnCollisionEnter(bodyIdPair);
+	});
+	
 	_HandleCollisionVector(physic.bodiesOnCollisionStay, ecs, deltaTime, [](auto& script, const auto& bodyIdPair) {
-		script->OnCollisionStay(bodyIdPair.second);
-		});
+		script->OnCollisionStay(bodyIdPair);
+	});
+	
 	_HandleCollisionVector(physic.bodiesOnCollisionExit, ecs, deltaTime, [](auto& script, const auto& bodyIdPair) {
-		script->OnCollisionExit(bodyIdPair.second);
-		});
-
-	/*auto& collExitVect = physic.bodiesOnCollisionExit;
-	if (collExitVect.size() > 0) {
-		std::for_each(collExitVect.begin(), collExitVect.end(), [&](const auto& bodyIdPair) {
-			auto* bodyScriptable = ecs.GetComponent<Scriptable>(bodyIdPair.first);
-			if (bodyScriptable) {
-				std::for_each(bodyScriptable->_scripts.begin(), bodyScriptable->_scripts.end(), [&](auto& script) {
-					script->OnCollisionExit(bodyIdPair.second);
-					});
-				auto& map_JBId_GoId = Physics::Get().mapJBodyGameObject;
-				std::erase_if(map_JBId_GoId, [&](auto pairJbGo) { return bodyIdPair.first == pairJbGo.second; });
-			}
-			});
-		collExitVect.clear();
-	}*/
+		script->OnCollisionExit(bodyIdPair);
+	});
 }
 
 //initialize jph::bodies and update ecs::transforms
@@ -75,26 +71,45 @@ void Frost::PhysicSystem::UpdateAllJoltBodies(ECS& ecs, float deltaTime)
 
 	for (int i = 0; i < rbodies->data.size(); i++) {
 		auto goId = goIds[i];
-		auto rbody = ecs.GetComponent<Frost::RigidBody>(goId);
+		auto rbody = ecs.GetComponent<Frost::RigidBody2>(goId);
 
-		if (rbody->bodyId == JPH::BodyID()) {
-			InitRigidBody(ecs, rbody, goId);
-		}
+		auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody->body->GetID());
+		auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody->body->GetID());
 
-		auto id = rbody->bodyId;
-		auto jBodyPos = Physics::Get().body_interface->GetPosition(id);
-		auto jBodyRot = Physics::Get().body_interface->GetRotation(id);
-		
 		auto transform = ecs.GetComponent<Transform>(goId);
 		auto parent = ecs.GetComponent<Frost::GameObjectInfo>(goId)->parentId;
 
-		if (parent == GameObject::InvalidId) {
-			transform->position = Physics::JoltVectorToVector3(jBodyPos);
+		transform->position = Physics::JoltVectorToVector3(jBodyPos);
 
-			auto wTransfRotTemp = jBodyRot;
-			transform->rotation = Physics::JoltVectorToVector3(wTransfRotTemp.GetEulerAngles());
-		}
-		else throw RigidBodyCannotHaveParents();
+		transform->rotation.x = jBodyRot.GetX();
+		transform->rotation.y = jBodyRot.GetY();
+		transform->rotation.z = jBodyRot.GetZ();
+		transform->rotation.w = jBodyRot.GetW();
+	}
+}
+
+void Frost::PhysicSystem::UpdateAllJoltBodies2(ECS& ecs, float deltaTime)
+{
+	auto rbodies = ecs.GetComponents<Frost::RigidBody2>();
+	auto goIds = ecs.GetIndexMap<RigidBody2>();
+
+	for (int i = 0; i < rbodies->data.size(); i++) {
+		auto goId = goIds[i];
+		auto rbody = ecs.GetComponent<Frost::RigidBody2>(goId);
+
+		auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody->body->GetID());
+		auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody->body->GetID());
+
+		auto transform = ecs.GetComponent<Transform>(goId);
+		auto parent = ecs.GetComponent<Frost::GameObjectInfo>(goId)->parentId;
+
+		transform->position = Physics::JoltVectorToVector3(jBodyPos);
+
+		JPH::Vec3 rotationRadians = jBodyRot.GetEulerAngles();
+		transform->rotation.x = jBodyRot.GetX();
+		transform->rotation.y = jBodyRot.GetY();
+		transform->rotation.z = jBodyRot.GetZ();
+		transform->rotation.w = jBodyRot.GetW();
 	}
 }
 
@@ -111,12 +126,21 @@ void Frost::PhysicSystem::InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id 
 	auto test = Physics::Get()._rigidbodyFuturColliders;
 	auto shapeRef = Physics::Get()._rigidbodyFuturColliders.at(goInfo->id);
 
+	JPH::Quat initialRotation(
+		transform->rotation.x,
+		transform->rotation.y,
+		transform->rotation.z,
+		transform->rotation.w
+	);
+
 	JPH::BodyCreationSettings bodySettings(
 		shapeRef,
 		Physics::Vector3ToJoltVector(transform->position),
-		JPH::Quat::sEulerAngles(Physics::Vector3ToJoltVector(transform->rotation)),
+		initialRotation, // Use the quaternion, not Quat::sEulerAngles(Vector3)
 		rb->motionType,
 		rb->objectLayer);
+	// --- END QUATERNION UPDATE ---
+
 	bodySettings.mUserData = id;
 	auto Jid = Physics::Get().body_interface->CreateAndAddBody(bodySettings, activationMode);
 	
@@ -141,86 +165,24 @@ void Frost::PhysicSystem::_HandleCollisionVector(Physics::PairIdCollisionVector&
 		auto* bodyScriptable = ecs.GetComponent<Scriptable>(bodyIdPair.first);
 		if (bodyScriptable) {
 			std::for_each(bodyScriptable->_scripts.begin(), bodyScriptable->_scripts.end(), [&](auto& script) {
-				callback(script, bodyIdPair);
-				});
+				if (script->GetECS() == nullptr)
+				{
+					script->Initialize(bodyIdPair.first, &ecs);
+				}
+				callback(script, bodyIdPair.second);
+			});
 		}
 		bodyScriptable = ecs.GetComponent<Scriptable>(bodyIdPair.second);
 		if (bodyScriptable) {
 			std::for_each(bodyScriptable->_scripts.begin(), bodyScriptable->_scripts.end(), [&](auto& script) {
-				callback(script, bodyIdPair);
-				});
+				if (script->GetECS() == nullptr)
+				{
+					script->Initialize(bodyIdPair.second, &ecs);
+				}
+				callback(script, bodyIdPair.first);
+			});
 		}
 		});
 	colVector.clear();
 }
 
-
-
-#pragma region to delete
-/*
-void Frost::PhysicSystem::UpdateColliderRigidbodyLinks(ECS& ecs)
-{
-	auto colliders = ecs.GetComponents<Collider>();
-	auto& physics = Physics::Get();
-
-	for (int i = 0; i < colliders->data.size(); i++) {
-		auto collider = colliders->data[i];
-		auto colliderInfo = ecs.GetComponent<GameObjectInfo>(colliders->indexToEntity[i]);
-		auto colliderTransform = ecs.GetComponent<Transform>(colliders->indexToEntity[i]);
-		auto shape = physics.GetColliderShapeRef(&collider);
-
-
-		if (colliderInfo->parentId != collider.rigidbodyId) {
-			if (collider.rigidbodyId != -1) {
-				//remove shape in old body compound shape
-				auto oldParentRigidBody = ecs.GetComponent<RigidBody>(collider.rigidbodyId);
-				if (oldParentRigidBody)
-				{
-					physics.RemoveSubShapeFromBody((oldParentRigidBody->bodyId), collider.subShapeIndex, JPH::EActivation::Activate);
-				}
-			}
-			auto newParentRigidBody = ecs.GetComponent<RigidBody>(colliderInfo->parentId);
-			int index = physics.AddSubShapeToBody(
-				(newParentRigidBody->bodyId),
-				shape,
-				JPH::EActivation::Activate,
-				JPH::Vec3Arg{ colliderTransform->position.x, colliderTransform->position.y, colliderTransform->position.z },
-				JPH::Quat::sEulerAngles(JPH::Vec3{ colliderTransform->rotation.x, colliderTransform->rotation.y, colliderTransform->rotation.z })
-			);
-			physics.body_interface->SetMotionType((newParentRigidBody->bodyId), newParentRigidBody->motionType, JPH::EActivation::Activate);
-			if(index < 0) 
-				collider.subShapeIndex = index;
-			collider.rigidbodyId = colliderInfo->parentId;
-			collider.hasShapeBeenModified = false;
-			continue;
-		}
-
-
-		if (collider.hasShapeBeenModified) {
-			auto parentRigidBody = ecs.GetComponent<RigidBody>(colliderInfo->parentId);
-
-			physics.RemoveSubShapeFromBody((parentRigidBody->bodyId), collider.subShapeIndex, JPH::EActivation::Activate);
-			int index = physics.AddSubShapeToBody(
-				(parentRigidBody->bodyId),
-				shape,
-				JPH::EActivation::Activate,
-				JPH::Vec3Arg{ colliderTransform->position.x, colliderTransform->position.y, colliderTransform->position.z },
-				JPH::Quat::sEulerAngles(JPH::Vec3{ colliderTransform->rotation.x, colliderTransform->rotation.y, colliderTransform->rotation.z })
-			);
-			physics.body_interface->SetMotionType((parentRigidBody->bodyId), parentRigidBody->motionType, JPH::EActivation::Activate);
-			if (index < 0)
-				collider.subShapeIndex = index;
-			collider.rigidbodyId = colliderInfo->parentId;
-			collider.hasShapeBeenModified = false;
-		}
-
-		/*if (collider.isActivated) {
-			// if(collider.parent n'a PAS la shape dans le compoundShape)
-				// add shape dans parent body compound shape
-		}
-		else {
-			// remove old shape in parent body compound shape
-		}
-	}
-}*/
-#pragma endregion
