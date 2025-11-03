@@ -32,6 +32,13 @@ namespace Frost
 
 	Timer::Duration Timer::GetDuration() const
 	{
-		return Clock::now() - _lastTime + _duration;
+		if (_running)
+		{
+			return Clock::now() - _lastTime + _duration;
+		}
+		else
+		{
+			return _duration;
+		}
 	}
 }

@@ -21,6 +21,10 @@ namespace Frost
 		GameObject::Id CreateGameObject(std::string name, GameObject::Id parentId);
 		void DestroyGameObject(GameObject::Id id);
 
+		// Use NoCopy?
+		Scene(const Scene&) = delete;
+		Scene& operator=(const Scene&) = delete;
+
 		void Update(float deltaTime);
 		void FixedUpdate(float deltaTime);
 		void LateUpdate(float deltaTime);

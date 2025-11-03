@@ -30,7 +30,7 @@ namespace Frost
         void RemoveComponent(GameObject::Id id);
 
         template <typename T>
-        T* GetComponent(GameObject::Id id);
+        T* GetComponent(const GameObject::Id id);
 
         template <typename T>
         bool HasComponent(GameObject::Id id);
@@ -96,7 +96,7 @@ namespace Frost
     }
 
     template <typename T>
-    T* ECS::GetComponent(GameObject::Id id)
+    T* ECS::GetComponent(const GameObject::Id id)
     {
         ComponentArray<T>* array = GetComponents<T>();
         if (array->entityToIndex.count(id))

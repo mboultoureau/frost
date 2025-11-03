@@ -22,7 +22,7 @@ namespace Frost
 		auto it = _keyStates.find(keyCode);
 		if (it != _keyStates.end())
 		{
-			return it->second == KeyState::DOWN || KeyState::REPEATED;
+			return it->second == KeyState::DOWN || it->second == KeyState::REPEATED;
 		}
 		return KeyState::DOWN;
 	}
