@@ -30,14 +30,14 @@ namespace Frost
 		cDeltaTime(1.0f / 60.0f),
 		body_activation_listener{},
 		contact_listener{},
-		broad_phase_layer_interface{},
-		object_vs_broadphase_layer_filter{},
-		object_vs_object_layer_filter{},
+		broad_phase_layer_interface{ _physicsConfig.broadPhaseLayerInterface },
+		object_vs_broadphase_layer_filter{ _physicsConfig.objectVsBroadPhaseLayerFilter },
+		object_vs_object_layer_filter{ _physicsConfig.objectLayerPairFilter },
 		temp_allocator(10 * 1024 * 1024),
 		job_system(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1),
 		mapJBodyGameObject{}
 	{
-		physics_system.Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, broad_phase_layer_interface, object_vs_broadphase_layer_filter, object_vs_object_layer_filter);
+		physics_system.Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, *broad_phase_layer_interface, *object_vs_broadphase_layer_filter, *object_vs_object_layer_filter);
 		physics_system.SetBodyActivationListener(&body_activation_listener);
 
 		physics_system.SetContactListener(&contact_listener);
@@ -59,6 +59,47 @@ namespace Frost
 		JPH::UnregisterTypes();
 	}
 
+	void Physics::AddConstraint(JPH::Constraint* inConstraint)
+	{
+		Get().physics_system.AddConstraint(inConstraint);
+	}
+
+	void Physics::AddConstraints(JPH::Constraint** inConstraints, int inNumber)
+	{
+		Get().physics_system.AddConstraints(inConstraints, inNumber);
+	}
+
+	void Physics::AddStepListener(JPH::PhysicsStepListener* inListener)
+	{
+		Get().physics_system.AddStepListener(inListener);
+	}
+	
+	JPH::Body* Physics::CreateBody(const JPH::BodyCreationSettings& inSettings)
+	{
+		return Get().body_interface->CreateBody(inSettings);
+	}
+
+	void Physics::AddBody(const JPH::BodyID& inBodyID, JPH::EActivation inActivationMode)
+	{
+		return Get().body_interface->AddBody(inBodyID, inActivationMode);
+	}
+
+	JPH::Vec3 Physics::GetGravity()
+	{
+		return Get().physics_system.GetGravity();
+	}
+
+	void Physics::ActivateBody(const JPH::BodyID& inBodyID)
+	{
+		Get().body_interface->ActivateBody(inBodyID);
+	}
+
+	void Physics::RemoveBody(const JPH::BodyID& inBodyID)
+	{
+		Get().body_interface->RemoveBody(inBodyID);
+	}
+
+
 	Frost::Transform::Vector3 Frost::Physics::JoltVectorToVector3(RVec3 v)
 	{
 		return { v.GetX(), v.GetY(), v.GetZ() };
@@ -73,7 +114,6 @@ namespace Frost
 	{
 		physics_system.Update(cDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
 	}
-
 
 	void Physics::TraceImpl(const char* inFMT, ...)
 	{
@@ -99,8 +139,28 @@ namespace Frost
 		// Breakpoint
 		return true;
 	}
-	void Physics::InitPhysics()
+
+	void Physics::InitPhysics(PhysicsConfig& config, bool useConfig)
 	{
+		FT_ENGINE_ASSERT(!_physicsInitialized, "Physics has already been initialized!");
+		FT_ENGINE_INFO("Initializing Physics...");
+
+		if (useConfig)
+		{
+			FT_ENGINE_ASSERT(config.broadPhaseLayerInterface != nullptr, "broadPhaseLayerInterface in PhysicsConfig is null!");
+			FT_ENGINE_ASSERT(config.objectLayerPairFilter != nullptr, "objectLayerPairFilter in PhysicsConfig is null!");
+			FT_ENGINE_ASSERT(config.objectVsBroadPhaseLayerFilter != nullptr, "objectVsBroadPhaseLayerFilter in PhysicsConfig is null!");
+			_physicsConfig = config;
+		}
+		else
+		{
+			_physicsConfig = PhysicsConfig {
+				new BPLayerInterfaceImpl{},
+				new ObjectLayerPairFilterImpl{},
+				new ObjectVsBroadPhaseLayerFilterImpl{}
+			};
+		}
+
 		JPH::RegisterDefaultAllocator();
 		JPH::Trace = Physics::TraceImpl;
 		JPH_IF_ENABLE_ASSERTS(AssertFailed = Physics::AssertFailedImpl;)
@@ -108,6 +168,8 @@ namespace Frost
 		RegisterTypes();
 
 		Physics::Get();
+
+		_physicsInitialized = true;
 	}
 	;
 
@@ -180,81 +242,6 @@ namespace Frost
 		default:													JPH_ASSERT(false); return "INVALID";
 		}
 	}
-
-#pragma region to delete
-	/*
-	class CouldNotAddSubShapeToBody{};
-	int Frost::Physics::AddSubShapeToBody(JPH::BodyID& bodyID, ShapeRefC& newShapeRef, EActivation activationMode, JPH::Vec3Arg& localPosition, JPH::QuatArg& localRotation) {
-		if (bodyID == JPH::BodyID()) throw CouldNotAddSubShapeToBody();
-
-
-		int index;
-		JPH::Shape* shapeRef;
-		{ // Lock en écriture
-			auto& lockInterface = physics_system.GetBodyLockInterface();
-			JPH::BodyLockWrite lock(lockInterface, bodyID);
-			if (!lock.Succeeded()) throw CouldNotAddSubShapeToBody();
-
-			JPH::Body& body = lock.GetBody();
-			JPH::ShapeRefC shapeRefC = body.GetShape();
-			shapeRef = const_cast<JPH::Shape*>(shapeRefC.GetPtr());
-
-			// Vérifie que c’est bien un MutableCompound
-			if (shapeRef->GetType() != JPH::EShapeType::Compound ||
-				shapeRef->GetSubType() != JPH::EShapeSubType::MutableCompound)
-			{
-				std::cout << "Not a mutable compound shape!\n";
-				throw CouldNotAddSubShapeToBody();
-			}
-
-			auto* compound = static_cast<JPH::MutableCompoundShape*>(shapeRef);
-
-			index = compound->AddShape(localPosition, localRotation, newShapeRef);
-		} // END OF LOCK
-
-		if (!shapeRef) CouldNotAddSubShapeToBody();
-		// Réapplique la shape au body
-		body_interface->SetShape(bodyID, shapeRef, true, activationMode);
-
-		return index;
-	}
-
-
-
-	class CouldNotRemoveSubShapeToBody {};
-	void Frost::Physics::RemoveSubShapeFromBody(JPH::BodyID& bodyID, JPH::uint32 subShapeInternalIndex, EActivation activationMode) {
-		if (bodyID == JPH::BodyID()) throw CouldNotRemoveSubShapeToBody();
-
-		// Lock en écriture
-		JPH::Shape* shapeRef;
-		{
-			auto& lockInterface = physics_system.GetBodyLockInterface();
-			JPH::BodyLockWrite lock(lockInterface, bodyID);
-			if (!lock.Succeeded())throw CouldNotRemoveSubShapeToBody();
-
-			JPH::Body& body = lock.GetBody();
-			JPH::ShapeRefC shapeRefC = body.GetShape();
-			JPH::Shape* shapeRef = const_cast<JPH::Shape*>(shapeRefC.GetPtr());
-
-			// Vérifie que c’est bien un MutableCompound
-			if (shapeRef->GetType() != JPH::EShapeType::Compound ||
-				shapeRef->GetSubType() != JPH::EShapeSubType::MutableCompound)
-			{
-				std::cout << "Not a mutable compound shape!\n";
-				return;
-			}
-
-			auto* compound = static_cast<JPH::MutableCompoundShape*>(shapeRef);
-			compound->RemoveShape(subShapeInternalIndex);
-		}
-		if (!shapeRef) CouldNotRemoveSubShapeToBody();
-
-		// Réapplique la shape au body
-		body_interface->SetShape(bodyID, shapeRef, true, activationMode);
-	}
-*/
-
-#pragma endregion
 
 	int Physics::SetShapeToRigidbody(GameObject::Id id, JPH::ShapeRefC shapeRef) {
 		_rigidbodyFuturColliders.insert({ id, shapeRef });

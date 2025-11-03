@@ -16,6 +16,7 @@ namespace Frost
         PhysicSystem();
         void FixedUpdate(ECS& ecs, float deltaTime) override;
         void UpdateAllJoltBodies(ECS& ecs, float deltaTime);
+        void UpdateAllJoltBodies2(ECS& ecs, float deltaTime);
 
     private:
         void InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id id);

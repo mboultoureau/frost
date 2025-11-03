@@ -32,7 +32,11 @@ namespace Frost
 				_window->Destroy();
 				return true;
 			});
-		Physics::InitPhysics();
+	}
+
+	void Application::Setup()
+	{
+		Physics::InitPhysics(_physicsConfig, _physicsConfigured);
 	}
 	
 	Application::~Application()
@@ -64,6 +68,12 @@ namespace Frost
 		throw NoLayerWithThisName{};
 	}
 	
+	void Application::ConfigurePhysics(const PhysicsConfig& config)
+	{
+		_physicsConfig = config;
+		_physicsConfigured = true;
+	}
+
 	void Application::Run()
 	{
 		_renderTimer.Start();

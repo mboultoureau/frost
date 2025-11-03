@@ -3,6 +3,7 @@
 #include "Frost/Scene/ECS/Component.h"
 #include "Frost/Renderer/Viewport.h"
 #include "Frost/Utils/Math/Angle.h"
+#include "Frost.h"
 
 namespace Frost
 {
@@ -22,6 +23,9 @@ namespace Frost
 
 		bool clearOnRender = true;
 		float backgroundColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+
+		bool lookAtPositionEnabled = false;
+		Transform::Vector3 lookAtPosition = { 0.0f, 0.0f, 0.0f };
 
 		Viewport viewport;
 	};

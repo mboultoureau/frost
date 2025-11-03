@@ -2,7 +2,7 @@
 
 #include "Game.h"
 
-#include "Frost/Core/Application.h"
+#include "Frost.h"
 
 #include <memory>
 
@@ -12,6 +12,10 @@ public:
 	Lab(Frost::ApplicationEntryPoint entryPoint);
 	~Lab();
 
+	void OnApplicationReady() override;
+
+
 private:
 	std::unique_ptr<Game> _game;
+	Frost::PhysicsConfig _physicsConfig;
 };

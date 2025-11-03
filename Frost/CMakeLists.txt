@@ -149,8 +149,11 @@ target_link_libraries(Frost PRIVATE
     assimp
     Jolt
     ImGui
-    spdlog::spdlog
     stb
+)
+
+target_link_libraries(Frost PUBLIC
+    spdlog::spdlog
 )
 
 if(WIN32)
