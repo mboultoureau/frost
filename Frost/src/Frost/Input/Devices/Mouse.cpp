@@ -133,7 +133,6 @@ namespace Frost
 			if (!wasPressed && isPressed)
 			{
 				_buttonStates[i] = ButtonState::Pressed;
-				FT_ENGINE_TRACE("Mouse button {} pressed", static_cast<int>(i));
 			}
 			else if (wasPressed && isPressed)
 			{

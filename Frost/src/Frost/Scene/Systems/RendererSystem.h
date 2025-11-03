@@ -12,7 +12,7 @@ namespace Frost
     {
     public:
 		RendererSystem();
-        void Update(Frost::ECS& ecs, float deltaTime) override;
+        void LateUpdate(Frost::ECS& ecs, float deltaTime) override;
 
     private:
         void Render(ECS& ecs);

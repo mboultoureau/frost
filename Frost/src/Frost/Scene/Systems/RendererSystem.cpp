@@ -51,7 +51,7 @@ namespace Frost
 		RendererAPI::CreateSamplerState(&samplerDesc, _samplerState.GetAddressOf());
 	}
 
-	void RendererSystem::Update(Frost::ECS& ecs, float deltaTime)
+	void RendererSystem::LateUpdate(Frost::ECS& ecs, float deltaTime)
 	{
 		Render(ecs);
 	}
@@ -88,23 +88,17 @@ namespace Frost
 			DirectX::XMMATRIX view;
 			DirectX::XMFLOAT4 actualCameraPosition = { cameraTransform->position.x, cameraTransform->position.y, cameraTransform->position.z, 1.0f };
 
+			DirectX::XMVECTOR cameraRotationQuat = DirectX::XMLoadFloat4(&cameraTransform->rotation);
+
 			// Calculate up vector from rotation
 			DirectX::XMVECTOR worldUp = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-			DirectX::XMMATRIX cameraRotationMatrix = 
-				DirectX::XMMatrixRotationRollPitchYaw(
-					Angle<Radian>(cameraTransform->rotation.x).value(),
-					Angle<Radian>(cameraTransform->rotation.y).value(),
-					Angle<Radian>(cameraTransform->rotation.z).value()
-				);
-
-			DirectX::XMVECTOR cameraUp = DirectX::XMVector3TransformNormal(worldUp, cameraRotationMatrix);
-
-			// Calculate forward vector from rotation
 			DirectX::XMVECTOR worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-			DirectX::XMVECTOR cameraDirection = DirectX::XMVector3TransformNormal(worldForward, cameraRotationMatrix);
+
+			DirectX::XMVECTOR cameraUp = DirectX::XMVector3Rotate(worldUp, cameraRotationQuat);
+			DirectX::XMVECTOR cameraDirection = DirectX::XMVector3Rotate(worldForward, cameraRotationQuat);
 
 			view = DirectX::XMMatrixLookToLH(
-				DirectX::XMVectorSet(actualCameraPosition.x, actualCameraPosition.y, actualCameraPosition.z, 1.0f),
+				DirectX::XMLoadFloat3(&cameraTransform->position),
 				cameraDirection,
 				cameraUp
 			);
@@ -156,17 +150,21 @@ namespace Frost
 						transform->scale.z
 					);
 
-					DirectX::XMMATRIX matRotation = DirectX::XMMatrixRotationRollPitchYaw(
-						Angle<Radian>(transform->rotation.x).value(),
-						Angle<Radian>(transform->rotation.y).value(),
-						Angle<Radian>(transform->rotation.z).value()
+					// 2. Create the Rotation Matrix from the quaternion
+					// This replaces the incorrect XMMatrixRotationRollPitchYaw call
+					DirectX::XMMATRIX matRotation = DirectX::XMMatrixRotationQuaternion(
+						DirectX::XMLoadFloat4(&transform->rotation)
 					);
 
+					// 3. Create the Translation Matrix
 					DirectX::XMMATRIX matTranslation = DirectX::XMMatrixTranslation(
 						transform->position.x,
 						transform->position.y,
 						transform->position.z
 					);
+
+					// 4. Combine into World Matrix (Scale * Rotation * Translation)
+					DirectX::XMMATRIX matWorld = matScale * matRotation * matTranslation;
 
 					RendererAPI::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					RendererAPI::SetInputLayout(_vertexShader.GetInputLayout());
@@ -179,7 +177,6 @@ namespace Frost
 					const UINT offset = 0;
 
 					ShadersParams sp = {};
-					DirectX::XMMATRIX matWorld = matScale * matRotation * matTranslation;
 					DirectX::XMMATRIX viewProj = view * projection;
 					sp.worldViewProjection = DirectX::XMMatrixTranspose(DirectX::XMMatrixMultiply(matWorld, viewProj));
 					sp.world = XMMatrixTranspose(matWorld);

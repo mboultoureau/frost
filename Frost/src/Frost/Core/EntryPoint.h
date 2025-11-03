@@ -21,6 +21,8 @@ int WINAPI wWinMain(
 	Frost::ApplicationEntryPoint entryPoint{ hInstance, hPrevInstance, pCmdLine, nCmdShow };
 
 	auto application = Frost::CreateApplication(entryPoint);
+	application->Setup();
+	application->OnApplicationReady();
 	application->Run();
 	delete application;
 }

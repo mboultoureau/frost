@@ -15,12 +15,14 @@
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
 
-#include <vector>
-
 #include "Frost/Physics/Layers.h"
 #include "Frost/Physics/PhysicListener.h"
-#include <map>
 #include "Frost/Physics/ShapeRegistry.h"
+
+#include "Frost.h"
+
+#include <vector>
+#include <map>
 
 
 namespace Frost
@@ -37,6 +39,15 @@ namespace Frost
 
 		Physics();
 		~Physics();
+
+		static void AddConstraint(JPH::Constraint* inConstraint);
+		static void AddConstraints(JPH::Constraint** inConstraints, int inNumber);
+		static void AddStepListener(JPH::PhysicsStepListener* inListener);
+		static JPH::Body* CreateBody(const JPH::BodyCreationSettings& inSettings);
+		static void AddBody(const JPH::BodyID& inBodyID, JPH::EActivation inActivationMode);
+		static JPH::Vec3 GetGravity();
+		static void ActivateBody(const JPH::BodyID& inBodyID);
+		static void RemoveBody(const JPH::BodyID& inBodyID);
 
 
 		static Frost::Transform::Vector3 JoltVectorToVector3(JPH::RVec3 v);
@@ -55,7 +66,7 @@ namespace Frost
 		
 		Frost::MyBodyActivationListener body_activation_listener;
 		Frost::MyContactListener contact_listener;
-		Frost::BPLayerInterfaceImpl broad_phase_layer_interface;
+		JPH::BroadPhaseLayerInterface* broad_phase_layer_interface;
 
 		static void TraceImpl(const char* inFMT, ...);
 #ifdef JPH_ENABLE_ASSERTS
@@ -63,7 +74,7 @@ namespace Frost
 #endif 
 
 		static bool HasPhysicsBeenInitialized;
-		static void InitPhysics();
+		static void InitPhysics(PhysicsConfig& config, bool useConfig);
 
 		Frost::GameObject::Id GetGoIdFromJoltBodyId(JPH::BodyID id);
 		std::unordered_map<JPH::BodyID, Frost::GameObject::Id> mapJBodyGameObject;
@@ -92,9 +103,12 @@ namespace Frost
 		const JPH::uint cMaxBodyPairs;
 		const JPH::uint cMaxContactConstraints;
 
-		Frost::ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
-		Frost::ObjectLayerPairFilterImpl object_vs_object_layer_filter;
+		JPH::ObjectVsBroadPhaseLayerFilter* object_vs_broadphase_layer_filter;
+		JPH::ObjectLayerPairFilter* object_vs_object_layer_filter;
 
 		const float cDeltaTime;
+
+		inline static bool _physicsInitialized = false;
+		inline static PhysicsConfig _physicsConfig;
 	};
 }	// NAMESPACE FROST

@@ -24,18 +24,80 @@ namespace Frost
 	{
 	}
 
+	static DirectX::XMFLOAT3 QuaternionToEuler(const DirectX::XMFLOAT4& q)
+	{
+		DirectX::XMVECTOR quat = DirectX::XMLoadFloat4(&q);
+		DirectX::XMFLOAT3 euler;
+
+		// Convert quaternion to rotation matrix
+		DirectX::XMMATRIX matrix = DirectX::XMMatrixRotationQuaternion(quat);
+
+		// Decompose the rotation matrix to get Euler angles (Roll, Pitch, Yaw)
+		// DirectXMath doesn't have a direct XMExtractRollPitchYaw. This is a common implementation.
+		float m11, m12, m13, m21, m22, m23, m31, m32, m33;
+
+		// Load matrix components
+		DirectX::XMFLOAT4X4 matrix_f;
+		DirectX::XMStoreFloat4x4(&matrix_f, matrix);
+
+		m11 = matrix_f._11; m12 = matrix_f._12; m13 = matrix_f._13;
+		m21 = matrix_f._21; m22 = matrix_f._22; m23 = matrix_f._23;
+		m31 = matrix_f._31; m32 = matrix_f._32; m33 = matrix_f._33;
+
+		// Pitch (rotation around X)
+		euler.x = asinf(-m23);
+
+		if (cosf(euler.x) > 0.0001f) // Not at pole
+		{
+			// Yaw (rotation around Y)
+			euler.y = atan2f(m13, m33);
+			// Roll (rotation around Z)
+			euler.z = atan2f(m21, m22);
+		}
+		else // Gimbal lock, assume yaw is 0
+		{
+			euler.y = atan2f(-m31, m11);
+			euler.z = 0.0f;
+		}
+
+		// NOTE: The order (X, Y, Z vs Z, Y, X) depends on your engine's convention.
+		// Assuming X=Pitch, Y=Yaw, Z=Roll for the purpose of conversion.
+		// If your system uses ZYX (Yaw-Pitch-Roll), you might need to swap components or use a different decomposition.
+		// We will display them in the order X, Y, Z for consistency with ImGui.
+
+		return euler;
+	}
+
+	static DirectX::XMFLOAT4 EulerToQuaternion(const DirectX::XMFLOAT3& euler)
+	{
+		// Euler is assumed to be in Radians. The order of application here matters (Roll-Pitch-Yaw or Z-Y-X).
+		// XMMatrixRotationRollPitchYaw takes Pitch(X), Yaw(Y), Roll(Z) in order.
+		DirectX::XMVECTOR quat = DirectX::XMQuaternionRotationRollPitchYaw(
+			euler.x, // Pitch (X)
+			euler.y, // Yaw (Y)
+			euler.z  // Roll (Z)
+		);
+		DirectX::XMFLOAT4 q;
+		DirectX::XMStoreFloat4(&q, quat);
+		return q;
+	}
+
 	static bool DrawVec3Control_Internal(const std::string& label, DirectX::XMFLOAT3& values, float resetValue, float columnWidth, bool isRotation)
 	{
+		// This is for Position and Scale (XMFLOAT3)
+		// The rotation logic needs to be moved to a separate function or handled with a different signature
+		// for clean separation of concerns and type correctness.
+
+		// I will keep this function only for XMFLOAT3 (Position and Scale).
+
 		DirectX::XMFLOAT3 displayValues = values;
 		std::string format = "%.2f";
 
-		if (isRotation)
-		{
-			displayValues.x = angle_traits<Degree>::from_neutral(values.x);
-			displayValues.y = angle_traits<Degree>::from_neutral(values.y);
-			displayValues.z = angle_traits<Degree>::from_neutral(values.z);
-			format += " deg";
-		}
+		// ... (rest of the XMFLOAT3 DrawVec3Control_Internal logic remains the same) ...
+
+		// (Skipping the body of DrawVec3Control_Internal for brevity, as it handles XMFLOAT3 correctly now)
+
+		// ... (end of XMFLOAT3 DrawVec3Control_Internal logic) ...
 
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts.Size > 0 ? io.Fonts->Fonts[0] : nullptr;
@@ -115,30 +177,115 @@ namespace Frost
 
 		if (modified)
 		{
-			if (isRotation)
-			{
-				values.x = angle_traits<Degree>::to_neutral(displayValues.x);
-				values.y = angle_traits<Degree>::to_neutral(displayValues.y);
-				values.z = angle_traits<Degree>::to_neutral(displayValues.z);
-			}
-			else
-			{
-				values = displayValues;
-			}
+			values = displayValues;
 		}
 
 		return modified;
 	}
-
 
 	static bool DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
 		return DrawVec3Control_Internal(label, values, resetValue, columnWidth, false);
 	}
 
-	static bool DrawRotationControl(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
+	static bool DrawQuaternionControl(const std::string& label, DirectX::XMFLOAT4& quaternion, float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
-		return DrawVec3Control_Internal(label, values, resetValue, columnWidth, true);
+		DirectX::XMFLOAT3 eulerRadians = QuaternionToEuler(quaternion);
+		DirectX::XMFLOAT3 eulerDegrees = {
+			angle_traits<Degree>::from_neutral(eulerRadians.x),
+			angle_traits<Degree>::from_neutral(eulerRadians.y),
+			angle_traits<Degree>::from_neutral(eulerRadians.z)
+		};
+
+		ImGuiIO& io = ImGui::GetIO();
+		auto boldFont = io.Fonts->Fonts.Size > 0 ? io.Fonts->Fonts[0] : nullptr;
+
+		bool modified = false;
+		std::string format = "%.2f deg";
+
+		ImGui::PushID(label.c_str());
+
+		ImGui::Columns(2);
+		ImGui::SetColumnWidth(0, columnWidth);
+		ImGui::Text(label.c_str());
+		ImGui::NextColumn();
+
+		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+
+		float lineHeight = ImGui::GetFontSize() + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+
+		// --- X (Pitch) ---
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+		if (boldFont) ImGui::PushFont(boldFont);
+		if (ImGui::Button("X", buttonSize))
+		{
+			eulerDegrees.x = resetValue;
+			modified = true;
+		}
+		if (boldFont) ImGui::PopFont();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SameLine();
+		if (ImGui::DragFloat("##X", &eulerDegrees.x, 0.1f, 0.0f, 0.0f, format.c_str())) modified = true;
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+
+		// --- Y (Yaw) ---
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+		if (boldFont) ImGui::PushFont(boldFont);
+		if (ImGui::Button("Y", buttonSize))
+		{
+			eulerDegrees.y = resetValue;
+			modified = true;
+		}
+		if (boldFont) ImGui::PopFont();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SameLine();
+		if (ImGui::DragFloat("##Y", &eulerDegrees.y, 0.1f, 0.0f, 0.0f, format.c_str())) modified = true;
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+
+		// --- Z (Roll) ---
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+		if (boldFont) ImGui::PushFont(boldFont);
+		if (ImGui::Button("Z", buttonSize))
+		{
+			eulerDegrees.z = resetValue;
+			modified = true;
+		}
+		if (boldFont) ImGui::PopFont();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SameLine();
+		if (ImGui::DragFloat("##Z", &eulerDegrees.z, 0.1f, 0.0f, 0.0f, format.c_str())) modified = true;
+		ImGui::PopItemWidth();
+
+		ImGui::PopStyleVar();
+
+		ImGui::Columns(1);
+		ImGui::PopID();
+
+		if (modified)
+		{
+			// Convert degrees back to radians
+			eulerRadians.x = angle_traits<Degree>::to_neutral(eulerDegrees.x);
+			eulerRadians.y = angle_traits<Degree>::to_neutral(eulerDegrees.y);
+			eulerRadians.z = angle_traits<Degree>::to_neutral(eulerDegrees.z);
+
+			// Convert Euler radians back to Quaternion
+			quaternion = EulerToQuaternion(eulerRadians);
+		}
+
+		return modified;
 	}
 
 	static bool DrawComponentHeader(const char* name)
@@ -309,7 +456,7 @@ namespace Frost
 								if (DrawComponentHeader("Transform (Local)"))
 								{
 									DrawVec3Control("Position", transform->position);
-									DrawRotationControl("Rotation", transform->rotation);
+									DrawQuaternionControl("Rotation", transform->rotation);
 									DrawVec3Control("Scale", transform->scale, 1.0f);
 									ImGui::TreePop();
 								}
@@ -321,8 +468,15 @@ namespace Frost
 								{
 									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 									ImGui::Text("Position: (%.2f, %.2f, %.2f)", worldTransform->position.x, worldTransform->position.y, worldTransform->position.z);
-									ImGui::Text("Rotation: (%.2f, %.2f, %.2f)", worldTransform->rotation.x, worldTransform->rotation.y, worldTransform->rotation.z);
+									ImGui::Text("Rotation (Quat): (%.2f, %.2f, %.2f, %.2f)", worldTransform->rotation.x, worldTransform->rotation.y, worldTransform->rotation.z, worldTransform->rotation.w);
 									ImGui::Text("Scale:    (%.2f, %.2f, %.2f)", worldTransform->scale.x, worldTransform->scale.y, worldTransform->scale.z);
+									
+									DirectX::XMFLOAT3 eulerDegrees = QuaternionToEuler(worldTransform->rotation);
+									ImGui::Text("Rotation (Euler): (P:%.2f, Y:%.2f, R:%.2f) deg",
+									angle_traits<Degree>::from_neutral(eulerDegrees.x),
+									angle_traits<Degree>::from_neutral(eulerDegrees.y),
+									angle_traits<Degree>::from_neutral(eulerDegrees.z));
+									
 									ImGui::PopStyleColor();
 									ImGui::TreePop();
 								}
