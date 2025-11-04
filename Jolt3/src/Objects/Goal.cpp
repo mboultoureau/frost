@@ -6,7 +6,7 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 
 #include "Frost.h"
-#include "Frost/Scene/Components/RigidBody2.h"
+#include "Frost/Scene/Components/RigidBody.h"
 
 #include "../Physics/PhysicsLayer.h"
 
@@ -19,15 +19,15 @@ public:
 	{
 		Scene& scene = Game::GetScene();
 
-		auto otherRigidbody = scene.GetComponent<Frost::RigidBody2>(otherObject);
+		auto otherRigidbody = scene.GetComponent<Frost::RigidBody>(otherObject);
 		if (!otherRigidbody) return;
 
 		auto id = GetGameObject();
 
-		auto rigidBody = scene.GetComponent<Frost::RigidBody2>(GetGameObject());
+		auto rigidBody = scene.GetComponent<Frost::RigidBody>(GetGameObject());
 		if (!rigidBody) return;
 
-		if (otherRigidbody->body->GetObjectLayer() == ObjectLayers::CARGO)
+		if (Physics::Get().body_interface->GetObjectLayer(otherRigidbody->bodyId) == ObjectLayers::CARGO)
 		{
 			_score += 1;
 
@@ -49,7 +49,7 @@ public:
 			}
 
 			Physics::Get().body_interface->SetPosition(
-				rigidBody->body->GetID(),
+				rigidBody->bodyId,
 				JPH::RVec3(static_cast<float>(x), 20.0f, static_cast<float>(z)),
 				JPH::EActivation::Activate
 			);
@@ -85,9 +85,6 @@ Goal::Goal()
 	Quat rotation = Quat::sRotation(Vec3::sAxisX(), JPH::DegreesToRadians(90.0f));
 
 	BodyCreationSettings goalBodySettings(boxShape, position, rotation, EMotionType::Static, ObjectLayers::GOAL);
-	goalBodySettings.mUserData = _goal;
 	goalBodySettings.mIsSensor = true;
-	_body = Physics::CreateBody(goalBodySettings);
-	Physics::AddBody(_body->GetID(), EActivation::Activate);
-	scene.AddComponent<RigidBody2>(_goal, _body);
+	scene.AddComponent<RigidBody>(_goal, goalBodySettings, _goal, EActivation::Activate);
 }

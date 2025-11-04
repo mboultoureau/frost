@@ -5,7 +5,7 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 
 #include "Frost.h"
-#include "Frost/Scene/Components/RigidBody2.h"
+#include "Frost/Scene/Components/RigidBody.h"
 
 Terrain::Terrain(Scene& scene)
 {
@@ -24,9 +24,5 @@ Terrain::Terrain(Scene& scene)
 	Vec3 position(0.0f, 0.0f, 00.0f);
 	JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(500.0f, 0.1f, 500.0f)).Create().Get();
 	BodyCreationSettings cargoBodySettings(boxShape, position, Quat::sIdentity(), EMotionType::Static, ObjectLayers::NON_MOVING);
-	cargoBodySettings.mUserData = _terrain;
-	_body = Physics::CreateBody(cargoBodySettings);
-	Physics::AddBody(_body->GetID(), EActivation::Activate);
-
-	scene.AddComponent<RigidBody2>(_terrain, _body);
+	scene.AddComponent<RigidBody>(_terrain, cargoBodySettings, _terrain, EActivation::Activate);
 }

@@ -4,7 +4,6 @@
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Scene/ECS/ECS.h"
 #include "Frost/Scene/Components/Transform.h"
-#include "Frost/Scene/Components/RigidBody.h"
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
@@ -18,8 +17,8 @@
 #include "Frost/Physics/Layers.h"
 #include "Frost/Physics/PhysicListener.h"
 #include "Frost/Physics/ShapeRegistry.h"
-
-#include "Frost.h"
+#include "Frost/Physics/DebugRendererPhysics.h"
+#include "Frost/Physics/PhysicsConfig.h"
 
 #include <vector>
 #include <map>
@@ -30,8 +29,6 @@ namespace Frost
 	class Physics : NoCopy
 	{
 		friend class PhysicSystem;
-		friend class RigidBody;
-
 	public:
 		using PairIdCollisionVector = std::vector<std::pair<Frost::GameObject::Id, Frost::GameObject::Id>>;
 
@@ -40,11 +37,16 @@ namespace Frost
 		Physics();
 		~Physics();
 
+		static void DrawDebug();
+		static Frost::DebugRendererPhysicsConfig& GetDebugRendererConfig();
+		static void SetDebugRendererConfig(Frost::DebugRendererPhysicsConfig config);
+
 		static void AddConstraint(JPH::Constraint* inConstraint);
 		static void AddConstraints(JPH::Constraint** inConstraints, int inNumber);
 		static void AddStepListener(JPH::PhysicsStepListener* inListener);
 		static JPH::Body* CreateBody(const JPH::BodyCreationSettings& inSettings);
 		static void AddBody(const JPH::BodyID& inBodyID, JPH::EActivation inActivationMode);
+		static JPH::BodyID CreateAndAddBody(JPH::BodyCreationSettings& inSettings, const GameObject::Id& rigidBodyId, const JPH::EActivation& inActivationMode);
 		static JPH::Vec3 GetGravity();
 		static void ActivateBody(const JPH::BodyID& inBodyID);
 		static void RemoveBody(const JPH::BodyID& inBodyID);
@@ -80,14 +82,6 @@ namespace Frost
 		std::unordered_map<JPH::BodyID, Frost::GameObject::Id> mapJBodyGameObject;
 
 
-		// adds shape to body associated to rigidBody, then returns subShape index in its mutableCompoundShape
-		//int AddSubShapeToBody(JPH::BodyID&, JPH::ShapeRefC&, JPH::EActivation, JPH::Vec3Arg& localPosition, JPH::QuatArg& localRotation);
-		//void RemoveSubShapeFromBody(JPH::BodyID&, JPH::uint32 subShapeInternalIndex, JPH::EActivation);
-		
-		// WARNING : this MUST be called the same frame you create a rigidbody
-		JPH::ShapeRefC& GetRigidbodyShapeRef(Frost::RigidBody* rb);
-
-
 	private:
 		int SetShapeToRigidbody(GameObject::Id id, JPH::ShapeRefC shapeRef);
 
@@ -110,5 +104,8 @@ namespace Frost
 
 		inline static bool _physicsInitialized = false;
 		inline static PhysicsConfig _physicsConfig;
+
+		JPH::DebugRenderer* _debugRenderer;
+		Frost::DebugRendererPhysicsConfig _debugRendererConfig;
 	};
 }	// NAMESPACE FROST
