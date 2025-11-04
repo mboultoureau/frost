@@ -6,7 +6,7 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include "Frost/Physics/Physics.h"
 
-#include "Frost/Scene/Components/RigidBody2.h"
+#include "Frost/Scene/Components/RigidBody.h"
 
 class RigidBodyCannotHaveParents {};
 
@@ -21,7 +21,6 @@ void Frost::PhysicSystem::FixedUpdate(ECS& ecs, float deltaTime)
 	physic.UpdatePhysics();
 
 	UpdateAllJoltBodies(ecs, deltaTime);
-	UpdateAllJoltBodies2(ecs, deltaTime);
 
 	//Awake and sleep
 	std::for_each(physic.bodiesOnAwake.begin(), physic.bodiesOnAwake.end(), [&](const auto& bodyId) {
@@ -63,42 +62,25 @@ void Frost::PhysicSystem::FixedUpdate(ECS& ecs, float deltaTime)
 	});
 }
 
+void Frost::PhysicSystem::LateUpdate(ECS& ecs, float deltaTime)
+{
+	Physics::DrawDebug();
+}
+
 //initialize jph::bodies and update ecs::transforms
 void Frost::PhysicSystem::UpdateAllJoltBodies(ECS& ecs, float deltaTime)
 {
+	auto& physics = Physics::Get();
 	auto rbodies = ecs.GetComponents<Frost::RigidBody>();
 	auto goIds = ecs.GetIndexMap<RigidBody>();
 
-	for (int i = 0; i < rbodies->data.size(); i++) {
-		auto goId = goIds[i];
-		auto rbody = ecs.GetComponent<Frost::RigidBody2>(goId);
-
-		auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody->body->GetID());
-		auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody->body->GetID());
-
-		auto transform = ecs.GetComponent<Transform>(goId);
-		auto parent = ecs.GetComponent<Frost::GameObjectInfo>(goId)->parentId;
-
-		transform->position = Physics::JoltVectorToVector3(jBodyPos);
-
-		transform->rotation.x = jBodyRot.GetX();
-		transform->rotation.y = jBodyRot.GetY();
-		transform->rotation.z = jBodyRot.GetZ();
-		transform->rotation.w = jBodyRot.GetW();
-	}
-}
-
-void Frost::PhysicSystem::UpdateAllJoltBodies2(ECS& ecs, float deltaTime)
-{
-	auto rbodies = ecs.GetComponents<Frost::RigidBody2>();
-	auto goIds = ecs.GetIndexMap<RigidBody2>();
 
 	for (int i = 0; i < rbodies->data.size(); i++) {
 		auto goId = goIds[i];
-		auto rbody = ecs.GetComponent<Frost::RigidBody2>(goId);
+		auto rbody = ecs.GetComponent<Frost::RigidBody>(goId);
 
-		auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody->body->GetID());
-		auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody->body->GetID());
+		auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody->bodyId);
+		auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody->bodyId);
 
 		auto transform = ecs.GetComponent<Transform>(goId);
 		auto parent = ecs.GetComponent<Frost::GameObjectInfo>(goId)->parentId;
@@ -113,6 +95,8 @@ void Frost::PhysicSystem::UpdateAllJoltBodies2(ECS& ecs, float deltaTime)
 	}
 }
 
+
+/*
 class RigidbodyCouldNotBeInitialized {};
 void Frost::PhysicSystem::InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id id)
 {
@@ -144,16 +128,16 @@ void Frost::PhysicSystem::InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id 
 	bodySettings.mUserData = id;
 	auto Jid = Physics::Get().body_interface->CreateAndAddBody(bodySettings, activationMode);
 	
-	/*if (wTransform) {
+	if (wTransform) {
 		Physics::Vector3ToJoltVector(transform->position),
 		JPH::Quat::sEulerAngles(Physics::Vector3ToJoltVector(transform->rotation)),
-	}*/
+	}
 
 	rb->bodyId = Jid;
 
 	if(ecs.GetComponent<RigidBody>(id)->bodyId == JPH::BodyID()) throw RigidbodyCouldNotBeInitialized();
 }
-
+*/
 
 
 template<typename Func>

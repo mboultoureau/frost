@@ -24,6 +24,7 @@ target_include_directories(Lab PRIVATE
 
 target_link_libraries(Lab PRIVATE
     Frost
+    Jolt
 )
 
 if(WIN32)

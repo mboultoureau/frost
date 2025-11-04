@@ -2,7 +2,7 @@
 #include "../Physics/PhysicsLayer.h"
 #include "../Game.h"
 
-#include "Frost/Scene/Components/RigidBody2.h"
+#include "Frost/Scene/Components/RigidBody.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
@@ -74,11 +74,9 @@ void Player::InitializePhysics()
 	// TODO: be sexy and load the shape from player and cargo
 	JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(5.0f, 5.0f, 5.0f)).Create().Get();
 	BodyCreationSettings motorcycle_body_settings(boxShape, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
-	motorcycle_body_settings.mUserData = _player;
-	_playerBody = Physics::CreateBody(motorcycle_body_settings);
-	Physics::AddBody(_playerBody->GetID(), EActivation::Activate);
-
-	scene.AddComponent<RigidBody2>(_player, _playerBody);
+	scene.AddComponent<RigidBody>(_player, motorcycle_body_settings, _player, EActivation::Activate);
+	_playerBodyID = scene.GetComponent<RigidBody>(_player)->bodyId;
+	_bodyInter = Physics::Get().body_interface;
 }
 
 void Player::ProcessInput(float deltaTime)
@@ -173,14 +171,14 @@ void Player::UpdatePhysics(float deltaTime)
 
 	if (_right != 0.0f || _forward != 0.0f)
 	{
-		Physics::ActivateBody(_playerBody->GetID());
+		Physics::ActivateBody(_playerBodyID);
 	}
 
-	auto currentVelocity = _playerBody->GetLinearVelocity();
+	auto currentVelocity = _bodyInter->GetLinearVelocity(_playerBodyID);
 
-	_playerBody->SetAngularVelocity(Vec3(0.0f, _right * 2.0f, 0.0f));
-	_playerBody->SetLinearVelocity(
-		_playerBody->GetRotation() * Vec3(0.0f, currentVelocity.GetY(), _forward * 100.0f)
+	_bodyInter->SetAngularVelocity(_playerBodyID, Vec3(0.0f, _right * 2.0f, 0.0f));
+	_bodyInter->SetLinearVelocity(_playerBodyID,
+		_bodyInter->GetRotation(_playerBodyID) * Vec3(0.0f, currentVelocity.GetY(), _forward * 100.0f)
 	);
 
 	Scene& scene = Game::GetScene();
@@ -198,7 +196,7 @@ void Player::UpdatePhysics(float deltaTime)
 
 void Player::CleanupBullets()
 {
-	std::erase_if(_bullets, [](const std::unique_ptr<Bullet>& bullet) {
+	std::erase_if(_bullets, [](auto& bullet) {
 		return bullet->IsExpired();
 	});
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Frost/Event/Event.h"
-#include "Frost.h"
+#include "Frost/Input/Devices/Gamepad.h"
 
 namespace Frost
 {

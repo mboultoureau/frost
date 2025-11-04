@@ -22,7 +22,8 @@ private:
 	GameObject::Id _camera;
 	GameObject::Id _vehicle;
 
-	JPH::Body* _playerBody;
+	JPH::BodyID _playerBodyID;
+	JPH::BodyInterface* _bodyInter;
 
 	Timer _fireTimer;
 	std::vector<std::unique_ptr<Bullet>> _bullets;

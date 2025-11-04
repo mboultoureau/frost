@@ -5,14 +5,24 @@
 #include <iostream>
 
 #include "MainLayer.h"
+#include "Physics/PhysicsLayer.h"
 
-Lab::Lab(Frost::ApplicationEntryPoint entryPoint) : Frost::Application(entryPoint)
+Lab::Lab(Frost::ApplicationEntryPoint entryPoint) : Frost::Application(entryPoint), _physicsConfig{
+	new GameBroadPhaseLayerInterface(),
+	new GameObjectLayerPairFilter(),
+	new GameObjectVsBroadPhaseLayerFilter()
+}
 {
-	_game = std::make_unique<Game>(this);
+	ConfigurePhysics(_physicsConfig);
 }
 
 Lab::~Lab()
 {
+}
+
+void Lab::OnApplicationReady()
+{
+	_game = std::make_unique<Game>(this);
 }
 
 
