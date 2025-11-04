@@ -5,7 +5,7 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Math/Quat.h>
 
-#include "Frost/Scene/Components/RigidBody2.h"
+#include "Frost/Scene/Components/RigidBody.h"
 #include "../Physics/PhysicsLayer.h"
 
 
@@ -16,18 +16,18 @@ public:
 	{
 		Scene& scene = Game::GetScene();
 		
-		auto otherRigidbody = scene.GetComponent<Frost::RigidBody2>(otherObject);
+		auto otherRigidbody = scene.GetComponent<Frost::RigidBody>(otherObject);
 		if (!otherRigidbody) return;
 
 		auto id = GetGameObject();
 
-		auto rigidBody = scene.GetComponent<Frost::RigidBody2>(GetGameObject());
+		auto rigidBody = scene.GetComponent<Frost::RigidBody>(GetGameObject());
 		if (!rigidBody) return;
 
-		if (otherRigidbody->body->GetObjectLayer() == ObjectLayers::CARGO)
+		if (Physics::Get().body_interface->GetObjectLayer(otherRigidbody->bodyId) == ObjectLayers::CARGO)
 		{
 			FT_INFO("Bullet hit cargo, applying velocity.");
-			Physics::ActivateBody(otherRigidbody->body->GetID());
+			Physics::ActivateBody(otherRigidbody->bodyId);
 		}
 
 		scene.DestroyGameObject(GetGameObject());
@@ -55,6 +55,7 @@ Bullet::Bullet(Transform transform)
 
 	// Add physics
 	RVec3 position(transform.position.x, transform.position.y, transform.position.z);
+
 	ShapeRefC boxShape = SphereShapeSettings(2.0f).Create().Get();
 	JPH::Quat rotation_quat(
 		transform.rotation.x,
@@ -65,19 +66,15 @@ Bullet::Bullet(Transform transform)
 	BodyCreationSettings bulletBodySettings(boxShape, position, rotation_quat, EMotionType::Dynamic, ObjectLayers::BULLET);
 	bulletBodySettings.mUserData = _bullet;
 	bulletBodySettings.mRestitution = 20.0f;
-	_body = Physics::CreateBody(bulletBodySettings);
-	Physics::AddBody(_body->GetID(), EActivation::Activate);
-
+	bulletBodySettings.mGravityFactor = 0.0f;
 	Vec3 rotation(
 		transform.rotation.x,
 		transform.rotation.y,
 		transform.rotation.z
 	);
-
-	_body->GetMotionProperties()->SetGravityFactor(0.0f);
-	_body->SetLinearVelocity(rotation_quat * Vec3(0.0f, 0.0f, 20.0f));
-	scene.AddComponent<RigidBody2>(_bullet, _body);
-
+	bulletBodySettings.mLinearVelocity = rotation_quat * Vec3(0.0f, 0.0f, 20.0f);
+	scene.AddComponent<RigidBody>(_bullet, bulletBodySettings, _bullet, EActivation::Activate);
+	_bodyID = scene.GetComponent<RigidBody>(_bullet)->bodyId;
  	_lifetimeTimer.Start();
 }
 
@@ -87,14 +84,13 @@ Bullet::~Bullet()
 
 	Scene& scene = Game::GetScene();
 
-	scene.RemoveComponent<RigidBody2>(_bullet);
+	Physics::Get().RemoveBody(_bodyID);
+	scene.RemoveComponent<RigidBody>(_bullet);
 	scene.RemoveComponent<ModelRenderer>(_bullet);
 	scene.RemoveComponent<WorldTransform>(_bullet);
 	scene.RemoveComponent<Transform>(_bullet);
 
 	scene.DestroyGameObject(_bullet);
-
-	Physics::RemoveBody(_body->GetID());
 }
 
 bool Bullet::IsExpired() const
