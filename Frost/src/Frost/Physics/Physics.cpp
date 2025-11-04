@@ -17,6 +17,8 @@
 
 #include <Frost/Scene/Components/GameObjectInfo.h>
 #include <Frost/Scene/Systems/PhysicSystem.h>
+#include <Frost/Debugging/Logger.h>
+#include <Frost/Debugging/Assert.h>
 
 
 using namespace JPH;
@@ -44,7 +46,12 @@ namespace Frost
 		body_interface = &physics_system.GetBodyInterface();
 
 		physics_system.OptimizeBroadPhase();
-		std::cout << "Physics initialized" << std::endl;
+		FT_ENGINE_INFO("Physics initialized");
+
+
+#ifdef FT_DEBUG
+		_debugRenderer = new DebugRendererPhysics();
+#endif
 	}
 
 	Physics& Physics::Get()
@@ -57,6 +64,28 @@ namespace Frost
 	Physics::~Physics()
 	{
 		JPH::UnregisterTypes();
+	}
+
+	void Physics::DrawDebug()
+	{
+		FT_ENGINE_ASSERT(Get()._debugRenderer != nullptr, "Debug renderer is null!");
+
+		auto debugRendererConfig = GetDebugRendererConfig();
+
+		if (debugRendererConfig.DrawBodies)
+		{
+			Get().physics_system.DrawBodies(debugRendererConfig.BodyDrawSettings, Get()._debugRenderer);
+		}
+	}
+
+	Frost::DebugRendererPhysicsConfig& Physics::GetDebugRendererConfig()
+	{
+		return Get()._debugRendererConfig;
+	}
+
+	void Physics::SetDebugRendererConfig(Frost::DebugRendererPhysicsConfig config)
+	{
+		Get()._debugRendererConfig = config;
 	}
 
 	void Physics::AddConstraint(JPH::Constraint* inConstraint)
@@ -82,6 +111,13 @@ namespace Frost
 	void Physics::AddBody(const JPH::BodyID& inBodyID, JPH::EActivation inActivationMode)
 	{
 		return Get().body_interface->AddBody(inBodyID, inActivationMode);
+	}
+
+	JPH::BodyID Physics::CreateAndAddBody(JPH::BodyCreationSettings& inSettings, const GameObject::Id& rigidBodyId, const JPH::EActivation& inActivationMode) {
+		inSettings.mUserData = rigidBodyId;
+		auto body = CreateBody(inSettings);
+		AddBody(body->GetID(), inActivationMode);
+		return body->GetID();
 	}
 
 	JPH::Vec3 Physics::GetGravity()
@@ -241,15 +277,5 @@ namespace Frost
 		case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:		return "MOVING";
 		default:													JPH_ASSERT(false); return "INVALID";
 		}
-	}
-
-	int Physics::SetShapeToRigidbody(GameObject::Id id, JPH::ShapeRefC shapeRef) {
-		_rigidbodyFuturColliders.insert({ id, shapeRef });
-		return shapeRegistry.registerShape(shapeRef);
-	}
-
-
-	JPH::ShapeRefC& Physics::GetRigidbodyShapeRef(RigidBody* rb) {
-		return shapeRegistry.getRef(rb->shapeId);
 	}
 }

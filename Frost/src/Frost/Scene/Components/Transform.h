@@ -46,5 +46,18 @@ namespace Frost
 
 			DirectX::XMStoreFloat4(&rotation, quaternion);
 		}
+
+		void Rotate(const Vector3& euler_angles)
+		{
+			using namespace DirectX;
+			XMVECTOR currentRotation = DirectX::XMLoadFloat4(&rotation);
+			XMVECTOR deltaRotation = DirectX::XMQuaternionRotationRollPitchYaw(
+				euler_angles.x,
+				euler_angles.y,
+				euler_angles.z
+			);
+			XMVECTOR newRotation = DirectX::XMQuaternionMultiply(currentRotation, deltaRotation);
+			DirectX::XMStoreFloat4(&rotation, newRotation);
+		}
 	};
 }

@@ -15,7 +15,7 @@ public:
 
 private:
 	GameObject::Id _bullet;
-	JPH::Body* _body;
+	JPH::BodyID _bodyID;
 	Timer _lifetimeTimer;
 };
 

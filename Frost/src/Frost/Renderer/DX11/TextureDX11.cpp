@@ -1,13 +1,16 @@
-#include "Frost/Renderer/Texture.h"
-#include "Frost.h"
+#include "Frost/Renderer/DX11/TextureDX11.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <assimp/scene.h>
 
+#include "Frost/Debugging/Assert.h"
+#include "Frost/Debugging/Logger.h"
+#include "Frost/Renderer/RendererAPI.h"
+
 namespace Frost
 {
-	Texture::Texture(const std::string& path, const TextureType textureType) : _path{ path }, _textureType{ textureType }
+	TextureDX11::TextureDX11(const std::string& path, const TextureType textureType) : Texture(path, textureType)
 	{
 		FT_ENGINE_INFO("Loading texture: {}", path);
 
@@ -18,7 +21,7 @@ namespace Frost
 		stbi_image_free(data);
 	}
 
-	Texture::Texture(const aiTexture* aTexture, const TextureType textureType) : _textureType{ textureType }
+	TextureDX11::TextureDX11(const aiTexture* aTexture, const TextureType textureType) : Texture(aTexture, textureType)
 	{
 		FT_ENGINE_INFO("Loading embedded texture");
 
@@ -60,7 +63,11 @@ namespace Frost
 		}
 	}
 
-	Texture::~Texture()
+	TextureDX11::TextureDX11(const int width, const int height, const TextureType textureType) : Texture(width, height, textureType)
+	{
+	}
+
+	TextureDX11::~TextureDX11()
 	{
 		if (_textureView)
 		{
@@ -69,7 +76,7 @@ namespace Frost
 		}
 	}
 
-	void Texture::CreateD3D11TextureView(int width, int height, const void* data, DXGI_FORMAT format)
+	void TextureDX11::CreateD3D11TextureView(int width, int height, const void* data, DXGI_FORMAT format)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc = {};
 		textureDesc.Width = width;

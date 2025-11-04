@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Frost/Scene/ECS/System.h"
-#include <Frost/Scene/Components/RigidBody.h>
 
 // Jolt includes
 #include <Jolt/Jolt.h>
@@ -15,11 +14,12 @@ namespace Frost
     public:
         PhysicSystem();
         void FixedUpdate(ECS& ecs, float deltaTime) override;
+		void LateUpdate(ECS& ecs, float deltaTime) override;
+
         void UpdateAllJoltBodies(ECS& ecs, float deltaTime);
-        void UpdateAllJoltBodies2(ECS& ecs, float deltaTime);
 
     private:
-        void InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id id);
+        //void InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id id);
         //void UpdateColliderRigidbodyLinks(ECS& ecs);
 
         template<typename Func>
