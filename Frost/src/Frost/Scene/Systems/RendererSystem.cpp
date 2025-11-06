@@ -1,4 +1,4 @@
-﻿#include "Frost/Scene/Systems/RendererSystem.h"
+#include "Frost/Scene/Systems/RendererSystem.h"
 
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/ModelRenderer.h"
@@ -31,7 +31,7 @@ namespace Frost
 		int padding[1];                
 	};
 
-	RendererSystem::RendererSystem()
+	RendererSystem::RendererSystem() : _frustum{}
 	{
 		constexpr D3D11_INPUT_ELEMENT_DESC inputLayout[] =
 		{
@@ -185,9 +185,20 @@ namespace Frost
 					sp.world = XMMatrixTranspose(matWorld);
 					sp.cameraPosition = actualCameraPosition;
 
+					if(camera.frustumCulling) _frustum.Extract(viewProj, camera.frustumPadding);
+
 					const Model& model = *modelRenderer.model;
 					for (const Mesh& mesh : model.GetMeshes())
 					{
+						if (camera.frustumCulling)
+						{
+							BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
+							if (!_frustum.IsInside(worldBox))
+							{
+								continue;
+							}
+						}
+
 						const Material& material = model.GetMaterials()[mesh.GetMaterialIndex()];
 
 						sp.diffuseColor = { material.diffuseColor.x, material.diffuseColor.y, material.diffuseColor.z, 1.0f };
