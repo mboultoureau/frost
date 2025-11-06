@@ -21,6 +21,9 @@ namespace Frost
 		float nearClip = 0.1f;
 		float farClip = 1000.0f;
 
+		bool frustumCulling = true;
+		float frustumPadding = 10.0f;
+
 		bool clearOnRender = true;
 		float backgroundColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 

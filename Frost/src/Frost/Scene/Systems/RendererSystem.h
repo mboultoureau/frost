@@ -3,6 +3,7 @@
 #include "Frost/Scene/ECS/System.h"
 #include "Frost/Renderer/Shader.h"
 #include "Frost/Renderer/Buffer.h"
+#include "Frost/Renderer/Frustum.h"
 
 #include <wrl/client.h>
 
@@ -20,6 +21,7 @@ namespace Frost
         VertexShader _vertexShader;
 		PixelShader _pixelShader;
 		ConstantBuffer _constantBuffer;
+        Frustum _frustum;
 
         Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
     };
