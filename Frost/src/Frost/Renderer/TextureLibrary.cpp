@@ -20,7 +20,7 @@ namespace Frost
 		}
 
 		// Load the texture
-		std::shared_ptr<Texture> texture = std::make_shared<Texture>(path, textureType);
+		std::shared_ptr<TextureDX11> texture = std::make_shared<TextureDX11>(path, textureType);
 		_textures[path] = texture;
 		
 		return texture;
@@ -30,6 +30,6 @@ namespace Frost
 	{
 		FT_ENGINE_ASSERT(aTexture != nullptr, "Assimp texture cannot be null!");
 
-		return std::make_shared<Texture>(aTexture, textureType);
+		return std::make_shared<TextureDX11>(aTexture, textureType);
 	}
 }

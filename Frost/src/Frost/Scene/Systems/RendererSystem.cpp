@@ -6,6 +6,7 @@
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/Vertex.h"
+#include "Frost/Renderer/DX11/TextureDX11.h"
 
 namespace Frost
 {
@@ -206,7 +207,8 @@ namespace Frost
 						if (material.diffuseTextures.size() > 0)
 						{
 							sp.numberDiffuseTextures = 1;
-							RendererAPI::SetPixelShaderResource(0, material.diffuseTextures[0]->GetTextureView()); 
+							TextureDX11* diffuseTexture = static_cast<TextureDX11*>(material.diffuseTextures[0].get());
+							RendererAPI::SetPixelShaderResource(0, diffuseTexture->GetTextureView());
 						}
 						else
 						{
@@ -217,7 +219,8 @@ namespace Frost
 						if (material.normalTextures.size() > 0)
 						{
 							sp.hasNormalMap = 1;
-							RendererAPI::SetPixelShaderResource(1, material.normalTextures[0]->GetTextureView()); 
+							TextureDX11* normalTexture = static_cast<TextureDX11*>(material.normalTextures[0].get());
+							RendererAPI::SetPixelShaderResource(1, normalTexture->GetTextureView());
 						}
 						else
 						{
@@ -230,7 +233,8 @@ namespace Frost
 						if (material.emissiveTextures.size() > 0)
 						{
 							sp.hasEmissiveTexture = 1;
-							RendererAPI::SetPixelShaderResource(2, material.emissiveTextures[0]->GetTextureView()); 
+							TextureDX11* emissiveTexture = static_cast<TextureDX11*>(material.emissiveTextures[0].get());
+							RendererAPI::SetPixelShaderResource(2, emissiveTexture->GetTextureView());
 						}
 						else
 						{
@@ -241,7 +245,8 @@ namespace Frost
 						if (material.ambientOclusionTextures.size() > 0)
 						{
 							sp.hasAmbientOclusionTexture = 1;
-							RendererAPI::SetPixelShaderResource(3, material.ambientOclusionTextures[0]->GetTextureView()); 
+							TextureDX11* aoTexture = static_cast<TextureDX11*>(material.ambientOclusionTextures[0].get());
+							RendererAPI::SetPixelShaderResource(3, aoTexture->GetTextureView());
 						}
 						else
 						{
@@ -252,7 +257,8 @@ namespace Frost
 						if (material.metallicTextures.size() > 0)
 						{
 							sp.hasMetallicTexture = 1;
-							RendererAPI::SetPixelShaderResource(4, material.metallicTextures[0]->GetTextureView());
+							TextureDX11* metallicTexture = static_cast<TextureDX11*>(material.metallicTextures[0].get());
+							RendererAPI::SetPixelShaderResource(4, metallicTexture->GetTextureView());
 						}
 						else
 						{
@@ -264,7 +270,8 @@ namespace Frost
 						if (material.roughnessTextures.size() > 0)
 						{
 							sp.hasRoughnessTexture = 1;
-							RendererAPI::SetPixelShaderResource(5, material.roughnessTextures[0]->GetTextureView());
+							TextureDX11* roughnessTexture = static_cast<TextureDX11*>(material.roughnessTextures[0].get());
+							RendererAPI::SetPixelShaderResource(5, roughnessTexture->GetTextureView());
 						}
 						else
 						{
