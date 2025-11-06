@@ -13,7 +13,7 @@ Game::Game(Lab* app) : _app{ app }
 
 	_scene = std::make_unique<Frost::Scene>("Scene");
 	_app->PushLayer(new MainLayer());
-	
+
 	// Memory leak
 	Frost::DebugLayer* debugLayer = new Frost::DebugLayer{};
 	_app->PushLayer(debugLayer);

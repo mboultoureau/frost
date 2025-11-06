@@ -11,7 +11,7 @@
 
 namespace Frost
 {
-	class ModelLoading{};
+	class ModelLoading {};
 
 	Model::Model(const std::string& filepath) : _filepath{ filepath }
 	{
@@ -60,12 +60,10 @@ namespace Frost
 		vertices.reserve(amesh->mNumVertices);
 		for (unsigned int i = 0; i < amesh->mNumVertices; ++i)
 		{
-			// Position
 			Vertex vertex;
 
 			vertex.position = { amesh->mVertices[i].x, amesh->mVertices[i].y, amesh->mVertices[i].z };
 
-			// Normal
 			if (amesh->HasNormals())
 			{
 				vertex.normal = { amesh->mNormals[i].x, amesh->mNormals[i].y, amesh->mNormals[i].z };
@@ -75,7 +73,6 @@ namespace Frost
 				vertex.normal = { 0.0f, 0.0f, 0.0f };
 			}
 
-			// Texture Coordinates
 			if (amesh->mTextureCoords[0])
 			{
 				vertex.texCoord = { amesh->mTextureCoords[0][i].x, amesh->mTextureCoords[0][i].y };
@@ -85,10 +82,21 @@ namespace Frost
 				vertex.texCoord = { 0.0f, 0.0f };
 			}
 
+
+			if (amesh->HasTangentsAndBitangents())
+			{
+				vertex.tangent = { amesh->mTangents[i].x, amesh->mTangents[i].y, amesh->mTangents[i].z };
+
+				vertex.bitangent = { amesh->mBitangents[i].x, amesh->mBitangents[i].y, amesh->mBitangents[i].z };
+			}
+			else
+			{
+				vertex.tangent = { 0.0f, 0.0f, 0.0f };
+				vertex.bitangent = { 0.0f, 0.0f, 0.0f };
+			}
 			vertices.push_back(vertex);
 		}
 
-		// Indices
 		indices.reserve(amesh->mNumFaces * 3);
 		for (unsigned int i = 0; i < amesh->mNumFaces; ++i)
 		{
@@ -113,12 +121,10 @@ namespace Frost
 			aiMaterial* ai_material = scene->mMaterials[i];
 			Material material;
 
-			// Material name
 			aiString name;
 			ai_material->Get(AI_MATKEY_NAME, name);
 			material.name = name.C_Str();
 
-			// Diffuse color
 			aiColor3D color(0.0f, 0.0f, 0.0f);
 			if (ai_material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS)
 			{
@@ -129,16 +135,32 @@ namespace Frost
 				material.diffuseColor = { 1.0f, 1.0f, 1.0f };
 			}
 
-			unsigned int diffuseCount = ai_material->GetTextureCount(aiTextureType_DIFFUSE);
-			material.diffuseTextures.reserve(diffuseCount);
-			for (unsigned int j = 0; j < diffuseCount; j++)
+			aiColor3D emissiveColor(0.0f, 0.0f, 0.0f);
+			if (ai_material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == AI_SUCCESS)
 			{
-				std::shared_ptr<Texture> texture = LoadMaterialTexture(ai_material, aiTextureType_DIFFUSE, j, scene, directory);
-				if (texture)
-				{
-					material.diffuseTextures.push_back(texture);
-				}
+				material.emissiveColor = { emissiveColor.r, emissiveColor.g, emissiveColor.b };
 			}
+
+			AddTexture(*ai_material, scene, directory, aiTextureType_DIFFUSE, material.diffuseTextures);
+			AddTexture(*ai_material, scene, directory, aiTextureType_NORMALS, material.normalTextures);
+
+			AddTexture(*ai_material, scene, directory, aiTextureType_EMISSIVE, material.emissiveTextures);
+
+			if (material.emissiveTextures.empty())
+			{
+				AddTexture(*ai_material, scene, directory, aiTextureType_EMISSION_COLOR, material.emissiveTextures);
+			}
+
+			AddTexture(*ai_material, scene, directory, aiTextureType_AMBIENT_OCCLUSION, material.ambientOclusionTextures);
+
+			if (material.ambientOclusionTextures.empty())
+			{
+				AddTexture(*ai_material, scene, directory, aiTextureType_LIGHTMAP, material.ambientOclusionTextures);
+			}
+
+			AddTexture(*ai_material, scene, directory, aiTextureType_METALNESS, material.metallicTextures);
+
+			AddTexture(*ai_material, scene, directory, aiTextureType_DIFFUSE_ROUGHNESS, material.roughnessTextures);
 
 			_materials.push_back(material);
 		}
@@ -165,5 +187,19 @@ namespace Frost
 		}
 
 		return nullptr;
+	}
+
+	void Model::AddTexture(aiMaterial& ai_material, const aiScene* scene, const std::string& directory, aiTextureType textureType, std::vector<std::shared_ptr<Texture>>& emplaceHere)
+	{
+		unsigned int diffuseCount = ai_material.GetTextureCount(textureType);
+		emplaceHere.reserve(diffuseCount);
+		for (unsigned int j = 0; j < diffuseCount; j++)
+		{
+			std::shared_ptr<Texture> texture = LoadMaterialTexture(&ai_material, textureType, j, scene, directory);
+			if (texture)
+			{
+				emplaceHere.push_back(texture);
+			}
+		}
 	}
 }
