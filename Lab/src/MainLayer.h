@@ -5,6 +5,9 @@
 #include "Objects/Moto.h"
 #include "Objects/TopCamera.h"
 #include "Objects/Plane.h"
+#include "Objects/Ogre.h"
+#include "Objects/OgreNormal.h"
+#include "Objects/Text.h"
 
 #include <memory>
 
@@ -24,5 +27,8 @@ private:
 	std::unique_ptr<TopCamera> _topCamera;
 	std::unique_ptr<Moto> _moto;
 	std::unique_ptr<Plane> _plane;
+	std::unique_ptr<Ogre> _ogre;
+	std::unique_ptr<OgreNormal> _ogreNormal;
+	std::unique_ptr<Text> _text;
 };
 

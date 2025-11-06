@@ -9,7 +9,6 @@
 
 namespace Frost
 {
-	// The shader must be align as 16 bytes
 	struct alignas(16) ShadersParams
 	{
 		DirectX::XMMATRIX worldViewProjection;
@@ -18,24 +17,33 @@ namespace Frost
 		DirectX::XMFLOAT4 lightPosition{ -10.0f, 10.0f, 10.0f, 1.0f };
 		DirectX::XMFLOAT4 ambientColor{ 0.2f, 0.2f, 0.2f, 1.0f };
 		DirectX::XMFLOAT4 diffuseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
-
+		DirectX::XMFLOAT4 emissiveColor{ 0.0f , 0.0f , 0.0f , 1.0f };
 		DirectX::XMFLOAT4 cameraPosition{ 0.0f, 0.0f, -10.0f, 1.0f };
 
 		int numberDiffuseTextures = 0;
-		int padding[3];
+		int hasNormalMap = 0;
+		int hasEmissiveTexture = 0;
+		int hasAmbientOclusionTexture = 0;
+
+		int hasMetallicTexture = 0;    
+		float roughnessValue = 0.5f;
+		int hasRoughnessTexture = 0;
+		int padding[1];                
 	};
 
 	RendererSystem::RendererSystem()
-    {
-        constexpr D3D11_INPUT_ELEMENT_DESC inputLayout[] =
-        {
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        };
+	{
+		constexpr D3D11_INPUT_ELEMENT_DESC inputLayout[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
 
-        _vertexShader.Create(L"../Frost/resources/shaders/Vertex.hlsl", inputLayout, _countof(inputLayout));
-        _pixelShader.Create(L"../Frost/resources/shaders/Pixel.hlsl");
+		_vertexShader.Create(L"../Frost/resources/shaders/Vertex.hlsl", inputLayout, _countof(inputLayout));
+		_pixelShader.Create(L"../Frost/resources/shaders/Pixel.hlsl");
 		_constantBuffer.Create(nullptr, sizeof(ShadersParams));
 
 		D3D11_SAMPLER_DESC samplerDesc = {};
@@ -57,7 +65,7 @@ namespace Frost
 	}
 
 	void RendererSystem::Render(ECS& ecs)
-    {
+	{
 		RendererAPI::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 		const WindowDimensions currentWindowDimensions = Application::Get().GetWindow()->GetDimensions();
@@ -90,7 +98,6 @@ namespace Frost
 
 			DirectX::XMVECTOR cameraRotationQuat = DirectX::XMLoadFloat4(&cameraTransform->rotation);
 
-			// Calculate up vector from rotation
 			DirectX::XMVECTOR worldUp = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 			DirectX::XMVECTOR worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 
@@ -150,20 +157,16 @@ namespace Frost
 						transform->scale.z
 					);
 
-					// 2. Create the Rotation Matrix from the quaternion
-					// This replaces the incorrect XMMatrixRotationRollPitchYaw call
 					DirectX::XMMATRIX matRotation = DirectX::XMMatrixRotationQuaternion(
 						DirectX::XMLoadFloat4(&transform->rotation)
 					);
 
-					// 3. Create the Translation Matrix
 					DirectX::XMMATRIX matTranslation = DirectX::XMMatrixTranslation(
 						transform->position.x,
 						transform->position.y,
 						transform->position.z
 					);
 
-					// 4. Combine into World Matrix (Scale * Rotation * Translation)
 					DirectX::XMMATRIX matWorld = matScale * matRotation * matTranslation;
 
 					RendererAPI::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -186,12 +189,13 @@ namespace Frost
 					for (const Mesh& mesh : model.GetMeshes())
 					{
 						const Material& material = model.GetMaterials()[mesh.GetMaterialIndex()];
+
 						sp.diffuseColor = { material.diffuseColor.x, material.diffuseColor.y, material.diffuseColor.z, 1.0f };
 
 						if (material.diffuseTextures.size() > 0)
 						{
 							sp.numberDiffuseTextures = 1;
-							RendererAPI::SetPixelShaderResource(0, material.diffuseTextures[0]->GetTextureView());
+							RendererAPI::SetPixelShaderResource(0, material.diffuseTextures[0]->GetTextureView()); 
 						}
 						else
 						{
@@ -199,7 +203,66 @@ namespace Frost
 							RendererAPI::SetPixelShaderResource(0, nullptr);
 						}
 
+						if (material.normalTextures.size() > 0)
+						{
+							sp.hasNormalMap = 1;
+							RendererAPI::SetPixelShaderResource(1, material.normalTextures[0]->GetTextureView()); 
+						}
+						else
+						{
+							sp.hasNormalMap = 0;
+							RendererAPI::SetPixelShaderResource(1, nullptr);
+						}
+
+						sp.emissiveColor = { material.emissiveColor.x, material.emissiveColor.y, material.emissiveColor.z, 1.0f };
+
+						if (material.emissiveTextures.size() > 0)
+						{
+							sp.hasEmissiveTexture = 1;
+							RendererAPI::SetPixelShaderResource(2, material.emissiveTextures[0]->GetTextureView()); 
+						}
+						else
+						{
+							sp.hasEmissiveTexture = 0;
+							RendererAPI::SetPixelShaderResource(2, nullptr);
+						}
+
+						if (material.ambientOclusionTextures.size() > 0)
+						{
+							sp.hasAmbientOclusionTexture = 1;
+							RendererAPI::SetPixelShaderResource(3, material.ambientOclusionTextures[0]->GetTextureView()); 
+						}
+						else
+						{
+							sp.hasAmbientOclusionTexture = 0;
+							RendererAPI::SetPixelShaderResource(3, nullptr);
+						}
+
+						if (material.metallicTextures.size() > 0)
+						{
+							sp.hasMetallicTexture = 1;
+							RendererAPI::SetPixelShaderResource(4, material.metallicTextures[0]->GetTextureView());
+						}
+						else
+						{
+							sp.hasMetallicTexture = 0;
+							RendererAPI::SetPixelShaderResource(4, nullptr);
+						}
+
+						sp.roughnessValue = material.roughnessValue;
+						if (material.roughnessTextures.size() > 0)
+						{
+							sp.hasRoughnessTexture = 1;
+							RendererAPI::SetPixelShaderResource(5, material.roughnessTextures[0]->GetTextureView());
+						}
+						else
+						{
+							sp.hasRoughnessTexture = 0;
+							RendererAPI::SetPixelShaderResource(5, nullptr);
+						}
+
 						RendererAPI::UpdateSubresource(_constantBuffer.Get(), &sp, sizeof(ShadersParams));
+
 						RendererAPI::SetVertexConstantBuffer(0, _constantBuffer.Get());
 						RendererAPI::SetPixelConstantBuffer(0, _constantBuffer.Get());
 
@@ -208,12 +271,11 @@ namespace Frost
 
 						RendererAPI::SetVertexBuffer(mesh.GetVertexBuffer(), stride, offset);
 						RendererAPI::SetIndexBuffer(mesh.GetIndexBuffer(), 0);
-						
+
 						RendererAPI::DrawIndexed(mesh.GetIndexCount(), 0, 0);
 					}
 				}
 			}
-        }
-    }
+		}
+	}
 }
-

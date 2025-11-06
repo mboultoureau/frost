@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Input/Devices/Gamepad.h"
 #include "Frost/Event/Event.h"
 #include "Frost/Input/Devices/Gamepad.h"
 

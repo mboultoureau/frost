@@ -19,6 +19,7 @@
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/ModelRenderer.h"
 #include "Frost/Scene/Components/RigidBody.h"
+#include "Frost/Scene/Components/RigidBody2.h"
 #include "Frost/Scene/Components/RigidBody.h"
 
 #include "Frost/Renderer/RendererAPI.h"
