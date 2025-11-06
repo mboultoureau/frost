@@ -34,7 +34,6 @@ namespace Frost
 		Mesh ProcessMesh(aiMesh* aMesh, const aiScene* aScene);
 		void LoadMaterials(const aiScene* aScene, const std::string& directory);
 		std::shared_ptr<Texture> LoadMaterialTexture(aiMaterial* aMaterial, aiTextureType aTextureType, unsigned int index, const aiScene* aScene, const std::string& directory);
+		void AddTexture(aiMaterial& material, const aiScene* scene, const std::string& directory, aiTextureType textureType, std::vector<std::shared_ptr<Texture>>& emplaceHere);
 	};
 }
-
-

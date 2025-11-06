@@ -1,7 +1,7 @@
-#include "Moto.h"
+#include "OgreNormal.h"
 #include "../Game.h"
 
-class RotateMoto : public Frost::Script
+class RotateOgreNormal : public Frost::Script
 {
 public:
 	void OnFixedUpdate(float deltaTime) override
@@ -14,18 +14,18 @@ public:
 	}
 };
 
-Moto::Moto()
+OgreNormal::OgreNormal()
 {
 	Scene& _scene = Game::GetScene();
 
-	_moto = _scene.CreateGameObject("Moto");
+	_ogreNormal = _scene.CreateGameObject("Ogre Normal");
 	_scene.AddComponent<Frost::Transform>(
-		_moto,
+		_ogreNormal,
 		Frost::Transform::Vector3{ 0.0f, 5.0f, 5.0f },
-		Frost::Transform::Vector3{ angle_traits<Degree>::to_neutral(-90.0), angle_traits<Degree>::to_neutral(-90.0), 0.0f },
+		Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f },
 		Frost::Transform::Vector3{ 1.0f, 1.0f, 1.0f }
 	);
-	_scene.AddComponent<Frost::WorldTransform>(_moto, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
-	_scene.AddComponent<Frost::ModelRenderer>(_moto, "./resources/meshes/moto.glb");
-	_scene.AddScript<RotateMoto>(_moto);
+	_scene.AddComponent<Frost::WorldTransform>(_ogreNormal, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
+	_scene.AddComponent<Frost::ModelRenderer>(_ogreNormal, "./resources/meshes/normal.fbx");
+	_scene.AddScript<RotateOgreNormal>(_ogreNormal);
 }
