@@ -38,8 +38,5 @@ void Plane::_SetupPhysics()
 	ShapeRefC boxShape = BoxShapeSettings(Vec3(500.0f, 0.1f, 500.0f)).Create().Get();
 	BodyCreationSettings planeBodySettings(boxShape, RVec3(0.0f, 0.0f, 0.0f), Quat::sIdentity(), EMotionType::Static, ObjectLayers::NON_MOVING);
 	planeBodySettings.mUserData = _plane;
-	_body = Physics::CreateBody(planeBodySettings);
-	Physics::AddBody(_body->GetID(), EActivation::Activate);
-
-	scene.AddComponent<RigidBody2>(_plane, _body);
+	scene.AddComponent<RigidBody>(_plane, planeBodySettings, _plane, EActivation::DontActivate);
 }
