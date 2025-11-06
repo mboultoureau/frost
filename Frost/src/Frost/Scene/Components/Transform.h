@@ -41,7 +41,7 @@ namespace Frost
 			XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(
 				euler_angles.x,
 				euler_angles.y,
-				euler_angles.z 
+				euler_angles.z
 			);
 
 			DirectX::XMStoreFloat4(&rotation, quaternion);
