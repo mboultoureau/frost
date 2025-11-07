@@ -8,8 +8,8 @@ LevelCamera::LevelCamera()
 	auto _camera = _scene.CreateGameObject("Level Camera");
 	_scene.AddComponent<Frost::Transform>(
 		_camera,
-		Frost::Transform::Vector3{ 0.0f, 10.0f, 0.0f },
-		Frost::Transform::Vector3{ angle_traits<Degree>::to_neutral(90.0), 0.0f, 0.0f },
+		Frost::Transform::Vector3{ 0.0f, 30.0f, 0.0f },
+		Frost::Transform::Vector3{ 1.6, 0.0f, 0.0f },
 		Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f }
 	);
 	_scene.AddComponent<Frost::WorldTransform>(_camera, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });

@@ -7,6 +7,7 @@
 #include "Frost/Physics/Physics.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
+#include <Frost/Scene/Components/WorldTransform.h>
 
 class RigidBodyCannotHaveParents {};
 
@@ -94,50 +95,6 @@ void Frost::PhysicSystem::UpdateAllJoltBodies(ECS& ecs, float deltaTime)
 		transform->rotation.w = jBodyRot.GetW();
 	}
 }
-
-
-/*
-class RigidbodyCouldNotBeInitialized {};
-void Frost::PhysicSystem::InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id id)
-{
-	auto goInfo = ecs.GetComponent<GameObjectInfo>(id);
-	if (goInfo->parentId != GameObject::InvalidId) throw RigidBodyCannotHaveParents();
-
-	auto transform = ecs.GetComponent<Transform>(id);
-	bool isActive = true;//ecs.GetActiveGameObjects());
-	auto activationMode = isActive ? JPH::EActivation::Activate : JPH::EActivation::DontActivate; 
-
-	auto test = Physics::Get()._rigidbodyFuturColliders;
-	auto shapeRef = Physics::Get()._rigidbodyFuturColliders.at(goInfo->id);
-
-	JPH::Quat initialRotation(
-		transform->rotation.x,
-		transform->rotation.y,
-		transform->rotation.z,
-		transform->rotation.w
-	);
-
-	JPH::BodyCreationSettings bodySettings(
-		shapeRef,
-		Physics::Vector3ToJoltVector(transform->position),
-		initialRotation, // Use the quaternion, not Quat::sEulerAngles(Vector3)
-		rb->motionType,
-		rb->objectLayer);
-	// --- END QUATERNION UPDATE ---
-
-	bodySettings.mUserData = id;
-	auto Jid = Physics::Get().body_interface->CreateAndAddBody(bodySettings, activationMode);
-	
-	if (wTransform) {
-		Physics::Vector3ToJoltVector(transform->position),
-		JPH::Quat::sEulerAngles(Physics::Vector3ToJoltVector(transform->rotation)),
-	}
-
-	rb->bodyId = Jid;
-
-	if(ecs.GetComponent<RigidBody>(id)->bodyId == JPH::BodyID()) throw RigidbodyCouldNotBeInitialized();
-}
-*/
 
 
 template<typename Func>

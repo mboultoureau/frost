@@ -6,6 +6,8 @@
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+
 
 // TODO: remove windows header from polluting all the code
 #undef max
@@ -13,6 +15,9 @@
 #include <algorithm>
 #include <cmath>
 #include <DirectXMath.h>
+#include <Frost/Scene/Components/GameObjectInfo.h>
+#include "PlayerCamera.h"
+
 
 Player::Player()
 {
@@ -33,25 +38,13 @@ Player::Player()
 	scene.AddComponent<WorldTransform>(_vehicle);
 	scene.AddComponent<ModelRenderer>(_vehicle, "./resources/meshes/cube.fbx");
 
-	// Camera Pivot
-	_cameraPivot = scene.CreateGameObject("Camera Pivot", _player);
-	scene.AddComponent<Transform>(_cameraPivot, Transform::Vector3{ 0.0f, 0.0f, 0.0f });
-	scene.AddComponent<WorldTransform>(_cameraPivot);
-
-	// Camera
-	_camera = scene.CreateGameObject("Camera", _cameraPivot);
-	scene.AddComponent<Transform>(_camera, Transform::Vector3{ 0.0f, 10.0f, -20.0f });
-	scene.AddComponent<WorldTransform>(_camera, Transform::Vector3{ 0.0f, 10.0f, -20.0f });
-	scene.AddComponent<Camera>(_camera);
-
-	auto cameraComponent = scene.GetComponent<Camera>(_camera);
-	cameraComponent->backgroundColor[0] = 47.0f / 255.0f;
-	cameraComponent->backgroundColor[1] = 116.0f / 255.0f;
-	cameraComponent->backgroundColor[2] = 228.0f / 255.0f;
-	cameraComponent->backgroundColor[3] = 1.0f;
-
+	//Add spring camera
+	auto wt = scene.GetComponent<WorldTransform>(_player);
+	auto pCam = PlayerCamera(_player);
+	_playerCamera = &pCam;
+	
 	InitializePhysics();
-
+	
 	_fireTimer.Start();
 }
 
@@ -71,11 +64,12 @@ void Player::InitializePhysics()
 
 	// Create vehicle body
 	RVec3 position(0, 10.0f, 0);
-	// TODO: be sexy and load the shape from player and cargo
 	JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(5.0f, 5.0f, 5.0f)).Create().Get();
 	BodyCreationSettings motorcycle_body_settings(boxShape, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
 	scene.AddComponent<RigidBody>(_player, motorcycle_body_settings, _player, EActivation::Activate);
+
 	_playerBodyID = scene.GetComponent<RigidBody>(_player)->bodyId;
+	//_cameraBodyID = _playerBodyID = scene.GetComponent<RigidBody>(_playerCamera->_camera)->bodyId;
 	_bodyInter = Physics::Get().body_interface;
 }
 
@@ -105,50 +99,6 @@ void Player::ProcessInput(float deltaTime)
 		_right = 1.0f * deltaTime * 50.0f;
 	}
 
-	// Rotate Y
-	if (Input::GetKeyboard().IsKeyDown(K_1) || Input::GetKeyboard().IsKeyDown(K_NUMPAD6))
-	{
-		_cameraPivotRotationY += 1.0f * deltaTime;
-	}
-	else if (Input::GetKeyboard().IsKeyDown(K_2) || Input::GetKeyboard().IsKeyDown(K_NUMPAD4))
-	{
-		_cameraPivotRotationY -= 1.0f * deltaTime;
-	}
-
-	// Rotate X
-	if (Input::GetKeyboard().IsKeyDown(K_3) || Input::GetKeyboard().IsKeyDown(K_NUMPAD8))
-	{
-		_cameraPivotRotationX += 1.0f * deltaTime;
-	}
-	else if (Input::GetKeyboard().IsKeyDown(K_4) || Input::GetKeyboard().IsKeyDown(K_NUMPAD2))
-	{
-		_cameraPivotRotationX -= 1.0f * deltaTime;
-	}
-
-	// Clamp values
-	const float MAX_PITCH = DirectX::XM_PIDIV2;
-	const float MIN_PITCH = -DirectX::XM_PIDIV2;
-
-	if (_cameraPivotRotationX > MAX_PITCH)
-	{
-		_cameraPivotRotationX = MAX_PITCH;
-	}
-	else if (_cameraPivotRotationX < MIN_PITCH)
-	{
-		_cameraPivotRotationX = MIN_PITCH;
-	}
-
-	const float TWO_PI = DirectX::XM_2PI;
-
-	if (_cameraPivotRotationY > TWO_PI)
-	{
-		_cameraPivotRotationY -= TWO_PI;
-	}
-	else if (_cameraPivotRotationY < 0.0f)
-	{
-		_cameraPivotRotationY += TWO_PI;
-	}
-
 	// Fire bullets
 	if (_fireTimer.GetDurationAs<std::chrono::milliseconds>().count() < 500)
 	{
@@ -172,6 +122,7 @@ void Player::UpdatePhysics(float deltaTime)
 	if (_right != 0.0f || _forward != 0.0f)
 	{
 		Physics::ActivateBody(_playerBodyID);
+		_bodyInter->ActivateBody(_cameraBodyID);
 	}
 
 	auto currentVelocity = _bodyInter->GetLinearVelocity(_playerBodyID);
@@ -180,18 +131,6 @@ void Player::UpdatePhysics(float deltaTime)
 	_bodyInter->SetLinearVelocity(_playerBodyID,
 		_bodyInter->GetRotation(_playerBodyID) * Vec3(0.0f, currentVelocity.GetY(), _forward * 100.0f)
 	);
-
-	Scene& scene = Game::GetScene();
-	auto transform = scene.GetComponent<Transform>(_cameraPivot);
-	
-	// Convert euler to quaternion
-	XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(
-		_cameraPivotRotationX,
-		_cameraPivotRotationY,
-		0.0f
-	);
-
-	DirectX::XMStoreFloat4(&transform->rotation, quaternion);
 }
 
 void Player::CleanupBullets()

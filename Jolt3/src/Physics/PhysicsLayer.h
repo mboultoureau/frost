@@ -13,7 +13,8 @@ namespace ObjectLayers
 	static constexpr JPH::ObjectLayer BULLET = 2;
 	static constexpr JPH::ObjectLayer CARGO = 3;
 	static constexpr JPH::ObjectLayer GOAL = 4;
-	static constexpr JPH::ObjectLayer NUM_LAYERS = 5;
+	static constexpr JPH::ObjectLayer CAMERA = 5;
+	static constexpr JPH::ObjectLayer NUM_LAYERS = 6;
 }
 
 namespace BroadPhaseLayers
