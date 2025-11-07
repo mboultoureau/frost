@@ -11,6 +11,6 @@ public:
 
 private:
 	GameObject::Id _terrain;
-	JPH::Body* _body;
+	GameObject::Id _wall;
 };
 

@@ -7,6 +7,8 @@
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
 
 #include "Bullet.h"
+#include <Frost/Scene/Components/GameObjectInfo.h>
+#include "PlayerCamera.h"
 
 using namespace Frost;
 
@@ -18,11 +20,11 @@ public:
 
 private:
 	GameObject::Id _player;
-	GameObject::Id _cameraPivot;
-	GameObject::Id _camera;
 	GameObject::Id _vehicle;
+	PlayerCamera* _playerCamera;
 
 	JPH::BodyID _playerBodyID;
+	JPH::BodyID _cameraBodyID;
 	JPH::BodyInterface* _bodyInter;
 
 	Timer _fireTimer;
@@ -31,8 +33,6 @@ private:
 	float _forward = 0.0f;
 	float _previousForward = 1.0f;
 	float _right = 0.0f;
-	float _cameraPivotRotationX = 0.0f;
-	float _cameraPivotRotationY = 0.0f;
 
 	void InitializePhysics();
 	void ProcessInput(float deltaTime);
