@@ -3,8 +3,9 @@
 #include "Frost/Renderer/Texture.h"
 
 #include <d3d11.h>
-#include <assimp/types.h>
 #include <string>
+
+struct aiTexture;
 
 namespace Frost
 {

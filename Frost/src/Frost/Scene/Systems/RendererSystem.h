@@ -17,12 +17,25 @@ namespace Frost
 
     private:
         void Render(ECS& ecs);
+        void RenderHUD(ECS& ecs);
 		
+        // VS & PS 3D
         VertexShader _vertexShader;
 		PixelShader _pixelShader;
+        // VS & PS 2D
+        VertexShader _hudVertexShader;
+        PixelShader _hudPixelShader;
+        //Buffer 3D
 		ConstantBuffer _constantBuffer;
+        //Buffer 2D
+        ConstantBuffer _hudConstantBuffer;
+
+        VertexBuffer _hudVertexBuffer;
+        IndexBuffer _hudIndexBuffer;
+
         Frustum _frustum;
 
         Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
+        Microsoft::WRL::ComPtr<ID3D11SamplerState> _hudSamplerState;
     };
 }
