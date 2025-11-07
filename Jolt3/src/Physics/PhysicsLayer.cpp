@@ -7,6 +7,7 @@ GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()
 	mObjectToBroadPhase[ObjectLayers::BULLET] = BroadPhaseLayers::MOVING;
 	mObjectToBroadPhase[ObjectLayers::CARGO] = BroadPhaseLayers::MOVING;
 	mObjectToBroadPhase[ObjectLayers::GOAL] = BroadPhaseLayers::NON_MOVING;
+	mObjectToBroadPhase[ObjectLayers::CAMERA] = BroadPhaseLayers::MOVING;
 }
 
 JPH::uint GameBroadPhaseLayerInterface::GetNumBroadPhaseLayers() const
@@ -50,6 +51,8 @@ bool GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::O
 		return inObject2 != ObjectLayers::PLAYER;
 	case ObjectLayers::GOAL:
 		return inObject2 == ObjectLayers::CARGO;
+	case ObjectLayers::CAMERA :
+		return inObject2 != ObjectLayers::PLAYER;
 	default:
 		FT_ENGINE_ASSERT(false, "Invalid object layer");
 		return false;
@@ -70,6 +73,8 @@ bool GameObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer inLayer1,
 		return true;
 	case ObjectLayers::GOAL:
 		return inLayer2 == BroadPhaseLayers::MOVING;
+	case ObjectLayers::CAMERA:
+		return true;
 	default:
 		FT_ENGINE_ASSERT(false, "Invalid object layer");
 		return false;
