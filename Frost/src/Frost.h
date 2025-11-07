@@ -15,6 +15,7 @@
 
 #include "Frost/Scene/Scene.h"
 #include "Frost/Scene/Components/Camera.h"
+#include "Frost/Scene/Components/HUD_Image.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/ModelRenderer.h"
