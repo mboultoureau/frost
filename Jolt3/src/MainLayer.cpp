@@ -18,8 +18,8 @@ void MainLayer::OnAttach()
 	Terrain terrain(_scene);
 
 	_player = std::make_unique<Player>();
-	Goal goal;
-	Cargo cargo;
+	//Goal goal;
+	//Cargo cargo;
 	//Bullet bullet{ Transform::Vector3{0.0f, 5.0f, 0.0f} };
 	LevelCamera levelCamera;
 }
