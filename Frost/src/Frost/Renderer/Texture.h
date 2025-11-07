@@ -6,7 +6,6 @@ struct aiTexture;
 
 namespace Frost
 {
-	// Related to assimp texture types
 	enum TextureType
 	{
 		NONE = 0,
@@ -22,7 +21,6 @@ namespace Frost
 		LIGHTMAP = 10,
 		REFLECTION = 11,
 
-		// PBR
 		BASE_COLOR = 12,
 		NORMAL_CAMERA = 13,
 		EMISSION_COLOR = 14,
@@ -35,9 +33,9 @@ namespace Frost
 		CLEARCOAT = 20,
 		TRANSMISSION = 21,
 
-
-		// DirectX specific
+		
 		SHADOW = 100,
+		HUD = 110,
 	}; 
 
 	class Texture

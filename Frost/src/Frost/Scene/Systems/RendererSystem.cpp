@@ -7,9 +7,11 @@
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/Vertex.h"
 #include "Frost/Renderer/DX11/TextureDX11.h"
-
+#include "Frost/Scene/Components/HUD_Image.h"
+#include "Frost/Renderer/Shader.h"
 namespace Frost
 {
+	// Structures de constantes 3D
 	struct alignas(16) ShadersParams
 	{
 		DirectX::XMMATRIX worldViewProjection;
@@ -26,11 +28,25 @@ namespace Frost
 		int hasEmissiveTexture = 0;
 		int hasAmbientOclusionTexture = 0;
 
-		int hasMetallicTexture = 0;    
+		int hasMetallicTexture = 0;
 		float roughnessValue = 0.5f;
 		int hasRoughnessTexture = 0;
-		int padding[1];                
+		int padding[1];
 	};
+
+	// Structure de constantes 2D pour le HUD
+	struct alignas(16) HUD_ShadersParams
+	{
+		DirectX::XMMATRIX world;
+		DirectX::XMFLOAT4 screenDimensions;
+	};
+	// Structure de sommet 2D
+	struct HUD_Vertex
+	{
+		DirectX::XMFLOAT3 Position;
+		DirectX::XMFLOAT2 TexCoord;
+	};
+
 
 	RendererSystem::RendererSystem() : _frustum{}
 	{
@@ -46,6 +62,42 @@ namespace Frost
 		_vertexShader.Create(L"../Frost/resources/shaders/Vertex.hlsl", inputLayout, _countof(inputLayout));
 		_pixelShader.Create(L"../Frost/resources/shaders/Pixel.hlsl");
 		_constantBuffer.Create(nullptr, sizeof(ShadersParams));
+
+
+		HUD_Vertex vertices[4] =
+		{
+			{ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f} },
+			{ {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f} },
+			{ {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
+			{ {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
+		};
+		UINT indices[6] = { 0, 1, 2, 2, 1, 3 };
+
+		_hudVertexBuffer.Create(vertices, sizeof(vertices)); 
+
+		_hudIndexBuffer.Create(indices,sizeof(indices), 6);
+
+		constexpr D3D11_INPUT_ELEMENT_DESC hudInputLayout[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+
+		_hudVertexShader.Create(L"../Frost/resources/shaders/HUD_Vertex.hlsl", hudInputLayout, _countof(hudInputLayout));
+		_hudPixelShader.Create(L"../Frost/resources/shaders/HUD_Pixel.hlsl");
+
+
+		D3D11_SAMPLER_DESC hudSamplerDesc = {};
+		hudSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		hudSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;  
+		hudSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		hudSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		hudSamplerDesc.MaxAnisotropy = 1;
+		hudSamplerDesc.MipLODBias = 0.0f;
+		hudSamplerDesc.MinLOD = 0;
+		hudSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+		RendererAPI::CreateSamplerState(&hudSamplerDesc, _hudSamplerState.GetAddressOf());
 
 		D3D11_SAMPLER_DESC samplerDesc = {};
 		samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -63,6 +115,7 @@ namespace Frost
 	void RendererSystem::LateUpdate(Frost::ECS& ecs, float deltaTime)
 	{
 		Render(ecs);
+		RenderHUD(ecs);
 	}
 
 	void RendererSystem::Render(ECS& ecs)
@@ -89,7 +142,6 @@ namespace Frost
 				continue;
 			}
 
-			// Calculate viewport
 			float width = camera.viewport.width * currentWindowDimensions.width;
 			float height = camera.viewport.height * currentWindowDimensions.height;
 			float viewportAspectRatio = width / height;
@@ -186,7 +238,7 @@ namespace Frost
 					sp.world = XMMatrixTranspose(matWorld);
 					sp.cameraPosition = actualCameraPosition;
 
-					if(camera.frustumCulling) _frustum.Extract(viewProj, camera.frustumPadding);
+					if (camera.frustumCulling) _frustum.Extract(viewProj, camera.frustumPadding);
 
 					const Model& model = *modelRenderer.model;
 					for (const Mesh& mesh : model.GetMeshes())
@@ -296,4 +348,85 @@ namespace Frost
 			}
 		}
 	}
+	
+	
+	void RendererSystem::RenderHUD(ECS& ecs)
+	{
+		const WindowDimensions currentWindowDimensions = Application::Get().GetWindow()->GetDimensions();
+		if (currentWindowDimensions.width == 0 || currentWindowDimensions.height == 0)
+		{
+			return;
+		}
+
+	
+
+		Viewport viewport;
+
+		RendererAPI::SetViewport(viewport);
+
+		RendererAPI::SetInputLayout(_hudVertexShader.GetInputLayout());
+		RendererAPI::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		const UINT stride = sizeof(HUD_Vertex);
+		const UINT offset = 0;
+		RendererAPI::SetVertexBuffer(_hudVertexBuffer, stride, offset);
+		RendererAPI::SetIndexBuffer(_hudIndexBuffer, 0);
+
+		RendererAPI::EnableVertexShader(_hudVertexShader);
+		RendererAPI::EnablePixelShader(_hudPixelShader);
+
+		RendererAPI::SetPixelSampler(0, _hudSamplerState.Get());
+
+	
+		RendererAPI::SetVertexConstantBuffer(0, _constantBuffer.Get());
+
+
+		auto& hudImages = ecs.GetDataArray<HUD_Image>();
+
+		HUD_ShadersParams hudSp = {};
+		hudSp.screenDimensions = {
+			(float)currentWindowDimensions.width,
+			(float)currentWindowDimensions.height,
+			0.0f,
+			0.0f
+		};
+
+
+		for (size_t i = 0; i < hudImages.size(); ++i)
+		{
+			const HUD_Image& hudImage = hudImages[i];
+
+			if (hudImage.texture == nullptr)
+			{
+				continue;
+			}
+
+			DirectX::XMMATRIX matScale = DirectX::XMMatrixScaling(
+				hudImage.viewport.width,
+				hudImage.viewport.height,
+				1.0f
+			);
+
+			DirectX::XMMATRIX matTranslation = DirectX::XMMatrixTranslation(
+				hudImage.viewport.x,
+				hudImage.viewport.y,
+				0.0f
+			);
+
+			DirectX::XMMATRIX matWorld = matScale * matTranslation;
+			hudSp.world = DirectX::XMMatrixTranspose(matWorld);
+
+			RendererAPI::UpdateSubresource(_constantBuffer.Get(), &hudSp, sizeof(HUD_ShadersParams));
+
+
+			TextureDX11* diffuseTexture = static_cast<TextureDX11*>(hudImage.texture);
+			RendererAPI::SetPixelShaderResource(0, diffuseTexture->GetTextureView());
+
+			RendererAPI::DrawIndexed(_hudIndexBuffer.GetCount(), 0, 0);
+
+			RendererAPI::SetPixelShaderResource(0, nullptr);
+		}
+	}
+	
+
 }

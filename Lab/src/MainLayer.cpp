@@ -21,6 +21,7 @@ void MainLayer::OnAttach()
 	//_ogreNormal = std::make_unique<OgreNormal>();
 	//_text = std::make_unique<Text>();
 	//_plane = std::make_unique<Plane>();
+	_hudLogo = std::make_unique<HUD_Logo>();
 }
 
 void MainLayer::OnUpdate(float deltaTime)

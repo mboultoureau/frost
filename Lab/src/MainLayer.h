@@ -8,7 +8,7 @@
 #include "Objects/Ogre.h"
 #include "Objects/OgreNormal.h"
 #include "Objects/Text.h"
-
+#include "Objects/HUD_Logo.h"
 #include <memory>
 
 class MainLayer : public Frost::Layer
@@ -30,5 +30,6 @@ private:
 	std::unique_ptr<Ogre> _ogre;
 	std::unique_ptr<OgreNormal> _ogreNormal;
 	std::unique_ptr<Text> _text;
+	std::unique_ptr<HUD_Logo> _hudLogo;
 };
 
