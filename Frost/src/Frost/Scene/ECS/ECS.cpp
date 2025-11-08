@@ -6,8 +6,16 @@ namespace Frost
 {
     ECS::~ECS()
     {
+        for (auto id : _activeGameObjects)
+        {
+            for (auto const& [typeId, array] : _allComponentArrays)
+            {
+                array->RemoveComponent(id);
+            }
+        }
+
         _allComponentArrays.clear();
-		_activeGameObjects.clear();
+        _activeGameObjects.clear();
     }
 
     GameObject::Id ECS::CreateGameObject()

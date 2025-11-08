@@ -55,6 +55,20 @@ namespace Frost
 		_layerStack.PopLayer(layer);
 	}
 
+
+	void Application::Reset()
+	{
+		for (auto& pair : Physics::Get().mapJBodyGameObject)
+		{
+			Physics::Get().body_interface->RemoveBody(pair.first);
+			Physics::Get().body_interface->DestroyBody(pair.first);
+		}
+
+		Physics::Get().mapJBodyGameObject.clear();
+
+		_layerStack.Clear();
+	}
+
 	Layer* Application::GetLayer(const Layer::LayerName& name)
 	{
 		for (Layer* layer : _layerStack._layers)
@@ -111,7 +125,7 @@ namespace Frost
 				{
 					float fixedDeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_physicsDuration).count();
 
-					layer->OnFixedUpdate(fixedDeltaTime);
+					if(!layer->isPaused()) layer->OnFixedUpdate(fixedDeltaTime);
 				}
 			}
 
