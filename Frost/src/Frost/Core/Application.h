@@ -37,6 +37,7 @@ namespace Frost
 		void Run();
 		void PushLayer(Layer* layer);
 		void PopLayer(Layer* layer);
+		void Reset();
 		virtual void OnApplicationReady() {};
 
 		Layer* GetLayer(const Layer::LayerName& name);

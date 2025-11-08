@@ -30,8 +30,6 @@ void Frost::MyContactListener::OnContactPersisted(const JPH::Body& inBody1, cons
 
 	Physics::Get().bodiesOnCollisionStay.emplace_back(
 		inBody1.GetUserData(), inBody2.GetUserData());
-	Physics::Get().mapJBodyGameObject.insert({ inBody1.GetID(), static_cast<GameObject::Id>(inBody1.GetUserData()) });
-	Physics::Get().mapJBodyGameObject.insert({ inBody2.GetID(), static_cast<GameObject::Id>(inBody2.GetUserData()) });
 }
 
 void Frost::MyContactListener::OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair)

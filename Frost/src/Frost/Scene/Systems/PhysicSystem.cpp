@@ -7,6 +7,7 @@
 #include "Frost/Physics/Physics.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
+#include <Frost/Debugging/Logger.h>
 #include <Frost/Scene/Components/WorldTransform.h>
 
 class RigidBodyCannotHaveParents {};
@@ -75,10 +76,10 @@ void Frost::PhysicSystem::UpdateAllJoltBodies(ECS& ecs, float deltaTime)
 	auto rbodies = ecs.GetComponents<Frost::RigidBody>();
 	auto goIds = ecs.GetIndexMap<RigidBody>();
 
-
 	for (int i = 0; i < rbodies->data.size(); i++) {
 		auto goId = goIds[i];
 		auto rbody = ecs.GetComponent<Frost::RigidBody>(goId);
+
 
 		auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody->bodyId);
 		auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody->bodyId);

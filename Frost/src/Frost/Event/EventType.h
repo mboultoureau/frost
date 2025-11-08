@@ -19,6 +19,9 @@ namespace Frost
 		GamepadAxisMoved,
 		GamepadConnected,
 		GamepadDisconnected,
+		GamePaused,
+		GameUnpaused,
+		GameReset,
 		_COUNT
 	};
 }
