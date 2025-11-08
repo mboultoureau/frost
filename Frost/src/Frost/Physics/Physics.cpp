@@ -9,7 +9,7 @@
 #include <Jolt/Physics/Collision/PhysicsMaterialSimple.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
-#include <Frost/Scene/Systems/PhysicSystem.h>
+#include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 
 #include <iostream>
 #include <stdarg.h>
@@ -278,4 +278,64 @@ namespace Frost
 		default:													JPH_ASSERT(false); return "INVALID";
 		}
 	}
+
+
+	/// heightTexture : ta TextureDX11* (doit fournir GetTextureRawData(), GetWidth(), GetHeight())
+	/// channel : TextureChannel::R/G/B/A
+	/// heightScale : échelle verticale souhaitée (le sample stocke valeurs 0..1, mScale.Y va multiplier)
+	JPH::ShapeRefC Physics::CreateHeightFieldShapeFromTexture(TextureDX11* heightTexture, TextureChannel channel, float heightScale, Transform::Vector3 transformScale)
+	{
+		FT_ENGINE_ASSERT(heightTexture, "heightTexture null");
+		const int texW = heightTexture->GetWidth();
+		const int texH = heightTexture->GetHeight();
+		FT_ENGINE_ASSERT(texW > 0 && texH > 0, "Invalid texture size");
+
+		std::vector<uint8_t> pixels = heightTexture->GetTextureRawData();
+		FT_ENGINE_ASSERT(!pixels.empty(), "Empty texture data");
+
+		uint32 sampleCount = texW > texH ? texW : texH;
+		if (sampleCount < 2) sampleCount = 2; // minimum 2
+
+		std::vector<float> samples(sampleCount * sampleCount, 0.0f);
+
+		for (uint32 y = 0; y < (uint32)texH; ++y)
+		{
+			for (uint32 x = 0; x < (uint32)texW; ++x)
+			{
+				size_t pixIdx = (y * texW + x) * 4;
+				uint8_t value = 0;
+				switch (channel)
+				{
+				case TextureChannel::R: value = pixels[pixIdx + 0]; break;
+				case TextureChannel::G: value = pixels[pixIdx + 1]; break;
+				case TextureChannel::B: value = pixels[pixIdx + 2]; break;
+				case TextureChannel::A: value = pixels[pixIdx + 3]; break;
+				}
+				// Normalise en 0..1
+				float sample = float(value) / 255.0f;
+				samples[y * sampleCount + x] = sample;
+			}
+		}
+
+		//Vec3 offset(-0.5f, 0.0f, -0.5f);                     
+		Vec3 offset(-0.5f * transformScale.x, 0.0f, -0.5f * transformScale.z);
+		Vec3 scale(1.0f / float(sampleCount) * transformScale.x,               
+			heightScale * transformScale.y,                              
+			1.0f / float(sampleCount) * transformScale.z);          
+
+		JPH::HeightFieldShapeSettings settings{ samples.data(), offset, scale, sampleCount };
+
+		Shape::ShapeResult result = settings.Create();
+		if (!result.IsValid())
+		{
+			FT_ENGINE_ERROR("Failed to create HeightFieldShape from texture");
+			return nullptr;
+		}
+
+		RefConst<Shape> shape = result.Get();
+		return shape;
+	}
+
+
+
 }

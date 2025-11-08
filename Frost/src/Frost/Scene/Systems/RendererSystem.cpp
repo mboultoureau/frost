@@ -22,6 +22,9 @@ namespace Frost
 		DirectX::XMFLOAT4 diffuseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 		DirectX::XMFLOAT4 emissiveColor{ 0.0f , 0.0f , 0.0f , 1.0f };
 		DirectX::XMFLOAT4 cameraPosition{ 0.0f, 0.0f, -10.0f, 1.0f };
+		DirectX::XMFLOAT2 uvTiling{ 1.0f, 1.0f };
+		DirectX::XMFLOAT2 uvOffset{ 0.0f, 0.0f };
+
 
 		int numberDiffuseTextures = 0;
 		int hasNormalMap = 0;
@@ -50,6 +53,7 @@ namespace Frost
 
 	RendererSystem::RendererSystem() : _frustum{}
 	{
+		// shaders
 		constexpr D3D11_INPUT_ELEMENT_DESC inputLayout[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -63,7 +67,7 @@ namespace Frost
 		_pixelShader.Create(L"../Frost/resources/shaders/Pixel.hlsl");
 		_constantBuffer.Create(nullptr, sizeof(ShadersParams));
 
-
+		// HUD shaders
 		HUD_Vertex vertices[4] =
 		{
 			{ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f} },
@@ -86,30 +90,40 @@ namespace Frost
 		_hudVertexShader.Create(L"../Frost/resources/shaders/HUD_Vertex.hlsl", hudInputLayout, _countof(hudInputLayout));
 		_hudPixelShader.Create(L"../Frost/resources/shaders/HUD_Pixel.hlsl");
 
+		// Texture sampler
+		D3D11_SAMPLER_DESC pointDesc = {};
+		pointDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		pointDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		pointDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		pointDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		pointDesc.MaxAnisotropy = D3D11_DEFAULT_MAX_ANISOTROPY;
+		pointDesc.MipLODBias = 0.0f;
+		pointDesc.MinLOD = 0;
+		pointDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		RendererAPI::CreateSamplerState(&pointDesc, _samplerPoint.GetAddressOf());
 
-		D3D11_SAMPLER_DESC hudSamplerDesc = {};
-		hudSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		hudSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;  
-		hudSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		hudSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		hudSamplerDesc.MaxAnisotropy = 1;
-		hudSamplerDesc.MipLODBias = 0.0f;
-		hudSamplerDesc.MinLOD = 0;
-		hudSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		D3D11_SAMPLER_DESC linearDesc = {};
+		linearDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		linearDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		linearDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		linearDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		linearDesc.MaxAnisotropy = D3D11_DEFAULT_MAX_ANISOTROPY;
+		linearDesc.MipLODBias = 0.0f;
+		linearDesc.MinLOD = 0;
+		linearDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		RendererAPI::CreateSamplerState(&linearDesc, _samplerLinear.GetAddressOf());
 
-		RendererAPI::CreateSamplerState(&hudSamplerDesc, _hudSamplerState.GetAddressOf());
 
-		D3D11_SAMPLER_DESC samplerDesc = {};
-		samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.MaxAnisotropy = D3D11_DEFAULT_MAX_ANISOTROPY;
-		samplerDesc.MipLODBias = 0.0f;
-		samplerDesc.MinLOD = 0;
-		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-		RendererAPI::CreateSamplerState(&samplerDesc, _samplerState.GetAddressOf());
+		D3D11_SAMPLER_DESC anisDesc = {};
+		anisDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+		anisDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		anisDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		anisDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		anisDesc.MaxAnisotropy = D3D11_DEFAULT_MAX_ANISOTROPY;
+		anisDesc.MipLODBias = 0.0f;
+		anisDesc.MinLOD = 0;
+		anisDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		RendererAPI::CreateSamplerState(&anisDesc, _samplerAnisotropic.GetAddressOf());
 	}
 
 	void RendererSystem::LateUpdate(Frost::ECS& ecs, float deltaTime)
@@ -227,7 +241,6 @@ namespace Frost
 					RendererAPI::EnableVertexShader(_vertexShader);
 					RendererAPI::SetGeometryShader();
 					RendererAPI::EnablePixelShader(_pixelShader);
-					RendererAPI::SetPixelSampler(0, _samplerState.Get());
 
 					const UINT stride = sizeof(Vertex);
 					const UINT offset = 0;
@@ -253,6 +266,7 @@ namespace Frost
 						}
 
 						const Material& material = model.GetMaterials()[mesh.GetMaterialIndex()];
+						SetRendererToFilter(material.filterMode);
 
 						sp.diffuseColor = { material.diffuseColor.x, material.diffuseColor.y, material.diffuseColor.z, 1.0f };
 
@@ -330,6 +344,8 @@ namespace Frost
 							sp.hasRoughnessTexture = 0;
 							RendererAPI::SetPixelShaderResource(5, nullptr);
 						}
+						sp.uvTiling = material.uvTiling;
+						sp.uvOffset = material.uvOffset;
 
 						RendererAPI::UpdateSubresource(_constantBuffer.Get(), &sp, sizeof(ShadersParams));
 
@@ -375,11 +391,7 @@ namespace Frost
 		RendererAPI::EnableVertexShader(_hudVertexShader);
 		RendererAPI::EnablePixelShader(_hudPixelShader);
 
-		RendererAPI::SetPixelSampler(0, _hudSamplerState.Get());
-
-	
 		RendererAPI::SetVertexConstantBuffer(0, _constantBuffer.Get());
-
 
 		auto& hudImages = ecs.GetDataArray<HUD_Image>();
 
@@ -395,6 +407,8 @@ namespace Frost
 		for (size_t i = 0; i < hudImages.size(); ++i)
 		{
 			const HUD_Image& hudImage = hudImages[i];
+
+			SetRendererToFilter(hudImage.textureFilter);
 
 			if (hudImage.texture == nullptr)
 			{
@@ -428,5 +442,23 @@ namespace Frost
 		}
 	}
 	
+	void RendererSystem::SetRendererToFilter(Material::FilterMode filterMode) {
+		switch (filterMode)
+		{
+		case Material::FilterMode::POINT:
+			RendererAPI::SetPixelSampler(0, _samplerPoint.Get());
+			break;
+
+		case Material::FilterMode::LINEAR:
+			RendererAPI::SetPixelSampler(0, _samplerLinear.Get());
+			break;
+
+		case Material::FilterMode::ANISOTROPIC:
+		default:
+			RendererAPI::SetPixelSampler(0, _samplerAnisotropic.Get());
+			break;
+		}
+	}
+
 
 }

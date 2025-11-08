@@ -8,6 +8,8 @@
 #include "Objects/Ogre.h"
 #include "Objects/OgreNormal.h"
 #include "Objects/Text.h"
+#include "Objects/Terrain.h"
+#include "Objects/Player.h"
 #include "Objects/HUD_Logo.h"
 #include <memory>
 
@@ -30,6 +32,8 @@ private:
 	std::unique_ptr<Ogre> _ogre;
 	std::unique_ptr<OgreNormal> _ogreNormal;
 	std::unique_ptr<Text> _text;
+	std::unique_ptr<Terrain> _terrain;
+	std::unique_ptr<Player> _player;
 	std::unique_ptr<HUD_Logo> _hudLogo;
 };
 

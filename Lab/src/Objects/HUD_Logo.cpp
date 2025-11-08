@@ -19,7 +19,8 @@ HUD_Logo::HUD_Logo()
 	_scene.AddComponent<Frost::HUD_Image>(
 		_hudLogo,
 		viewport,
-		LOGO_PATH
+		LOGO_PATH,
+		Material::FilterMode::POINT
 	);
 
 }
