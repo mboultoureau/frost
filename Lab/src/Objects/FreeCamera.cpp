@@ -1,6 +1,7 @@
 #include "FreeCamera.h"
 #include "../Game.h"
 
+
 FreeCamera::FreeCamera()
 {
 	Scene& _scene = Game::GetScene();

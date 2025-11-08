@@ -8,6 +8,8 @@
 
 namespace Frost
 {
+	class IsHeightMapRenderer{};
+
 	struct ModelRenderer : public Component
 	{
 		Model* model = nullptr;
@@ -17,6 +19,12 @@ namespace Frost
 			: modelFilepath(filepath)
 		{
 			model = Application::Get().GetModelLibrary().Get(filepath);
+		}
+
+		ModelRenderer(IsHeightMapRenderer, std::string filepath, Material& material, TextureChannel channel, int chunksize, float height)
+			: modelFilepath(filepath)
+		{
+			model = Application::Get().GetModelLibrary().MakeHeightMapModel(filepath, material, channel, chunksize, height);
 		}
 	};
 }
