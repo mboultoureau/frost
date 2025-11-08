@@ -21,6 +21,8 @@ namespace Frost
        
         Viewport viewport;
 
+        bool enabled = true;
+
         HUD_Image() = default;
 
         HUD_Image(Viewport viewport,std::string pathTexture, Material::FilterMode textureFilter)

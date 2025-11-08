@@ -11,6 +11,8 @@
 #include "Objects/Terrain.h"
 #include "Objects/Player.h"
 #include "Objects/HUD_Logo.h"
+#include "Frost/Event/Events/PauseMenu/PauseEvent.h"
+#include "Frost/Event/Events/PauseMenu/UnPauseEvent.h"
 #include <memory>
 
 class MainLayer : public Frost::Layer
@@ -22,6 +24,7 @@ public:
 	void OnUpdate(float deltaTime) override;
 	void OnFixedUpdate(float deltaTime) override;
 	void OnAttach() override;
+	void OnDetach() override;
 
 private:
 	std::unique_ptr<Sphere> _sphere;
@@ -35,5 +38,11 @@ private:
 	std::unique_ptr<Terrain> _terrain;
 	std::unique_ptr<Player> _player;
 	std::unique_ptr<HUD_Logo> _hudLogo;
+
+	bool OnGamePaused(Frost::PauseEvent& e);
+	bool OnGameUnpaused(Frost::UnPauseEvent& e);
+
+	Frost::UUID _pauseHandlerUUID;
+	Frost::UUID _unpauseHandlerUUID;
 };
 

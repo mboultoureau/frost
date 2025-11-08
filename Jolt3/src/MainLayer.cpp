@@ -5,6 +5,9 @@
 #include "Objects/Bullet.h"
 #include "Objects/Goal.h"
 #include "Objects/LevelCamera.h"
+#include "Frost/Core/Application.h"
+
+
 
 using namespace Frost;
 
@@ -22,6 +25,12 @@ void MainLayer::OnAttach()
 	//Cargo cargo;
 	//Bullet bullet{ Transform::Vector3{0.0f, 5.0f, 0.0f} };
 	LevelCamera levelCamera;
+
+	_pauseHandlerUUID = Application::Get().GetEventManager().Subscribe<Frost::PauseEvent>(
+		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
+
+	_unpauseHandlerUUID = Application::Get().GetEventManager().Subscribe<Frost::UnPauseEvent>(
+		FROST_BIND_EVENT_FN(MainLayer::OnGameUnpaused));
 }
 
 void MainLayer::OnUpdate(float deltaTime)
@@ -43,4 +52,22 @@ void MainLayer::OnFixedUpdate(float deltaTime)
 
 	_player->FixedUpdate(deltaTime);
 	_scene.FixedUpdate(deltaTime);
+}
+
+void MainLayer::OnDetach()
+{
+	Application::Get().GetEventManager().Unsubscribe(EventType::GamePaused, _pauseHandlerUUID);
+	Application::Get().GetEventManager().Unsubscribe(EventType::GameUnpaused, _unpauseHandlerUUID);
+}
+
+bool MainLayer::OnGamePaused(Frost::PauseEvent& e)
+{
+	_paused = true;
+	return true;
+}
+
+bool MainLayer::OnGameUnpaused(Frost::UnPauseEvent& e)
+{
+	_paused = false;
+	return true;
 }
