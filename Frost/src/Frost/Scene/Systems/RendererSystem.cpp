@@ -9,6 +9,7 @@
 #include "Frost/Renderer/DX11/TextureDX11.h"
 #include "Frost/Scene/Components/HUD_Image.h"
 #include "Frost/Renderer/Shader.h"
+
 namespace Frost
 {
 	// Structures de constantes 3D
@@ -273,6 +274,7 @@ namespace Frost
 						if (material.diffuseTextures.size() > 0)
 						{
 							sp.numberDiffuseTextures = 1;
+
 							TextureDX11* diffuseTexture = static_cast<TextureDX11*>(material.diffuseTextures[0].get());
 							RendererAPI::SetPixelShaderResource(0, diffuseTexture->GetTextureView());
 						}
@@ -410,7 +412,7 @@ namespace Frost
 
 			SetRendererToFilter(hudImage.textureFilter);
 
-			if (hudImage.texture == nullptr)
+			if (hudImage.texture == nullptr || !hudImage.enabled)
 			{
 				continue;
 			}

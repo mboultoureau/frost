@@ -13,8 +13,8 @@ namespace Frost
 		using LayerName = std::string;
 		using LayerPriority = uint32_t;
 
-		Layer(const LayerName& name) : _name(name), _priority{ 0 } {}
-		Layer(const LayerName& name, LayerPriority priority) : _name(name), _priority{ priority } {}
+		Layer(const LayerName& name) : _name(name), _priority{ 0 }, _paused(false) {}
+		Layer(const LayerName& name, LayerPriority priority) : _name(name), _priority{ priority }, _paused(false) {}
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
@@ -24,6 +24,11 @@ namespace Frost
 		virtual void OnLateUpdate(float deltaTime) {}
 
 		const LayerName& GetName() const { return _name; }
+
+		bool isPaused() const { return _paused; }
+
+	protected:
+		bool _paused;
 
 	private:
 		LayerName _name;
