@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <map>
+#include <Frost/Renderer/DX11/TextureDX11.h>
 
 
 namespace Frost
@@ -81,6 +82,8 @@ namespace Frost
 		Frost::GameObject::Id GetGoIdFromJoltBodyId(JPH::BodyID id);
 		std::unordered_map<JPH::BodyID, Frost::GameObject::Id> mapJBodyGameObject;
 
+
+		JPH::ShapeRefC CreateHeightFieldShapeFromTexture(TextureDX11* heightTexture, TextureChannel channel, float heightScale, Transform::Vector3 transformScale);
 
 	private:
 		int SetShapeToRigidbody(GameObject::Id id, JPH::ShapeRefC shapeRef);

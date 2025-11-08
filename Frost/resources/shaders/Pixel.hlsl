@@ -11,6 +11,9 @@ cbuffer Constants
     
     float4 CameraPosition;
     
+    float2 uvTiling; 
+    float2 uvOffset; 
+    
     int numberDiffuseTextures;
     int hasNormalMap;
     int hasEmissiveTexture;
@@ -44,10 +47,13 @@ struct PixelInput
 
 float4 PSMain(PixelInput input) : SV_TARGET
 {
+    float2 uv = input.texCoord * uvTiling + uvOffset;
+
+    
     float4 BaseColor = DiffuseColor;
     if (numberDiffuseTextures > 0)
     {
-        BaseColor *= diffuseTexture.Sample(textureSampler, input.texCoord);
+        BaseColor *= diffuseTexture.Sample(textureSampler, uv);
     }
     
     float3 finalLighting;
@@ -55,12 +61,11 @@ float4 PSMain(PixelInput input) : SV_TARGET
     float3 L = normalize(input.lightDirection);
     float3 V = normalize(input.cameraDirection);
     
-    
     float3 N;
         
     if (hasNormalMap > 0)
     {
-        float3 tangentNormal = normalTexture.Sample(textureSampler, input.texCoord).xyz;
+        float3 tangentNormal = normalTexture.Sample(textureSampler, uv).xyz;
         tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
             
         float3 T = normalize(input.worldTangent);
@@ -83,19 +88,19 @@ float4 PSMain(PixelInput input) : SV_TARGET
     float aoFactor = 1.0f;
     if (hasAmbientOclusionTexture > 0)
     {
-        aoFactor = ambientOclusionTexture.Sample(textureSampler, input.texCoord).r;
+        aoFactor = ambientOclusionTexture.Sample(textureSampler, uv).r;
     }
 
     float metallicFactor = 0.0f;
     if (hasMetallicTexture > 0)
     {
-        metallicFactor = metallicTexture.Sample(textureSampler, input.texCoord).b;
+        metallicFactor = metallicTexture.Sample(textureSampler, uv).b;
     }
     
     float roughness = roughnessValue;
     if (hasRoughnessTexture > 0)
     {
-        roughness = roughnessTexture.Sample(textureSampler, input.texCoord).g;
+        roughness = roughnessTexture.Sample(textureSampler, uv).g;
     }
     
     float shininess = (1.0f - roughness) * 31.0f + 1.0f;
@@ -115,7 +120,7 @@ float4 PSMain(PixelInput input) : SV_TARGET
     
     if (hasEmissiveTexture > 0)
     {
-        finalEmissive *= emissiveTexture.Sample(textureSampler, input.texCoord).rgb;
+        finalEmissive *= emissiveTexture.Sample(textureSampler, uv).rgb;
     }
     
     float3 finalColor = finalLighting + finalEmissive;

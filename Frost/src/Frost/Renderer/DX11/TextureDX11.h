@@ -4,11 +4,16 @@
 
 #include <d3d11.h>
 #include <string>
+#include <cstdint>
+#include <vector>
+
+struct aiTexture;
 
 struct aiTexture;
 
 namespace Frost
 {
+
 	class TextureDX11 : public Texture
 	{
 	public:
@@ -18,9 +23,11 @@ namespace Frost
 		virtual ~TextureDX11() override;
 
 		ID3D11ShaderResourceView* GetTextureView() const { return _textureView; }
+		std::vector<uint8_t> GetTextureRawData() const { return _data; }
 
 	private:
 		ID3D11ShaderResourceView* _textureView = nullptr;
 		void CreateD3D11TextureView(int width, int height, const void* data, DXGI_FORMAT format);
+		std::vector<uint8_t> _data;
 	};
 }

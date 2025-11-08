@@ -4,6 +4,7 @@
 #include "Frost/Renderer/Shader.h"
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Frustum.h"
+#include "Frost/Renderer/Material.h"
 
 #include <wrl/client.h>
 
@@ -18,6 +19,7 @@ namespace Frost
     private:
         void Render(ECS& ecs);
         void RenderHUD(ECS& ecs);
+        void SetRendererToFilter(Material::FilterMode filterMode);
 		
         // VS & PS 3D
         VertexShader _vertexShader;
@@ -35,7 +37,9 @@ namespace Frost
 
         Frustum _frustum;
 
-        Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
-        Microsoft::WRL::ComPtr<ID3D11SamplerState> _hudSamplerState;
+        Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerLinear;
+        Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerPoint;
+        Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerAnisotropic;
+
     };
 }
