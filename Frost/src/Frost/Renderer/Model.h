@@ -24,8 +24,9 @@ namespace Frost
 		const std::string& GetFilepath() const { return _filepath; }
 		const std::vector<Mesh>& GetMeshes() const { return _meshes; }
 		const std::vector<Material>& GetMaterials() const { return _materials; }
+		Model() = default;
 
-	private:
+	protected:
 		std::string _filepath;
 		std::vector<Mesh> _meshes;
 		std::vector<Material> _materials;

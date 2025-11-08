@@ -1,5 +1,7 @@
 #include "Frost/Renderer/TextureLibrary.h"
 #include "Frost.h"
+#include <assimp/scene.h>
+
 
 namespace Frost
 {

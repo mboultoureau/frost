@@ -38,6 +38,8 @@ namespace Frost
 		HUD = 110,
 	}; 
 
+	enum class TextureChannel { R, G, B, A };
+
 	class Texture
 	{
 	public:
@@ -48,6 +50,8 @@ namespace Frost
 
 		const std::string& GetPath() const { return _path; }
 		const TextureType GetTextureType() const { return _textureType; }
+		const int GetWidth() { return _width; }
+		const int GetHeight() { return _height; }
 
 	protected:
 		TextureType _textureType;

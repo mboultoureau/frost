@@ -2,6 +2,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <assimp/types.h>
 #include <assimp/scene.h>
 
 #include "Frost/Debugging/Assert.h"
@@ -17,6 +18,9 @@ namespace Frost
 		int width, height, channels;
 		stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 		FT_ENGINE_ASSERT(data, "Failed to load texture: {}", path);
+		_data = std::vector<uint8_t>( data, data + width * height * 4 );
+		_width = width;
+		_height = height;
 		CreateD3D11TextureView(width, height, data, DXGI_FORMAT_R8G8B8A8_UNORM);
 		stbi_image_free(data);
 	}
