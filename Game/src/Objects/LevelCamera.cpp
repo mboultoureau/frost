@@ -8,7 +8,7 @@ LevelCamera::LevelCamera()
 	auto _camera = _scene.CreateGameObject("Level Camera");
 	_scene.AddComponent<Frost::Transform>(
 		_camera,
-		Frost::Transform::Vector3{ 0.0f, 30.0f, 0.0f },
+		Frost::Transform::Vector3{ 0.0f, 500.0f, -100.0f },
 		Frost::Transform::Vector3{ 1.6, 0.0f, 0.0f },
 		Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f }
 	);
@@ -17,11 +17,11 @@ LevelCamera::LevelCamera()
 
 	auto cameraComp = _scene.GetComponent<Frost::Camera>(_camera);
 	cameraComp->projectionType = Frost::Camera::ProjectionType::Orthographic;
-	cameraComp->backgroundColor[0] = 0.4f;
-	cameraComp->backgroundColor[1] = 0.3f;
-	cameraComp->backgroundColor[2] = 0.2f;
+	cameraComp->backgroundColor[0] = 0.1f;
+	cameraComp->backgroundColor[1] = 0.1f;
+	cameraComp->backgroundColor[2] = 0.5f;
 	cameraComp->backgroundColor[3] = 1.0f;
-	cameraComp->orthographicSize = 80.0f;
+	cameraComp->orthographicSize = 500.0f;
 	cameraComp->clearOnRender = true;
 	cameraComp->viewport = Frost::Viewport(0.05f, 0.05f, 0.2f, 0.2f);
 }

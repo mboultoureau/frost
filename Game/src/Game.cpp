@@ -46,6 +46,7 @@ void Game::InitGame()
 	_app->PushLayer(debugLayer);
 
 	Frost::PauseMenu* pauseLayer = new Frost::PauseMenu{};
+	pauseLayer->AddScene(_scene.get());
 	_app->PushLayer(pauseLayer);
 
 	debugLayer->AddScene(_scene.get());

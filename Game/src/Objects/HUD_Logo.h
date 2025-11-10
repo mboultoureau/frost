@@ -4,14 +4,11 @@
 
 using namespace Frost;
 
-class Cargo
+class HUD_Logo
 {
 public:
-	Cargo();
+	HUD_Logo();
 
 private:
-	GameObject::Id _cargo;
-
-	JPH::Body* _body;
+	GameObject::Id _hudLogo;
 };
-
