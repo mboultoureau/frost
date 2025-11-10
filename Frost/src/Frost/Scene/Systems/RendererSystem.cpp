@@ -441,7 +441,7 @@ namespace Frost
 		DirectX::XMMATRIX matWorld = matScale * matTranslation;
 		hudSp.world = DirectX::XMMatrixTranspose(matWorld);
 
-		RendererAPI::UpdateSubresource(_constantBuffer.Get(), &hudSp, sizeof(HUD_ShadersParams));
+		RendererAPI::UpdateSubresource(_hudConstantBuffer.Get(), &hudSp, sizeof(HUD_ShadersParams));
 
 
 		TextureDX11* diffuseTexture = static_cast<TextureDX11*>(hudImage.texture);
