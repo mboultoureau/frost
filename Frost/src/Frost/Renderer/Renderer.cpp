@@ -46,10 +46,10 @@ namespace Frost
 	{
 		FT_ENGINE_ASSERT(_device != nullptr, "Renderer device is null");
 		D3D11_RECT vp;
-		vp.left = viewport.x * Application::Get().GetWindow()->GetDimensions().width;
-		vp.top = viewport.y * Application::Get().GetWindow()->GetDimensions().height;
-		vp.right = vp.left + (viewport.width * Application::Get().GetWindow()->GetDimensions().width);
-		vp.bottom = vp.top + (viewport.height * Application::Get().GetWindow()->GetDimensions().height);
+		vp.left = viewport.x * Application::Get().GetWindow()->GetRenderedZoneDimensions().width;
+		vp.top = viewport.y * Application::Get().GetWindow()->GetRenderedZoneDimensions().height;
+		vp.right = vp.left + (viewport.width * Application::Get().GetWindow()->GetRenderedZoneDimensions().width);
+		vp.bottom = vp.top + (viewport.height * Application::Get().GetWindow()->GetRenderedZoneDimensions().height);
 
 		float clearColor[4] = { r, g, b, a };
 		
@@ -61,10 +61,10 @@ namespace Frost
 		FT_ENGINE_ASSERT(_device != nullptr, "Renderer device is null");
 
 		D3D11_VIEWPORT vp;
-		vp.TopLeftX = viewport.x * Application::Get().GetWindow()->GetDimensions().width;
-		vp.TopLeftY = viewport.y * Application::Get().GetWindow()->GetDimensions().height;
-		vp.Width = viewport.width * Application::Get().GetWindow()->GetDimensions().width;
-		vp.Height = viewport.height * Application::Get().GetWindow()->GetDimensions().height;
+		vp.TopLeftX = viewport.x * Application::Get().GetWindow()->GetRenderedZoneDimensions().width;
+		vp.TopLeftY = viewport.y * Application::Get().GetWindow()->GetRenderedZoneDimensions().height;
+		vp.Width = viewport.width * Application::Get().GetWindow()->GetRenderedZoneDimensions().width;
+		vp.Height = viewport.height * Application::Get().GetWindow()->GetRenderedZoneDimensions().height;
 		vp.MinDepth = 0.0f;
 		vp.MaxDepth = 1.0f;
 

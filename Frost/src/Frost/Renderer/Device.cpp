@@ -20,7 +20,7 @@ namespace Frost
 		assert(_window != nullptr);
 
 		_CreateDevice();
-		WindowDimensions dimensions = _window->GetDimensions();
+		WindowDimensions dimensions = _window->GetWindowDimensions();
 		_CreateViewsAndViewport(dimensions.width, dimensions.height);
 		_CreateRasterizer();
 		_CreateWireframeRasterizer();
@@ -38,7 +38,7 @@ namespace Frost
 
 	void Device::_CreateDevice()
 	{
-		WindowDimensions dimensions = _window->GetDimensions();
+		WindowDimensions dimensions = _window->GetWindowDimensions();
 
 		UINT flags = 0x0;
 #ifdef FT_DEBUG
