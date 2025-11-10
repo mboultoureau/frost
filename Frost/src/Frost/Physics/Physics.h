@@ -38,9 +38,11 @@ namespace Frost
 		Physics();
 		~Physics();
 
+#ifdef FT_DEBUG
 		static void DrawDebug();
 		static Frost::DebugRendererPhysicsConfig& GetDebugRendererConfig();
 		static void SetDebugRendererConfig(Frost::DebugRendererPhysicsConfig config);
+#endif
 
 		static void AddConstraint(JPH::Constraint* inConstraint);
 		static void AddConstraints(JPH::Constraint** inConstraints, int inNumber);
@@ -108,7 +110,9 @@ namespace Frost
 		inline static bool _physicsInitialized = false;
 		inline static PhysicsConfig _physicsConfig;
 
+#ifdef FT_DEBUG
 		JPH::DebugRenderer* _debugRenderer;
 		Frost::DebugRendererPhysicsConfig _debugRendererConfig;
+#endif
 	};
 }	// NAMESPACE FROST

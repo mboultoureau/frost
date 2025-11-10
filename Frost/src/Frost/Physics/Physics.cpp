@@ -66,6 +66,7 @@ namespace Frost
 		JPH::UnregisterTypes();
 	}
 
+#ifdef FT_DEBUG
 	void Physics::DrawDebug()
 	{
 		FT_ENGINE_ASSERT(Get()._debugRenderer != nullptr, "Debug renderer is null!");
@@ -87,6 +88,8 @@ namespace Frost
 	{
 		Get()._debugRendererConfig = config;
 	}
+#endif
+
 
 	void Physics::AddConstraint(JPH::Constraint* inConstraint)
 	{
@@ -175,6 +178,7 @@ namespace Frost
 		// Breakpoint
 		return true;
 	}
+#endif 
 
 	void Physics::InitPhysics(PhysicsConfig& config, bool useConfig)
 	{
@@ -209,7 +213,6 @@ namespace Frost
 	}
 	;
 
-#endif 
 	Frost::GameObject::Id Frost::Physics::GetGoIdFromJoltBodyId(JPH::BodyID id)
 	{
 		return mapJBodyGameObject.at(id);
@@ -282,7 +285,7 @@ namespace Frost
 
 	/// heightTexture : ta TextureDX11* (doit fournir GetTextureRawData(), GetWidth(), GetHeight())
 	/// channel : TextureChannel::R/G/B/A
-	/// heightScale : échelle verticale souhaitée (le sample stocke valeurs 0..1, mScale.Y va multiplier)
+	/// heightScale : echelle verticale souhaitée (le sample stocke valeurs 0..1, mScale.Y va multiplier)
 	JPH::ShapeRefC Physics::CreateHeightFieldShapeFromTexture(TextureDX11* heightTexture, TextureChannel channel, float heightScale, Transform::Vector3 transformScale)
 	{
 		FT_ENGINE_ASSERT(heightTexture, "heightTexture null");

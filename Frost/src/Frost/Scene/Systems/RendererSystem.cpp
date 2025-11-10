@@ -40,6 +40,9 @@ namespace Frost
 
 	RendererSystem::RendererSystem() : _frustum{}
 	{
+		FT_ENGINE_ASSERT((sizeof(ShadersParams) % 16) == 0, "ShadersParams size must be multiple of 16");
+		FT_ENGINE_ASSERT((sizeof(HUD_ShadersParams) % 16) == 0, "HUD_ShadersParams size must be multiple of 16");
+
 		// shaders
 		constexpr D3D11_INPUT_ELEMENT_DESC inputLayout[] =
 		{
@@ -53,6 +56,10 @@ namespace Frost
 		_vertexShader.Create(L"../Frost/resources/shaders/Vertex.hlsl", inputLayout, _countof(inputLayout));
 		_pixelShader.Create(L"../Frost/resources/shaders/Pixel.hlsl");
 		_constantBuffer.Create(nullptr, sizeof(ShadersParams));
+		_hudConstantBuffer.Create(nullptr, sizeof(HUD_ShadersParams));
+		FT_ENGINE_ASSERT(_constantBuffer.Get(), "Failed to create constant buffer");
+		FT_ENGINE_ASSERT(_hudConstantBuffer.Get(), "Failed to create HUD constant buffer");
+
 
 		// HUD shaders
 		HUD_Vertex vertices[4] =
@@ -76,6 +83,8 @@ namespace Frost
 
 		_hudVertexShader.Create(L"../Frost/resources/shaders/HUD_Vertex.hlsl", hudInputLayout, _countof(hudInputLayout));
 		_hudPixelShader.Create(L"../Frost/resources/shaders/HUD_Pixel.hlsl");
+
+
 
 		// Texture sampler
 		D3D11_SAMPLER_DESC pointDesc = {};
@@ -199,6 +208,7 @@ namespace Frost
 			for (size_t i = 0; i < renderers.size(); ++i)
 			{
 				const ModelRenderer& modelRenderer = renderers[i];
+				if (!(modelRenderer.isActive)) continue;
 				GameObject::Id id = rendererEntities[i];
 
 				WorldTransform* transform = ecs.GetComponent<WorldTransform>(id);
@@ -365,7 +375,6 @@ namespace Frost
 	
 
 		Viewport viewport;
-
 		RendererAPI::SetViewport(viewport);
 
 		RendererAPI::SetInputLayout(_hudVertexShader.GetInputLayout());
@@ -379,7 +388,7 @@ namespace Frost
 		RendererAPI::EnableVertexShader(_hudVertexShader);
 		RendererAPI::EnablePixelShader(_hudPixelShader);
 
-		RendererAPI::SetVertexConstantBuffer(0, _constantBuffer.Get());
+		RendererAPI::SetVertexConstantBuffer(0, _hudConstantBuffer.Get());
 
 		auto& hudImages = ecs.GetDataArray<HUD_Image>();
 		auto& uiButtons = ecs.GetDataArray<UIButton>();

@@ -161,10 +161,12 @@ void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
 		isThirdPerson = !isThirdPerson;
 	}*/
 	isThirdPerson = !(Input::GetKeyboard().IsKeyDown(K_E));
+	auto renderer = scene->GetComponent<ModelRenderer>(vehicle);
+	renderer->isActive = isThirdPerson;
 }
 
 
-PlayerCamera::PlayerCamera(GameObject::Id& _player) : _player{_player}
+PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : _player{_player}
 {
 	using namespace JPH;
 	auto& scene = Game::GetScene();
@@ -179,7 +181,8 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player) : _player{_player}
 	_3rdPersVirtCamera = scene.CreateGameObject("3rd Person Virtual Camera", _cameraPivot);
 	scene.AddComponent<Transform>(_3rdPersVirtCamera, Transform::Vector3{ 0.0f, 10, -20.0f });
 	scene.AddComponent<WorldTransform>(_3rdPersVirtCamera, Transform::Vector3{ 0.0f, 10.0f, -20.0f });
-	scene.AddComponent<ModelRenderer>(_3rdPersVirtCamera, "./resources/meshes/sphere.fbx");
+	//debug
+	//scene.AddComponent<ModelRenderer>(_3rdPersVirtCamera, "./resources/meshes/sphere.fbx");
 	auto tpCamWTransform = scene.GetComponent<WorldTransform>(_3rdPersVirtCamera);
 
 	// Camera
@@ -213,10 +216,11 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player) : _player{_player}
 		_cameraPivot,
 		_3rdPersVirtCamera,
 		_player,
+		_vehicle,
 		_camera
 		);
 		
-	//_cameraBodyID = scene.GetComponent<RigidBody>(_camera)->bodyId;
+	_cameraBodyID = scene.GetComponent<RigidBody>(_camera)->bodyId;
 	
 	_bodyInter = Physics::Get().body_interface;
 }

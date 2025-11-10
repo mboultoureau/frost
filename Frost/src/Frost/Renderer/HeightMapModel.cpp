@@ -178,7 +178,7 @@ namespace Frost
                 normalVec = XMVector3Normalize(normalVec);
 
                 XMFLOAT3 normal;
-                XMStoreFloat3(&normal, normalVec);
+                XMStoreFloat3(&normal, -1*normalVec);
 
                 Vertex v{};
                 v.position = { worldX, worldY, worldZ };
