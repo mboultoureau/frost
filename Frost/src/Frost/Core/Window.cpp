@@ -186,13 +186,29 @@ namespace Frost
         return 0;
     }
 
-    WindowDimensions Window::GetDimensions()
+    WindowDimensions Window::GetWindowDimensions()
     {
         WindowDimensions dimensions;
         RECT rect;
         
         if (!GetWindowRect(_hwnd, &rect)) {
             MessageBox(NULL, L"Window Get Dimensions Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+            throw WindowGetDimensionsFailed{};
+        }
+
+        dimensions.width = rect.right - rect.left;
+        dimensions.height = rect.bottom - rect.top;
+
+        return dimensions;
+    }
+
+    WindowDimensions Window::GetRenderedZoneDimensions()
+    {
+        WindowDimensions dimensions;
+        RECT rect;
+
+        if (!GetClientRect(_hwnd, &rect)) {
+            MessageBox(NULL, L"Window Get Rendered Zone Dimensions Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
             throw WindowGetDimensionsFailed{};
         }
 

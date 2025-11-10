@@ -7,7 +7,6 @@
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/Vertex.h"
 #include "Frost/Renderer/DX11/TextureDX11.h"
-#include "Frost/Scene/Components/HUD_Image.h"
 #include "Frost/Renderer/Shader.h"
 
 namespace Frost
@@ -36,19 +35,6 @@ namespace Frost
 		float roughnessValue = 0.5f;
 		int hasRoughnessTexture = 0;
 		int padding[1];
-	};
-
-	// Structure de constantes 2D pour le HUD
-	struct alignas(16) HUD_ShadersParams
-	{
-		DirectX::XMMATRIX world;
-		DirectX::XMFLOAT4 screenDimensions;
-	};
-	// Structure de sommet 2D
-	struct HUD_Vertex
-	{
-		DirectX::XMFLOAT3 Position;
-		DirectX::XMFLOAT2 TexCoord;
 	};
 
 
@@ -137,7 +123,7 @@ namespace Frost
 	{
 		RendererAPI::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-		const WindowDimensions currentWindowDimensions = Application::Get().GetWindow()->GetDimensions();
+		const WindowDimensions currentWindowDimensions = Application::Get().GetWindow()->GetRenderedZoneDimensions();
 		if (currentWindowDimensions.width == 0 || currentWindowDimensions.height == 0)
 		{
 			return;
@@ -370,7 +356,7 @@ namespace Frost
 	
 	void RendererSystem::RenderHUD(ECS& ecs)
 	{
-		const WindowDimensions currentWindowDimensions = Application::Get().GetWindow()->GetDimensions();
+		const WindowDimensions currentWindowDimensions = Application::Get().GetWindow()->GetRenderedZoneDimensions();
 		if (currentWindowDimensions.width == 0 || currentWindowDimensions.height == 0)
 		{
 			return;
@@ -396,6 +382,7 @@ namespace Frost
 		RendererAPI::SetVertexConstantBuffer(0, _constantBuffer.Get());
 
 		auto& hudImages = ecs.GetDataArray<HUD_Image>();
+		auto& uiButtons = ecs.GetDataArray<UIButton>();
 
 		HUD_ShadersParams hudSp = {};
 		hudSp.screenDimensions = {
@@ -412,36 +399,48 @@ namespace Frost
 
 			SetRendererToFilter(hudImage.textureFilter);
 
-			if (hudImage.texture == nullptr || !hudImage.enabled)
-			{
-				continue;
-			}
-
-			DirectX::XMMATRIX matScale = DirectX::XMMatrixScaling(
-				hudImage.viewport.width,
-				hudImage.viewport.height,
-				1.0f
-			);
-
-			DirectX::XMMATRIX matTranslation = DirectX::XMMatrixTranslation(
-				hudImage.viewport.x,
-				hudImage.viewport.y,
-				0.0f
-			);
-
-			DirectX::XMMATRIX matWorld = matScale * matTranslation;
-			hudSp.world = DirectX::XMMatrixTranspose(matWorld);
-
-			RendererAPI::UpdateSubresource(_constantBuffer.Get(), &hudSp, sizeof(HUD_ShadersParams));
-
-
-			TextureDX11* diffuseTexture = static_cast<TextureDX11*>(hudImage.texture);
-			RendererAPI::SetPixelShaderResource(0, diffuseTexture->GetTextureView());
-
-			RendererAPI::DrawIndexed(_hudIndexBuffer.GetCount(), 0, 0);
-
-			RendererAPI::SetPixelShaderResource(0, nullptr);
+			DrawImage(hudImage, hudSp);
 		}
+
+
+		for (const UIButton& button : uiButtons)
+		{
+			SetRendererToFilter(button.textureFilter);
+		 	DrawImage(button, hudSp);
+		}
+	}
+
+	void RendererSystem::DrawImage(const HUD_Image& hudImage, HUD_ShadersParams& hudSp)
+	{
+		if (hudImage.texture == nullptr || !hudImage.enabled)
+		{
+			return;
+		}
+
+		DirectX::XMMATRIX matScale = DirectX::XMMatrixScaling(
+			hudImage.viewport.width,
+			hudImage.viewport.height,
+			1.0f
+		);
+
+		DirectX::XMMATRIX matTranslation = DirectX::XMMatrixTranslation(
+			hudImage.viewport.x,
+			hudImage.viewport.y,
+			0.0f
+		);
+
+		DirectX::XMMATRIX matWorld = matScale * matTranslation;
+		hudSp.world = DirectX::XMMatrixTranspose(matWorld);
+
+		RendererAPI::UpdateSubresource(_constantBuffer.Get(), &hudSp, sizeof(HUD_ShadersParams));
+
+
+		TextureDX11* diffuseTexture = static_cast<TextureDX11*>(hudImage.texture);
+		RendererAPI::SetPixelShaderResource(0, diffuseTexture->GetTextureView());
+
+		RendererAPI::DrawIndexed(_hudIndexBuffer.GetCount(), 0, 0);
+
+		RendererAPI::SetPixelShaderResource(0, nullptr);
 	}
 	
 	void RendererSystem::SetRendererToFilter(Material::FilterMode filterMode) {
@@ -461,6 +460,4 @@ namespace Frost
 			break;
 		}
 	}
-
-
 }
