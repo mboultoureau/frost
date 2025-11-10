@@ -35,7 +35,8 @@ namespace Frost
 	{
 	public:
 		Window(const WindowSettings& settings);
-		WindowDimensions GetDimensions();
+		WindowDimensions GetWindowDimensions();
+		WindowDimensions GetRenderedZoneDimensions();
 
 		void Destroy();
 		HWND GetHWND() const { return _hwnd; }
