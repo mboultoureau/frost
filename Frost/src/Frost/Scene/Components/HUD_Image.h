@@ -7,6 +7,7 @@
 
 #include <string>
 #include <memory> 
+#include <Frost/Renderer/Viewport.h>
 
 namespace Frost
 {
@@ -26,7 +27,7 @@ namespace Frost
         HUD_Image() = default;
 
         HUD_Image(Viewport viewport,std::string pathTexture, Material::FilterMode textureFilter)
-            : viewport{viewport}, textureFilepath{ pathTexture }
+            : viewport{viewport}, textureFilepath{ pathTexture }, textureFilter{ textureFilter }
         {
             texture = TextureLibrary::Get().GetTexture(pathTexture, TextureType::HUD).get();
         }
