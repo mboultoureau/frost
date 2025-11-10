@@ -6,7 +6,6 @@
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
 
-#include "Bullet.h"
 #include <Frost/Scene/Components/GameObjectInfo.h>
 #include "PlayerCamera.h"
 
@@ -28,7 +27,6 @@ private:
 	JPH::BodyInterface* _bodyInter;
 
 	Timer _fireTimer;
-	std::vector<std::unique_ptr<Bullet>> _bullets;
 
 	float _forward = 0.0f;
 	float _previousForward = 1.0f;
@@ -37,6 +35,5 @@ private:
 	void InitializePhysics();
 	void ProcessInput(float deltaTime);
 	void UpdatePhysics(float deltaTime);
-	void CleanupBullets();
 };
 

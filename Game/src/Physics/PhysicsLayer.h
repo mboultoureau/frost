@@ -12,13 +12,15 @@ namespace ObjectLayers
 	static constexpr JPH::ObjectLayer PLAYER = 1;
 	static constexpr JPH::ObjectLayer BULLET = 2;
 	static constexpr JPH::ObjectLayer CARGO = 3;
-	static constexpr JPH::ObjectLayer GOAL = 4;
-	static constexpr JPH::ObjectLayer CAMERA = 5;
-	static constexpr JPH::ObjectLayer NUM_LAYERS = 6;
+	static constexpr JPH::ObjectLayer CHECKPOINT = 4;
+	static constexpr JPH::ObjectLayer NO_COLLIDE = 5;
+	static constexpr JPH::ObjectLayer CAMERA = 6;
+	static constexpr JPH::ObjectLayer NUM_LAYERS = 7;
 }
 
 namespace BroadPhaseLayers
 {
+
 	static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
 	static constexpr JPH::BroadPhaseLayer MOVING(1);
 	static constexpr JPH::uint NUM_LAYERS(2);

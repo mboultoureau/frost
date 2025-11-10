@@ -19,10 +19,12 @@ namespace Frost
 
 	Model* ModelLibrary::MakeHeightMapModel(const std::string& filepath, const Material& material, const TextureChannel& channel, int chunksize, float height)
 	{
-		if (!Exists(filepath))
+
+		std::string key = filepath + static_cast<char>(channel);
+		if (!Exists(key))
 		{
-			_models.emplace(filepath, HeightMapModel(filepath, material, channel, chunksize, height));
+			_models.emplace(key, HeightMapModel(filepath, material, channel, chunksize, height));
 		}
-		return &_models.at(filepath);
+		return &_models.at(key);
 	}
 }

@@ -14,6 +14,7 @@ namespace Frost
 	{
 		Model* model = nullptr;
 		std::string modelFilepath;
+		bool isActive = true;
 		
 		ModelRenderer(std::string filepath)
 			: modelFilepath(filepath)

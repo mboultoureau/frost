@@ -226,6 +226,7 @@ namespace Frost
 	void Renderer::SetPixelShaderResource(UINT slot, ID3D11ShaderResourceView* shaderResourceView)
 	{
 		FT_ENGINE_ASSERT(_device != nullptr, "Renderer device is null");
+		//FT_ENGINE_ASSERT(!shaderResourceView, "Texture Shader view is null");
 		_device->_immediateContext->PSSetShaderResources(slot, 1, &shaderResourceView);
 	}
 
