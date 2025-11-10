@@ -7,10 +7,11 @@ using namespace Frost;
 class Terrain
 {
 public:
-	Terrain(Scene& scene);
+	Terrain();
+	float heightScale = 1.0f;
+	std::string filepath;
 
 private:
 	GameObject::Id _terrain;
-	GameObject::Id _wall;
 };
 

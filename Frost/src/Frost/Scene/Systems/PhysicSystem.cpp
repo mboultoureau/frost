@@ -66,7 +66,9 @@ void Frost::PhysicSystem::FixedUpdate(ECS& ecs, float deltaTime)
 
 void Frost::PhysicSystem::LateUpdate(ECS& ecs, float deltaTime)
 {
+#ifdef FT_DEBUG
 	Physics::DrawDebug();
+#endif
 }
 
 //initialize jph::bodies and update ecs::transforms
