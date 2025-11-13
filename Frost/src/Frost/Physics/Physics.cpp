@@ -213,11 +213,6 @@ namespace Frost
 	}
 	;
 
-	Frost::GameObject::Id Frost::Physics::GetGoIdFromJoltBodyId(JPH::BodyID id)
-	{
-		return mapJBodyGameObject.at(id);
-	}
-
 	bool ObjectLayerPairFilterImpl::ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const
 	{
 		switch (inObject1)

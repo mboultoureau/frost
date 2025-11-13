@@ -14,6 +14,7 @@
 #include "Frost/Event/Events/PauseMenu/PauseEvent.h"
 #include "Frost/Event/Events/PauseMenu/UnPauseEvent.h"
 #include <memory>
+#include "Objects/HierarchyTest.h"
 
 class MainLayer : public Frost::Layer
 {
@@ -38,6 +39,7 @@ private:
 	std::unique_ptr<Terrain> _terrain;
 	std::unique_ptr<Player> _player;
 	std::unique_ptr<HUD_Logo> _hudLogo;
+	std::unique_ptr<HierarchyTest> _hierarchy;
 
 	bool OnGamePaused(Frost::PauseEvent& e);
 	bool OnGameUnpaused(Frost::UnPauseEvent& e);

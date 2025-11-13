@@ -14,6 +14,7 @@
 
 #include <memory>
 #include "Objects/Terrain.h"
+#include "Objects/Wall.h"
 
 class MainLayer : public Frost::Layer
 {
@@ -40,6 +41,7 @@ private:
 	std::shared_ptr<CheckPoint> _checkPoint3;
 	std::shared_ptr<CheckPoint> _checkPoint4;
 	std::shared_ptr<CheckPoint> _checkPoint5;
+	std::shared_ptr<Wall> _wall;
 	HUD_Logo logo;
 };
 

@@ -5,7 +5,8 @@
 #include "Frost/Scene/Components/RigidBody.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 
 
@@ -28,7 +29,7 @@ Player::Player()
 	scene.AddComponent<Transform>(
 		_player,
 		Transform::Vector3{ 0.0f, 0.0f, 0.0f },
-		Transform::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, 
+		Transform::Vector4{ -1.55f, 0.0f, 0.0f, 1.0f }, 
 		Transform::Vector3{ 1.0f, 1.0f, 1.0f }
 	);
 	scene.AddComponent<WorldTransform>(_player);
@@ -38,12 +39,12 @@ Player::Player()
 	scene.AddComponent<Transform>(
 		_vehicle,
 		Frost::Transform::Vector3{ 0.0f, 1.0f, 5.0f },
-		Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f }, //-90,0,0
+		Frost::Transform::Vector3{ -1.6f, 0.0f, 0.0f },
 		Frost::Transform::Vector3{ 5.0f, 5.0f, 5.0f });
 
 	scene.AddComponent<WorldTransform>(_vehicle);
-	scene.AddComponent<ModelRenderer>(_vehicle, "./resources/meshes/sphere.fbx"); //"./resources/meshes/moto.glb"
-
+	scene.AddComponent<ModelRenderer>(_vehicle, "./resources/meshes/moto.glb"); //"./resources/meshes/moto.glb"
+	//scene.AddComponent<ModelRenderer>(_vehicle, "./resources/meshes/sphere.fbx");
 	//Add spring camera
 	auto wt = scene.GetComponent<WorldTransform>(_player);
 	auto pCam = PlayerCamera(_player, _vehicle);
@@ -69,17 +70,22 @@ void Player::InitializePhysics()
 
 	// Create vehicle body
 	RVec3 position(-365, 100.0f, -100);
-	JPH::ShapeRefC boxShape = JPH::SphereShapeSettings(5.0f).Create().Get();	//5 5 25
-	BodyCreationSettings motorcycle_body_settings(boxShape, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
+
+	JPH::ShapeRefC capsuleShape = new JPH::CapsuleShape(5.0f, 1.0f);
+	Quat localRot = Quat::sRotation(Vec3::sAxisX(), JPH::DegreesToRadians(90.0f));
+	JPH::ShapeRefC rotatedCapsule = new RotatedTranslatedShape(Vec3(0, 0, 0), localRot, capsuleShape);
+
+	//JPH::ShapeRefC boxShape = JPH::SphereShapeSettings(5.0f).Create().Get();
+	BodyCreationSettings motorcycle_body_settings(rotatedCapsule, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
 	motorcycle_body_settings.mRestitution = 0.0f;
 	motorcycle_body_settings.mAllowSleeping = false;
 	motorcycle_body_settings.mFriction = 100.f; 
-	motorcycle_body_settings.mAllowedDOFs = 
-		EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ;
+	motorcycle_body_settings.mAllowedDOFs =
+		EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ; 
 	scene.AddComponent<RigidBody>(_player, motorcycle_body_settings, _player, EActivation::Activate);
 
-	_playerBodyID = scene.GetComponent<RigidBody>(_player)->bodyId;
-	_cameraBodyID = scene.GetComponent<RigidBody>(_playerCamera->_camera)->bodyId;
+	_playerBodyID = scene.GetComponent<RigidBody>(_player)->physicBody->bodyId;
+	_cameraBodyID = scene.GetComponent<RigidBody>(_playerCamera->_camera)->physicBody->bodyId;
 	_bodyInter = Physics::Get().body_interface;
 
 	_bodyInter->SetMotionQuality(_playerBodyID, EMotionQuality::Discrete);
