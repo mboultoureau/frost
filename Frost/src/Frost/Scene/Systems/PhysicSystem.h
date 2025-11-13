@@ -22,8 +22,11 @@ namespace Frost
         //void InitRigidBody(ECS& ecs, RigidBody* rb, GameObject::Id id);
         //void UpdateColliderRigidbodyLinks(ECS& ecs);
 
-        template<typename Func>
-        void _HandleCollisionVector(Physics::PairIdCollisionVector& colVector, ECS& ecs, float deltaTime, Func&& callback);
+        void _HandleAwakeVector(ECS& ecs, float deltaTime);
+        void _HandleSleepVector(ECS& ecs, float deltaTime);
+        void _HandleOnCollisionEnterVector(ECS& ecs, float deltaTime);
+        void _HandleOnCollisionStayVector(ECS& ecs, float deltaTime);
+        void _HandleOnCollisionRemovedVector(ECS& ecs, float deltaTime);
     };
 
 

@@ -3,6 +3,7 @@
 #include "Objects/Terrain.h"
 #include "Objects/LevelCamera.h"
 #include "Objects/LapCheckPoint.h"
+#include "Objects/Wall.h"
 using namespace Frost;
 
 MainLayer::MainLayer() : Layer("MainLayer")
@@ -13,6 +14,7 @@ void MainLayer::OnAttach()
 {
 	Scene& _scene = Game::GetScene();
 	_terrain = std::make_unique<Terrain>(Terrain());
+	_wall = std::make_unique<Wall>(Wall());
 
 	_gamestate = GameState();
 	_gamestate.SetLap(4);
@@ -87,7 +89,6 @@ void MainLayer::OnFixedUpdate(float deltaTime)
 {
 	Frost::Scene& _scene = Game::GetScene();
 	if (_gamestate.Finished()) {
-		FT_INFO("C'est gagne !!!");
 
 		auto winScreen = _scene.CreateGameObject("victoryScreen");
 

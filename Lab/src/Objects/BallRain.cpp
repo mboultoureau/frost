@@ -18,13 +18,13 @@
 
 class DropletScript : public Frost::Script {
 public:
-	void OnCollisionEnter(GameObject::Id other) override
+	void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override
 	{
 		auto scene = GetECS();
 		auto rb = scene->GetComponent<RigidBody>(GetGameObject());;
 
-		Physics::Get().body_interface->SetGravityFactor(rb->bodyId, 0.0f);
-		Physics::Get().body_interface->DeactivateBody(rb->bodyId);
+		Physics::Get().body_interface->SetGravityFactor(rb->physicBody->bodyId, 0.0f);
+		Physics::Get().body_interface->DeactivateBody(rb->physicBody->bodyId);
 	}
 };
 

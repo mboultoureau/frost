@@ -1,4 +1,6 @@
 #pragma once
+#include "Frost/Scene/ECS/GameObject.h"
+
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyID.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
@@ -9,6 +11,19 @@
 
 namespace Frost
 {
+	struct BodyActivationParameters {
+		const JPH::BodyID& inBodyID;
+		JPH::uint64 inBodyUserData;
+	};
+
+	struct BodyOnContactParameters {
+		const JPH::Body& inBody1;
+		const JPH::Body& inBody2;
+		const JPH::ContactManifold& inManifold;
+		JPH::ContactSettings& ioSettings;
+	};
+
+
 	class MyBodyActivationListener : public JPH::BodyActivationListener
 	{
 	public:

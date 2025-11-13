@@ -25,9 +25,9 @@ class PlayerScript : public Frost::Script {
 	JPH::BodyInterface* _bodyInter;
 
 public:
-	void OnAwake() override
+	void OnInitialize() override
 	{
-		_playerBodyID = Game::GetScene().GetComponent<RigidBody>(GetGameObject())->bodyId;
+		_playerBodyID = Game::GetScene().GetComponent<RigidBody>(GetGameObject())->physicBody->bodyId;
 		_bodyInter = Physics::Get().body_interface;
 	}
 
@@ -100,7 +100,7 @@ Player::Player()
 		_player,
 		Transform::Vector3{ 0.0f, 0.0f, -10.0f },
 		Transform::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, 
-		Transform::Vector3{ 5.0f, 5.0f, 5.0f }
+		Transform::Vector3{ 1.0f, 1.0f, 1.0f }
 	);
 	scene.AddComponent<WorldTransform>(_player);
 
@@ -128,13 +128,13 @@ void Player::InitializePhysics()
 	Scene& scene = Game::GetScene();
 
 	// Create vehicle body
-	RVec3 position(0, 0.0f, 0);
+	RVec3 position(0, 0.0f, -10);
 	JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(1.0f).Create().Get();
 	BodyCreationSettings player_body_settings(sphereShape, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
 	player_body_settings.mGravityFactor = 0.0f;
 	scene.AddComponent<RigidBody>(_player, player_body_settings, _player, EActivation::Activate);
 
-	auto _playerBodyID = scene.GetComponent<RigidBody>(_player)->bodyId;
+	auto _playerBodyID = scene.GetComponent<RigidBody>(_player)->physicBody->bodyId;
 	auto _bodyInter = Physics::Get().body_interface;
 
 	scene.AddScript<PlayerScript>(_player);

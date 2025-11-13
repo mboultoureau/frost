@@ -16,16 +16,17 @@ void MainLayer::OnAttach()
 
 	//_sphere = std::make_unique<Sphere>();
 	//_freeCamera = std::make_unique<FreeCamera>();
-	_topCamera = std::make_unique<TopCamera>();
+	//_topCamera = std::make_unique<TopCamera>();
 	//_moto = std::make_unique<Moto>();
 	//_ogre = std::make_unique<Ogre>();
 	//_ogreNormal = std::make_unique<OgreNormal>();
 	//_text = std::make_unique<Text>();
 	//_plane = std::make_unique<Plane>();
-	_terrain = std::make_unique<Terrain>();
+	//_terrain = std::make_unique<Terrain>();
 	_player = std::make_unique<Player>();
+	_hierarchy = std::make_unique<HierarchyTest>();
 	//auto _rain = std::make_unique<BallRain>();
-	_hudLogo = std::make_unique<HUD_Logo>();
+	//_hudLogo = std::make_unique<HUD_Logo>();
 
 	_pauseHandlerUUID = Application::Get().GetEventManager().Subscribe<Frost::PauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
