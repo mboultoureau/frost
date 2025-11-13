@@ -23,6 +23,7 @@
 #include <vector>
 #include <map>
 #include <Frost/Renderer/DX11/TextureDX11.h>
+#include <set>
 
 
 namespace Frost
@@ -30,20 +31,50 @@ namespace Frost
 	class Physics : NoCopy
 	{
 		friend class PhysicSystem;
+		// ===== Constructors =================
 	public:
-		using PairIdCollisionVector = std::vector<std::pair<Frost::GameObject::Id, Frost::GameObject::Id>>;
-
 		static Physics& Get();
-
 		Physics();
 		~Physics();
+		void UpdatePhysics();
+		static void InitPhysics(PhysicsConfig& config, bool useConfig);
+
+		JPH::PhysicsSystem physics_system;
+		JPH::BodyInterface* body_interface;
+	private:
+		JPH::TempAllocatorImpl temp_allocator;
+		JPH::JobSystemThreadPool job_system;
+		const int cCollisionSteps = 1;
+		const JPH::uint cMaxBodies;
+		const JPH::uint cNumBodyMutexes;
+		const JPH::uint cMaxBodyPairs;
+		const JPH::uint cMaxContactConstraints;
+		const float cDeltaTime;
+		inline static bool _physicsInitialized = false;
+		inline static PhysicsConfig _physicsConfig;
+
+
+		// ===== Debug Macros =================
+	public:
+		static void TraceImpl(const char* inFMT, ...);
 
 #ifdef FT_DEBUG
+	public:
 		static void DrawDebug();
 		static Frost::DebugRendererPhysicsConfig& GetDebugRendererConfig();
 		static void SetDebugRendererConfig(Frost::DebugRendererPhysicsConfig config);
+	private:
+		JPH::DebugRenderer* _debugRenderer;
+		Frost::DebugRendererPhysicsConfig _debugRendererConfig;
 #endif
 
+#ifdef JPH_ENABLE_ASSERTS
+	public:
+		static bool AssertFailedImpl(const char* inExpression, const char* inMessage, const char* inFile, JPH::uint inLine);
+#endif 
+
+		// ===== Body Interface =================
+	public:
 		static void AddConstraint(JPH::Constraint* inConstraint);
 		static void AddConstraints(JPH::Constraint** inConstraints, int inNumber);
 		static void AddStepListener(JPH::PhysicsStepListener* inListener);
@@ -53,66 +84,30 @@ namespace Frost
 		static JPH::Vec3 GetGravity();
 		static void ActivateBody(const JPH::BodyID& inBodyID);
 		static void RemoveBody(const JPH::BodyID& inBodyID);
-
-
 		static Frost::Transform::Vector3 JoltVectorToVector3(JPH::RVec3 v);
 		static JPH::Vec3 Vector3ToJoltVector(Frost::Transform::Vector3 v);
+		JPH::ShapeRefC CreateHeightFieldShapeFromTexture(TextureDX11* heightTexture, TextureChannel channel, float heightScale, Transform::Vector3 transformScale);
 
-		void UpdatePhysics();
+		GameObject::Id GetObjectID(const JPH::BodyID& inBodyID) { return body_interface->GetUserData(inBodyID); };
+		GameObject::Id GetObjectID(const JPH::Body& inBody) { return inBody.GetUserData(); };
 
-		std::vector<Frost::GameObject::Id> bodiesOnAwake;
-		std::vector<Frost::GameObject::Id> bodiesOnSleep;
-		PairIdCollisionVector bodiesOnCollisionEnter;
-		PairIdCollisionVector bodiesOnCollisionStay;
-		PairIdCollisionVector bodiesOnCollisionExit;
 
-		JPH::PhysicsSystem physics_system;
-		JPH::BodyInterface* body_interface;
+		// ===== Layers Interface =================
+		std::vector<Frost::BodyActivationParameters> bodiesOnAwake = {};
+		std::vector<Frost::BodyActivationParameters> bodiesOnSleep = {};
+		std::vector<Frost::BodyOnContactParameters> bodiesOnCollisionEnter = {};
+		std::vector<Frost::BodyOnContactParameters> bodiesOnCollisionStay = {};
+		std::set<std::pair<Frost::GameObject::Id, Frost::GameObject::Id>> lastFrameBodyIDsOnCollisionStay = {};
+		std::set<std::pair<Frost::GameObject::Id, Frost::GameObject::Id>> currentFrameBodyIDsOnCollisionStay = {};
 		
 		Frost::MyBodyActivationListener body_activation_listener;
 		Frost::MyContactListener contact_listener;
 		JPH::BroadPhaseLayerInterface* broad_phase_layer_interface;
 
-		static void TraceImpl(const char* inFMT, ...);
-#ifdef JPH_ENABLE_ASSERTS
-		static bool AssertFailedImpl(const char* inExpression, const char* inMessage, const char* inFile, JPH::uint inLine);
-#endif 
-
-		static bool HasPhysicsBeenInitialized;
-		static void InitPhysics(PhysicsConfig& config, bool useConfig);
-
-		Frost::GameObject::Id GetGoIdFromJoltBodyId(JPH::BodyID id);
 		std::unordered_map<JPH::BodyID, Frost::GameObject::Id> mapJBodyGameObject;
 
-
-		JPH::ShapeRefC CreateHeightFieldShapeFromTexture(TextureDX11* heightTexture, TextureChannel channel, float heightScale, Transform::Vector3 transformScale);
-
 	private:
-		int SetShapeToRigidbody(GameObject::Id id, JPH::ShapeRefC shapeRef);
-
-		ShapeRegistry shapeRegistry;
-		std::unordered_map<GameObject::Id, JPH::ShapeRefC> _rigidbodyFuturColliders;
-
-		JPH::TempAllocatorImpl temp_allocator;
-		JPH::JobSystemThreadPool job_system;
-
-		const int cCollisionSteps = 1;
-		const JPH::uint cMaxBodies;
-		const JPH::uint cNumBodyMutexes;
-		const JPH::uint cMaxBodyPairs;
-		const JPH::uint cMaxContactConstraints;
-
 		JPH::ObjectVsBroadPhaseLayerFilter* object_vs_broadphase_layer_filter;
 		JPH::ObjectLayerPairFilter* object_vs_object_layer_filter;
-
-		const float cDeltaTime;
-
-		inline static bool _physicsInitialized = false;
-		inline static PhysicsConfig _physicsConfig;
-
-#ifdef FT_DEBUG
-		JPH::DebugRenderer* _debugRenderer;
-		Frost::DebugRendererPhysicsConfig _debugRendererConfig;
-#endif
 	};
 }	// NAMESPACE FROST

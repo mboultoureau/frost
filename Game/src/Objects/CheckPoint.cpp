@@ -22,7 +22,7 @@ public:
 	CheckPointScript(CheckPoint* checkpoint) : checkPoint{checkpoint}
 	{
 	}
-	virtual void OnCollisionEnter(Frost::GameObject::Id other) 
+	virtual void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override
 	{
 		checkPoint->ReinitializeChildrenPhysics();
 
@@ -134,17 +134,8 @@ void CheckPoint::DeleteChildrenPhysics()
 
 		if (bodyComponent)
 		{
-			JPH::BodyID bodyId = bodyComponent->bodyId;
+			JPH::BodyID bodyId = bodyComponent->physicBody->bodyId;
 			Physics::Get().mapJBodyGameObject.erase(bodyId);
-
-			if (bodyId.IsInvalid() == false)
-			{
-				if (bodyInter->IsAdded(bodyId))
-				{
-					bodyInter->RemoveBody(bodyId);
-				}
-				bodyInter->DestroyBody(bodyId);
-			}
 
 			scene.RemoveComponent<Frost::RigidBody>(childId);
 
@@ -166,7 +157,7 @@ void CheckPoint::DestroyGameObject()
 	if (bodyComponent)
 	{
 		JPH::BodyInterface* bodyInter = Physics::Get().body_interface;
-		JPH::BodyID bodyId = bodyComponent->bodyId;
+		JPH::BodyID bodyId = bodyComponent->physicBody->bodyId;
 
 		if (bodyId.IsInvalid() == false)
 		{

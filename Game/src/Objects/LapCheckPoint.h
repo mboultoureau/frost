@@ -15,7 +15,7 @@ public:
 	{
 	}
 
-	void OnCollisionEnter(Frost::GameObject::Id other) override
+	void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override
 	{
 		gamestate.IncreaseLap();
 

@@ -1,5 +1,6 @@
 #include "PlayerCamera.h"
 
+#include "Frost.h"
 #include "Player.h"
 #include "../Physics/PhysicsLayer.h"
 #include "../Game.h"
@@ -31,7 +32,6 @@ void PlayerSpringCameraScript::OnFixedUpdate(float deltaTime)
 
 void PlayerSpringCameraScript::UpdateTPCam(float deltaTime)
 {
-	// Convert euler to quaternion
 	DirectX::XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(
 		_cameraPivotRotationX,
 		_cameraPivotRotationY,
@@ -44,21 +44,21 @@ void PlayerSpringCameraScript::UpdateTPCam(float deltaTime)
 	// TODO : cam rotation is actually one frame behind cameraPivot rotation
 	auto cameraPivotWTransform = scene->GetComponent<WorldTransform>(cameraPivot);
 
-	// Set camera rot to pivot WT ?? 
 	auto springCamRB = scene->GetComponent<RigidBody>(springCam);
 
-	if (isThirdPerson) {
+	// set desired pos to 3rd pers cam
+	if (isThirdPerson) { 
 		auto thirdPersonCameraWTransform = scene->GetComponent<WorldTransform>(thirdPersonCamera);
-		Physics::Get().body_interface->SetRotation(springCamRB->bodyId,
+		Physics::Get().body_interface->SetRotation(springCamRB->physicBody->bodyId,
 			JPH::Quat(thirdPersonCameraWTransform->rotation.x,
 				thirdPersonCameraWTransform->rotation.y,
 				thirdPersonCameraWTransform->rotation.z,
 				thirdPersonCameraWTransform->rotation.w),
 			JPH::EActivation::Activate);
-	}
-	else {
+	}//Set desired pos to player
+	else { 
 		auto playerWTransform = scene->GetComponent<WorldTransform>(player);
-		Physics::Get().body_interface->SetRotation(springCamRB->bodyId,
+		Physics::Get().body_interface->SetRotation(springCamRB->physicBody->bodyId,
 			JPH::Quat(playerWTransform->rotation.x,
 				playerWTransform->rotation.y,
 				playerWTransform->rotation.z,
@@ -71,7 +71,7 @@ void PlayerSpringCameraScript::UpdateTPCam(float deltaTime)
 	auto playerRB = scene->GetComponent<RigidBody>(player);
 	auto thirdPersonCameraTransform = scene->GetComponent<Transform>(thirdPersonCamera);
 
-	auto velocity = Physics::Get().body_interface->GetLinearVelocity(playerRB->bodyId);
+	auto velocity = Physics::Get().body_interface->GetLinearVelocity(playerRB->physicBody->bodyId);
 	auto speed = velocity.LengthSq();
 	thirdPersonCameraTransform->position.z = defaultThirdPersonCameraDistance + speed * thirdPersonCamVelocityToDistance;
 }
@@ -81,7 +81,7 @@ class IgnoreCameraLayerFilter : public JPH::ObjectLayerFilter
 public:
 	bool ShouldCollide(JPH::ObjectLayer inLayer) const override
 	{
-		return inLayer != ObjectLayers::CAMERA && inLayer != ObjectLayers::PLAYER;   // ignore la caméra
+		return inLayer != ObjectLayers::CAMERA && inLayer != ObjectLayers::PLAYER && inLayer != ObjectLayers::CHECKPOINT;   // ignore la camera
 	}
 };
 
@@ -100,35 +100,38 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 	auto thirdPersonCameraWTransform = scene->GetComponent<WorldTransform>(thirdPersonCamera);
 	auto springCamRigidBody = scene->GetComponent<RigidBody>(springCam);
 
-	JPH::Vec3 cameraPos = Physics::Get().body_interface->GetPosition(springCamRigidBody->bodyId);
-	JPH::Vec3 cameraVelocity = Physics::Get().body_interface->GetLinearVelocity(springCamRigidBody->bodyId);
+	JPH::Vec3 cameraPos = Physics::Get().body_interface->GetPosition(springCamRigidBody->physicBody->bodyId);
+	JPH::Vec3 cameraVelocity = Physics::Get().body_interface->GetLinearVelocity(springCamRigidBody->physicBody->bodyId);
 	auto desiredPos = isThirdPerson ?
-		Physics::Vector3ToJoltVector(thirdPersonCameraWTransform->position) :
-		Physics::Vector3ToJoltVector(playerWTransform->position);
+	Physics::Vector3ToJoltVector(thirdPersonCameraWTransform->position) :
+	Physics::Vector3ToJoltVector(playerWTransform->position);
+
+	auto playerPosition = Physics::Vector3ToJoltVector(playerWTransform->position);
+	JPH::RRayCast ray;
+	ray.mOrigin = playerPosition;
+	auto _thirdPCamPos = Physics::Vector3ToJoltVector(thirdPersonCameraWTransform->position);
+	ray.mDirection = (_thirdPCamPos - playerPosition);
+	float desiredDistance = ray.mDirection.Length();
+
+	auto renderer = scene->GetComponent<ModelRenderer>(vehicle);
+	renderer->isActive = ((playerPosition - cameraPos).Length() > 10.f);
 
 	if (isThirdPerson) {
-		auto playerPosition = Physics::Vector3ToJoltVector(playerWTransform->position);
-		JPH::RRayCast ray;
-		ray.mOrigin = playerPosition;
-		ray.mDirection = (cameraPos - playerPosition).Normalized();
-		float desiredDistance = (cameraPos - playerPosition).Length();
-
 		RayCastBroadPhaseFilter bpFilter;
 		IgnoreCameraLayerFilter objectFilter;
 
 		JPH::RayCastResult result;
-		if (Physics::Get().physics_system.GetNarrowPhaseQuery().CastRay(ray, result, bpFilter, objectFilter, JPH::BodyFilter())
-			&& desiredDistance > 0.01)
+		if (desiredDistance > 0.01 && Physics::Get().physics_system.GetNarrowPhaseQuery().CastRay(ray, result, bpFilter, objectFilter))
 		{
-			cameraPos = playerPosition + ray.mDirection * (result.mFraction * desiredDistance);
-			Physics::Get().body_interface->SetPosition(springCamRigidBody->bodyId, cameraPos, JPH::EActivation::Activate);
+			cameraPos = ray.GetPointOnRay(result.mFraction);
+			Physics::Get().body_interface->SetPosition(springCamRigidBody->physicBody->bodyId, cameraPos, JPH::EActivation::Activate);
 			return;
 		}
 	}
 
 	JPH::Vec3 displacement = desiredPos - cameraPos;
 	JPH::Vec3 springForce = displacement * stiffness;
-	Physics::Get().body_interface->SetPosition(springCamRigidBody->bodyId, cameraPos + deltaTime * springForce, JPH::EActivation::Activate);
+	Physics::Get().body_interface->SetPosition(springCamRigidBody->physicBody->bodyId, cameraPos + deltaTime * springForce, JPH::EActivation::Activate);
 }
 
 
@@ -136,7 +139,7 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 
 void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
 	// Rotate Y
-	/*if (Input::GetKeyboard().IsKeyDown(K_1) || Input::GetKeyboard().IsKeyDown(K_NUMPAD6))
+	if (Input::GetKeyboard().IsKeyDown(K_1) || Input::GetKeyboard().IsKeyDown(K_NUMPAD6))
 	{
 		_cameraPivotRotationY += 1.0f * deltaTime;
 	}
@@ -159,10 +162,8 @@ void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
 	if (Input::GetKeyboard().GetKeyState(K_E) == KeyState::DOWN)
 	{
 		isThirdPerson = !isThirdPerson;
-	}*/
+	}
 	isThirdPerson = !(Input::GetKeyboard().IsKeyDown(K_E));
-	auto renderer = scene->GetComponent<ModelRenderer>(vehicle);
-	renderer->isActive = isThirdPerson;
 }
 
 
@@ -173,7 +174,7 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : 
 
 	// Camera Pivot
 	_cameraPivot = scene.CreateGameObject("Camera Pivot", _player);
-	scene.AddComponent<Transform>(_cameraPivot, Transform::Vector3{ 0.0f, 0.0f, 0.0f });
+	scene.AddComponent<Transform>(_cameraPivot, Transform::Vector3{ 0.0f, 0.0f, 4.4f });
 	scene.AddComponent<WorldTransform>(_cameraPivot);
 
 
@@ -182,7 +183,7 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : 
 	scene.AddComponent<Transform>(_3rdPersVirtCamera, Transform::Vector3{ 0.0f, 10, -20.0f });
 	scene.AddComponent<WorldTransform>(_3rdPersVirtCamera, Transform::Vector3{ 0.0f, 10.0f, -20.0f });
 	//debug
-	//scene.AddComponent<ModelRenderer>(_3rdPersVirtCamera, "./resources/meshes/sphere.fbx");
+		//scene.AddComponent<ModelRenderer>(_3rdPersVirtCamera, "./resources/meshes/sphere.fbx");
 	auto tpCamWTransform = scene.GetComponent<WorldTransform>(_3rdPersVirtCamera);
 
 	// Camera
@@ -197,7 +198,6 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : 
 	cameraComponent->backgroundColor[1] = 116.0f / 255.0f;
 	cameraComponent->backgroundColor[2] = 228.0f / 255.0f;
 	cameraComponent->backgroundColor[3] = 1.0f;
-
 
 	// Create the Camera Sensor
 	JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(1.0f).Create().Get();
@@ -220,7 +220,6 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : 
 		_camera
 		);
 		
-	_cameraBodyID = scene.GetComponent<RigidBody>(_camera)->bodyId;
-	
+	_cameraBodyID = scene.GetComponent<RigidBody>(_camera)->physicBody->bodyId;
 	_bodyInter = Physics::Get().body_interface;
 }

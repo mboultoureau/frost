@@ -47,8 +47,7 @@ Terrain::Terrain()
 	bodySettings.mRestitution = 0.0f;
 
 	_scene.AddComponent<Frost::RigidBody>(_terrain, bodySettings, _terrain, JPH::EActivation::Activate);
-
-
+	auto bodyId = _scene.GetComponent<RigidBody>(_terrain)->physicBody->bodyId;
 
 
 	// Ground 

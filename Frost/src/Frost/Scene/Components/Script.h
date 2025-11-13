@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Scene/ECS/GameObject.h"
+#include "Frost/Physics/PhysicListener.h"
 
 namespace Frost
 {
@@ -13,18 +14,23 @@ namespace Frost
 		{
 			_gameObject = gameObject;
 			_ecs = ecs;
-			OnAwake();
+			OnInitialize();
 		}
+		// Called after constructor, so you have gameobject and ecs that are accessible
+		virtual void OnInitialize() {}
+
 		virtual void OnUpdate(float deltaTime) {}
 		virtual void OnFixedUpdate(float fixedDeltaTime) {}
 		virtual void OnLateUpdate(float deltaTime) {}
 
-		virtual void OnAwake() {}
-		virtual void OnSleep() {}
+		virtual void OnAwake(float deltaTime) {}
+		virtual void OnSleep(float deltaTime) {}
 
-		virtual void OnCollisionEnter(GameObject::Id otherObject) {}
-		virtual void OnCollisionStay(GameObject::Id otherObject) {}
-		virtual void OnCollisionExit(GameObject::Id otherObject) {}
+		virtual void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) {}
+		virtual void OnCollisionStay(BodyOnContactParameters params, float deltaTime) {}
+
+		// Warning : params may contains bodies that are not valid at the moment
+		virtual void OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime) {}
 
 		virtual ECS* GetECS() const { return _ecs; }
 		virtual GameObject::Id GetGameObject() const { return _gameObject; }
