@@ -35,30 +35,27 @@ namespace Frost
 
 				if (parentTransform)
 				{
+					//Get info
+					DirectX::XMVECTOR parentPosition = DirectX::XMLoadFloat3(&parentTransform->position);
 					DirectX::XMVECTOR parentRotation = DirectX::XMLoadFloat4(&parentTransform->rotation);
 
-					// 2. Load the local Transform's Position (Vector)
 					DirectX::XMVECTOR localPosition = DirectX::XMLoadFloat3(&localTransform.position);
+					DirectX::XMVECTOR localRotation = DirectX::XMLoadFloat4(&localTransform.rotation);
 
-					// 3. Rotate the local position by the parent's world rotation
-					// This is the correct way to transform a child's position into world space relative to its parent.
+
+					// calc worldtransform pos
 					DirectX::XMVECTOR rotatedPosition = DirectX::XMVector3Rotate(localPosition, parentRotation);
-
-					// 4. Calculate World Position: parent.position + (rotated)local.position
-					DirectX::XMVECTOR parentPosition = DirectX::XMLoadFloat3(&parentTransform->position);
 					DirectX::XMVECTOR worldPosition = DirectX::XMVectorAdd(parentPosition, rotatedPosition);
 
-					// 5. Calculate World Rotation: parent.rotation * local.rotation (Quaternion Multiplication)
-					// Note: Order matters! parent * local is standard for object hierarchies.
-					DirectX::XMVECTOR localRotation = DirectX::XMLoadFloat4(&localTransform.rotation);
-					DirectX::XMVECTOR worldRotation = DirectX::XMQuaternionMultiply(parentRotation, localRotation);
+					// calc worldtransform rot
+					DirectX::XMVECTOR worldRotation = DirectX::XMQuaternionMultiply(localRotation, parentRotation);
 
-					// 6. Calculate World Scale: parent.scale * local.scale (Component-wise Multiplication)
+					// calc worldtransform rot
 					DirectX::XMVECTOR parentScale = DirectX::XMLoadFloat3(&parentTransform->scale);
 					DirectX::XMVECTOR localScale = DirectX::XMLoadFloat3(&localTransform.scale);
 					DirectX::XMVECTOR worldScale = DirectX::XMVectorMultiply(parentScale, localScale);
 
-					// 7. Store the results back into the WorldTransform component
+
 					DirectX::XMStoreFloat3(&worldTransform->position, worldPosition);
 					DirectX::XMStoreFloat4(&worldTransform->rotation, worldRotation); // Store as XMFLOAT4
 					DirectX::XMStoreFloat3(&worldTransform->scale, worldScale);
