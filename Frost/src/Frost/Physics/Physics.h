@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Utils/NoCopy.h"
 #include "Frost/Scene/ECS/GameObject.h"
@@ -6,6 +6,7 @@
 #include "Frost/Scene/Components/Transform.h"
 
 #include <Jolt/Jolt.h>
+#include <Jolt/RegisterTypes.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Physics/PhysicsSystem.h>
@@ -17,14 +18,17 @@
 #include "Frost/Physics/Layers.h"
 #include "Frost/Physics/PhysicListener.h"
 #include "Frost/Physics/ShapeRegistry.h"
-#include "Frost/Physics/DebugRendererPhysics.h"
+#include "Frost/Renderer/Pipeline/JoltDebugRenderingPipeline.h"
 #include "Frost/Physics/PhysicsConfig.h"
+
+#include "Frost/Utils/Math/Vector.h"
 
 #include <vector>
 #include <map>
-#include <Frost/Renderer/DX11/TextureDX11.h>
 #include <set>
+#include <mutex>
 
+#include <Frost/Renderer/DX11/TextureDX11.h>
 
 namespace Frost
 {
@@ -61,11 +65,8 @@ namespace Frost
 #ifdef FT_DEBUG
 	public:
 		static void DrawDebug();
-		static Frost::DebugRendererPhysicsConfig& GetDebugRendererConfig();
-		static void SetDebugRendererConfig(Frost::DebugRendererPhysicsConfig config);
-	private:
-		JPH::DebugRenderer* _debugRenderer;
-		Frost::DebugRendererPhysicsConfig _debugRendererConfig;
+		//static Frost::DebugRendererPhysicsConfig& GetDebugRendererConfig();
+		//static void SetDebugRendererConfig(Frost::DebugRendererPhysicsConfig config);
 #endif
 
 #ifdef JPH_ENABLE_ASSERTS
@@ -84,15 +85,24 @@ namespace Frost
 		static JPH::Vec3 GetGravity();
 		static void ActivateBody(const JPH::BodyID& inBodyID);
 		static void RemoveBody(const JPH::BodyID& inBodyID);
-		static Frost::Transform::Vector3 JoltVectorToVector3(JPH::RVec3 v);
-		static JPH::Vec3 Vector3ToJoltVector(Frost::Transform::Vector3 v);
-		JPH::ShapeRefC CreateHeightFieldShapeFromTexture(TextureDX11* heightTexture, TextureChannel channel, float heightScale, Transform::Vector3 transformScale);
+
+		static JPH::BodyInterface& GetBodyInterface();
+		static const JPH::BodyLockInterfaceLocking& GetBodyLockInterface();
+
+		static Frost::Math::Vector3 JoltVectorToVector3(JPH::RVec3 v);
+		static JPH::Vec3 Vector3ToJoltVector(Frost::Math::Vector3 v);
 
 		GameObject::Id GetObjectID(const JPH::BodyID& inBodyID) { return body_interface->GetUserData(inBodyID); };
 		GameObject::Id GetObjectID(const JPH::Body& inBody) { return inBody.GetUserData(); };
 
+		static JPH::DebugRenderer* GetDebugRenderer();
 
 		// ===== Layers Interface =================
+		std::mutex mutexOnAwake;
+		std::mutex mutexOnSleep;
+		std::mutex mutexOnCollisionEnter;
+		std::mutex mutexOnCollisionStay;
+
 		std::vector<Frost::BodyActivationParameters> bodiesOnAwake = {};
 		std::vector<Frost::BodyActivationParameters> bodiesOnSleep = {};
 		std::vector<Frost::BodyOnContactParameters> bodiesOnCollisionEnter = {};
@@ -109,5 +119,9 @@ namespace Frost
 	private:
 		JPH::ObjectVsBroadPhaseLayerFilter* object_vs_broadphase_layer_filter;
 		JPH::ObjectLayerPairFilter* object_vs_object_layer_filter;
+
+#ifdef FT_DEBUG
+		JPH::DebugRenderer* _debugRenderer;
+#endif
 	};
-}	// NAMESPACE FROST
+}

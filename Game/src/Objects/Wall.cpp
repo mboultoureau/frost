@@ -1,9 +1,12 @@
 #include "Wall.h"
 #include "../Physics/PhysicsLayer.h"
 #include "../Game.h"
-#include <Frost/Renderer/TextureLibrary.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+
+using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
 
 Wall::Wall()
 {
@@ -14,12 +17,12 @@ Wall::Wall()
 	_wall = scene.CreateGameObject("Plane");
 	scene.AddComponent<Transform>(
 		_wall,
-		Transform::Vector3{ -365, 100.0f, -130 },
-		Transform::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
-		Transform::Vector3{ 50.0f, 50.0f, 1.0f }
+		Vector3{ -365, 100.0f, -130 },
+		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
+		Vector3{ 50.0f, 50.0f, 1.0f }
 	);
 	scene.AddComponent<WorldTransform>(_wall);
-	scene.AddComponent<ModelRenderer>(_wall, "./resources/meshes/cube.fbx");
+	scene.AddComponent<StaticMesh>(_wall, "./resources/meshes/cube.fbx");
 
 	_SetupPhysics();
 }

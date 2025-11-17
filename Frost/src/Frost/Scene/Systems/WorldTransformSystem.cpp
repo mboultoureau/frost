@@ -2,7 +2,9 @@
 
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
-#include "Frost/Scene/Components/GameObjectInfo.h"
+#include "Frost/Scene/Components/Meta.h"
+
+using namespace Frost::Component;
 
 namespace Frost
 {
@@ -20,7 +22,7 @@ namespace Frost
 			GameObject::Id id = transformEntities[i];
 			const Transform& localTransform = transforms[i];
 
-			GameObjectInfo* info = ecs.GetComponent<GameObjectInfo>(id);
+			Meta* info = ecs.GetComponent<Meta>(id);
 			WorldTransform* worldTransform = ecs.GetComponent<WorldTransform>(id);
 			
 			if (!worldTransform)
@@ -35,30 +37,23 @@ namespace Frost
 
 				if (parentTransform)
 				{
-					//Get info
-					DirectX::XMVECTOR parentPosition = DirectX::XMLoadFloat3(&parentTransform->position);
-					DirectX::XMVECTOR parentRotation = DirectX::XMLoadFloat4(&parentTransform->rotation);
-
-					DirectX::XMVECTOR localPosition = DirectX::XMLoadFloat3(&localTransform.position);
-					DirectX::XMVECTOR localRotation = DirectX::XMLoadFloat4(&localTransform.rotation);
-
-
-					// calc worldtransform pos
+					DirectX::XMVECTOR parentRotation = vector_cast<DirectX::XMVECTOR>(parentTransform->rotation);
+					DirectX::XMVECTOR localPosition = vector_cast<DirectX::XMVECTOR>(localTransform.position);
 					DirectX::XMVECTOR rotatedPosition = DirectX::XMVector3Rotate(localPosition, parentRotation);
+
+					DirectX::XMVECTOR parentPosition = vector_cast<DirectX::XMVECTOR>(parentTransform->position);
 					DirectX::XMVECTOR worldPosition = DirectX::XMVectorAdd(parentPosition, rotatedPosition);
 
-					// calc worldtransform rot
+					DirectX::XMVECTOR localRotation = vector_cast<DirectX::XMVECTOR>(localTransform.rotation);
 					DirectX::XMVECTOR worldRotation = DirectX::XMQuaternionMultiply(localRotation, parentRotation);
 
-					// calc worldtransform rot
-					DirectX::XMVECTOR parentScale = DirectX::XMLoadFloat3(&parentTransform->scale);
-					DirectX::XMVECTOR localScale = DirectX::XMLoadFloat3(&localTransform.scale);
+					DirectX::XMVECTOR parentScale = vector_cast<DirectX::XMVECTOR>(parentTransform->scale);
+					DirectX::XMVECTOR localScale = vector_cast<DirectX::XMVECTOR>(localTransform.scale);
 					DirectX::XMVECTOR worldScale = DirectX::XMVectorMultiply(parentScale, localScale);
 
-
-					DirectX::XMStoreFloat3(&worldTransform->position, worldPosition);
-					DirectX::XMStoreFloat4(&worldTransform->rotation, worldRotation); // Store as XMFLOAT4
-					DirectX::XMStoreFloat3(&worldTransform->scale, worldScale);
+					worldTransform->position = Math::vector_cast<Math::Vector3>(worldPosition);
+					worldTransform->rotation = Math::vector_cast<Math::Vector4>(worldRotation);
+					worldTransform->scale = Math::vector_cast<Math::Vector3>(worldScale);
 
 					continue;
 				}

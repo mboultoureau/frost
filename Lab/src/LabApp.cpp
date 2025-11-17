@@ -28,6 +28,6 @@ void Lab::OnApplicationReady()
 
 Frost::Application* Frost::CreateApplication(ApplicationEntryPoint entryPoint)
 {
-	entryPoint.title = "Lab";
+	entryPoint.title = Window::WindowTitle{ L"Lab" };
 	return new Lab(entryPoint);
 }

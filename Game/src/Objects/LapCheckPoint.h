@@ -5,6 +5,9 @@
 
 using namespace Frost;
 
+using namespace Frost::Math;
+using namespace Frost::Component;
+
 class LapCheckPointScript : public Script {
 private:
 	CheckPoint* checkPoint; 
@@ -36,7 +39,7 @@ public:
 
 class LapCheckPoint : public CheckPoint {
 public : 
-	LapCheckPoint(Transform::Vector3 startpos, GameState& gamestate)
+	LapCheckPoint(Vector3 startpos, GameState& gamestate)
 		: CheckPoint(startpos), _gamestate{ gamestate }
 	{
 	}

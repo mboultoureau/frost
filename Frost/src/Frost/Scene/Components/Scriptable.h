@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 
-namespace Frost
+namespace Frost::Component
 {
 	struct Scriptable : public Component
 	{

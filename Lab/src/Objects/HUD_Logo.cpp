@@ -1,6 +1,7 @@
 #include "HUD_Logo.h"
 #include "../Game.h" 
 
+/*
 HUD_Logo::HUD_Logo()
 {
 
@@ -24,3 +25,5 @@ HUD_Logo::HUD_Logo()
 	);
 
 }
+
+*/

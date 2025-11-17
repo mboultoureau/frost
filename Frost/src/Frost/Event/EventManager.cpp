@@ -4,30 +4,15 @@
 
 namespace Frost
 {
-	void EventManager::Unsubscribe(EventType type, UUID handlerID)
-	{
-		if (_handlers.count(type) == 0)
-			return;
-
-		auto& handlers = _handlers[type];
-
-		auto it = std::remove_if(handlers.begin(), handlers.end(),
-			[handlerID](const std::shared_ptr<EventHandlerInterface>& handler) {
-				return handler->GetID() == handlerID;
-			});
-
-		handlers.erase(it, handlers.end());
-	}
-
 	void EventManager::ProcessEvents()
 	{
-		for (auto& event : _eventQueue)
+		for (auto& event : Get()._eventQueue)
 		{
 			EventType type = event->GetEventType();
 
-			if (_handlers.count(type))
+			if (Get()._handlers.count(type))
 			{
-				auto& handlers = _handlers[type];
+				auto& handlers = Get()._handlers[type];
 				for (const auto& handler : handlers)
 				{
 					if (handler && handler->OnEvent(*event))
@@ -43,6 +28,12 @@ namespace Frost
 			}
 		}
 
-		_eventQueue.clear();
+		Get()._eventQueue.clear();
+	}
+
+	EventManager& EventManager::Get()
+	{
+		static EventManager instance;
+		return instance;
 	}
 }

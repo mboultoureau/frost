@@ -25,7 +25,6 @@ namespace Frost
             size_t indexToRemove = entityToIndex.at(id);
             size_t lastIndex = data.size() - 1;
 
-            // Swap & Pop: Maintain Contiguity
             if (indexToRemove != lastIndex)
             {
                 GameObject::Id entityOfLast = indexToEntity[lastIndex];

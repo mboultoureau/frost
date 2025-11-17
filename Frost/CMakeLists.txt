@@ -2,10 +2,24 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # assimp
 set(ASSIMP_BUILD_TESTS OFF)
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "Build assimp samples" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Build assimp tools" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "Install assimp" FORCE)
+set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "Inject debug postfix" FORCE)
 
 add_subdirectory(vendor/assimp)
+
+if(WIN32 AND TARGET zlibstatic)
+    set_target_properties(zlibstatic PROPERTIES
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+    target_compile_options(zlibstatic PRIVATE
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+    )
+endif()
+
 set_target_properties(
-    uninstall
     UpdateAssimpLibsDebugSymbolsAndDLLs
     zlibstatic
     PROPERTIES FOLDER "Hidden Targets"
@@ -23,7 +37,13 @@ if(WIN32)
     )
 endif()
 
-# Jolt Physics
+set(ENABLE_INSTALL OFF CACHE BOOL "Generate installation target" FORCE)
+set(TARGET_UNIT_TESTS OFF CACHE BOOL "Build Unit Tests" FORCE)
+set(TARGET_HELLO_WORLD OFF CACHE BOOL "Build Hello World" FORCE)
+set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "Build Performance Test" FORCE)
+set(TARGET_SAMPLES OFF CACHE BOOL "Build Samples" FORCE)
+set(TARGET_VIEWER OFF CACHE BOOL "Build JoltViewer" FORCE)
+
 add_subdirectory(vendor/JoltPhysics/Build)
 set_property(TARGET Jolt PROPERTY FOLDER "Dependencies")
 
@@ -35,6 +55,9 @@ if(WIN32)
     target_compile_options(Jolt PRIVATE
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
         $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+
+        # disable the enum warning for Jolt
+        $<$<CXX_COMPILER_ID:MSVC>:/wd4865>
     )
 endif()
 
@@ -163,6 +186,7 @@ if(WIN32)
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
         $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
 		$<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/bigobj>>
     )
 
     target_compile_definitions(Frost PUBLIC

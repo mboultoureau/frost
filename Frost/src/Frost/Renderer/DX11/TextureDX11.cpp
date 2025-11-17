@@ -1,4 +1,5 @@
-#include "Frost/Renderer/DX11/TextureDX11.h"
+﻿#include "Frost/Renderer/DX11/TextureDX11.h"
+#include "Frost/Renderer/DX11/FormatDX11.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -8,103 +9,402 @@
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/Logger.h"
 #include "Frost/Renderer/RendererAPI.h"
+#include "Frost/Renderer/DX11/RendererDX11.h"
 
 namespace Frost
 {
-	TextureDX11::TextureDX11(const std::string& path, const TextureType textureType) : Texture(path, textureType)
+	static bool IsDepthFormat(Format format)
 	{
-		FT_ENGINE_INFO("Loading texture: {}", path);
-
-		int width, height, channels;
-		stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-		FT_ENGINE_ASSERT(data, "Failed to load texture: {}", path);
-		_data = std::vector<uint8_t>( data, data + width * height * 4 );
-		_width = width;
-		_height = height;
-		CreateD3D11TextureView(width, height, data, DXGI_FORMAT_R8G8B8A8_UNORM);
-		stbi_image_free(data);
+		return format == Format::D24_UNORM_S8_UINT;
 	}
 
-	TextureDX11::TextureDX11(const aiTexture* aTexture, const TextureType textureType) : Texture(aTexture, textureType)
+	TextureDX11::TextureDX11(TextureConfig& config) : Texture(config)
 	{
-		FT_ENGINE_INFO("Loading embedded texture");
+		int width = config.width;
+		int height = config.height;
+		int channels = config.channels;
+		std::vector<uint8_t> imageData;
 
-		// if mHeight == 0, texture is compressed (like PNG, JPG, etc.)
-		if (aTexture->mHeight != 0)
+		if (config.aTexture)
 		{
-			int width = (int)aTexture->mWidth;
-			int height = (int)aTexture->mHeight;
+			FT_ENGINE_INFO("Loading embedded texture: {}", config.debugName);
 
-			std::vector<unsigned char> swizzledData(width * height * 4);
-			aiTexel* texels = aTexture->pcData;
-
-			for (int i = 0; i < width * height; ++i)
+			if (config.aTexture->mHeight == 0)
 			{
-				swizzledData[i * 4 + 0] = texels[i].r; // R
-				swizzledData[i * 4 + 1] = texels[i].g; // G
-				swizzledData[i * 4 + 2] = texels[i].b; // B
-				swizzledData[i * 4 + 3] = texels[i].a; // A
+				stbi_uc* data = stbi_load_from_memory(
+					reinterpret_cast<const stbi_uc*>(config.aTexture->pcData),
+					config.aTexture->mWidth,
+					&width, &height, &channels,
+					STBI_rgb_alpha
+				);
+				FT_ENGINE_ASSERT(data, "Failed to load COMPRESSED embedded texture from memory");
+
+				if (config.format == Format::UNKNOWN)
+				{
+					config.format = Format::RGBA8_UNORM;
+					channels = 4;
+				}
+
+				if (data)
+				{
+					size_t imageSize = (size_t)width * height * 4;
+					imageData.assign(data, data + imageSize);
+					stbi_image_free(data);
+				}
+			}
+			else
+			{
+				width = config.aTexture->mWidth;
+				height = config.aTexture->mHeight;
+				FT_ENGINE_ASSERT(width > 0 && height > 0, "Invalid dimensions for UNCOMPRESSED embedded texture");
+
+				size_t numPixels = (size_t)width * height;
+				imageData.resize(numPixels * 4);
+
+				const aiTexel* sourceData = reinterpret_cast<const aiTexel*>(config.aTexture->pcData);
+				uint8_t* destData = imageData.data();
+
+				for (size_t i = 0; i < numPixels; ++i)
+				{
+					destData[i * 4 + 0] = sourceData[i].r;
+					destData[i * 4 + 1] = sourceData[i].g;
+					destData[i * 4 + 2] = sourceData[i].b;
+					destData[i * 4 + 3] = sourceData[i].a;
+				}
+			}
+		}
+		else if (!config.path.empty())
+		{
+			FT_ENGINE_INFO("Loading texture from file: {}", config.path);
+			stbi_uc* data = stbi_load(config.path.c_str(), &width, &height, &channels, 0);
+			FT_ENGINE_ASSERT(data, "Failed to load texture from file");
+
+			if (config.format == Format::UNKNOWN)
+			{
+				switch (channels)
+				{
+				case 1:
+					config.format = Format::R8_UNORM;
+					break;
+				case 2:
+					config.format = Format::RG8_UNORM;
+					break;
+				case 3:
+					config.format = Format::RGBA8_UNORM;
+					break;
+				case 4:
+				default:
+					config.format = Format::RGBA8_UNORM;
+					break;
+				}
 			}
 
-			CreateD3D11TextureView(width, height, swizzledData.data(), DXGI_FORMAT_R8G8B8A8_UNORM);
+			if (data)
+			{
+				size_t imageSize = (size_t)width * height * channels;
+				imageData.assign(data, data + imageSize);
+				stbi_image_free(data);
+			}
+
+			if (channels == 3)
+			{
+				std::vector<uint8_t> rgbaData;
+				rgbaData.reserve(width * height * 4);
+
+				for (size_t i = 0; i < imageData.size(); i += 3)
+				{
+					rgbaData.push_back(imageData[i + 0]); // R
+					rgbaData.push_back(imageData[i + 1]); // G
+					rgbaData.push_back(imageData[i + 2]); // B
+					rgbaData.push_back(255);              // A = opaque
+				}
+
+				imageData.swap(rgbaData);
+				channels = 4;
+			}
+		}
+
+		DXGI_FORMAT dxgiFormat = ToDXGIFormat(config.format);
+		FT_ENGINE_ASSERT(dxgiFormat != DXGI_FORMAT_UNKNOWN, "Unsupported texture format provided.");
+
+		FT_ENGINE_ASSERT(!(imageData.empty() && (width == 0 || height == 0)),
+			"Texture creation failed: No data loaded and no dimensions specified.");
+
+		D3D11_TEXTURE2D_DESC textureDesc = {};
+		textureDesc.Width = width;
+		textureDesc.Height = height;
+		textureDesc.ArraySize = 1;
+		textureDesc.Format = dxgiFormat;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.SampleDesc.Quality = 0;
+		textureDesc.MiscFlags = 0;
+
+		bool generateMips = config.hasMipmaps && config.isShaderResource && !imageData.empty();
+
+		UINT bindFlags = 0;
+		if (config.isShaderResource)
+		{
+			bindFlags |= D3D11_BIND_SHADER_RESOURCE;
+		}
+		if (config.isRenderTarget)
+		{
+			bindFlags |= IsDepthFormat(config.format) ? D3D11_BIND_DEPTH_STENCIL : D3D11_BIND_RENDER_TARGET;
+		}
+
+		if (generateMips)
+		{
+			bindFlags |= D3D11_BIND_RENDER_TARGET;
+		}
+		textureDesc.BindFlags = bindFlags;
+
+		if (generateMips)
+		{
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+			textureDesc.CPUAccessFlags = 0;
+			textureDesc.MipLevels = 0;
+			textureDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
 		}
 		else
 		{
-			int width, height, numChannels;
-
-			stbi_uc* data = stbi_load_from_memory(
-				reinterpret_cast<const stbi_uc*>(aTexture->pcData),
-				(int)aTexture->mWidth,
-				&width,
-				&height,
-				&numChannels,
-				STBI_rgb_alpha
-			);
-
-			FT_ENGINE_ASSERT(data, "Failed to load embedded texture from memory");
-			CreateD3D11TextureView(width, height, data, DXGI_FORMAT_R8G8B8A8_UNORM);
-			stbi_image_free(data);
+			textureDesc.MipLevels = 1;
+			textureDesc.Usage = !imageData.empty() ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+			textureDesc.CPUAccessFlags = 0;
 		}
-	}
 
-	TextureDX11::TextureDX11(const int width, const int height, const TextureType textureType) : Texture(width, height, textureType)
-	{
-	}
+		RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
+		ID3D11Device* device = renderer->GetDevice();
+		ID3D11DeviceContext* context = renderer->GetDeviceContext();
 
-	TextureDX11::~TextureDX11()
-	{
-		if (_textureView)
+		HRESULT hr;
+
+		if (generateMips)
 		{
-			_textureView->Release();
-			_textureView = nullptr;
+			hr = device->CreateTexture2D(&textureDesc, nullptr, _texture.GetAddressOf());
+			FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create D3D11 Texture2D for mipmap generation.");
 		}
+		else if (!imageData.empty())
+		{
+			D3D11_SUBRESOURCE_DATA initData = {};
+			initData.pSysMem = imageData.data();
+			initData.SysMemPitch = width * GetFormatSize(config.format);
+			hr = device->CreateTexture2D(&textureDesc, &initData, _texture.GetAddressOf());
+		}
+		else
+		{
+			hr = device->CreateTexture2D(&textureDesc, nullptr, _texture.GetAddressOf());
+		}
+
+		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create D3D11 Texture2D.");
+
+		if (SUCCEEDED(hr))
+		{
+			if (bindFlags & D3D11_BIND_SHADER_RESOURCE)
+			{
+				D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+				srvDesc.Format = dxgiFormat;
+				srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				srvDesc.Texture2D.MostDetailedMip = 0;
+				srvDesc.Texture2D.MipLevels = (textureDesc.MipLevels == 0) ? -1 : 1;
+				hr = device->CreateShaderResourceView(_texture.Get(), &srvDesc, _srv.GetAddressOf());
+				FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create SRV.");
+			}
+			if (bindFlags & D3D11_BIND_RENDER_TARGET)
+			{
+				hr = device->CreateRenderTargetView(_texture.Get(), nullptr, _rtv.GetAddressOf());
+				FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create RTV.");
+			}
+			if (bindFlags & D3D11_BIND_DEPTH_STENCIL)
+			{
+				hr = device->CreateDepthStencilView(_texture.Get(), nullptr, _dsv.GetAddressOf());
+				FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create DSV.");
+			}
+		}
+
+
+		if (generateMips)
+		{
+			UINT rowPitch = width * GetFormatSize(config.format);
+			context->UpdateSubresource(_texture.Get(), 0, nullptr, imageData.data(), rowPitch, 0);
+
+			if (_srv)
+			{
+				context->GenerateMips(_srv.Get());
+			}
+		}
+
+		_config.width = width;
+		_config.height = height;
+		_config.channels = channels;
+		_config.format = config.format;
 	}
 
-	void TextureDX11::CreateD3D11TextureView(int width, int height, const void* data, DXGI_FORMAT format)
+	TextureDX11::TextureDX11(ID3D11Texture2D* existingTexture, ID3D11RenderTargetView* rtv) : Texture([&]() {
+		FT_ENGINE_ASSERT(existingTexture, "Existing texture cannot be null!");
+		D3D11_TEXTURE2D_DESC desc;
+		existingTexture->GetDesc(&desc);
+
+		TextureConfig config;
+		config.width = desc.Width;
+		config.height = desc.Height;
+		config.isRenderTarget = true;
+		config.isShaderResource = false;
+		config.debugName = "BackBufferTexture";
+		return config;
+		}())
 	{
+		FT_ENGINE_ASSERT(rtv, "Render target view cannot be null!");
+
+		_texture = existingTexture;
+		_rtv = rtv;
+		_srv = nullptr;
+		_dsv = nullptr;
+
+		D3D11_TEXTURE2D_DESC desc;
+		_texture->GetDesc(&desc);
+		_config.width = desc.Width;
+		_config.height = desc.Height;
+		_config.isRenderTarget = true;
+	}
+
+	TextureDX11::TextureDX11(ID3D11Texture2D* existingTexture, ID3D11DepthStencilView* dsv) : Texture([&]() {
+		FT_ENGINE_ASSERT(existingTexture, "Existing texture cannot be null!");
+		D3D11_TEXTURE2D_DESC desc;
+		existingTexture->GetDesc(&desc);
+
+		TextureConfig config;
+		config.width = desc.Width;
+		config.height = desc.Height;
+		config.isRenderTarget = false;
+		config.isShaderResource = false;
+		config.debugName = "DepthBufferTexture";
+		return config;
+		}())
+	{
+		FT_ENGINE_ASSERT(dsv, "Depth stencil view cannot be null for a depth texture!");
+
+		_texture = existingTexture;
+		_dsv = dsv;
+		_rtv = nullptr;
+		_srv = nullptr;
+
+		D3D11_TEXTURE2D_DESC desc;
+		_texture->GetDesc(&desc);
+		_config.width = desc.Width;
+		_config.height = desc.Height;
+		_config.isRenderTarget = false;
+	}
+
+	TextureDX11::TextureDX11(uint32_t width, uint32_t height, Format format, const void* pixelData, const std::string& debugName) : Texture([&]() {
+		TextureConfig config;
+		config.width = width;
+		config.height = height;
+		config.format = format;
+		config.isRenderTarget = false;
+		config.isShaderResource = true;
+		config.hasMipmaps = false;
+		config.debugName = debugName;
+		return config;
+		}())
+	{
+		RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
+		ID3D11Device* device = renderer->GetDevice();
+
+		DXGI_FORMAT dxgiFormat = ToDXGIFormat(format);
+		FT_ENGINE_ASSERT(dxgiFormat != DXGI_FORMAT_UNKNOWN, "Unsupported texture format provided.");
+
+		uint32_t bytesPerPixel = GetFormatSize(format);
+		uint32_t rowPitch = width * bytesPerPixel;
+
 		D3D11_TEXTURE2D_DESC textureDesc = {};
 		textureDesc.Width = width;
 		textureDesc.Height = height;
 		textureDesc.MipLevels = 1;
 		textureDesc.ArraySize = 1;
-		textureDesc.Format = format;
+		textureDesc.Format = dxgiFormat;
 		textureDesc.SampleDesc.Count = 1;
+		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.CPUAccessFlags = 0;
+		textureDesc.MiscFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA initData = {};
-		initData.pSysMem = data;
-		initData.SysMemPitch = width * 4; // RGBA
+		initData.pSysMem = pixelData;
+		initData.SysMemPitch = rowPitch;
+		initData.SysMemSlicePitch = rowPitch * height;
 
-		ID3D11Texture2D* texture = nullptr;
-		FT_ENGINE_ASSERT(RendererAPI::CreateTexture2D(&textureDesc, &initData, &texture), "Failed to create texture2D");
+		HRESULT hr = device->CreateTexture2D(&textureDesc, &initData, _texture.GetAddressOf());
+		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create D3D11 Texture2D from pixel data.");
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = textureDesc.Format;
+		srvDesc.Format = dxgiFormat;
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
-		FT_ENGINE_ASSERT(RendererAPI::CreateShaderResourceView(texture, &srvDesc, &_textureView), "Failed to create shader resource view for texture");
-		texture->Release();
+
+		hr = device->CreateShaderResourceView(_texture.Get(), &srvDesc, _srv.GetAddressOf());
+		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create SRV for texture from pixel data.");
+	}
+
+	const std::vector<uint8_t> TextureDX11::GetData() const
+	{
+		if (_dataCached)
+		{
+			return _dataCache;
+		}
+
+		RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
+		ID3D11DeviceContext* context = renderer->GetDeviceContext();
+		ID3D11Device* device = renderer->GetDevice();
+		FT_ENGINE_ASSERT(context, "Device context is null.");
+		FT_ENGINE_ASSERT(device, "Device is null.");
+
+		D3D11_TEXTURE2D_DESC desc;
+		_texture->GetDesc(&desc);
+
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.BindFlags = 0;
+		desc.MiscFlags = 0;
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> stagingTexture;
+		HRESULT hr = device->CreateTexture2D(&desc, nullptr, stagingTexture.GetAddressOf());
+		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create staging texture.");
+
+		context->CopyResource(stagingTexture.Get(), _texture.Get());
+
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+
+		hr = context->Map(stagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mappedResource);
+		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to map staging texture.");
+
+		const Format textureFormat = _config.format;
+		const uint32_t bytesPerPixel = Frost::GetFormatSize(textureFormat);
+
+		size_t dataSize = (size_t)desc.Width * desc.Height * bytesPerPixel;
+		_dataCache.resize(dataSize);
+
+		const uint32_t bytesPerRow = desc.Width * bytesPerPixel;
+		const uint8_t* src = static_cast<const uint8_t*>(mappedResource.pData);
+		uint8_t* dst = _dataCache.data();
+
+		for (uint32_t y = 0; y < desc.Height; ++y)
+		{
+			std::memcpy(dst, src, bytesPerRow);
+			src += mappedResource.RowPitch;
+			dst += bytesPerRow;
+		}
+
+		context->Unmap(stagingTexture.Get(), 0);
+		_dataCached = true;
+		return _dataCache;
+	}
+
+	void TextureDX11::Bind(Slot slot) const
+	{
+		RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
+		ID3D11DeviceContext* context = renderer->GetDeviceContext();
+		FT_ENGINE_ASSERT(_srv, "Cannot bind texture: SRV is null.");
+		context->PSSetShaderResources(static_cast<UINT>(slot), 1, _srv.GetAddressOf());
 	}
 }

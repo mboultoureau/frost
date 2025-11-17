@@ -1,11 +1,14 @@
 #include "Frost/Scene/Scene.h"
 
-#include "Frost/Scene/Systems/RendererSystem.h"
+#include "Frost/Scene/Systems/JoltRendererSystem.h"
+#include "Frost/Scene/Systems/ModelRendererSystem.h"
 #include "Frost/Scene/Systems/WorldTransformSystem.h"
 #include "Frost/Scene/Systems/ScriptableSystem.h"
 #include "Frost/Scene/Systems/PhysicSystem.h"
 #include "Frost/Scene/Systems/UISystem.h"
-#include "Frost/Scene/Components/GameObjectInfo.h"
+#include "Frost/Scene/Components/Meta.h"
+
+using namespace Frost::Component;
 
 namespace Frost
 {
@@ -17,14 +20,14 @@ namespace Frost
     GameObject::Id Scene::CreateGameObject(std::string name)
     {
         auto id = _ecs.CreateGameObject();
-        _ecs.AddComponent<GameObjectInfo>(id, id, name);
+        _ecs.AddComponent<Meta>(id, id, name);
         return id;
     }
 
     GameObject::Id Scene::CreateGameObject(std::string name, GameObject::Id parentId)
     {
         auto id = _ecs.CreateGameObject();
-        _ecs.AddComponent<GameObjectInfo>(id, id, parentId, name);
+        _ecs.AddComponent<Meta>(id, id, parentId, name);
         return id;
     }
 
@@ -41,10 +44,11 @@ namespace Frost
     void Scene::_InitializeSystems()
     {
 		_systems.push_back(std::make_unique<WorldTransformSystem>());
-        _systems.push_back(std::make_unique<RendererSystem>());
+        _systems.push_back(std::make_unique<ModelRendererSystem>());
 		_systems.push_back(std::make_unique<ScriptableSystem>());
         _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<UISystem>());
+        //_systems.push_back(std::make_unique<JoltRendererSystem>());
     }
 
     void Scene::Update(float deltaTime)
