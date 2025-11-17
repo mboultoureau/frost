@@ -14,7 +14,7 @@ echo.
 echo --- Nettoyage du Répertoire Racine ---
 
 :: Répertoires racine à supprimer
-set "ROOT_DIRS_TO_REMOVE=CMakeFiles x64 Debug Release vendor"
+set "ROOT_DIRS_TO_REMOVE=CMakeFiles x64 Debug Release vendor ZERO_CHECK.dir INSTALL.dir ALL_BUILD.dir"
 
 echo Suppression des répertoires de construction racines...
 for %%d in (%ROOT_DIRS_TO_REMOVE%) do (
@@ -25,7 +25,7 @@ for %%d in (%ROOT_DIRS_TO_REMOVE%) do (
 )
 
 :: Fichiers racines à supprimer
-set "ROOT_FILES_TO_REMOVE=*.sln *.vcxproj *.vcxproj.filters CMakeCache.txt cmake_install.cmake"
+set "ROOT_FILES_TO_REMOVE=*.sln *.slnx *.vcxproj *.vcxproj.user *.vcxproj.filters CMakeCache.txt cmake_install.cmake"
 
 echo Suppression des fichiers racines générés...
 for %%f in (%ROOT_FILES_TO_REMOVE%) do (
@@ -36,19 +36,19 @@ for %%f in (%ROOT_FILES_TO_REMOVE%) do (
 )
 
 :: -----------------------------------------------------------------------------
-:: SECTION 2: NETTOYAGE DES SOUS-RÉPERTOIRES (FROST, LAB)
+:: SECTION 2: NETTOYAGE DES SOUS-RÉPERTOIRES (FROST, LAB, GAME)
 :: -----------------------------------------------------------------------------
 
 echo.
-echo --- Nettoyage des Sous-répertoires (Frost, Lab) ---
+echo --- Nettoyage des Sous-répertoires (Frost, Lab, Game) ---
 
-set "SUB_DIRS_TO_CLEAN=Frost Lab"
+set "SUB_DIRS_TO_CLEAN=Frost Lab Game"
 
 :: Répertoires à supprimer à l'INTÉRIEUR des sous-répertoires (noms explicites)
 set "SUB_EXPLICIT_DIRS=bin CMakeFiles Debug Release vendor"
 
 :: Fichiers de construction à supprimer à l'INTÉRIEUR des sous-répertoires
-set "SUB_BUILD_FILES_TO_REMOVE=*.vcxproj *.vcxproj.filters *.vcxproj.user cmake_install.cmake"
+set "SUB_BUILD_FILES_TO_REMOVE=*.vcxproj *.vcxproj.filters *.vcxproj.user cmake_install.cmake imgui.ini *.log"
 
 for %%s in (%SUB_DIRS_TO_CLEAN%) do (
     if exist "%%s" (

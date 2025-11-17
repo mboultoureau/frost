@@ -6,13 +6,15 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 
 using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
 
 Sphere::Sphere()
 {
 	Scene& _scene = Game::GetScene();
 
 	_sphere = _scene.CreateGameObject("Sphere");
-	_scene.AddComponent<Frost::Transform>(_sphere, Frost::Transform::Vector3{ 0.0f, 0.0f, 0.0f });
+	_scene.AddComponent<Transform>(_sphere, Vector3{ 0.0f, 0.0f, 0.0f });
 
 	_SetupPhysics();
 }

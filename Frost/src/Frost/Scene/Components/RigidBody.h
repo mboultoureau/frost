@@ -1,8 +1,12 @@
 #pragma once
 #include "Frost/Debugging/Logger.h"
-#include <Jolt/Physics/Body/Body.h>
 
-namespace Frost
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Body/Body.h>
+#include <Jolt/Physics/EActivation.h>
+#include "Frost/Physics/Physics.h"
+
+namespace Frost::Component
 {
 
 	struct PhysicBody

@@ -1,16 +1,19 @@
 #pragma once
 
+
+#include "Frost/Core/Window.h"
+#include "Frost/Renderer/Renderer.h"
+#include "Frost/Event/Events/Window/WindowCloseEvent.h"
 #include "Frost/Utils/NoCopy.h"
 #include "Frost/Core/Timer.h"
-#include "Frost/Core/Window.h"
 #include "Frost/Core/LayerStack.h"
-#include "Frost/Renderer/ModelLibrary.h"
 #include "Frost/Event/EventManager.h"
 #include "Frost/Physics/PhysicsConfig.h"
 
-#include <Windows.h>
+#include <windows.h>
+#include <optional>
 #include <memory>
-#include <string>
+
 
 using namespace std::chrono_literals;
 
@@ -23,7 +26,7 @@ namespace Frost
 		PWSTR pCmdLine;
 		int nCmdShow;
 
-		std::string title;
+		Window::WindowTitle title;
 	};
 
 	class Application : NoCopy
@@ -35,40 +38,42 @@ namespace Frost
 		void ConfigurePhysics(const PhysicsConfig& config);
 		void Setup();
 		void Run();
-		void PushLayer(Layer* layer);
+
+		// Layers
+		template<typename T, typename... Args>
+		T* PushLayer(Args&&... args)
+		{
+			return _layerStack.PushLayer<T>(std::forward<Args>(args)...);
+		}
+
 		void PopLayer(Layer* layer);
+		std::optional<Layer*> GetLayer(const Layer::LayerName& name);
+
+
 		void Reset();
 		virtual void OnApplicationReady() {};
 
-		Layer* GetLayer(const Layer::LayerName& name);
-	
+
 		static Application& Get();
-
-		std::unique_ptr<Window>& GetWindow() { return _window; }
-		const std::unique_ptr<Window>& GetWindow() const { return _window; }
-
-		ModelLibrary& GetModelLibrary() { return _meshLibrary; }
-		const ModelLibrary& GetModelLibrary() const { return _meshLibrary; }
-
-		EventManager& GetEventManager() { return _eventManager; }
-		const EventManager& GetEventManager() const { return _eventManager; }
 
 		LayerStack& GetLayerStack() { return _layerStack; }
 		const LayerStack& GetLayerStack() const { return _layerStack; }
 
-		enum {
-			DEFAULT_WIDTH = 640,
-			DEFAULT_HEIGHT = 480
-		};
+		static Window* GetWindow() { return Get()._window.get(); }
 
 	private:
-		HINSTANCE _hInstance;
 		std::unique_ptr<Window> _window;
+		std::unique_ptr<Renderer> _renderer;
+		EventHandlerId _closeEventHandlerId;
 		bool _running;
 
-		EventManager _eventManager;
+	private:
+		bool _OnWindowClose(WindowCloseEvent& e);
+
+		HINSTANCE _hInstance;
+
+
 		LayerStack _layerStack;
-		ModelLibrary _meshLibrary;
 		PhysicsConfig _physicsConfig;
 		bool _physicsConfigured = false;
 

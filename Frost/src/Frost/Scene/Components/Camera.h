@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Frost/Scene/ECS/Component.h"
 #include "Frost/Renderer/Viewport.h"
+#include "Frost/Scene/ECS/Component.h"
+#include "Frost/Utils/Math/Vector.h"
 #include "Frost/Utils/Math/Angle.h"
-#include "Frost.h"
 
-namespace Frost
+namespace Frost::Component
 {
 	struct Camera : public Component
 	{
@@ -16,7 +16,7 @@ namespace Frost
 		};
 
 		ProjectionType projectionType = ProjectionType::Perspective;
-		Angle<Degree> perspectiveFOV = 60.0_deg;
+		Math::Angle<Math::Radian> perspectiveFOV = Math::Angle<Math::Degree>(60.0f);
 		float orthographicSize = 10.0f;
 		float nearClip = 0.1f;
 		float farClip = 1000.0f;
@@ -25,10 +25,10 @@ namespace Frost
 		float frustumPadding = 10.0f;
 
 		bool clearOnRender = true;
-		float backgroundColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+		Math::Color4 backgroundColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 		bool lookAtPositionEnabled = false;
-		Transform::Vector3 lookAtPosition = { 0.0f, 0.0f, 0.0f };
+		Math::Vector3 lookAtPosition = { 0.0f, 0.0f, 0.0f };
 
 		Viewport viewport;
 	};

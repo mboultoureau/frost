@@ -13,6 +13,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(OUTPUT_BASE_DIR "bin")
 set(INT_BASE_DIR "bin-int")
 
+# Compilation optimizations
+if(MSVC)
+    add_compile_options(/MP)
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /INCREMENTAL")
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /INCREMENTAL")
+    set(CMAKE_STATIC_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} /INCREMENTAL")
+endif()
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.12")
+    include(ProcessorCount)
+    ProcessorCount(N)
+    if(NOT N EQUAL 0)
+        set(CMAKE_BUILD_PARALLEL_LEVEL ${N} CACHE STRING "Number of parallel jobs to use")
+    endif()
+endif()
+
 add_subdirectory(Frost)
 add_subdirectory(Lab)
 add_subdirectory(Game)

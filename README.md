@@ -2,18 +2,23 @@
 
 Frost is a game engine created by the Uno team ([Elias Del Pozo](https://depot.dinf.usherbrooke.ca/dele5830), [Mathis Boultoureau](https://depot.dinf.usherbrooke.ca/boum6233), [Simon Le Floch](https://depot.dinf.usherbrooke.ca/lefs1934) and [Thomas Vanwalleghem](https://depot.dinf.usherbrooke.ca/vant2523)) for DDJV courses.
 
-## Installation
+## Constraints
 
-To install and run the project, you must be running Windows and have Visual Studio 2022 and CMake installed. Then run the `Setup.bat` script to generate the project.
+For the purposes of the course, we were not allowed to use any external libraries except those listed below. A more robust implementation of the engine would use entt, nvrhi, etc.
 
 ## Features
 
 - [x] ECS
 - [x] Rendering (DirectX 11)
+- [x] Model loading (assimp)
 - [x] Physics (Jolt)
 - [x] Input (mouse, keyboard, gamepad)
 - [x] Debugging (logger, debugging interface)
 - [x] Easily extensible
+
+## Installation
+
+To install and run the project, you must be running Windows and have Visual Studio 2022 and CMake installed. Then run the `Setup.bat` script to generate the project.
 
 ## Resources
 

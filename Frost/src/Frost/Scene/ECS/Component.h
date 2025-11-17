@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Frost
+namespace Frost::Component
 {
 	class Component
 	{

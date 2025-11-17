@@ -33,6 +33,7 @@ if(WIN32)
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
         $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
         $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/bigobj>>
     )
     target_compile_definitions(Game PUBLIC
         FT_PLATFORM_WINDOWS

@@ -2,7 +2,7 @@
 
 #include "Frost/Scene/Components/Transform.h"
 
-namespace Frost
+namespace Frost::Component
 {
 	struct WorldTransform : public Transform
 	{
@@ -11,12 +11,12 @@ namespace Frost
 		{
 		}
 
-		WorldTransform(const Vector3& pos, const Vector4& rot, const Vector3& scl) noexcept
+		WorldTransform(const Math::Vector3& pos, const Math::Vector4& rot, const Math::Vector3& scl) noexcept
 			: Transform(pos, rot, scl)
 		{
 		}
 
-		WorldTransform(const Vector3& pos) noexcept
+		WorldTransform(const Math::Vector3& pos) noexcept
 			: Transform(pos)
 		{
 		}

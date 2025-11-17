@@ -16,6 +16,10 @@
 #include <cmath>
 #include <DirectXMath.h>
 
+using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
+
 class DropletScript : public Frost::Script {
 public:
 	void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override
@@ -44,12 +48,12 @@ void BallRain::InstantiateDroplet(float x, float z)
 	auto _droplet = scene.CreateGameObject("Player");
 	scene.AddComponent<Transform>(
 		_droplet,
-		Transform::Vector3{ x, (x+z)/2.0f+2*scale, z },
-		Transform::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
-		Transform::Vector3{ 5.0f, 5.0f, 5.0f }
+		Vector3{ x, (x+z)/2.0f+2*scale, z },
+		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
+		Vector3{ 5.0f, 5.0f, 5.0f }
 	);
 	scene.AddComponent<WorldTransform>(_droplet);
-	scene.AddComponent<ModelRenderer>(_droplet, "./resources/meshes/sphere.fbx");
+	scene.AddComponent<StaticMesh>(_droplet, "./resources/meshes/sphere.fbx");
 
 	FT_ENGINE_ASSERT(_droplet != GameObject::InvalidId, "Droplet GameObject is invalid");
 

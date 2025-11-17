@@ -1,4 +1,4 @@
-#include "PlayerCamera.h"
+﻿#include "PlayerCamera.h"
 
 #include "Frost.h"
 #include "Player.h"
@@ -20,7 +20,10 @@
 #include <algorithm>
 #include <cmath>
 #include <DirectXMath.h>
-#include <Frost/Scene/Components/GameObjectInfo.h>
+
+using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
 
 
 void PlayerSpringCameraScript::OnFixedUpdate(float deltaTime)
@@ -39,7 +42,7 @@ void PlayerSpringCameraScript::UpdateTPCam(float deltaTime)
 	);
 
 	auto cameraPivotTransform = scene->GetComponent<Transform>(cameraPivot);
-	DirectX::XMStoreFloat4(&cameraPivotTransform->rotation, quaternion);
+	DirectX::XMStoreFloat4(reinterpret_cast<DirectX::XMFLOAT4*>(&cameraPivotTransform->rotation), quaternion);
 
 	// TODO : cam rotation is actually one frame behind cameraPivot rotation
 	auto cameraPivotWTransform = scene->GetComponent<WorldTransform>(cameraPivot);
@@ -113,8 +116,8 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 	ray.mDirection = (_thirdPCamPos - playerPosition);
 	float desiredDistance = ray.mDirection.Length();
 
-	auto renderer = scene->GetComponent<ModelRenderer>(vehicle);
-	renderer->isActive = ((playerPosition - cameraPos).Length() > 10.f);
+	auto renderer = scene->GetComponent<StaticMesh>(vehicle);
+	//renderer->isActive = ((playerPosition - cameraPos).Length() > 10.f);
 
 	if (isThirdPerson) {
 		RayCastBroadPhaseFilter bpFilter;
@@ -174,30 +177,30 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : 
 
 	// Camera Pivot
 	_cameraPivot = scene.CreateGameObject("Camera Pivot", _player);
-	scene.AddComponent<Transform>(_cameraPivot, Transform::Vector3{ 0.0f, 0.0f, 4.4f });
+	scene.AddComponent<Transform>(_cameraPivot, Vector3{ 0.0f, 0.0f, 4.4f });
 	scene.AddComponent<WorldTransform>(_cameraPivot);
 
 
 	// 3rdPersVirtualCamera
 	_3rdPersVirtCamera = scene.CreateGameObject("3rd Person Virtual Camera", _cameraPivot);
-	scene.AddComponent<Transform>(_3rdPersVirtCamera, Transform::Vector3{ 0.0f, 10, -20.0f });
-	scene.AddComponent<WorldTransform>(_3rdPersVirtCamera, Transform::Vector3{ 0.0f, 10.0f, -20.0f });
+	scene.AddComponent<Transform>(_3rdPersVirtCamera, Vector3{ 0.0f, 10, -20.0f });
+	scene.AddComponent<WorldTransform>(_3rdPersVirtCamera, Vector3{ 0.0f, 10.0f, -20.0f });
 	//debug
 		//scene.AddComponent<ModelRenderer>(_3rdPersVirtCamera, "./resources/meshes/sphere.fbx");
 	auto tpCamWTransform = scene.GetComponent<WorldTransform>(_3rdPersVirtCamera);
 
 	// Camera
 	_camera = scene.CreateGameObject("Camera");
-	scene.AddComponent<Transform>(_camera, Transform::Vector3{ 0.0f, 10, -20.0f });
-	scene.AddComponent<WorldTransform>(_camera, Transform::Vector3{ 0.0f, 10.0f, -20.0f });
+	scene.AddComponent<Transform>(_camera, Vector3{ 0.0f, 10, -20.0f });
+	scene.AddComponent<WorldTransform>(_camera, Vector3{ 0.0f, 10.0f, -20.0f });
 	scene.AddComponent<Camera>(_camera);
-	scene.AddComponent<ModelRenderer>(_camera, "./resources/meshes/sphere.fbx");
+	scene.AddComponent<StaticMesh>(_camera, "./resources/meshes/sphere.fbx");
 
 	auto cameraComponent = scene.GetComponent<Camera>(_camera);
-	cameraComponent->backgroundColor[0] = 47.0f / 255.0f;
-	cameraComponent->backgroundColor[1] = 116.0f / 255.0f;
-	cameraComponent->backgroundColor[2] = 228.0f / 255.0f;
-	cameraComponent->backgroundColor[3] = 1.0f;
+	cameraComponent->backgroundColor.r = 47.0f / 255.0f;
+	cameraComponent->backgroundColor.g = 116.0f / 255.0f;
+	cameraComponent->backgroundColor.b = 228.0f / 255.0f;
+	cameraComponent->backgroundColor.a = 1.0f;
 
 	// Create the Camera Sensor
 	JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(1.0f).Create().Get();

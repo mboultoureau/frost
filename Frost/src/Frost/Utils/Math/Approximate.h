@@ -7,7 +7,7 @@
 * @see https://h-deb.ca/Sujets/Maths/Assez-proches.html
 */
 
-namespace Frost
+namespace Frost::Math
 {
 	class Approximate
 	{

@@ -9,8 +9,5 @@ namespace Frost
     public:
         WorldTransformSystem();
         void Update(Frost::ECS& ecs, float deltaTime) override;
-
-    private:
-        void Render(ECS& ecs);
     };
 }
