@@ -14,7 +14,7 @@ namespace Frost
     public:
         PhysicSystem();
         void FixedUpdate(ECS& ecs, float deltaTime) override;
-		void LateUpdate(ECS& ecs, float deltaTime) override;
+        void LateUpdate(ECS& ecs, float deltaTime) override;
 
         void UpdateAllJoltBodies(ECS& ecs, float deltaTime);
 
@@ -28,8 +28,6 @@ namespace Frost
         void _HandleOnCollisionStayVector(ECS& ecs, float deltaTime);
         void _HandleOnCollisionRemovedVector(ECS& ecs, float deltaTime);
     };
-
-
 }
 
 

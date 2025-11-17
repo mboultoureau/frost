@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Frost/Renderer/Viewport.h"
+
 #include <cstdint>
 #include <array>
 
@@ -50,6 +52,7 @@ namespace Frost
 		void ShowCursor();
 		void HideCursor();
 		bool IsCursorVisible() const;
+		bool IsCursorInViewport(const Viewport& viewport) const;
 		MousePosition GetPosition() const;
 		MouseViewportPosition GetViewportPosition() const;
 

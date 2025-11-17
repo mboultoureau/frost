@@ -1,32 +1,39 @@
-#pragma once
+﻿#pragma once
 
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Vertex.h"
 #include "Frost/Renderer/BoundingBox.h"
 
 #include <span>
+#include <cstdint>
+#include <cstddef>
 
 namespace Frost
 {
+	class Renderer;
+
 	class Mesh
 	{
 	public:
-		Mesh(std::span<const Vertex> vertices, std::span<const uint32_t> indices);
+		Mesh(std::span<const std::byte> vertices, uint32_t vertexStride, std::span<const uint32_t> indices);
 
-		const VertexBuffer& GetVertexBuffer() const { return _vertexBuffer; }
-		const IndexBuffer& GetIndexBuffer() const { return _indexBuffer; }
-		uint32_t GetMaterialIndex() const { return _materialIndex; }
-		void SetMaterialIndex(uint32_t index) { _materialIndex = index; }
+		const Buffer* GetVertexBuffer() const { return _vertexBuffer.get(); }
+		const Buffer* GetIndexBuffer() const { return _indexBuffer.get(); }
+
+		uint32_t GetVertexStride() const { return _vertexStride; }
 		uint32_t GetIndexCount() const { return _indexCount; }
+		uint32_t GetMaterialIndex() const { return _materialIndex; }
+
+		void SetMaterialIndex(uint32_t index) { _materialIndex = index; }
 		BoundingBox GetBoundingBox() const { return _boundingBox; }
 
 	private:
-		VertexBuffer _vertexBuffer;
-		IndexBuffer _indexBuffer;
+		std::unique_ptr<Buffer> _vertexBuffer;
+		std::unique_ptr<Buffer> _indexBuffer;
 		BoundingBox _boundingBox;
-		uint32_t _materialIndex;
+
+		uint32_t _vertexStride;
 		uint32_t _indexCount;
+		uint32_t _materialIndex;
 	};
 }
-
-

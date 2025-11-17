@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
-#include "Frost/Renderer/Texture.h"
+#include "Frost/Asset/Texture.h"
+#include "Frost/Utils/Math/Vector.h"
 
 #include <string>
-#include <DirectXMath.h>
 #include <memory>
 #include <vector>
 
@@ -11,27 +11,25 @@ namespace Frost
 {
 	struct Material
 	{
-		enum FilterMode {
-			LINEAR,
-			POINT,
-			ANISOTROPIC
-		};
+		enum class FilterMode { POINT, LINEAR, ANISOTROPIC };
 
-		std::string name;
-		DirectX::XMFLOAT3 diffuseColor;
-
-		FilterMode filterMode = FilterMode::ANISOTROPIC;
-		std::vector<std::shared_ptr<Texture>> diffuseTextures;
+		std::string name = "DefaultMaterial";
+		Math::Color4 albedo = { 1.0f, 1.0f, 1.0f, 1.0f };
+		Math::Color4 emissiveColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float metalness = 0.0f;
+		float roughness = 0.5f;
+		float ao = 1.0f;
+		
+		
+		FilterMode filter = FilterMode::ANISOTROPIC;
+		std::vector<std::shared_ptr<Texture>> albedoTextures;
 		std::vector<std::shared_ptr<Texture>> normalTextures;
-		DirectX::XMFLOAT3 emissiveColor = { 0.0f, 0.0f, 0.0f };
-		std::vector<std::shared_ptr<Texture>> emissiveTextures;
-		std::vector<std::shared_ptr<Texture>> ambientOclusionTextures;
 		std::vector<std::shared_ptr<Texture>> metallicTextures;
 		std::vector<std::shared_ptr<Texture>> roughnessTextures;
-		float roughnessValue = 0.5f;
-		DirectX::XMFLOAT2 uvTiling = { 1,1 };
-		DirectX::XMFLOAT2 uvOffset = { 0,0 };
+		std::vector<std::shared_ptr<Texture>> aoTextures;
+		std::vector<std::shared_ptr<Texture>> emissiveTextures;
+		
+		Math::Vector2 uvTiling = { 1,1 };
+		Math::Vector2 uvOffset = { 0,0 };
 	};
 }
-
-

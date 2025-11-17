@@ -10,8 +10,12 @@
 #include <algorithm>
 #include <cmath>
 #include <DirectXMath.h>
-#include <Frost/Scene/Components/GameObjectInfo.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+
+using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
+
 
 const float CHECKPOINT_SIZE = 5.0f;
 
@@ -42,7 +46,7 @@ public:
 
 };
 
-CheckPoint::CheckPoint(Transform::Vector3 startpos)
+CheckPoint::CheckPoint(Vector3 startpos)
 {
 	Scene& scene = Game::GetScene();
 
@@ -50,8 +54,8 @@ CheckPoint::CheckPoint(Transform::Vector3 startpos)
 	scene.AddComponent<Transform>(
 		_checkpoint,
 		startpos,
-		Transform::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
-		Transform::Vector3{ 5.0f, 5.0f, 5.0f }
+		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
+		Vector3{ 5.0f, 5.0f, 5.0f }
 	);
 	scene.AddComponent<WorldTransform>(_checkpoint);
 }
@@ -125,21 +129,21 @@ void CheckPoint::DeleteChildrenPhysics()
 	{
 		GameObject::Id childId = child->_checkpoint;
 
-		if (scene.GetComponent<Frost::Transform>(childId) == nullptr)
+		if (scene.GetComponent<Transform>(childId) == nullptr)
 		{
 			continue;
 		}
 
-		Frost::RigidBody* bodyComponent = scene.GetComponent<Frost::RigidBody>(childId);
+		RigidBody* bodyComponent = scene.GetComponent<RigidBody>(childId);
 
 		if (bodyComponent)
 		{
 			JPH::BodyID bodyId = bodyComponent->physicBody->bodyId;
 			Physics::Get().mapJBodyGameObject.erase(bodyId);
 
-			scene.RemoveComponent<Frost::RigidBody>(childId);
+			scene.RemoveComponent<RigidBody>(childId);
 
-			scene.RemoveComponent<Frost::ModelRenderer>(childId);
+			scene.RemoveComponent<StaticMesh>(childId);
 
 			scene.RemoveComponent<CheckPointScript>(childId);
 		}
@@ -152,7 +156,7 @@ void CheckPoint::DestroyGameObject()
 	Scene& scene = Game::GetScene();
 	GameObject::Id id = _checkpoint;
 
-	Frost::RigidBody* bodyComponent = scene.GetComponent<Frost::RigidBody>(id);
+	RigidBody* bodyComponent = scene.GetComponent<RigidBody>(id);
 
 	if (bodyComponent)
 	{
@@ -175,11 +179,11 @@ void CheckPoint::DestroyGameObject()
 void CheckPoint::ActivatePhysics()
 {
 	Scene& scene = Game::GetScene();
-	if (!scene.GetComponent<Frost::ModelRenderer>(_checkpoint))
+	if (!scene.GetComponent<StaticMesh>(_checkpoint))
 	{
-		scene.AddComponent<ModelRenderer>(_checkpoint, "./resources/meshes/sphere.fbx");
+		scene.AddComponent<StaticMesh>(_checkpoint, "./resources/meshes/sphere.fbx");
 	}
-	if (scene.GetComponent<Frost::RigidBody>(_checkpoint))
+	if (scene.GetComponent<RigidBody>(_checkpoint))
 	{
 		return;
 	}

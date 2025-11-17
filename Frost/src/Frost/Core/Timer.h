@@ -4,9 +4,6 @@
 
 namespace Frost
 {
-	
-
-
 	class Timer
 	{
 	public:

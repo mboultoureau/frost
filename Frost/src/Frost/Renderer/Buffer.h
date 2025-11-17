@@ -1,42 +1,35 @@
 #pragma once
 
-#include <wrl/client.h>
-#include <d3d11.h>
+#include "Frost/Renderer/GPUResource.h"
+#include "Frost/Renderer/CommandList.h"
+
+#include <cstdint>
 
 namespace Frost
 {
-	class Buffer
-	{
-	public:
-		virtual ID3D11Buffer* Get() const { return _buffer.Get(); }
-		virtual void Bind() = 0;
+    enum class BufferUsage
+    {
+        UNKNOWN,
+        VERTEX_BUFFER,
+        INDEX_BUFFER,
+        CONSTANT_BUFFER,
+    };
 
-	protected:
-		Microsoft::WRL::ComPtr<ID3D11Buffer> _buffer;
-	};
+    struct BufferConfig
+    {
+        BufferUsage usage = BufferUsage::UNKNOWN;
+        uint32_t size = 0;
+        uint32_t stride = 0;
+        bool dynamic = false;
+    };
 
-	class VertexBuffer : public Buffer
-	{
-	public:
-		void Create(const void* data, UINT dataSize);
-		void Bind();
-	};
+    class Buffer : public GPUResource
+    {
+    public:
+        virtual ~Buffer() = default;
 
-	class IndexBuffer : public Buffer
-	{
-	public:
-		void Create(const void* data, UINT dataSize, UINT dataCount);
-		void Bind();
-		UINT GetCount() const { return _count; }
-
-	private:
-		UINT _count{};
-	};
-
-	class ConstantBuffer : public Buffer
-	{
-	public:
-		void Create(const void* data, UINT dataSize);
-		void Bind();
-	};
+        virtual const BufferConfig& GetConfig() const = 0;
+        virtual void UpdateData(CommandList* commandList, const void* data, uint32_t size, uint32_t offset = 0) = 0;
+        virtual uint32_t GetSize() const = 0;
+    };
 }

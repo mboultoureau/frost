@@ -31,6 +31,15 @@ namespace Frost
 		return false;
 	}
 
+	bool Mouse::IsCursorInViewport(const Viewport& viewport) const
+	{
+		MouseViewportPosition pos = GetViewportPosition();
+		return (
+			pos.x >= viewport.x && pos.x <= (viewport.x + viewport.width) &&
+			pos.y >= viewport.y && pos.y <= (viewport.y + viewport.height)
+		);
+	}
+
 	Mouse::MousePosition Mouse::GetPosition() const
 	{
 		return _position;
@@ -110,8 +119,8 @@ namespace Frost
 		RECT clientRect;
 		if (GetClientRect(windowHandle, &clientRect))
 		{
-			_viewportPosition.x = (static_cast<float>(cursorPosition.x) / static_cast<float>(clientRect.right)) * 2.0f - 1.0f;
-			_viewportPosition.y = 1.0f - (static_cast<float>(cursorPosition.y) / static_cast<float>(clientRect.bottom)) * 2.0f;
+			_viewportPosition.x = (static_cast<float>(cursorPosition.x) / static_cast<float>(clientRect.right));
+			_viewportPosition.y = (static_cast<float>(cursorPosition.y) / static_cast<float>(clientRect.bottom));
 		}
 	}
 

@@ -4,13 +4,14 @@
 #include <numbers>
 
 #include "Frost/Utils/Math/Approximate.h"
+#include "Frost/Utils/Math/Vector.h"
 
 /**
 * To learn more about changing the referential system, visit:
 * @see https://h-deb.ca/Sujets/Divers--cplusplus/Implementer-changement-referentiel.html
 */
 
-namespace Frost
+namespace Frost::Math
 {
 	using namespace std::string_view_literals;
 
@@ -129,12 +130,12 @@ namespace Frost
 
 		constexpr bool operator<=(const Angle& other) const noexcept
 		{
-			return !(other.valeur() < value());
+			return !(other.value() < value());
 		}
 
 		constexpr bool operator>(const Angle& other) const noexcept
 		{
-			return other.valeur() < value();
+			return other.value() < value();
 		}
 
 		constexpr bool operator>=(const Angle& other) const noexcept
@@ -186,7 +187,7 @@ namespace Frost
 			return *this;
 		}
 
-		constexpr Angle& operator-() const noexcept
+		constexpr Angle operator-() const noexcept
 		{
 			return { -value() };
 		}
@@ -230,5 +231,60 @@ namespace Frost
 	 constexpr Angle<Radian> operator"" _rad(unsigned long long value) noexcept
 	 {
 		 return { static_cast<float>(value) };
+	 }
+
+	 struct EulerAngles
+	 {
+		 Angle<Radian> Roll;
+		 Angle<Radian> Yaw;
+		 Angle<Radian> Pitch;
+	 };
+
+	 inline EulerAngles QuaternionToEulerAngles(const Vector<Vector4>& q)
+	 {
+		 EulerAngles angles;
+
+		 const float x = q.value().x;
+		 const float y = q.value().y;
+		 const float z = q.value().z;
+		 const float w = q.value().w;
+
+		 // Roll (x-axis rotation)
+		 float sinr_cosp = 2.0f * (w * x + y * z);
+		 float cosr_cosp = 1.0f - 2.0f * (x * x + y * y);
+		 angles.Roll = std::atan2(sinr_cosp, cosr_cosp);
+
+		 // Pitch (y-axis rotation)
+		 float sinp = 2.0f * (w * y - z * x);
+		 if (std::abs(sinp) >= 1)
+			 angles.Pitch = std::copysign(std::numbers::pi_v<float> / 2.0f, sinp);
+		 else
+			 angles.Pitch = std::asin(sinp);
+
+		 // Yaw (z-axis rotation)
+		 float siny_cosp = 2.0f * (w * z + x * y);
+		 float cosy_cosp = 1.0f - 2.0f * (y * y + z * z);
+		 angles.Yaw = std::atan2(siny_cosp, cosy_cosp);
+
+		 return angles;
+	 }
+
+	 inline Vector4 EulerToQuaternion(const EulerAngles& angles)
+	 {
+		 // Yaw (Z), Pitch (Y), Roll (X)
+		 float cy = std::cos(angles.Yaw.value() * 0.5f);
+		 float sy = std::sin(angles.Yaw.value() * 0.5f);
+		 float cp = std::cos(angles.Pitch.value() * 0.5f);
+		 float sp = std::sin(angles.Pitch.value() * 0.5f);
+		 float cr = std::cos(angles.Roll.value() * 0.5f);
+		 float sr = std::sin(angles.Roll.value() * 0.5f);
+
+		 Vector4 q;
+		 q.w = cr * cp * cy + sr * sp * sy;
+		 q.x = sr * cp * cy - cr * sp * sy;
+		 q.y = cr * sp * cy + sr * cp * sy;
+		 q.z = cr * cp * sy - sr * sp * cy;
+
+		 return Vector4(q);
 	 }
 }

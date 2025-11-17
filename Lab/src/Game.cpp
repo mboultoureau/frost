@@ -1,6 +1,6 @@
 #include "Game.h"
 
-#include "Frost/PauseMenu/PauseMenu.h"
+//#include "Frost/PauseMenu/PauseMenu.h"
 #include "MainLayer.h"
 #include "LabApp.h"
 #include "Frost.h"
@@ -14,8 +14,7 @@ Game::Game(Lab* app) : _app{ app }
 
 	InitGame();
 
-	Application::Get().GetEventManager().Subscribe<Frost::ResetEvent>(
-		FROST_BIND_EVENT_FN(Game::OnGameReset));
+	EventManager::Subscribe<Frost::ResetEvent>(FROST_BIND_EVENT_FN(Game::OnGameReset));
 }
 
 bool Game::OnGameReset(Frost::ResetEvent& e)
@@ -30,16 +29,11 @@ bool Game::OnGameReset(Frost::ResetEvent& e)
 void Game::InitGame()
 {
 	_scene = std::make_unique<Frost::Scene>("Scene");
-	_app->PushLayer(new MainLayer());
+	_app->PushLayer<MainLayer>();
+	DebugLayer* debugLayer = _app->PushLayer<DebugLayer>();
+	//Frost::PauseMenu* pauseLayer = _app->PushLayer<Frost::PauseMenu>();
 
-	// TODO: Memory leak on destroy
-	Frost::DebugLayer* debugLayer = new Frost::DebugLayer{};
-	_app->PushLayer(debugLayer);
-
-	Frost::PauseMenu* pauseLayer = new Frost::PauseMenu{};
-	pauseLayer->AddScene(_scene.get());
-	_app->PushLayer(pauseLayer);
-
+	//pauseLayer->AddScene(_scene.get());
 	debugLayer->AddScene(_scene.get());
 
 }

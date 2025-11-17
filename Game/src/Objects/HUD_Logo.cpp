@@ -1,6 +1,9 @@
 #include "HUD_Logo.h"
 #include "../Game.h" 
 
+using namespace Frost;
+using namespace Frost::Component;
+
 HUD_Logo::HUD_Logo()
 {
 
@@ -16,7 +19,7 @@ HUD_Logo::HUD_Logo()
 	viewport.x = 0.85f; 
 	viewport.y = 0.0f; 
 	
-	_scene.AddComponent<Frost::HUD_Image>(
+	_scene.AddComponent<HUDImage>(
 		_hudLogo,
 		viewport,
 		LOGO_PATH,

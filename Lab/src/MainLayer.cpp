@@ -14,12 +14,14 @@ void MainLayer::OnAttach()
 {
 	Frost::Scene& _scene = Game::GetScene();
 
+	_pointLight = std::make_unique<PointLight>();
+	_topCamera = std::make_unique<TopCamera>();
+
 	//_sphere = std::make_unique<Sphere>();
-	//_freeCamera = std::make_unique<FreeCamera>();
-	//_topCamera = std::make_unique<TopCamera>();
-	//_moto = std::make_unique<Moto>();
-	//_ogre = std::make_unique<Ogre>();
-	//_ogreNormal = std::make_unique<OgreNormal>();
+	_freeCamera = std::make_unique<FreeCamera>();
+	_moto = std::make_unique<Moto>();
+	_ogre = std::make_unique<Ogre>();
+	_ogreNormal = std::make_unique<OgreNormal>();
 	//_text = std::make_unique<Text>();
 	//_plane = std::make_unique<Plane>();
 	//_terrain = std::make_unique<Terrain>();
@@ -28,10 +30,10 @@ void MainLayer::OnAttach()
 	//auto _rain = std::make_unique<BallRain>();
 	//_hudLogo = std::make_unique<HUD_Logo>();
 
-	_pauseHandlerUUID = Application::Get().GetEventManager().Subscribe<Frost::PauseEvent>(
+	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
 
-	_unpauseHandlerUUID = Application::Get().GetEventManager().Subscribe<Frost::UnPauseEvent>(
+	_unpauseHandlerUUID = EventManager::Subscribe<Frost::UnPauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGameUnpaused));
 }
 
@@ -57,8 +59,8 @@ void MainLayer::OnLateUpdate(float deltaTime)
 
 void MainLayer::OnDetach()
 {
-	Application::Get().GetEventManager().Unsubscribe(EventType::GamePaused, _pauseHandlerUUID);
-	Application::Get().GetEventManager().Unsubscribe(EventType::GameUnpaused, _unpauseHandlerUUID);
+	//EventManager::Unsubscribe<EventType::GamePaused>(_pauseHandlerUUID);
+	//EventManager::Unsubscribe<EventType::GameUnpaused>(_unpauseHandlerUUID);
 }
 
 bool MainLayer::OnGamePaused(Frost::PauseEvent& e)

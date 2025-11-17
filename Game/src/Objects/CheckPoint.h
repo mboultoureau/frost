@@ -12,7 +12,7 @@ class CheckPoint
 public:
 	static GameObject::Id lastCheckPoint;
 
-	CheckPoint(Transform::Vector3 startpos);
+	CheckPoint(Math::Vector3 startpos);
 	void FixedUpdate(float deltaTime);
 	void AddChild(std::shared_ptr<CheckPoint> child);
 	void AddParent(std::shared_ptr<CheckPoint> parent);
@@ -21,6 +21,8 @@ public:
 	void DestroyGameObject();
 	virtual void ActivatePhysics();
 	std::vector<std::shared_ptr<CheckPoint>>& GetParent() { return _prevCheckPoints; };
+
+	GameObject::Id GetGameObjectId() const { return _checkpoint; }
 private:
 	std::vector<std::shared_ptr<CheckPoint>> _nextCheckPoints;
 	std::vector<std::shared_ptr<CheckPoint>> _prevCheckPoints;

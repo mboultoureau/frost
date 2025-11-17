@@ -3,6 +3,8 @@
 #include "Frost/Scene/ECS/ECS.h"
 #include "Frost/Scene/Components/Scriptable.h"
 
+using namespace Frost::Component;
+
 namespace Frost
 {
 	void ScriptableSystem::Update(Frost::ECS& ecs, float deltaTime)

@@ -220,6 +220,8 @@ namespace Frost
         KeyState GetKeyState(const VirtualKeyCode keyCode) const;
         void SetKeyState(const VirtualKeyCode keyCode, const KeyState newState);
         bool IsKeyDown(const VirtualKeyCode keyCode) const;
+        bool IsKeyPressed(const VirtualKeyCode keyCode) const;
+        void Update();
 
     private:
         std::unordered_map<VirtualKeyCode, KeyState> _keyStates;

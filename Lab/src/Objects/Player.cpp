@@ -16,6 +16,10 @@
 #include <cmath>
 #include <DirectXMath.h>
 
+using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
+
 class PlayerScript : public Frost::Script {
 	float _forward = 0.0f;
 	float _previousForward = 1.0f;
@@ -98,24 +102,24 @@ Player::Player()
 	_player = scene.CreateGameObject("Player");
 	scene.AddComponent<Transform>(
 		_player,
-		Transform::Vector3{ 0.0f, 0.0f, -10.0f },
-		Transform::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, 
-		Transform::Vector3{ 1.0f, 1.0f, 1.0f }
+		Vector3{ 0.0f, 0.0f, -10.0f },
+		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, 
+		Vector3{ 1.0f, 1.0f, 1.0f }
 	);
 	scene.AddComponent<WorldTransform>(_player);
 
 
 	// Camera
 	_camera = scene.CreateGameObject("Camera", _player);
-	scene.AddComponent<Transform>(_camera, Transform::Vector3{ 0.0f, 0.0f, 0.0f });
-	scene.AddComponent<WorldTransform>(_camera, Transform::Vector3{ 0.0f, 0.0f, 0.0f });
+	scene.AddComponent<Transform>(_camera, Vector3{ 0.0f, 0.0f, 0.0f });
+	scene.AddComponent<WorldTransform>(_camera, Vector3{ 0.0f, 0.0f, 0.0f });
 	scene.AddComponent<Camera>(_camera);
 
 	auto cameraComponent = scene.GetComponent<Camera>(_camera);
-	cameraComponent->backgroundColor[0] = 47.0f / 255.0f;
-	cameraComponent->backgroundColor[1] = 116.0f / 255.0f;
-	cameraComponent->backgroundColor[2] = 228.0f / 255.0f;
-	cameraComponent->backgroundColor[3] = 1.0f;
+	cameraComponent->backgroundColor.r = 47.0f / 255.0f;
+	cameraComponent->backgroundColor.g = 116.0f / 255.0f;
+	cameraComponent->backgroundColor.b = 228.0f / 255.0f;
+	cameraComponent->backgroundColor.a = 1.0f;
 
 	InitializePhysics();
 }

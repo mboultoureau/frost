@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Frost/Event/Event.h"
+#include "Frost/Core/Window.h"
 
 namespace Frost
 {
 	class WindowResizeEvent : public Event
 	{
 	public:
-		WindowResizeEvent(unsigned int width, unsigned int height)
+		WindowResizeEvent(Window::WindowSizeUnit width, Window::WindowSizeUnit height)
 			: _width(width), _height(height) {
 		}
 
@@ -16,11 +17,11 @@ namespace Frost
 
 		static EventType GetStaticType() { return EventType::WindowResize; }
 		
-		unsigned int GetWidth() const { return _width; }
-		unsigned int GetHeight() const { return _height; }
+		Window::WindowSizeUnit GetWidth() const { return _width; }
+		Window::WindowSizeUnit GetHeight() const { return _height; }
 
 	private:
-		unsigned int _width;
-		unsigned int _height;
+		Window::WindowSizeUnit _width;
+		Window::WindowSizeUnit _height;
 	};
 }

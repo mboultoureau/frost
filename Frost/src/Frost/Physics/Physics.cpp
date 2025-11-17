@@ -15,13 +15,15 @@
 #include <stdarg.h>
 #include <cassert>
 
-#include <Frost/Scene/Components/GameObjectInfo.h>
+#include <Frost/Scene/Components/Meta.h>
 #include <Frost/Scene/Systems/PhysicSystem.h>
 #include <Frost/Debugging/Logger.h>
 #include <Frost/Debugging/Assert.h>
-
+#include "Frost/Utils/Math/Vector.h"
 
 using namespace JPH;
+using namespace Frost::Math;
+
 namespace Frost
 {
 	Physics::Physics() :
@@ -50,7 +52,7 @@ namespace Frost
 
 
 #ifdef FT_DEBUG
-		_debugRenderer = new DebugRendererPhysics();
+		_debugRenderer = new JoltRenderingPipeline();
 #endif
 	}
 
@@ -71,22 +73,14 @@ namespace Frost
 	{
 		FT_ENGINE_ASSERT(Get()._debugRenderer != nullptr, "Debug renderer is null!");
 
-		auto debugRendererConfig = GetDebugRendererConfig();
+		//auto debugRendererConfig = GetDebugRendererConfig();
 
-		if (debugRendererConfig.DrawBodies)
-		{
-			Get().physics_system.DrawBodies(debugRendererConfig.BodyDrawSettings, Get()._debugRenderer);
-		}
-	}
+		//if (debugRendererConfig.DrawBodies)
+		//{
+		JPH::BodyManager::DrawSettings bodyDrawSettings;
 
-	Frost::DebugRendererPhysicsConfig& Physics::GetDebugRendererConfig()
-	{
-		return Get()._debugRendererConfig;
-	}
-
-	void Physics::SetDebugRendererConfig(Frost::DebugRendererPhysicsConfig config)
-	{
-		Get()._debugRendererConfig = config;
+		Get().physics_system.DrawBodies(bodyDrawSettings, Get()._debugRenderer);
+		//}
 	}
 #endif
 
@@ -105,7 +99,7 @@ namespace Frost
 	{
 		Get().physics_system.AddStepListener(inListener);
 	}
-	
+
 	JPH::Body* Physics::CreateBody(const JPH::BodyCreationSettings& inSettings)
 	{
 		return Get().body_interface->CreateBody(inSettings);
@@ -138,13 +132,22 @@ namespace Frost
 		Get().body_interface->RemoveBody(inBodyID);
 	}
 
+	JPH::BodyInterface& Physics::GetBodyInterface()
+	{
+		return *Get().body_interface;
+	}
 
-	Frost::Transform::Vector3 Frost::Physics::JoltVectorToVector3(RVec3 v)
+	const JPH::BodyLockInterfaceLocking& Physics::GetBodyLockInterface()
+	{
+		return Get().physics_system.GetBodyLockInterface();
+	}
+
+	Frost::Math::Vector3 Physics::JoltVectorToVector3(RVec3 v)
 	{
 		return { v.GetX(), v.GetY(), v.GetZ() };
 	}
 
-	Vec3 Frost::Physics::Vector3ToJoltVector(Transform::Vector3 v)
+	Vec3 Frost::Physics::Vector3ToJoltVector(Math::Vector3 v)
 	{
 		return { v.x, v.y, v.z };
 	}
@@ -180,6 +183,16 @@ namespace Frost
 	}
 #endif 
 
+
+	JPH::DebugRenderer* Physics::GetDebugRenderer()
+	{
+		#ifdef FT_DEBUG
+			return Get()._debugRenderer;
+		#else
+			#error "Debug renderer is only available in debug builds"
+		#endif
+	}
+
 	void Physics::InitPhysics(PhysicsConfig& config, bool useConfig)
 	{
 		FT_ENGINE_ASSERT(!_physicsInitialized, "Physics has already been initialized!");
@@ -194,7 +207,7 @@ namespace Frost
 		}
 		else
 		{
-			_physicsConfig = PhysicsConfig {
+			_physicsConfig = PhysicsConfig{
 				new BPLayerInterfaceImpl{},
 				new ObjectLayerPairFilterImpl{},
 				new ObjectVsBroadPhaseLayerFilterImpl{}
@@ -211,7 +224,6 @@ namespace Frost
 
 		_physicsInitialized = true;
 	}
-	;
 
 	bool ObjectLayerPairFilterImpl::ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const
 	{
@@ -276,64 +288,5 @@ namespace Frost
 		default:													JPH_ASSERT(false); return "INVALID";
 		}
 	}
-
-
-	/// heightTexture : ta TextureDX11* (doit fournir GetTextureRawData(), GetWidth(), GetHeight())
-	/// channel : TextureChannel::R/G/B/A
-	/// heightScale : echelle verticale souhaitée (le sample stocke valeurs 0..1, mScale.Y va multiplier)
-	JPH::ShapeRefC Physics::CreateHeightFieldShapeFromTexture(TextureDX11* heightTexture, TextureChannel channel, float heightScale, Transform::Vector3 transformScale)
-	{
-		FT_ENGINE_ASSERT(heightTexture, "heightTexture null");
-		const int texW = heightTexture->GetWidth();
-		const int texH = heightTexture->GetHeight();
-		FT_ENGINE_ASSERT(texW > 0 && texH > 0, "Invalid texture size");
-
-		std::vector<uint8_t> pixels = heightTexture->GetTextureRawData();
-		FT_ENGINE_ASSERT(!pixels.empty(), "Empty texture data");
-
-		uint32 sampleCount = texW > texH ? texW : texH;
-		if (sampleCount < 2) sampleCount = 2; // minimum 2
-
-		std::vector<float> samples(sampleCount * sampleCount, 0.0f);
-
-		for (uint32 y = 0; y < (uint32)texH; ++y)
-		{
-			for (uint32 x = 0; x < (uint32)texW; ++x)
-			{
-				size_t pixIdx = (y * texW + x) * 4;
-				uint8_t value = 0;
-				switch (channel)
-				{
-				case TextureChannel::R: value = pixels[pixIdx + 0]; break;
-				case TextureChannel::G: value = pixels[pixIdx + 1]; break;
-				case TextureChannel::B: value = pixels[pixIdx + 2]; break;
-				case TextureChannel::A: value = pixels[pixIdx + 3]; break;
-				}
-				// Normalise en 0..1
-				float sample = float(value) / 255.0f;
-				samples[y * sampleCount + x] = sample;
-			}
-		}
-
-		//Vec3 offset(-0.5f, 0.0f, -0.5f);                     
-		Vec3 offset(-0.5f * transformScale.x, 0.0f, -0.5f * transformScale.z);
-		Vec3 scale(1.0f / float(sampleCount) * transformScale.x,               
-			heightScale * transformScale.y,                              
-			1.0f / float(sampleCount) * transformScale.z);          
-
-		JPH::HeightFieldShapeSettings settings{ samples.data(), offset, scale, sampleCount };
-
-		Shape::ShapeResult result = settings.Create();
-		if (!result.IsValid())
-		{
-			FT_ENGINE_ERROR("Failed to create HeightFieldShape from texture");
-			return nullptr;
-		}
-
-		RefConst<Shape> shape = result.Get();
-		return shape;
-	}
-
-
 
 }
