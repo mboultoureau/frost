@@ -6,7 +6,7 @@
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
 
-#include <Frost/Scene/Components/GameObjectInfo.h>
+#include <Frost/Scene/Components/Meta.h>
 #include "PlayerCamera.h"
 
 using namespace Frost;

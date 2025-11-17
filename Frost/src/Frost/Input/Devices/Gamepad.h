@@ -5,7 +5,8 @@
 
 namespace Frost
 {
-	// For performance reasons, don't call XInputGetState for an 'empty' user slot every frame. We recommend that you space out checks for new controllers every few seconds instead.
+	// For performance reasons, don't call XInputGetState for an 'empty' user slot every frame.
+	// We recommend that you space out checks for new controllers every few seconds instead.
 
 	class Gamepad
 	{

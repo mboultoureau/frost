@@ -29,6 +29,7 @@ namespace Frost
 	void Input::Update()
 	{
 		GetMouse().Update();
+		GetKeyboard().Update();
 
 		// TODO: Update not connected gamepads every few seconds to check for new connections
 		for (uint8_t i = 0; i < Gamepad::MAX_GAMEPADS; ++i)

@@ -6,6 +6,8 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 
 using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
 
 Plane::Plane()
 {
@@ -16,12 +18,12 @@ Plane::Plane()
 	_plane = scene.CreateGameObject("Plane");
 	scene.AddComponent<Transform>(
 		_plane,
-		Transform::Vector3{ 0.0f, 0.0f, 0.0f },
-		Transform::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
-		Transform::Vector3{ 500.0f, 1.0f, 500.0f }
+		Vector3{ 0.0f, 0.0f, 0.0f },
+		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
+		Vector3{ 500.0f, 1.0f, 500.0f }
 	);
 	scene.AddComponent<WorldTransform>(_plane);
-	scene.AddComponent<ModelRenderer>(_plane, "./resources/meshes/cube.fbx");
+	scene.AddComponent<Model>(_plane, "./resources/meshes/cube.fbx");
 
 	_SetupPhysics();
 

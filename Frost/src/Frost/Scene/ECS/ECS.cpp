@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+using namespace Frost::Component;
+
 namespace Frost
 {
     ECS::~ECS()

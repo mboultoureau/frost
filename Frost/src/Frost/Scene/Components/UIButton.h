@@ -1,33 +1,43 @@
 #pragma once
 
-#include "Frost/Scene/Components/HUD_Image.h"
-#include <Frost/Renderer/Viewport.h>
+#include "Frost/Scene/Components/HUDImage.h"
+#include "Frost/Renderer/Viewport.h"
+
+
 #include <functional>
 
-namespace Frost
+namespace Frost::Component
 {
-	struct UIButton : public HUD_Image
+	struct UIButton : public HUDImage
 	{
-		Texture* idleTexture = nullptr;
-		Texture* hoverTexture = nullptr;
-		Texture* pressedTexture = nullptr;
+		std::shared_ptr<Texture> idleTexture;
+		std::shared_ptr<Texture> hoverTexture;
+		std::shared_ptr<Texture> pressedTexture;
 
 		std::string hoverTextureFilepath;
 		std::string pressedTextureFilepath;
 
-		RECT buttonHitbox;
+		Viewport buttonHitbox;
 
 		std::function<void()> onClick;
 
 		UIButton(Viewport viewport, std::string pathMainTexture, std::string pathHoverTexture, std::string pathPressedTexture, std::function<void()> f) :
-			HUD_Image(viewport, pathMainTexture, Material::FilterMode::POINT),
+			HUDImage(viewport, pathMainTexture, Material::FilterMode::POINT),
 			hoverTextureFilepath(pathHoverTexture),
 			pressedTextureFilepath(pathPressedTexture),
 			onClick(f)
 		{
 			idleTexture = texture;
-			hoverTexture = TextureLibrary::Get().GetTexture(pathHoverTexture, TextureType::HUD).get();
-			pressedTexture = TextureLibrary::Get().GetTexture(pathPressedTexture, TextureType::HUD).get();
+
+			TextureConfig configHover;
+			configHover.path = pathHoverTexture;
+			configHover.textureType = TextureType::HUD;
+			hoverTexture = AssetManager::LoadAsset(pathHoverTexture, configHover);
+			
+			TextureConfig configPressed;
+			configPressed.path = pathPressedTexture;
+			configPressed.textureType = TextureType::HUD;
+			pressedTexture = AssetManager::LoadAsset(pathPressedTexture, configPressed);
 		}
 	};
 }

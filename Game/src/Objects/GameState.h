@@ -13,6 +13,7 @@ public:
 		_totalLap = lap; };
 	void IncreaseLap() { _lap++; };
 	bool Finished() { return _lap>=_totalLap; };
+	void ResetLap() { _lap = 0; };
 private:
 	int _lap;
 	int _totalLap;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Objects/PointLight.h"
 #include "Objects/Sphere.h"
 #include "Objects/FreeCamera.h"
 #include "Objects/Moto.h"
@@ -28,6 +29,7 @@ public:
 	void OnDetach() override;
 
 private:
+	std::unique_ptr<PointLight> _pointLight;
 	std::unique_ptr<Sphere> _sphere;
 	std::unique_ptr<FreeCamera> _freeCamera;
 	std::unique_ptr<TopCamera> _topCamera;
@@ -44,7 +46,7 @@ private:
 	bool OnGamePaused(Frost::PauseEvent& e);
 	bool OnGameUnpaused(Frost::UnPauseEvent& e);
 
-	Frost::UUID _pauseHandlerUUID;
-	Frost::UUID _unpauseHandlerUUID;
+	EventHandlerId _pauseHandlerUUID;
+	EventHandlerId _unpauseHandlerUUID;
 };
 

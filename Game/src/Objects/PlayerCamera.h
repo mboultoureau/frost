@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Frost.h"
 
@@ -6,7 +6,7 @@
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
 
-#include <Frost/Scene/Components/GameObjectInfo.h>
+#include <Frost/Scene/Components/Meta.h>
 
 using namespace Frost;
 
@@ -41,7 +41,7 @@ public:
 	void UpdateSpringCam(float deltaTime);
 	void ProcessInput(float deltaTime);
 
-private :
+private:
 	float _cameraPivotRotationX = 0.0f;
 	float _cameraPivotRotationY = 0.0f;
 };

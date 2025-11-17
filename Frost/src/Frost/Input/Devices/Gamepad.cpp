@@ -1,5 +1,5 @@
 #include "Frost/Input/Devices/Gamepad.h"
-#include "Frost.h"
+#include "Frost/Event/EventManager.h"
 
 // Fix for Windows macro conflict
 #undef min
@@ -40,7 +40,7 @@ namespace Frost
             // Check if the controller was previously disconnected
             if (!_isConnected)
             {
-                Application::Get().GetEventManager().Emit<GamepadConnectedEvent>(GamepadId(_id));
+                EventManager::Emit<GamepadConnectedEvent>(GamepadId(_id));
 			}
 
             _isConnected = true;
@@ -57,7 +57,7 @@ namespace Frost
 			// Check if the controller was previously connected
             if (_isConnected)
             {
-                Application::Get().GetEventManager().Emit<GamepadDisconnectedEvent>(GamepadId(_id));
+                EventManager::Emit<GamepadDisconnectedEvent>(GamepadId(_id));
             }
 
 			_isConnected = false;

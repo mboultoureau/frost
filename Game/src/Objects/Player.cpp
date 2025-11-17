@@ -9,17 +9,20 @@
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 
-
 // TODO: remove windows header from polluting all the code
 #undef max
 #undef min
 #include <algorithm>
 #include <cmath>
 #include <DirectXMath.h>
-#include <Frost/Scene/Components/GameObjectInfo.h>
+#include "Frost/Scene/Components/Meta.h"
 #include "PlayerCamera.h"
 
 #include "CheckPoint.h"
+
+using namespace Frost;
+using namespace Frost::Math;
+using namespace Frost::Component;
 
 Player::Player()
 {
@@ -28,9 +31,9 @@ Player::Player()
 	_player = scene.CreateGameObject("Player");
 	scene.AddComponent<Transform>(
 		_player,
-		Transform::Vector3{ 0.0f, 0.0f, 0.0f },
-		Transform::Vector4{ -1.55f, 0.0f, 0.0f, 1.0f }, 
-		Transform::Vector3{ 1.0f, 1.0f, 1.0f }
+		Vector3{ 0.0f, 0.0f, 0.0f },
+		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, 
+		Vector3{ 1.0f, 1.0f, 1.0f }
 	);
 	scene.AddComponent<WorldTransform>(_player);
 
@@ -38,18 +41,34 @@ Player::Player()
 	_vehicle = scene.CreateGameObject("Vehicle", _player);
 	scene.AddComponent<Transform>(
 		_vehicle,
-		Frost::Transform::Vector3{ 0.0f, 1.0f, 5.0f },
-		Frost::Transform::Vector3{ -1.6f, 0.0f, 0.0f },
-		Frost::Transform::Vector3{ 5.0f, 5.0f, 5.0f });
+		Vector3{ 0.0f, 1.0f, 5.0f },
+		EulerAngles{ 0.0_deg, 0.0_deg, -90.0_deg },
+		Vector3{ 5.0f, 5.0f, 5.0f });
 
 	scene.AddComponent<WorldTransform>(_vehicle);
-	scene.AddComponent<ModelRenderer>(_vehicle, "./resources/meshes/moto.glb"); //"./resources/meshes/moto.glb"
-	//scene.AddComponent<ModelRenderer>(_vehicle, "./resources/meshes/sphere.fbx");
+	scene.AddComponent<StaticMesh>(_vehicle, "./resources/meshes/moto.glb");
+
 	//Add spring camera
 	auto wt = scene.GetComponent<WorldTransform>(_player);
 	auto pCam = PlayerCamera(_player, _vehicle);
 	_playerCamera = &pCam;
-	
+
+	// Test lights
+	auto light1 = scene.CreateGameObject("PlayerLight1", _player);
+	scene.AddComponent<Transform>(
+		light1,
+		Vector3{ 0.0f, 5.0f, 10.0f },
+		EulerAngles{ -45.0f, 0.0f, 0.0f },
+		Vector3{ 1.0f, 1.0f, 1.0f }
+	);
+	scene.AddComponent<WorldTransform>(light1);
+	scene.AddComponent<Light>(
+		light1,
+		LightType::Spot,
+		Vector3{ 1.0f, 1.0f, 1.0f },
+		5.0f
+	);
+
 	InitializePhysics();
 	
 	_fireTimer.Start();
@@ -126,7 +145,7 @@ void Player::UpdatePhysics(float deltaTime)
 	using namespace JPH;
 
 	auto pos = _bodyInter->GetPosition(_playerBodyID);
-	if (pos.GetY() < 60) {
+	if (pos.GetY() < 60.0f) {
 		Scene& scene = Game::GetScene();
 		auto cpTransform = scene.GetComponent<Transform>(CheckPoint::lastCheckPoint);
 		_bodyInter->SetPosition(_playerBodyID, Physics::Vector3ToJoltVector(cpTransform->position), EActivation::Activate);

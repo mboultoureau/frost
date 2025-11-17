@@ -14,24 +14,21 @@ void MainLayer::OnAttach()
 {
 	Scene& _scene = Game::GetScene();
 	_terrain = std::make_unique<Terrain>(Terrain());
-	_wall = std::make_unique<Wall>(Wall());
+	//_wall = std::make_unique<Wall>(Wall());
 
 	_gamestate = GameState();
-	_gamestate.SetLap(4);
+	_gamestate.SetLap(2);
 
+	_terrain = std::make_unique<Terrain>();
+	_sun = std::make_unique<Sun>();
 
 	_player = std::make_unique<Player>();
-	_checkPoint1 = std::make_shared<LapCheckPoint>(Transform::Vector3{ -365, 75, -32 },_gamestate);
 
-	_checkPoint2 = std::make_shared<CheckPoint>(Transform::Vector3{ -230, 75, 239 });
-	_checkPoint3 = std::make_shared<CheckPoint>(Transform::Vector3{ -130, 75, 180 });
-
-	_checkPoint4 = std::make_shared<CheckPoint>(Transform::Vector3{ -147, 75, -82 });
-
-	_checkPoint5 = std::make_shared<CheckPoint>(Transform::Vector3{ 190, 75, -524 });
-
-	logo = HUD_Logo();
-
+	_checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 },_gamestate);
+	_checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
+	_checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
+	_checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
+	_checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
 
 
 	//link 1 / 2
@@ -63,12 +60,16 @@ void MainLayer::OnAttach()
 
 	_checkPoint1->ActivatePhysics();
 
+	CheckPoint::lastCheckPoint = _checkPoint1->GetGameObjectId();
+
+	logo = HUD_Logo();
+
 	LevelCamera levelCamera;
 
-	_pauseHandlerUUID = Application::Get().GetEventManager().Subscribe<Frost::PauseEvent>(
+	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
 
-	_unpauseHandlerUUID = Application::Get().GetEventManager().Subscribe<Frost::UnPauseEvent>(
+	_unpauseHandlerUUID = EventManager::Subscribe<Frost::UnPauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGameUnpaused));
 }
 
@@ -99,8 +100,8 @@ void MainLayer::OnFixedUpdate(float deltaTime)
 
 		viewport.x = 0.25f;
 		viewport.y = 0.4;
-
-		_scene.AddComponent<Frost::HUD_Image>(
+		_gamestate.ResetLap();
+		_scene.AddComponent<HUDImage>(
 			winScreen,
 			viewport,
 			WIN_PATH,
@@ -120,8 +121,8 @@ void MainLayer::OnFixedUpdate(float deltaTime)
 
 void MainLayer::OnDetach()
 {
-	Application::Get().GetEventManager().Unsubscribe(EventType::GamePaused, _pauseHandlerUUID);
-	Application::Get().GetEventManager().Unsubscribe(EventType::GameUnpaused, _unpauseHandlerUUID);
+	EventManager::Unsubscribe<PauseEvent>(_pauseHandlerUUID);
+	EventManager::Unsubscribe<UnPauseEvent>(_unpauseHandlerUUID);
 }
 
 bool MainLayer::OnGamePaused(Frost::PauseEvent& e)

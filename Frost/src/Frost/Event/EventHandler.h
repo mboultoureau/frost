@@ -10,9 +10,11 @@ namespace Frost
 	class EventHandlerInterface
 	{
 	public:
+		using Id = UUID<EventHandlerInterface>;
+
 		virtual ~EventHandlerInterface() = default;
 		virtual bool OnEvent(Event& event) = 0;
-		virtual UUID GetID() const = 0;
+		virtual Id GetID() const = 0;
 
 	protected:
 		EventHandlerInterface() = default;
@@ -27,7 +29,7 @@ namespace Frost
 		using EventCallback = std::function<bool(EventType&)>;
 
 		EventHandler(const EventCallback& callback)
-			: _callback(callback), _id(UUID{})
+			: _callback(callback), _id(Id::generate())
 		{
 		}
 
@@ -46,10 +48,10 @@ namespace Frost
 			return false;
 		}
 
-		UUID GetID() const override { return _id; }
+		Id GetID() const override { return _id; }
 
 	private:
 		EventCallback _callback;
-		UUID _id;
+		Id _id;
 	};
 }

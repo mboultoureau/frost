@@ -4,6 +4,7 @@
 #include "Frost/Scene/ECS/ECS.h"
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Scene/ECS/System.h"
+#include "Frost/Utils/NoCopy.h"
 
 #include <vector>
 #include <memory>
@@ -11,7 +12,7 @@
 
 namespace Frost
 {
-	class Scene
+	class Scene : NoCopy
 	{
 	public:
 		Scene(std::string&& name);
@@ -20,10 +21,6 @@ namespace Frost
 		GameObject::Id CreateGameObject(std::string name);
 		GameObject::Id CreateGameObject(std::string name, GameObject::Id parentId);
 		void DestroyGameObject(GameObject::Id id);
-
-		// Use NoCopy?
-		Scene(const Scene&) = delete;
-		Scene& operator=(const Scene&) = delete;
 
 		void Update(float deltaTime);
 		void FixedUpdate(float deltaTime);
