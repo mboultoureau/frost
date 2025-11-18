@@ -17,6 +17,11 @@ namespace Frost
 			{
 				Application::GetWindow()->SetFullscreen(isFullscreen);
 			}
+
+			if (ImGui::Button("Close Application"))
+			{
+				EventManager::Emit<WindowCloseEvent>();
+			}
 		}
 	}
 }

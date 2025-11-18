@@ -4,8 +4,6 @@
 
 namespace Frost
 {
-
-
 	namespace Debug
 	{
 		struct RendererConfig {
@@ -13,7 +11,6 @@ namespace Frost
 			static bool display;
 		};
 	}
-
 
 	class DebugRendering : public DebugPanel
 	{

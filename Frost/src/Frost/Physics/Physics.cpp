@@ -189,7 +189,7 @@ namespace Frost
 		#ifdef FT_DEBUG
 			return Get()._debugRenderer;
 		#else
-			#error "Debug renderer is only available in debug builds"
+			return nullptr;
 		#endif
 	}
 
