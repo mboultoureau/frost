@@ -7,6 +7,7 @@
 #include "Frost/Renderer/Renderer.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Debugging/DebugInterface/DebugRendering.h"
+#include "Frost/Scene/Components/Skybox.h"
 
 using namespace Frost::Component;
 
@@ -55,6 +56,16 @@ namespace Frost
             }
         }
 
+		// Skybox (take only the first one but to be changed when portal rendering is implemented)
+        auto& skyboxes = ecs.GetDataArray<Component::Skybox>();
+        std::shared_ptr<Texture> activeSkyboxTexture = nullptr;
+
+        if (!skyboxes.empty())
+        {
+            auto& sceneSkybox = skyboxes[0];
+            activeSkyboxTexture = sceneSkybox.cubemapTexture;
+        }
+
         const auto& staticMeshes = ecs.GetDataArray<Component::StaticMesh>();
         const auto& staticMeshesEntities = ecs.GetIndexMap<Component::StaticMesh>();
 
@@ -86,6 +97,13 @@ namespace Frost
             }
 
             _deferredRendering.EndFrame(currentCamera, *cameraTransform, allLights);
+
+			// Skybox rendering
+            if (activeSkyboxTexture)
+            {
+                Texture* gbufferDepth = _deferredRendering.GetDepthStencilTexture();
+                _skyboxPipeline.Render(currentCamera, *cameraTransform, gbufferDepth, activeSkyboxTexture.get());
+            }
         }
 
     }

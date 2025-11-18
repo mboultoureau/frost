@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Renderer/Pipeline/DeferredRenderingPipeline.h"
+#include "Frost/Renderer/Pipeline/SkyboxPipeline.h"
 #include "Frost/Scene/ECS/System.h"
 
 namespace Frost
@@ -13,6 +14,7 @@ namespace Frost
 
 	private:
 		DeferredRenderingPipeline _deferredRendering;
+		SkyboxPipeline _skyboxPipeline;
 	};
 }
 

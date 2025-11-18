@@ -25,6 +25,7 @@
 #include "Frost/Scene/Components/StaticMesh.h"
 #include "Frost/Scene/Components/RigidBody.h"
 #include "Frost/Scene/Components/Light.h"
+#include "Frost/Scene/Components/Skybox.h"
 
 #include "Frost/Renderer/RendererAPI.h"
 

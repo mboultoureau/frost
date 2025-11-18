@@ -12,6 +12,7 @@
 #include "Objects/Terrain.h"
 #include "Objects/Player.h"
 #include "Objects/HUD_Logo.h"
+#include "Objects/Sky.h"
 #include "Frost/Event/Events/PauseMenu/PauseEvent.h"
 #include "Frost/Event/Events/PauseMenu/UnPauseEvent.h"
 #include <memory>
@@ -42,6 +43,7 @@ private:
 	std::unique_ptr<Player> _player;
 	std::unique_ptr<HUD_Logo> _hudLogo;
 	std::unique_ptr<HierarchyTest> _hierarchy;
+	std::unique_ptr<Sky> _sky;
 
 	bool OnGamePaused(Frost::PauseEvent& e);
 	bool OnGameUnpaused(Frost::UnPauseEvent& e);

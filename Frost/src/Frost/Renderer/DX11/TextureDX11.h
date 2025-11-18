@@ -4,6 +4,7 @@
 
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <array>
 
 struct aiTexture;
 
@@ -30,5 +31,8 @@ namespace Frost
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _srv;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _rtv;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> _dsv;
+
+	private:
+		void _CreateCubemap(TextureConfig& config);
 	};
 }
