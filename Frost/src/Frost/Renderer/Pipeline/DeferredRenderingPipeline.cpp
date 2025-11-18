@@ -126,7 +126,7 @@ namespace Frost
 
         if (width == 0 || height == 0) return;
 
-        CreateGBufferTextures(width, height);
+        _CreateGBufferTextures(width, height);
 
 #ifdef FT_PLATFORM_WINDOWS
         ShaderDesc gBufferVSDesc = { .type = ShaderType::Vertex, .debugName = "VS_GBuffer", .filePath = "../Frost/resources/shaders/VS_GBuffer.hlsl" };
@@ -220,7 +220,7 @@ namespace Frost
 #endif
     }
 
-    void DeferredRenderingPipeline::CreateGBufferTextures(uint32_t width, uint32_t height)
+    void DeferredRenderingPipeline::_CreateGBufferTextures(uint32_t width, uint32_t height)
     {
         _albedoTexture.reset();
         _normalTexture.reset();

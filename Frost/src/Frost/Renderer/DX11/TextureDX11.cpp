@@ -20,6 +20,12 @@ namespace Frost
 
 	TextureDX11::TextureDX11(TextureConfig& config) : Texture(config)
 	{
+		if (config.layout == TextureLayout::CUBEMAP)
+		{
+			_CreateCubemap(config);
+			return;
+		}
+
 		int width = config.width;
 		int height = config.height;
 		int channels = config.channels;
@@ -406,5 +412,65 @@ namespace Frost
 		ID3D11DeviceContext* context = renderer->GetDeviceContext();
 		FT_ENGINE_ASSERT(_srv, "Cannot bind texture: SRV is null.");
 		context->PSSetShaderResources(static_cast<UINT>(slot), 1, _srv.GetAddressOf());
+	}
+
+	void TextureDX11::_CreateCubemap(TextureConfig& config)
+	{
+		FT_ENGINE_ASSERT(config.faceFilePaths.size() == 6, "A cubemap requires exactly 6 texture faces.");
+		if (config.faceFilePaths.size() != 6) return;
+
+		RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
+		ID3D11Device* device = renderer->GetDevice();
+
+		int width = 0, height = 0, channels = 0;
+		std::vector<stbi_uc*> loadedData(6, nullptr);
+
+		for (int i = 0; i < 6; ++i)
+		{
+			loadedData[i] = stbi_load(config.faceFilePaths[i].c_str(), &width, &height, &channels, 4);
+			if (!loadedData[i])
+			{
+				FT_ENGINE_ERROR("Failed to load cubemap face: {0}", config.faceFilePaths[i]);
+				for (int j = 0; j < i; ++j) stbi_image_free(loadedData[j]);
+				return;
+			}
+		}
+
+		_config.width = width;
+		_config.height = height;
+
+		D3D11_TEXTURE2D_DESC textureDesc = {};
+		textureDesc.Width = width;
+		textureDesc.Height = height;
+		textureDesc.MipLevels = 1;
+		textureDesc.ArraySize = 6;
+		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.Usage = D3D11_USAGE_DEFAULT;
+		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+		D3D11_SUBRESOURCE_DATA subresourceData[6];
+		for (int i = 0; i < 6; ++i)
+		{
+			subresourceData[i].pSysMem = loadedData[i];
+			subresourceData[i].SysMemPitch = width * 4;
+			subresourceData[i].SysMemSlicePitch = 0;
+		}
+
+		HRESULT hr = device->CreateTexture2D(&textureDesc, subresourceData, _texture.GetAddressOf());
+
+		for (int i = 0; i < 6; ++i) stbi_image_free(loadedData[i]);
+
+		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create D3D11 cubemap texture resource.");
+		if (FAILED(hr)) return;
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = textureDesc.Format;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.TextureCube.MipLevels = 1;
+
+		hr = device->CreateShaderResourceView(_texture.Get(), &srvDesc, _srv.GetAddressOf());
+		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create D3D11 cubemap SRV.");
 	}
 }

@@ -7,6 +7,7 @@
 
 #include <string>
 #include <cstdint>
+#include <array>
 
 struct aiTexture;
 
@@ -56,6 +57,13 @@ namespace Frost
 		A = 3
 	};
 
+	enum class TextureLayout
+	{
+		TEXTURE_2D,
+		CUBEMAP
+	};
+
+
 	struct TextureConfig
 	{
 		TextureType textureType = TextureType::NONE;
@@ -71,6 +79,9 @@ namespace Frost
 		bool isRenderTarget = false;
 		bool isShaderResource = true;
 		bool hasMipmaps = true;
+
+		TextureLayout layout = TextureLayout::TEXTURE_2D;
+		std::array<std::string, 6> faceFilePaths;
 	};
 
 	class Texture : public Asset, GPUResource
