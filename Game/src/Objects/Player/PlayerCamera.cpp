@@ -2,8 +2,8 @@
 
 #include "Frost.h"
 #include "Player.h"
-#include "../Physics/PhysicsLayer.h"
-#include "../Game.h"
+#include "../../Physics/PhysicsLayer.h"
+#include "../../Game.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
 
@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <DirectXMath.h>
+#include "Vehicles/Vehicle.h"
 
 using namespace Frost;
 using namespace Frost::Math;
@@ -106,18 +107,19 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 	JPH::Vec3 cameraPos = Physics::Get().body_interface->GetPosition(springCamRigidBody->physicBody->bodyId);
 	JPH::Vec3 cameraVelocity = Physics::Get().body_interface->GetLinearVelocity(springCamRigidBody->physicBody->bodyId);
 	auto desiredPos = isThirdPerson ?
-	Physics::Vector3ToJoltVector(thirdPersonCameraWTransform->position) :
-	Physics::Vector3ToJoltVector(playerWTransform->position);
+	Math::vector_cast<JPH::Vec3>(thirdPersonCameraWTransform->position) :
+	Math::vector_cast<JPH::Vec3>(playerWTransform->position);
 
-	auto playerPosition = Physics::Vector3ToJoltVector(playerWTransform->position);
+	auto playerPosition = Math::vector_cast<JPH::Vec3>(playerWTransform->position);
 	JPH::RRayCast ray;
 	ray.mOrigin = playerPosition;
-	auto _thirdPCamPos = Physics::Vector3ToJoltVector(thirdPersonCameraWTransform->position);
+	auto _thirdPCamPos = Math::vector_cast<JPH::Vec3>(thirdPersonCameraWTransform->position);
 	ray.mDirection = (_thirdPCamPos - playerPosition);
 	float desiredDistance = ray.mDirection.Length();
 
-	auto renderer = scene->GetComponent<StaticMesh>(vehicle);
-	//renderer->isActive = ((playerPosition - cameraPos).Length() > 10.f);
+	// Make a getter inside player
+	auto renderer = scene->GetComponent<StaticMesh>(playerManager->GetCurrentVehicle().second->GetModelRendererObject());
+	renderer->isActive = ((playerPosition - cameraPos).Length() > 10.f);
 
 	if (isThirdPerson) {
 		RayCastBroadPhaseFilter bpFilter;
@@ -162,21 +164,21 @@ void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
 	}
 
 	// Switch cam to 3rd person or 1st person
-	if (Input::GetKeyboard().GetKeyState(K_E) == KeyState::DOWN)
+	/*if (Input::GetKeyboard().GetKeyState(K_E) == KeyState::DOWN)
 	{
 		isThirdPerson = !isThirdPerson;
-	}
-	isThirdPerson = !(Input::GetKeyboard().IsKeyDown(K_E));
+	}*/
+	isThirdPerson = !(Input::GetKeyboard().IsKeyDown(K_SPACE));
 }
 
 
-PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : _player{_player}
+PlayerCamera::PlayerCamera(Player* player) : _player{player}
 {
 	using namespace JPH;
 	auto& scene = Game::GetScene();
 
 	// Camera Pivot
-	_cameraPivot = scene.CreateGameObject("Camera Pivot", _player);
+	_cameraPivot = scene.CreateGameObject("Camera Pivot", _player->GetPlayerID());
 	scene.AddComponent<Transform>(_cameraPivot, Vector3{ 0.0f, 0.0f, 4.4f });
 	scene.AddComponent<WorldTransform>(_cameraPivot);
 
@@ -205,7 +207,7 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : 
 	// Create the Camera Sensor
 	JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(1.0f).Create().Get();
 	BodyCreationSettings camera_body_settings(sphereShape, 
-		Physics::Vector3ToJoltVector(scene.GetComponent<Transform>(_player)->position),
+		Math::vector_cast<JPH::Vec3>(scene.GetComponent<Transform>(_player->GetPlayerID())->position),
 		Quat::sIdentity(), 
 		EMotionType::Dynamic, 
 		ObjectLayers::CAMERA
@@ -215,12 +217,10 @@ PlayerCamera::PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle) : 
 	scene.AddComponent<RigidBody>(_camera, camera_body_settings, _camera, EActivation::Activate);
 	scene.AddScript<PlayerSpringCameraScript>(
 		_camera, 
-		&scene,
 		_cameraPivot,
 		_3rdPersVirtCamera,
-		_player,
-		_vehicle,
-		_camera
+		_camera,
+		_player
 		);
 		
 	_cameraBodyID = scene.GetComponent<RigidBody>(_camera)->physicBody->bodyId;

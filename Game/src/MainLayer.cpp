@@ -109,7 +109,6 @@ void MainLayer::OnFixedUpdate(float deltaTime)
 		);
 	}
 	else {
-		_player->FixedUpdate(deltaTime);
 		_checkPoint1->FixedUpdate(deltaTime);
 		_checkPoint2->FixedUpdate(deltaTime);
 		_checkPoint3->FixedUpdate(deltaTime);
