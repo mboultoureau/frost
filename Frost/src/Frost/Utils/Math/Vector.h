@@ -254,7 +254,35 @@ namespace Frost::Math
 
         static internal_type neutral_value() noexcept
         {
-            return internal_type{ 0.0f, 0.0f, 0.0f, 0.0f };
+            return internal_type{ 0.0f, 0.0f, 0.0f, 1.0f };
+        }
+    };
+
+    template<>
+    struct vector_traits<JPH::Quat> : base_vector_traits
+    {
+        using internal_type = JPH::Quat;
+        static constexpr int Dimensions = 4;
+
+        static neutral_type to_neutral(const internal_type& value) noexcept
+        {
+            return neutral_type{ value.GetX(), value.GetY(), value.GetZ(), value.GetW() };
+        }
+
+        static internal_type from_neutral(const neutral_type& value) noexcept
+        {
+            return internal_type{ value.x, value.y, value.z, value.w };
+        }
+
+        static constexpr auto name() noexcept
+        {
+            using namespace std::string_view_literals;
+            return "JPH::Quat"sv;
+        }
+
+        static internal_type neutral_value() noexcept
+        {
+            return internal_type{ 0.0f, 0.0f, 0.0f, 1.0f }; // quaternion identite
         }
     };
 

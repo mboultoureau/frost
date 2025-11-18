@@ -83,7 +83,7 @@ void CheckPoint::InitializePhysics()
 	Scene& scene = Game::GetScene();
 
 	auto transform = scene.GetComponent<Transform>(_checkpoint);
-	RVec3 position = Physics::Vector3ToJoltVector(transform->position);
+	RVec3 position = Math::vector_cast<Vec3>(transform->position);
 	JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(5.0f, 5.0f, 5.0f)).Create().Get();
 	BodyCreationSettings checkpoint_body_settings(boxShape, position, Quat::sIdentity(), EMotionType::Static, ObjectLayers::CHECKPOINT);
 
@@ -139,7 +139,6 @@ void CheckPoint::DeleteChildrenPhysics()
 		if (bodyComponent)
 		{
 			JPH::BodyID bodyId = bodyComponent->physicBody->bodyId;
-			Physics::Get().mapJBodyGameObject.erase(bodyId);
 
 			scene.RemoveComponent<RigidBody>(childId);
 
