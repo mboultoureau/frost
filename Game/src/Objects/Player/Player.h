@@ -1,0 +1,59 @@
+#pragma once
+
+#include "Frost.h"
+
+#include <Jolt/Core/Core.h>
+#include <Jolt/Physics/Body/Body.h>
+#include <Jolt/Physics/Vehicle/VehicleConstraint.h>
+
+
+using namespace Frost;
+using namespace Frost::Component;
+class PlayerCamera;
+class Vehicle;
+
+
+class Player
+{
+public:
+	enum VehicleType {
+		BIKE = 0,
+		BOAT = 1,
+		PLANE = 2
+	};
+
+	Player();
+	Scene* GetScene() { return _scene; };
+
+	void SetPlayerVehicle(Player::VehicleType type);
+
+	std::pair<VehicleType, Vehicle*> GetCurrentVehicle() {	return { _currentVehicleType, _currentVehicle }; }
+	int GetVehicleNumber() { return _vehicles.size(); };
+	GameObject::Id GetPlayerID() { return _playerId; };
+
+	Timer transitionTimer;
+	GameObject::Id transitionRenderer;
+
+private:
+	GameObject::Id _playerId;
+
+	Scene* _scene = nullptr;
+	PlayerCamera* _playerCamera = nullptr;
+
+	Vehicle* _currentVehicle = nullptr;
+	Player::VehicleType _currentVehicleType;
+	std::unordered_map<Player::VehicleType, Vehicle*> _vehicles;
+
+	void _InitializeVehicles();
+	void _SummonVehicleTransition();
+	void _SetBodyID(JPH::BodyID bodyId) {
+		_scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId = bodyId;
+		auto a = _scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId;
+		FT_ASSERT(a == bodyId);
+	}
+
+	//void InitializePhysics();
+	//void ProcessInput(float deltaTime);
+	//void UpdatePhysics(float deltaTime);
+};
+
