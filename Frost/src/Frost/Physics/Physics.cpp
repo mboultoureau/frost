@@ -38,8 +38,7 @@ namespace Frost
 		object_vs_broadphase_layer_filter{ _physicsConfig.objectVsBroadPhaseLayerFilter },
 		object_vs_object_layer_filter{ _physicsConfig.objectLayerPairFilter },
 		temp_allocator(10 * 1024 * 1024),
-		job_system(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1),
-		mapJBodyGameObject{}
+		job_system(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1)
 	{
 		physics_system.Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, *broad_phase_layer_interface, *object_vs_broadphase_layer_filter, *object_vs_object_layer_filter);
 		physics_system.SetBodyActivationListener(&body_activation_listener);
@@ -127,9 +126,16 @@ namespace Frost
 		Get().body_interface->ActivateBody(inBodyID);
 	}
 
-	void Physics::RemoveBody(const JPH::BodyID& inBodyID)
+	void Physics::RemoveAndDestroyBody(const JPH::BodyID& inBodyID)
 	{
-		Get().body_interface->RemoveBody(inBodyID);
+		if (inBodyID.IsInvalid() == false)
+		{
+			if (Physics::Get().body_interface->IsAdded(inBodyID))
+			{
+				Physics::Get().body_interface->RemoveBody(inBodyID);
+			}
+			Physics::Get().body_interface->DestroyBody(inBodyID);
+		}
 	}
 
 	JPH::BodyInterface& Physics::GetBodyInterface()
@@ -142,20 +148,11 @@ namespace Frost
 		return Get().physics_system.GetBodyLockInterface();
 	}
 
-	Frost::Math::Vector3 Physics::JoltVectorToVector3(RVec3 v)
-	{
-		return { v.GetX(), v.GetY(), v.GetZ() };
-	}
-
-	Vec3 Frost::Physics::Vector3ToJoltVector(Math::Vector3 v)
-	{
-		return { v.x, v.y, v.z };
-	}
-
 	void Physics::UpdatePhysics()
 	{
 		physics_system.Update(cDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
 	}
+
 
 	void Physics::TraceImpl(const char* inFMT, ...)
 	{

@@ -99,6 +99,7 @@ namespace Frost
 			if (_physicsDuration >= _physicsRefreshDuration)
 			{
 				_physicsTimer.Start();
+				_window->MainLoop();
 
 				for (const auto& layer : _layerStack)
 				{
@@ -112,7 +113,6 @@ namespace Frost
 			if (_renderDuration >= _renderRefreshDuration)
 			{
 				_renderTimer.Start();
-				_window->MainLoop();
 				RendererAPI::BeginFrame();
 
 				for (const auto& layer : _layerStack)

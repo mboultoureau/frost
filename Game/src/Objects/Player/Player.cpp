@@ -1,6 +1,6 @@
 #include "Player.h"
-#include "../Physics/PhysicsLayer.h"
-#include "../Game.h"
+#include "../../Physics/PhysicsLayer.h"
+#include "../../Game.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
 
@@ -18,7 +18,10 @@
 #include "Frost/Scene/Components/Meta.h"
 #include "PlayerCamera.h"
 
-#include "CheckPoint.h"
+#include "../CheckPoint.h"
+#include "Vehicles/Bike.h"
+#include "PlayerScript.h"
+#include "Vehicles/Vehicle.h"
 
 using namespace Frost;
 using namespace Frost::Math;
@@ -26,59 +29,125 @@ using namespace Frost::Component;
 
 Player::Player()
 {
-	Scene& scene = Game::GetScene();
+	_scene = &Game::GetScene();
 
-	_player = scene.CreateGameObject("Player");
-	scene.AddComponent<Transform>(
-		_player,
-		Vector3{ 0.0f, 0.0f, 0.0f },
-		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, 
+	// Create Player Game Object -------------
+	_playerId = _scene->CreateGameObject("Player");
+	_scene->AddComponent<Transform>(
+		_playerId,
+		Vector3{ -365.0f, 69.0f, -100.0f },
+		EulerAngles{ 0.0f, 0.0f, 0.0f },
 		Vector3{ 1.0f, 1.0f, 1.0f }
 	);
-	scene.AddComponent<WorldTransform>(_player);
+	_scene->AddComponent<WorldTransform>(_playerId);
 
-	// Vehicle Model
-	_vehicle = scene.CreateGameObject("Vehicle", _player);
-	scene.AddComponent<Transform>(
-		_vehicle,
-		Vector3{ 0.0f, 1.0f, 5.0f },
-		EulerAngles{ 0.0_deg, 0.0_deg, -90.0_deg },
-		Vector3{ 5.0f, 5.0f, 5.0f });
+	// Create TransitionModelRenderer -----------
+	transitionRenderer = _scene->CreateGameObject("Transition Model renderer", _playerId);
+	_scene->AddComponent<Transform>(transitionRenderer, 
+		Vector3{ 0.0f, 0, 0.0f },
+		EulerAngles{ 0.0f, 0.0f, 0.0f },
+		Vector3{ 10.0f, 10.0f, 10.0f });
+	_scene->AddComponent<WorldTransform>(transitionRenderer);
+	_scene->AddComponent<StaticMesh>(transitionRenderer, "./resources/meshes/sphere.fbx");
 
-	scene.AddComponent<WorldTransform>(_vehicle);
-	scene.AddComponent<StaticMesh>(_vehicle, "./resources/meshes/moto.glb");
+	// Create Vehicules structures -------------
+	_InitializeVehicles();
+	SetPlayerVehicle(VehicleType::BIKE);
+	_scene->AddScript<PlayerScript>(_playerId, this);
 
-	//Add spring camera
-	auto wt = scene.GetComponent<WorldTransform>(_player);
-	auto pCam = PlayerCamera(_player, _vehicle);
+
+	// Create playerCameras Game Objects -------------
+	auto pCam = PlayerCamera(this);
 	_playerCamera = &pCam;
-
-	// Test lights
-	auto light1 = scene.CreateGameObject("PlayerLight1", _player);
-	scene.AddComponent<Transform>(
-		light1,
-		Vector3{ 0.0f, 5.0f, 10.0f },
-		EulerAngles{ -45.0f, 0.0f, 0.0f },
-		Vector3{ 1.0f, 1.0f, 1.0f }
-	);
-	scene.AddComponent<WorldTransform>(light1);
-	scene.AddComponent<Light>(
-		light1,
-		LightType::Spot,
-		Vector3{ 1.0f, 1.0f, 1.0f },
-		5.0f
-	);
-
-	InitializePhysics();
-	
-	_fireTimer.Start();
 }
 
-void Player::FixedUpdate(float deltaTime)
+
+void Player::_InitializeVehicles()
 {
-	ProcessInput(deltaTime);
-	UpdatePhysics(deltaTime);
+	auto pos = Vector3{ 0.0f, 0.0f, 0.0f };
+	// Bike
+	auto bike = new Bike(
+		this, 
+		Vehicle::RendererParameters(
+			"Moto Renderer",
+			"./resources/meshes/moto.glb",
+			pos,
+			EulerAngles{ 0.0, 0.0f, -90.0f },
+			Vector3{ 5.0f, 5.0f, 5.0f }
+		));
+	_vehicles.insert({ VehicleType::BIKE, bike });
+
+	// Boat
+	auto boat = new Bike(
+		this,
+		Vehicle::RendererParameters(
+			"Boat Renderer",
+			"./resources/meshes/pill.fbx",
+			pos,
+			EulerAngles{ -90.0_deg, 0.0f, 0.0f },
+			Vector3{ 5.0f, 5.0f, 5.0f }
+		));
+	_vehicles.insert({ VehicleType::BOAT, boat });
+
+
+
+	// Plane
+	auto plane = new Bike(
+		this,
+		Vehicle::RendererParameters(
+			"Plane Renderer",
+			"./resources/meshes/cube.fbx",
+			pos,
+			EulerAngles{ -90.0_deg, 0.0f, 0.0f },
+			Vector3{ 5.0f, 5.0f, 5.0f }
+		));
+	_vehicles.insert({ VehicleType::PLANE, plane });
+
 }
+
+void Player::SetPlayerVehicle(Player::VehicleType type)
+{
+	using namespace JPH;
+	Vec3 linearSpeed;
+	Vec3 angularSpeed;
+	
+	if (_currentVehicle)
+	{
+		Physics::Get().body_interface->GetLinearAndAngularVelocity(
+			_scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId,
+			linearSpeed,
+			angularSpeed
+		);
+		_currentVehicle->Disappear();
+	}
+	_currentVehicle = _vehicles[type];
+	_currentVehicleType = type;
+	_SummonVehicleTransition();
+	auto bodyId = _currentVehicle->Appear();
+	if (_scene->GetComponent<RigidBody>(_playerId))
+	{
+		_SetBodyID(bodyId);
+		Physics::Get().body_interface->SetLinearAndAngularVelocity(
+			_scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId,
+			linearSpeed,
+			angularSpeed
+		);
+	}
+	else
+	{
+		_scene->AddComponent<RigidBody>(_playerId, _currentVehicle->GetBodyID(), _playerId);
+	}
+}
+void Player::_SummonVehicleTransition()
+{
+	FT_INFO("youhou, you have changed vehicle !");
+	_scene->GetComponent<StaticMesh>(transitionRenderer)->isActive = true;
+	transitionTimer.Resume();
+	transitionTimer.Start();
+}
+
+
+/*
 
 void Player::InitializePhysics()
 {
@@ -98,17 +167,24 @@ void Player::InitializePhysics()
 	BodyCreationSettings motorcycle_body_settings(rotatedCapsule, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
 	motorcycle_body_settings.mRestitution = 0.0f;
 	motorcycle_body_settings.mAllowSleeping = false;
-	motorcycle_body_settings.mFriction = 100.f; 
+	motorcycle_body_settings.mFriction = 100.f;
 	motorcycle_body_settings.mAllowedDOFs =
-		EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ; 
+		EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ;
 	scene.AddComponent<RigidBody>(_player, motorcycle_body_settings, _player, EActivation::Activate);
 
 	_playerBodyID = scene.GetComponent<RigidBody>(_player)->physicBody->bodyId;
-	_cameraBodyID = scene.GetComponent<RigidBody>(_playerCamera->_camera)->physicBody->bodyId;
 	_bodyInter = Physics::Get().body_interface;
 
 	_bodyInter->SetMotionQuality(_playerBodyID, EMotionQuality::Discrete);
 }
+
+void Player::FixedUpdate(float deltaTime)
+{
+	ProcessInput(deltaTime);
+	UpdatePhysics(deltaTime);
+}
+
+
 
 void Player::ProcessInput(float deltaTime)
 {
@@ -181,5 +257,6 @@ void Player::UpdatePhysics(float deltaTime)
 		Vec3 addVel = forwardDir * (_forward * accel);
 		_bodyInter->AddLinearVelocity(_playerBodyID, addVel);
 	}
-
+	
 }
+*/

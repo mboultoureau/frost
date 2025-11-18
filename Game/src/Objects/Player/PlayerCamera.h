@@ -6,27 +6,27 @@
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
 
+
+#include "Player.h"
 #include <Frost/Scene/Components/Meta.h>
 
 using namespace Frost;
 
-
+class Player;
 
 class PlayerSpringCameraScript : public Script
 {
 public:
-	PlayerSpringCameraScript(Scene* scene, GameObject::Id cameraPivot, GameObject::Id thirdPersonCamera, GameObject::Id player, GameObject::Id vehicle, GameObject::Id springCam) :
-		scene{ scene }, thirdPersonCamera{ thirdPersonCamera }, springCam{ springCam },
-		player{ player },
-		vehicle{vehicle},
-		cameraPivot{ cameraPivot }
+	PlayerSpringCameraScript(GameObject::Id cameraPivot, GameObject::Id thirdPersonCamera, GameObject::Id springCam, Player* player) :
+		thirdPersonCamera{ thirdPersonCamera }, springCam{ springCam }, cameraPivot{ cameraPivot },
+		playerManager{ player }, player{player->GetPlayerID()}, scene{ player->GetScene() }
 	{
 	};
 
+	Player* playerManager;
 	Scene* scene;
 	GameObject::Id thirdPersonCamera;
 	GameObject::Id player;
-	GameObject::Id vehicle;
 	GameObject::Id springCam;
 	GameObject::Id cameraPivot;
 	bool isThirdPerson = true;
@@ -53,10 +53,10 @@ class PlayerCamera
 public:
 	friend class Player;
 
-	PlayerCamera(GameObject::Id& _player, GameObject::Id& _vehicle);
+	PlayerCamera(Player* _player);
 
 private:
-	GameObject::Id _player;
+	Player* _player;
 	GameObject::Id _cameraPivot;
 	GameObject::Id _3rdPersVirtCamera;
 	GameObject::Id _camera;

@@ -89,7 +89,7 @@ namespace Frost
 
                 const Component::WorldTransform* transform = ecs.GetComponent<Component::WorldTransform>(entityId);
 
-                if (transform && staticMesh.model)
+                if (transform && staticMesh.model && staticMesh.isActive)
                 {
                     Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(*transform);
                     _deferredRendering.SubmitModel(*staticMesh.model, worldMatrix);

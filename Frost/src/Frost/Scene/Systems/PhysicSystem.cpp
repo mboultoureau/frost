@@ -59,7 +59,7 @@ void Frost::PhysicSystem::UpdateAllJoltBodies(ECS& ecs, float deltaTime)
 		auto transform = ecs.GetComponent<Transform>(goId);
 		auto parent = ecs.GetComponent<Meta>(goId)->parentId;
 
-		transform->position = Physics::JoltVectorToVector3(jBodyPos);
+		transform->position = Math::vector_cast<Math::Vector3>(jBodyPos);
 
 		JPH::Vec3 rotationRadians = jBodyRot.GetEulerAngles();
 		transform->rotation.x = jBodyRot.GetX();

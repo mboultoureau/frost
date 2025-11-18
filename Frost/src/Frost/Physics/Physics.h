@@ -84,13 +84,10 @@ namespace Frost
 		static JPH::BodyID CreateAndAddBody(JPH::BodyCreationSettings& inSettings, const GameObject::Id& rigidBodyId, const JPH::EActivation& inActivationMode);
 		static JPH::Vec3 GetGravity();
 		static void ActivateBody(const JPH::BodyID& inBodyID);
-		static void RemoveBody(const JPH::BodyID& inBodyID);
+		static void RemoveAndDestroyBody(const JPH::BodyID& inBodyID);
 
 		static JPH::BodyInterface& GetBodyInterface();
 		static const JPH::BodyLockInterfaceLocking& GetBodyLockInterface();
-
-		static Frost::Math::Vector3 JoltVectorToVector3(JPH::RVec3 v);
-		static JPH::Vec3 Vector3ToJoltVector(Frost::Math::Vector3 v);
 
 		GameObject::Id GetObjectID(const JPH::BodyID& inBodyID) { return body_interface->GetUserData(inBodyID); };
 		GameObject::Id GetObjectID(const JPH::Body& inBody) { return inBody.GetUserData(); };
@@ -113,8 +110,6 @@ namespace Frost
 		Frost::MyBodyActivationListener body_activation_listener;
 		Frost::MyContactListener contact_listener;
 		JPH::BroadPhaseLayerInterface* broad_phase_layer_interface;
-
-		std::unordered_map<JPH::BodyID, Frost::GameObject::Id> mapJBodyGameObject;
 
 	private:
 		JPH::ObjectVsBroadPhaseLayerFilter* object_vs_broadphase_layer_filter;

@@ -14,18 +14,16 @@ namespace Frost::Component
 		PhysicBody(JPH::BodyCreationSettings& bodySettings, GameObject::Id id, JPH::EActivation activationMode) :
 			bodyId{ Physics::CreateAndAddBody(bodySettings, id, activationMode) }
 		{
-			Physics::Get().mapJBodyGameObject.insert({ bodyId, id });
+		};
+
+		PhysicBody(JPH::BodyID bodyId, GameObject::Id id) :
+			bodyId{ bodyId }
+		{
+			Physics::Get().body_interface->SetUserData(bodyId, id);
 		};
 
 		~PhysicBody() {
-			if (bodyId.IsInvalid() == false)
-			{
-				if (Physics::Get().body_interface->IsAdded(bodyId))
-				{
-					Physics::Get().body_interface->RemoveBody(bodyId);
-				}
-				Physics::Get().body_interface->DestroyBody(bodyId);
-			}
+			Physics::RemoveAndDestroyBody(bodyId);
 		}
 
 		JPH::BodyID bodyId;
@@ -35,6 +33,11 @@ namespace Frost::Component
 	{
 		RigidBody(JPH::BodyCreationSettings& bodySettings, GameObject::Id id, JPH::EActivation activationMode) : 
 			physicBody{ std::make_shared<PhysicBody>(bodySettings, id, activationMode) }
+		{
+		};
+
+		RigidBody(JPH::BodyID bodyId, GameObject::Id id) :
+			physicBody{ std::make_shared<PhysicBody>(bodyId, id) }
 		{
 		};
 

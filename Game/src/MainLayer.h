@@ -4,7 +4,7 @@
 #include "Frost/Core/Layer.h"
 #include "Frost/Core/Timer.h"
 #include "Frost/Scene/Scene.h"
-#include "Objects/Player.h"
+#include "Objects/Player/Player.h"
 #include "Objects/CheckPoint.h"
 #include "Objects/GameState.h"
 #include "Objects/HUD_Logo.h"
