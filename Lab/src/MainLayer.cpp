@@ -29,6 +29,7 @@ void MainLayer::OnAttach()
 	_hierarchy = std::make_unique<HierarchyTest>();
 	//auto _rain = std::make_unique<BallRain>();
 	//_hudLogo = std::make_unique<HUD_Logo>();
+	_sky = std::make_unique<Sky>();
 
 	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));

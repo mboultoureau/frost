@@ -35,8 +35,10 @@ namespace Frost
         void SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix);
         void EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights);
 
+        Texture* GetDepthStencilTexture() const { return _depthStencilTexture.get(); }
+
     private:
-        void CreateGBufferTextures(uint32_t width, uint32_t height);
+        void _CreateGBufferTextures(uint32_t width, uint32_t height);
 
         // G-Buffer Textures
         std::unique_ptr<Texture> _albedoTexture;

@@ -1,0 +1,42 @@
+#pragma once
+
+#include "Frost/Renderer/Pipeline.h"
+#include "Frost/Scene/Components/Camera.h"
+#include "Frost/Scene/Components/WorldTransform.h"
+
+namespace Frost
+{
+    class CommandList;
+    class Texture;
+    class Shader;
+    class InputLayout;
+    class Sampler;
+    class Buffer;
+
+    class SkyboxPipeline : public Pipeline
+    {
+    public:
+        SkyboxPipeline();
+        ~SkyboxPipeline();
+
+        void Initialize() override;
+        void Shutdown() override;
+
+        void Render(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, Texture* gbufferDepth, Texture* skyboxTexture);
+
+    private:
+        void CreateCubeMesh();
+
+        std::unique_ptr<Shader> _skyboxVertexShader;
+        std::unique_ptr<Shader> _skyboxPixelShader;
+        std::unique_ptr<InputLayout> _skyboxInputLayout;
+        std::unique_ptr<Sampler> _skyboxSampler;
+
+        std::unique_ptr<Buffer> _cubeVertexBuffer;
+        std::unique_ptr<Buffer> _cubeIndexBuffer;
+        uint32_t _cubeIndexCount;
+
+        std::unique_ptr<Buffer> _vsSkyboxConstants;
+        std::unique_ptr<CommandList> _commandList;
+    };
+}
