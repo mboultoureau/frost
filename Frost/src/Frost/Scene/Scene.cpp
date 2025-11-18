@@ -48,7 +48,10 @@ namespace Frost
 		_systems.push_back(std::make_unique<ScriptableSystem>());
         _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<UISystem>());
-        //_systems.push_back(std::make_unique<JoltRendererSystem>());
+        
+#ifdef FT_DEBUG
+        _systems.push_back(std::make_unique<JoltRendererSystem>());
+#endif
     }
 
     void Scene::Update(float deltaTime)

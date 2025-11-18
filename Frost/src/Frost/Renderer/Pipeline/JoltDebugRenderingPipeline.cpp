@@ -6,6 +6,7 @@
 #include "Frost/Renderer/Shader.h"
 #include "Frost/Renderer/InputLayout.h"
 #include "Frost/Utils/Math/Transform.h"
+#include "Frost/Debugging/DebugInterface/DebugPhysics.h"
 
 #ifdef FT_PLATFORM_WINDOWS
 #include "Frost/Renderer/DX11/CommandListDX11.h"
@@ -346,7 +347,13 @@ namespace Frost
         _commandList->SetRasterizerState(RasterizerMode::Solid);
 
         _commandList->EndRecording();
-        _commandList->Execute();
+
+#ifdef FT_DEBUG
+        if (Debug::PhysicsConfig::display)
+        {
+            _commandList->Execute();
+        }
+#endif
 
         RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
 
