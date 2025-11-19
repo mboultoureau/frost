@@ -246,7 +246,7 @@ namespace Frost
         _depthStencilTexture = std::make_unique<TextureDX11>(depthConfig);
     }
 
-    void DeferredRenderingPipeline::BeginFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform)
+    void DeferredRenderingPipeline::BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix)
     {
         if (!_albedoTexture) return;
         _enabled = true;
@@ -278,8 +278,8 @@ namespace Frost
         }
 
         VS_PerFrameConstants vsPerFrameData;
-        vsPerFrameData.ViewMatrix = Math::Matrix4x4::CreateTranspose(Math::GetViewMatrix(cameraTransform));
-        vsPerFrameData.ProjectionMatrix = Math::Matrix4x4::CreateTranspose(Math::GetProjectionMatrix(camera, aspectRatio));
+        vsPerFrameData.ViewMatrix = Math::Matrix4x4::CreateTranspose(viewMatrix);
+        vsPerFrameData.ProjectionMatrix = Math::Matrix4x4::CreateTranspose(projectionMatrix);
         _vsPerFrameConstants->UpdateData(_commandList.get(), &vsPerFrameData, sizeof(VS_PerFrameConstants));
 
         Texture* gBufferRTs[] = {

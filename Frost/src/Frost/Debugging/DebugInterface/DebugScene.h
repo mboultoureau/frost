@@ -20,6 +20,7 @@ namespace Frost
 
 	private:
 		std::vector<Scene*> _scenes;
+		float _deltaTime = 0.0f;
 
 	private:
 		void _DrawMetaComponent(Scene* scene, GameObject::Id gameObjectId);

@@ -1,4 +1,4 @@
-#include "Player.h"
+﻿#include "Player.h"
 #include "../Physics/PhysicsLayer.h"
 #include "../Game.h"
 
@@ -14,6 +14,7 @@
 #undef min
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <DirectXMath.h>
 
 using namespace Frost;
@@ -120,6 +121,14 @@ Player::Player()
 	cameraComponent->backgroundColor.g = 116.0f / 255.0f;
 	cameraComponent->backgroundColor.b = 228.0f / 255.0f;
 	cameraComponent->backgroundColor.a = 1.0f;
+	cameraComponent->postEffects.push_back(std::make_shared<Frost::ScreenShakeEffect>());
+
+	auto screenShake = cameraComponent->GetEffect<Frost::ScreenShakeEffect>();
+	if (screenShake)
+	{
+		// 3. Déclenchez le tremblement !
+		screenShake->Shake(10.5f, 0.2f); // Tremblement de 0.5 seconde avec une magnitude de 0.2
+	}
 
 	InitializePhysics();
 }

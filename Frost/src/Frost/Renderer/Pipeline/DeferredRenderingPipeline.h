@@ -31,7 +31,7 @@ namespace Frost
         void Initialize() override;
         void Shutdown() override;
 
-        void BeginFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform);
+        void BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix);
         void SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix);
         void EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights);
 
