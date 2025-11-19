@@ -28,6 +28,7 @@
 #include "Frost/Scene/Components/Skybox.h"
 
 #include "Frost/Renderer/RendererAPI.h"
+#include "Frost/Renderer/PostEffect/ScreenShakeEffect.h"
 
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Random.h"

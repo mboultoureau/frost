@@ -80,7 +80,27 @@ namespace Frost
                 continue;
             }
 
-            _deferredRendering.BeginFrame(currentCamera, *cameraTransform);
+			// Calculate view and projection matrices
+            const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
+            const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
+            const float viewportWidth = currentCamera.viewport.width * windowWidth;
+            const float viewportHeight = currentCamera.viewport.height * windowHeight;
+            const float aspectRatio = (viewportHeight > 0) ? (viewportWidth / viewportHeight) : 1.0f;
+
+            Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(*cameraTransform);
+            Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(currentCamera, aspectRatio);
+
+			// Apply post-processing effects pre-render
+            for (auto& effect : currentCamera.postEffects)
+            {
+                if (effect && effect->IsEnabled())
+                {
+                    effect->OnPreRender(deltaTime, viewMatrix, projectionMatrix);
+                }
+            }
+
+            // Draw meshes
+            _deferredRendering.BeginFrame(currentCamera, viewMatrix, projectionMatrix);
 
             for (size_t i = 0; i < staticMeshes.size(); ++i)
             {
