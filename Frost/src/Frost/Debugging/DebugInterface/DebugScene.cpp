@@ -25,6 +25,8 @@ namespace Frost
 {
 	void DebugScene::OnImGuiRender(float deltaTime)
 	{
+		_deltaTime = deltaTime;
+
 		if (ImGui::CollapsingHeader("Scenes"))
 		{
 			if (_scenes.empty())
@@ -203,6 +205,28 @@ namespace Frost
 			if (ImGui::DragFloat("##W", &camera->viewport.width, 0.01f, 0.001f, 1.0f, "W:%.2f")) {} ImGui::SameLine();
 			if (ImGui::DragFloat("##H", &camera->viewport.height, 0.01f, 0.001f, 1.0f, "H:%.2f")) {}
 			ImGui::PopItemWidth();
+
+			// Post effects
+			ImGui::Separator();
+			ImGui::Text("Post Effects:");
+
+			for (size_t i = 0; i < camera->postEffects.size(); ++i)
+			{
+				PostEffect* effect = camera->postEffects[i].get();
+				if (!effect) continue;
+				ImGui::PushID((int)i);
+				bool enabled = effect->IsEnabled();
+				if (ImGui::Checkbox("##enabled", &enabled))
+				{
+					effect->SetEnabled(enabled);
+				}
+				ImGui::SameLine();
+				if (ImGui::CollapsingHeader(effect->GetName()))
+				{
+					effect->OnImGuiRender(_deltaTime);
+				}
+				ImGui::PopID();
+			}
 
 			ImGui::TreePop();
 		}
