@@ -4,6 +4,10 @@
 #include "Frost/Scene/ECS/Component.h"
 #include "Frost/Utils/Math/Vector.h"
 #include "Frost/Utils/Math/Angle.h"
+#include "Frost/Renderer/PostEffect.h"
+
+#include <vector>
+#include <memory>
 
 namespace Frost::Component
 {
@@ -31,5 +35,20 @@ namespace Frost::Component
 		Math::Vector3 lookAtPosition = { 0.0f, 0.0f, 0.0f };
 
 		Viewport viewport;
+		std::vector<std::shared_ptr<PostEffect>> postEffects;
+
+		template<typename T>
+		std::shared_ptr<T> GetEffect()
+		{
+			for (const auto& effect : postEffects)
+			{
+				auto castedEffect = std::dynamic_pointer_cast<T>(effect);
+				if (castedEffect)
+				{
+					return castedEffect;
+				}
+			}
+			return nullptr;
+		}
 	};
 }
