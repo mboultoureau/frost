@@ -184,6 +184,7 @@ namespace Frost
         _gBufferPixelShader.reset();
         _gBufferVertexShader.reset();
 
+        _finalLitTexture.reset();
         _depthStencilTexture.reset();
         _materialTexture.reset();
         _worldPositionTexture.reset();
@@ -227,6 +228,7 @@ namespace Frost
         _worldPositionTexture.reset();
         _materialTexture.reset();
         _depthStencilTexture.reset();
+        _finalLitTexture.reset();
 
         TextureConfig textureConfig = { .width = width, .height = height, .isRenderTarget = true, .isShaderResource = true, .hasMipmaps = false };
 
@@ -244,6 +246,9 @@ namespace Frost
 
         TextureConfig depthConfig = { .format = Format::D24_UNORM_S8_UINT, .width = width, .height = height, .isRenderTarget = true, .isShaderResource = false, .hasMipmaps = false };
         _depthStencilTexture = std::make_unique<TextureDX11>(depthConfig);
+
+        TextureConfig litConfig = { .format = Format::RGBA8_UNORM, .width = width, .height = height, .isRenderTarget = true, .isShaderResource = true, .hasMipmaps = false };
+        _finalLitTexture = std::make_unique<TextureDX11>(litConfig);
     }
 
     void DeferredRenderingPipeline::BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix)
@@ -447,8 +452,8 @@ namespace Frost
         }
         _lightConstantsBuffer->UpdateData(_commandList.get(), &lightData, sizeof(LightConstants));
 
-        Texture* backBuffer = RendererAPI::GetRenderer()->GetBackBuffer();
-        _commandList->SetRenderTargets(1, &backBuffer, nullptr);
+        Texture* finalLitTexturePtr = _finalLitTexture.get();
+        _commandList->SetRenderTargets(1, &finalLitTexturePtr, nullptr);
 
         const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
         const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
@@ -474,10 +479,5 @@ namespace Frost
 #endif
 
         _commandList->SetScissorRect(0, 0, Application::GetWindow()->GetWidth(), Application::GetWindow()->GetHeight());
-
-        _commandList->EndRecording();
-        _commandList->Execute();
-
-        RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
     }
 }

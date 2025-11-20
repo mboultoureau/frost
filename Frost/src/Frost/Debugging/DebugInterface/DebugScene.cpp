@@ -223,7 +223,9 @@ namespace Frost
 				ImGui::SameLine();
 				if (ImGui::CollapsingHeader(effect->GetName()))
 				{
+					ImGui::Indent();
 					effect->OnImGuiRender(_deltaTime);
+					ImGui::Unindent();
 				}
 				ImGui::PopID();
 			}
