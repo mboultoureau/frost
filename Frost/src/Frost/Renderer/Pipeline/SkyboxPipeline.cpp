@@ -37,8 +37,6 @@ namespace Frost
 
     void SkyboxPipeline::Initialize()
     {
-        _commandList = std::make_unique<CommandListDX11>();
-
         // Shaders
         ShaderDesc vsDesc = { .type = ShaderType::Vertex, .debugName = "VS_Skybox", .filePath = "../Frost/resources/shaders/VS_Skybox.hlsl" };
         ShaderDesc psDesc = { .type = ShaderType::Pixel, .debugName = "PS_Skybox", .filePath = "../Frost/resources/shaders/PS_Skybox.hlsl" };
@@ -73,7 +71,6 @@ namespace Frost
         _skyboxInputLayout.reset();
         _skyboxPixelShader.reset();
         _skyboxVertexShader.reset();
-        _commandList.reset();
     }
 
     void SkyboxPipeline::CreateCubeMesh()
@@ -100,15 +97,12 @@ namespace Frost
         _cubeIndexBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::INDEX_BUFFER, .size = sizeof(indices) }, indices);
     }
 
-    void SkyboxPipeline::Render(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, Texture* gbufferDepth, Texture* skyboxTexture)
+    void SkyboxPipeline::Render(CommandList* commandList, Texture* renderTarget, Texture* gbufferDepth, Texture* skyboxTexture, const Component::Camera& camera, const Component::WorldTransform& cameraTransform)
     {
 		// Check if texture is loaded
-        if (!skyboxTexture || !gbufferDepth) return;
+        if (!skyboxTexture || !gbufferDepth || !renderTarget || !commandList) return;
 
-        _commandList->BeginRecording();
-
-        Texture* backBuffer = RendererAPI::GetRenderer()->GetBackBuffer();
-        _commandList->SetRenderTargets(1, &backBuffer, gbufferDepth);
+        commandList->SetRenderTargets(1, &renderTarget, gbufferDepth);
 
         const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
         const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
@@ -116,37 +110,34 @@ namespace Frost
         const float viewportY = camera.viewport.y * windowHeight;
         const float viewportWidth = camera.viewport.width * windowWidth;
         const float viewportHeight = camera.viewport.height * windowHeight;
-        _commandList->SetViewport(viewportX, viewportY, viewportWidth, viewportHeight, 0.0f, 1.0f);
+        commandList->SetViewport(viewportX, viewportY, viewportWidth, viewportHeight, 0.0f, 1.0f);
 
 		// Draw inside of the cube
-        _commandList->SetRasterizerState(RasterizerMode::SolidCullNone);
-        _commandList->SetDepthStencilState(DepthMode::ReadOnly);
+        commandList->SetRasterizerState(RasterizerMode::SolidCullNone);
+        commandList->SetDepthStencilState(DepthMode::ReadOnly);
 
         // Update Constant Buffer
         VS_SkyboxConstants vsConstants;
         vsConstants.ViewMatrix = Math::Matrix4x4::CreateTranspose(Math::GetViewMatrix(cameraTransform));
         const float aspectRatio = (viewportHeight > 0) ? (viewportWidth / viewportHeight) : 1.0f;
         vsConstants.ProjectionMatrix = Math::Matrix4x4::CreateTranspose(Math::GetProjectionMatrix(camera, aspectRatio));
-        _vsSkyboxConstants->UpdateData(_commandList.get(), &vsConstants, sizeof(VS_SkyboxConstants));
+        _vsSkyboxConstants->UpdateData(commandList, &vsConstants, sizeof(VS_SkyboxConstants));
 
-        _commandList->SetShader(_skyboxVertexShader.get());
-        _commandList->SetShader(_skyboxPixelShader.get());
-        _commandList->SetInputLayout(_skyboxInputLayout.get());
+        commandList->SetShader(_skyboxVertexShader.get());
+        commandList->SetShader(_skyboxPixelShader.get());
+        commandList->SetInputLayout(_skyboxInputLayout.get());
 
-        _commandList->SetConstantBuffer(_vsSkyboxConstants.get(), 0);
-        _commandList->SetTexture(skyboxTexture, 0);
-        _commandList->SetSampler(_skyboxSampler.get(), 0);
+        commandList->SetConstantBuffer(_vsSkyboxConstants.get(), 0);
+        commandList->SetTexture(skyboxTexture, 0);
+        commandList->SetSampler(_skyboxSampler.get(), 0);
 
-        _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-        _commandList->SetVertexBuffer(_cubeVertexBuffer.get(), sizeof(Math::Vector3), 0);
-        _commandList->SetIndexBuffer(_cubeIndexBuffer.get(), 0);
+        commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+        commandList->SetVertexBuffer(_cubeVertexBuffer.get(), sizeof(Math::Vector3), 0);
+        commandList->SetIndexBuffer(_cubeIndexBuffer.get(), 0);
 
-        _commandList->DrawIndexed(_cubeIndexCount, 0, 0);
+        commandList->DrawIndexed(_cubeIndexCount, 0, 0);
 
-        _commandList->SetRasterizerState(RasterizerMode::Solid);
-        _commandList->SetDepthStencilState(DepthMode::ReadWrite);
-
-        _commandList->EndRecording();
-        _commandList->Execute();
+        commandList->SetRasterizerState(RasterizerMode::Solid);
+        commandList->SetDepthStencilState(DepthMode::ReadWrite);
     }
 }

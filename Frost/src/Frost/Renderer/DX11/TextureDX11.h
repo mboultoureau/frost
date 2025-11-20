@@ -22,6 +22,7 @@ namespace Frost
 		virtual const std::vector<uint8_t> GetData() const override;
 		virtual void Bind(Slot slot) const override;
 
+		ID3D11Resource* GetDX11Resource() const { return _texture.Get(); }
 		ID3D11ShaderResourceView* GetShaderResourceView() const { return _srv.Get(); }
 		ID3D11RenderTargetView* GetRenderTargetView() const { return _rtv.Get(); }
 		ID3D11DepthStencilView* GetDepthStencilView() const { return _dsv.Get(); }

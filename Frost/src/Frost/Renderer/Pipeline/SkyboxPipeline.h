@@ -22,7 +22,7 @@ namespace Frost
         void Initialize() override;
         void Shutdown() override;
 
-        void Render(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, Texture* gbufferDepth, Texture* skyboxTexture);
+        void Render(CommandList* commandList, Texture* renderTarget, Texture* gbufferDepth, Texture* skyboxTexture, const Component::Camera& camera, const Component::WorldTransform& cameraTransform);
 
     private:
         void CreateCubeMesh();
@@ -37,6 +37,5 @@ namespace Frost
         uint32_t _cubeIndexCount;
 
         std::unique_ptr<Buffer> _vsSkyboxConstants;
-        std::unique_ptr<CommandList> _commandList;
     };
 }
