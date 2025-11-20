@@ -243,6 +243,25 @@ namespace Frost
 		_context->IASetPrimitiveTopology(dxTopology);
 	}
 
+	void CommandListDX11::CopyResource(Texture* destination, Texture* source)
+	{
+		auto* destDX11 = static_cast<TextureDX11*>(destination);
+		auto* srcDX11 = static_cast<TextureDX11*>(source);
+
+		if (!destDX11 || !srcDX11)
+		{
+			return;
+		}
+
+		ID3D11Resource* pDstResource = destDX11->GetDX11Resource();
+		ID3D11Resource* pSrcResource = srcDX11->GetDX11Resource();
+
+		if (pDstResource && pSrcResource)
+		{
+			_context->CopyResource(pDstResource, pSrcResource);
+		}
+	}
+
 	void CommandListDX11::Draw(uint32_t vertexCount, uint32_t startVertexLocation)
 	{
 		_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

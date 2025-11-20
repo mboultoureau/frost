@@ -40,6 +40,8 @@ namespace Frost
 
 		void SetPrimitiveTopology(PrimitiveTopology topology) override;
 
+		void CopyResource(Texture* destination, Texture* source) override;
+
 		void Draw(uint32_t vertexCount, uint32_t startVertexLocation) override;
 		void DrawIndexed(uint32_t indexCount, uint32_t startIndexLocation, uint32_t baseVertexLocation) override;
 

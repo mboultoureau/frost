@@ -15,10 +15,10 @@ void MainLayer::OnAttach()
 	Frost::Scene& _scene = Game::GetScene();
 
 	_pointLight = std::make_unique<PointLight>();
-	_topCamera = std::make_unique<TopCamera>();
+	//_topCamera = std::make_unique<TopCamera>();
 
 	//_sphere = std::make_unique<Sphere>();
-	_freeCamera = std::make_unique<FreeCamera>();
+	//_freeCamera = std::make_unique<FreeCamera>();
 	_moto = std::make_unique<Moto>();
 	_ogre = std::make_unique<Ogre>();
 	_ogreNormal = std::make_unique<OgreNormal>();

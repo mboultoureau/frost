@@ -36,6 +36,8 @@ namespace Frost
         void EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights);
 
         Texture* GetDepthStencilTexture() const { return _depthStencilTexture.get(); }
+        CommandList* GetCommandList() const { return _commandList.get(); }
+        Texture* GetFinalLitTexture() const { return _finalLitTexture.get(); }
 
     private:
         void _CreateGBufferTextures(uint32_t width, uint32_t height);
@@ -46,6 +48,7 @@ namespace Frost
         std::unique_ptr<Texture> _worldPositionTexture;
         std::unique_ptr<Texture> _materialTexture;
         std::unique_ptr<Texture> _depthStencilTexture;
+        std::unique_ptr<Texture> _finalLitTexture;
 
         // G-Buffer Pass Resources
         std::unique_ptr<Shader> _gBufferVertexShader;

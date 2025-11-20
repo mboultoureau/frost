@@ -64,6 +64,7 @@ namespace Frost
         virtual void SetSampler(const Sampler* sampler, uint32_t slot) = 0;
 
         virtual void SetPrimitiveTopology(PrimitiveTopology topology) = 0;
+        virtual void CopyResource(Texture* destination, Texture* source) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t startVertexLocation) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t startIndexLocation, uint32_t baseVertexLocation) = 0;

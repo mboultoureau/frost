@@ -3,6 +3,9 @@
 #include "Frost/Renderer/Pipeline/DeferredRenderingPipeline.h"
 #include "Frost/Renderer/Pipeline/SkyboxPipeline.h"
 #include "Frost/Scene/ECS/System.h"
+#include "Frost/Asset/Texture.h"
+
+#include <memory>
 
 namespace Frost
 {
@@ -15,6 +18,9 @@ namespace Frost
 	private:
 		DeferredRenderingPipeline _deferredRendering;
 		SkyboxPipeline _skyboxPipeline;
+
+		std::unique_ptr<Texture> _source;
+		std::unique_ptr<Texture> _destination;
 	};
 }
 
