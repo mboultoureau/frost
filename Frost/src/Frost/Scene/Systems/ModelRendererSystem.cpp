@@ -8,6 +8,7 @@
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Debugging/DebugInterface/DebugRendering.h"
 #include "Frost/Scene/Components/Skybox.h"
+#include "Frost/Renderer/RendererAPI.h"
 
 using namespace Frost::Component;
 
@@ -80,6 +81,16 @@ namespace Frost
                 continue;
             }
 
+            // Get only active effects
+            std::vector<std::shared_ptr<PostEffect>> activeEffects;
+            for (const auto& effect : currentCamera.postEffects)
+            {
+                if (effect && effect->IsEnabled())
+                {
+                    activeEffects.push_back(effect);
+                }
+            }
+
 			// Calculate view and projection matrices
             const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
             const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
@@ -91,12 +102,10 @@ namespace Frost
             Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(currentCamera, aspectRatio);
 
 			// Apply post-processing effects pre-render
-            for (auto& effect : currentCamera.postEffects)
+            for (auto& effect : activeEffects)
             {
-                if (effect && effect->IsEnabled())
-                {
-                    effect->OnPreRender(deltaTime, viewMatrix, projectionMatrix);
-                }
+				FT_ENGINE_ASSERT(effect != nullptr, "PostEffect is null");
+                effect->OnPreRender(deltaTime, viewMatrix, projectionMatrix);
             }
 
             // Draw meshes
@@ -122,9 +131,64 @@ namespace Frost
             if (activeSkyboxTexture)
             {
                 Texture* gbufferDepth = _deferredRendering.GetDepthStencilTexture();
-                _skyboxPipeline.Render(currentCamera, *cameraTransform, gbufferDepth, activeSkyboxTexture.get());
-            }
-        }
+                Texture* finalLitTexture = _deferredRendering.GetFinalLitTexture();
+                CommandList* commandList = _deferredRendering.GetCommandList();
 
+                _skyboxPipeline.Render(commandList, finalLitTexture, gbufferDepth, activeSkyboxTexture.get(), currentCamera, *cameraTransform);
+            }
+
+            CommandList* commandList = _deferredRendering.GetCommandList();
+            Texture* sceneTexture = _deferredRendering.GetFinalLitTexture();
+
+			// Filter through post-processing effects
+            std::vector<std::shared_ptr<PostEffect>> postProcessingPasses;
+            for (const auto& effect : currentCamera.postEffects)
+            {
+                if (effect && effect->IsEnabled() && effect->IsPostProcessingPass())
+                {
+                    postProcessingPasses.push_back(effect);
+                }
+            }
+
+            if (!postProcessingPasses.empty())
+            {
+                uint32_t width = Application::GetWindow()->GetWidth();
+                uint32_t height = Application::GetWindow()->GetHeight();
+                if (!_source || _source->GetWidth() != width || _source->GetHeight() != height)
+                {
+                    TextureConfig ppConfig = { .format = Format::RGBA8_UNORM,.width = width, .height = height, .isRenderTarget = true, .isShaderResource = true };
+                    _source.reset(new TextureDX11(ppConfig));
+                    _destination.reset(new TextureDX11(ppConfig));
+                }
+
+                Texture* source = sceneTexture;
+                Texture* destination = nullptr;
+
+                for (size_t i = 0; i < postProcessingPasses.size(); ++i)
+                {
+                    if (i == postProcessingPasses.size() - 1)
+                    {
+						// The last effect renders to the back buffer
+                        destination = RendererAPI::GetRenderer()->GetBackBuffer();
+                    }
+                    else
+                    {
+						// Ping-pong between the two textures
+                        destination = (i % 2 == 0) ? _source.get() : _destination.get();
+                    }
+
+                    postProcessingPasses[i]->OnPostRender(deltaTime, commandList, source, destination);
+                    source = destination;
+                }
+            }
+            else
+            {
+                commandList->CopyResource(RendererAPI::GetRenderer()->GetBackBuffer(), sceneTexture);
+            }
+
+            commandList->EndRecording();
+            commandList->Execute();
+            RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
+        }
     }
 }

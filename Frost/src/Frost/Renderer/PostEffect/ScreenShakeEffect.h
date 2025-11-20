@@ -21,6 +21,7 @@ namespace Frost
 		void OnImGuiRender(float deltaTime) override;
 		void Shake(float duration, float amplitude, AttenuationType type = AttenuationType::EaseOut);
 		const char* GetName() const override { return "ScreenShakeEffect"; }
+		virtual bool IsPostProcessingPass() const { return false; }
 
 	private:
 		float _currentTime = 0.0f;
