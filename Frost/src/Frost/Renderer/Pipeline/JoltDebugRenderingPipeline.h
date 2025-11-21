@@ -60,9 +60,11 @@ namespace Frost
         void DrawGeometry(JPH::RMat44Arg inModelMatrix, const JPH::AABox& inWorldSpaceBounds, float inLODScaleSq, JPH::ColorArg inModelColor, const JPH::DebugRenderer::GeometryRef& inGeometry, JPH::DebugRenderer::ECullMode inCullMode, JPH::DebugRenderer::ECastShadow inCastShadow, JPH::DebugRenderer::EDrawMode inDrawMode) override;
         void DrawText3D(JPH::RVec3Arg inPosition, const std::string_view& inString, JPH::ColorArg inColor, float inHeight) override;
 
-        void BeginFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform);
-        void EndFrame();
-        void ClearFrameData();
+        void Render(const Component::Camera& camera, const Component::WorldTransform& cameraTransform);
+		void Clear();
+
+    private:
+        void _ClearFrameData();
 
     private:
         std::unique_ptr<CommandList> _commandList;
