@@ -30,6 +30,7 @@
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/PostEffect/ScreenShakeEffect.h"
 #include "Frost/Renderer/PostEffect/RadialBlurEffect.h"
+#include "Frost/Renderer/PostEffect/ChromaticAberrationEffect.h"
 
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Random.h"
