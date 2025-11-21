@@ -18,9 +18,9 @@ namespace Frost
     class Sampler;
     class Buffer;
     class Model;
-    class Camera;
-    class Light;
-    struct WorldTransform;
+    class Component::Camera;
+    class Component::Light;
+    struct Component::WorldTransform;
 
 	class DeferredRenderingPipeline : public Pipeline
     {

@@ -37,33 +37,30 @@ namespace Frost
 		Viewport resumeViewport = { centerX, textViewport.y + textHeight + gap, buttonWidth, buttonHeight };
 		Viewport resetViewport = { centerX, resumeViewport.y + buttonHeight + gap, buttonWidth, buttonHeight };
 
-		scene.AddComponent<Component::HUDImage>(
-			pauseTextId,
+		pauseTextId.AddComponent<Component::HUDImage>(
 			textViewport,
 			pausePath,
 			Material::FilterMode::POINT
 		);
 
-		scene.AddComponent<Component::UIButton>(
-			resumeButtonId,
+		resumeButtonId.AddComponent<Component::UIButton>(
 			resumeViewport,
 			idleResumePath,
 			hoverResumePath,
 			hoverResumePath,
 			[this]() { OnUnpauseButtonPress(); }
 		);
-		auto resumeButton = scene.GetComponent<Component::UIButton>(resumeButtonId);
-		resumeButton->buttonHitbox = resumeViewport;
-		scene.AddComponent<Component::UIButton>(
-			resetButtonId,
+		auto& resumeButton = resumeButtonId.GetComponent<Component::UIButton>();
+		resumeButton.buttonHitbox = resumeViewport;
+		resetButtonId.AddComponent<Component::UIButton>(
 			resetViewport,
 			idleResetPath,
 			hoverResetPath,
 			hoverResetPath,
 			[this]() { OnResetButtonPress(); }
 		);
-		auto resetButton = scene.GetComponent<Component::UIButton>(resetButtonId);
-		resetButton->buttonHitbox = resetViewport;
+		auto& resetButton = resetButtonId.GetComponent<Component::UIButton>();
+		resetButton.buttonHitbox = resetViewport;
 		HideMenu();
 	}
 
@@ -116,20 +113,16 @@ namespace Frost
 
 	void PauseMenu::ShowMenu()
 	{
-		auto& scene = Game::GetScene();
-
-		scene.GetComponent<Component::HUDImage>(pauseTextId)->SetEnabled(true);
-		scene.GetComponent<Component::UIButton>(resumeButtonId)->SetEnabled(true);
-		scene.GetComponent<Component::UIButton>(resetButtonId)->SetEnabled(true);
+		pauseTextId.SetActive(true);
+		resumeButtonId.SetActive(true);
+		resetButtonId.SetActive(true);
 	}
 
 	void PauseMenu::HideMenu()
 	{
-		auto& scene = Game::GetScene();
-
-		scene.GetComponent<Component::HUDImage>(pauseTextId)->SetEnabled(false);
-		scene.GetComponent<Component::UIButton>(resumeButtonId)->SetEnabled(false);
-		scene.GetComponent<Component::UIButton>(resetButtonId)->SetEnabled(false);
+		pauseTextId.SetActive(false);
+		resumeButtonId.SetActive(false);
+		resetButtonId.SetActive(false);
 	}
 
 	void PauseMenu::OnUnpauseButtonPress()

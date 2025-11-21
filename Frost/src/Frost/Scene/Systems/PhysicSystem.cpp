@@ -1,201 +1,159 @@
 #include "Frost/Scene/Systems/PhysicSystem.h"
-#include "Frost/Scene/ECS/Component.h"
-#include <Frost/Scene/Components/Meta.h>
-#include "Frost/Scene/ECS/ECS.h"
+#include "Frost/Scene/Components/Script.h"
 
-#include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include "Frost/Physics/Physics.h"
 
-#include "Frost/Scene/Components/RigidBody.h"
 
 using namespace Frost::Component;
 
-class RigidBodyCannotHaveParents {};
 
-Frost::PhysicSystem::PhysicSystem()
+namespace Frost
 {
-}
 
-#pragma region Updates
-void Frost::PhysicSystem::FixedUpdate(ECS& ecs, float deltaTime)
-{
-	Physics& physic = Physics::Get();
+	Frost::PhysicSystem::PhysicSystem()
+	{
+	}
 
-	physic.UpdatePhysics();
+	void Frost::PhysicSystem::FixedUpdate(Scene& scene, float deltaTime)
+	{
+		Physics& physic = Physics::Get();
 
-	UpdateAllJoltBodies(ecs, deltaTime);
+		physic.UpdatePhysics();
 
-	//Awake and sleep
-	_HandleAwakeVector(ecs, deltaTime);
-	_HandleSleepVector(ecs, deltaTime);
-	_HandleOnCollisionEnterVector(ecs, deltaTime);
-	_HandleOnCollisionStayVector(ecs, deltaTime);
-	_HandleOnCollisionRemovedVector(ecs, deltaTime);
-}
+		_UpdateAllJoltBodies(scene, deltaTime);
 
-void Frost::PhysicSystem::LateUpdate(ECS& ecs, float deltaTime)
-{
+		// Awake and sleep
+		_HandleAwakeVector(scene, deltaTime);
+		_HandleSleepVector(scene, deltaTime);
+		
+		// Collisions
+		_HandleOnCollisionEnterVector(scene, deltaTime);
+		_HandleOnCollisionStayVector(scene, deltaTime);
+		_HandleOnCollisionRemovedVector(scene, deltaTime);
+	}
+
+	void Frost::PhysicSystem::LateUpdate(Scene& scene, float deltaTime)
+	{
 #ifdef FT_DEBUG
-	Physics::DrawDebug();
+		Physics::DrawDebug();
 #endif
-}
-
-//initialize jph::bodies and update ecs::transforms
-void Frost::PhysicSystem::UpdateAllJoltBodies(ECS& ecs, float deltaTime)
-{
-	auto& physics = Physics::Get();
-	auto rbodies = ecs.GetComponents<RigidBody>();
-	auto goIds = ecs.GetIndexMap<RigidBody>();
-
-	for (int i = 0; i < rbodies->data.size(); i++) {
-		auto goId = goIds[i];
-		auto rbody = ecs.GetComponent<RigidBody>(goId);
-
-
-		auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody->physicBody->bodyId);
-		auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody->physicBody->bodyId);
-
-		auto transform = ecs.GetComponent<Transform>(goId);
-		auto parent = ecs.GetComponent<Meta>(goId)->parentId;
-
-		transform->position = Math::vector_cast<Math::Vector3>(jBodyPos);
-
-		JPH::Vec3 rotationRadians = jBodyRot.GetEulerAngles();
-		transform->rotation.x = jBodyRot.GetX();
-		transform->rotation.y = jBodyRot.GetY();
-		transform->rotation.z = jBodyRot.GetZ();
-		transform->rotation.w = jBodyRot.GetW();
 	}
-}
 
-#pragma endregion
+	void Frost::PhysicSystem::_UpdateAllJoltBodies(Scene& scene, float deltaTime)
+	{
+		auto& physics = Physics::Get();
+		auto rigidBodyView = scene.ViewActive<RigidBody, Transform>();
 
-#pragma region Vector handling
-void Frost::PhysicSystem::_HandleAwakeVector(ECS& ecs, float deltaTime)
-{
-	auto& physics = Physics::Get();
-	std::for_each(physics.bodiesOnAwake.begin(), physics.bodiesOnAwake.end(), [&](const auto& params) {
-		auto goId = physics.GetObjectID(params.inBodyID);
-		auto scriptables = ecs.GetComponent<Scriptable>(goId);
-		if (scriptables == nullptr) return;
-
-		auto& scripts = scriptables->_scripts;
-
-		std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-			script->OnAwake(deltaTime);
-		});
-	});
-	physics.bodiesOnAwake.clear();
-}
-
-void Frost::PhysicSystem::_HandleSleepVector(ECS& ecs, float deltaTime)
-{
-	auto& physics = Physics::Get();
-	std::for_each(physics.bodiesOnSleep.begin(), physics.bodiesOnSleep.end(), [&](const auto& params) {
-		auto goId = physics.GetObjectID(params.inBodyID);
-		auto scriptables = ecs.GetComponent<Scriptable>(goId);
-		if (scriptables == nullptr) return;
-
-		auto& scripts = scriptables->_scripts;
-
-		std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-			script->OnSleep(deltaTime);
-		});
-	});
-	physics.bodiesOnSleep.clear();
-}
-
-void Frost::PhysicSystem::_HandleOnCollisionEnterVector(ECS& ecs, float deltaTime)
-{
-	auto& physics = Physics::Get();
-	std::for_each(physics.bodiesOnCollisionEnter.begin(), physics.bodiesOnCollisionEnter.end(), [&](const auto& params) {
-		// Process id 1
-		auto goId1 = physics.GetObjectID(params.inBody1);
-		auto scriptables = ecs.GetComponent<Scriptable>(goId1);
-		if (scriptables)
+		for (auto entity : rigidBodyView)
 		{
-			auto& scripts = scriptables->_scripts;
-			std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-				script->OnCollisionEnter(params, deltaTime);
-			});
-		}
+			const auto& [rbody, transform] = rigidBodyView.get(entity);
 
-		//process id2
-		auto goId2 = physics.GetObjectID(params.inBody2);
-		scriptables = ecs.GetComponent<Scriptable>(goId2);
-		if (scriptables)
-		{
-			auto& scripts = scriptables->_scripts;
-			std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-				script->OnCollisionEnter(params, deltaTime);
-			});
-		}
-	});
-	physics.bodiesOnCollisionEnter.clear();
-}
+			auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody.physicBody->bodyId);
+			auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody.physicBody->bodyId);
 
-void Frost::PhysicSystem::_HandleOnCollisionStayVector(ECS& ecs, float deltaTime)
-{
-	auto& physics = Physics::Get();
-	std::for_each(physics.bodiesOnCollisionStay.begin(), physics.bodiesOnCollisionStay.end(), [&](const auto& params) {
-		// Process id 1
-		auto goId1 = physics.GetObjectID(params.inBody1);
-		auto scriptables = ecs.GetComponent<Scriptable>(goId1);
-		if (scriptables) {
-			auto& scripts = scriptables->_scripts;
-			std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-				script->OnCollisionStay(params, deltaTime);
-			});
-		}
-
-
-		//process id2
-		auto goId2 = physics.GetObjectID(params.inBody2);
-		scriptables = ecs.GetComponent<Scriptable>(goId2);
-		if (scriptables) {
-			auto& scripts = scriptables->_scripts;
-			std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-				script->OnCollisionStay(params, deltaTime);
-			});
-		}
-
-		physics.currentFrameBodyIDsOnCollisionStay.emplace(std::pair<Frost::GameObject::Id, Frost::GameObject::Id>( goId1, goId2 ));
-	});
-	physics.bodiesOnCollisionStay.clear();
-}
-
-void Frost::PhysicSystem::_HandleOnCollisionRemovedVector(ECS& ecs, float deltaTime)
-{
-	auto& physics = Physics::Get();
-
-	for (auto params : physics.lastFrameBodyIDsOnCollisionStay) {
-		// Check if idPair is not in current frame
-		if (physics.currentFrameBodyIDsOnCollisionStay.find(params) == physics.currentFrameBodyIDsOnCollisionStay.end()) {
-			// Process id 1
-			auto goId1 = params.first;
-			auto scriptables = ecs.GetComponent<Scriptable>(goId1);
-			if (scriptables) {
-				auto& scripts = scriptables->_scripts;
-				std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-					script->OnCollisionExit(params, deltaTime);
-				});
-			}
-
-			//process id2
-			auto goId2 = params.second;
-			scriptables = ecs.GetComponent<Scriptable>(goId2);
-			if (scriptables) {
-				auto& scripts = scriptables->_scripts;
-				std::for_each(scripts.begin(), scripts.end(), [&](auto& script) {
-					script->OnCollisionExit(params, deltaTime);
-				});
-			}
+			transform.position = Math::vector_cast<Math::Vector3>(jBodyPos);
+			transform.rotation.x = jBodyRot.GetX();
+			transform.rotation.y = jBodyRot.GetY();
+			transform.rotation.z = jBodyRot.GetZ();
+			transform.rotation.w = jBodyRot.GetW();
 		}
 	}
 
-	physics.lastFrameBodyIDsOnCollisionStay = physics.currentFrameBodyIDsOnCollisionStay;
-	physics.currentFrameBodyIDsOnCollisionStay.clear();
+	void Frost::PhysicSystem::_HandleAwakeVector(Scene& scene, float deltaTime)
+	{
+		auto& physics = Physics::Get();
+		for (const auto& params : physics.bodiesOnAwake)
+		{
+			entt::entity entity = Physics::GetEntityID(params.inBodyID);
+			_ExecuteOnScripts(scene, entity, [&](Script* script) {
+				script->OnAwake(deltaTime);
+			});
+		}
+		physics.bodiesOnAwake.clear();
+	}
+
+	void Frost::PhysicSystem::_HandleSleepVector(Scene& scene, float deltaTime)
+	{
+		auto& physics = Physics::Get();
+		for (const auto& params : physics.bodiesOnSleep)
+		{
+			entt::entity entity = Physics::GetEntityID(params.inBodyID);
+			_ExecuteOnScripts(scene, entity, [&](Script* script) {
+				script->OnSleep(deltaTime);
+			});
+		}
+		physics.bodiesOnSleep.clear();
+	}
+
+	void Frost::PhysicSystem::_HandleOnCollisionEnterVector(Scene& scene, float deltaTime)
+	{
+		auto& physics = Physics::Get();
+
+		for (const auto& params : physics.bodiesOnCollisionEnter)
+		{
+			entt::entity entity1 = Physics::GetEntityID(params.inBody1.GetID());
+			entt::entity entity2 = Physics::GetEntityID(params.inBody2.GetID());
+
+			_ExecuteOnScripts(scene, entity1, [&](Script* script) {
+				script->OnCollisionEnter(params, deltaTime);
+			});
+
+			_ExecuteOnScripts(scene, entity2, [&](Script* script) {
+				script->OnCollisionEnter(params, deltaTime);
+			});
+		}
+		physics.bodiesOnCollisionEnter.clear();
+	}
+
+	void Frost::PhysicSystem::_HandleOnCollisionStayVector(Scene& scene, float deltaTime)
+	{
+		auto& physics = Physics::Get();
+		for (const auto& params : physics.bodiesOnCollisionStay)
+		{
+			entt::entity entity1 = Physics::GetEntityID(params.inBody1.GetID());
+			entt::entity entity2 = Physics::GetEntityID(params.inBody2.GetID());
+
+			_ExecuteOnScripts(scene, entity1, [&](Script* script) {
+				script->OnCollisionStay(params, deltaTime);
+			});
+
+			_ExecuteOnScripts(scene, entity2, [&](Script* script) {
+				script->OnCollisionStay(params, deltaTime);
+			});
+
+			physics.currentFrameBodyIDsOnCollisionStay.emplace(entity1, entity2);
+		}
+		physics.bodiesOnCollisionStay.clear();
+	}
+
+	void Frost::PhysicSystem::_HandleOnCollisionRemovedVector(Scene& scene, float deltaTime)
+	{
+		auto& physics = Physics::Get();
+
+		for (const auto& pair : physics.lastFrameBodyIDsOnCollisionStay)
+		{
+			if (physics.currentFrameBodyIDsOnCollisionStay.find(pair) == physics.currentFrameBodyIDsOnCollisionStay.end())
+			{
+				entt::entity entity1 = pair.first;
+				entt::entity entity2 = pair.second;
+
+				std::pair<entt::entity, entt::entity> exitParams = { entity1, entity2 };
+
+				_ExecuteOnScripts(scene, entity1, [&](Script* script) {
+					script->OnCollisionExit(exitParams, deltaTime);
+				});
+
+				_ExecuteOnScripts(scene, entity2, [&](Script* script) {
+					script->OnCollisionExit(exitParams, deltaTime);
+				});
+			}
+		}
+
+		// Swap buffers for next frame
+		physics.lastFrameBodyIDsOnCollisionStay = physics.currentFrameBodyIDsOnCollisionStay;
+		physics.currentFrameBodyIDsOnCollisionStay.clear();
+	}
+
+
 }
 
-#pragma endregion

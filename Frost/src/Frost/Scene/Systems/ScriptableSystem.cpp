@@ -1,64 +1,69 @@
-#include "ScriptableSystem.h"
-
-#include "Frost/Scene/ECS/ECS.h"
+#include "Frost/Scene/Systems/ScriptableSystem.h"
 #include "Frost/Scene/Components/Scriptable.h"
+#include "Frost/Scene/Components/Script.h"
 
 using namespace Frost::Component;
 
 namespace Frost
 {
-	void ScriptableSystem::Update(Frost::ECS& ecs, float deltaTime)
+	void ScriptableSystem::Update(Scene& scene, float deltaTime)
 	{
-		auto& scriptables = ecs.GetDataArray<Scriptable>();
-		for (size_t i = 0; i < scriptables.size(); i++)
+		auto view = scene.ViewActive<Scriptable>();
+
+		for (auto entity : view)
 		{
-			auto& scriptable = scriptables[i];
-			auto& indexMap = ecs.GetIndexMap<Scriptable>();
-			auto gameObjectId = indexMap[i];
+			auto& scriptable = view.get<Scriptable>(entity);
+			GameObject gameObject(entity, &scene);
+
 			for (auto& script : scriptable._scripts)
 			{
-				if (script->GetECS() == nullptr)
+				if (!script->GetGameObject())
 				{
-					script->Initialize(gameObjectId, &ecs);
+					script->Initialize(gameObject);
 				}
+
 				script->OnUpdate(deltaTime);
 			}
 		}
 	}
 
-	void ScriptableSystem::FixedUpdate(Frost::ECS& ecs, float fixedDeltaTime)
+	void ScriptableSystem::FixedUpdate(Scene& scene, float fixedDeltaTime)
 	{
-		auto& scriptables = ecs.GetDataArray<Scriptable>();
-		for (size_t i = 0; i < scriptables.size(); i++)
+		auto view = scene.ViewActive<Scriptable>();
+
+		for (auto entity : view)
 		{
-			auto& scriptable = scriptables[i];
-			auto& indexMap = ecs.GetIndexMap<Scriptable>();
-			auto gameObjectId = indexMap[i];
+			auto& scriptable = view.get<Scriptable>(entity);
+			GameObject gameObject(entity, &scene);
+
 			for (auto& script : scriptable._scripts)
 			{
-				if (script->GetECS() == nullptr)
+				if (!script->GetGameObject())
 				{
-					script->Initialize(gameObjectId, &ecs);
+					script->Initialize(gameObject);
 				}
+
 				script->OnFixedUpdate(fixedDeltaTime);
 			}
 		}
 	}
 
-	void ScriptableSystem::LateUpdate(Frost::ECS& ecs, float deltaTime)
+	void ScriptableSystem::LateUpdate(Scene& scene, float deltaTime)
 	{
-		auto& scriptables = ecs.GetDataArray<Scriptable>();
-		for (size_t i = 0; i < scriptables.size(); i++)
+		auto view = scene.ViewActive<Scriptable>();
+
+		for (auto entity : view)
 		{
-			auto& scriptable = scriptables[i];
-			auto& indexMap = ecs.GetIndexMap<Scriptable>();
-			auto gameObjectId = indexMap[i];
+			auto& scriptable = view.get<Scriptable>(entity);
+			GameObject gameObject(entity, &scene);
+
 			for (auto& script : scriptable._scripts)
 			{
-				if (script->GetECS() == nullptr)
+				if (!script->GetGameObject())
 				{
-					script->Initialize(gameObjectId, &ecs);
+					script->Initialize(gameObject);
 				}
+
 				script->OnLateUpdate(deltaTime);
 			}
 		}

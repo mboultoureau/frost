@@ -11,15 +11,14 @@ public:
 	void OnFixedUpdate(float deltaTime) override
 	{
 		using namespace DirectX;
-		auto scene = GetECS();
-		auto transform = scene->GetComponent<Transform>(GetGameObject());;
-		XMFLOAT4 currentRot = vector_cast<XMFLOAT4>(transform->rotation);
+		auto& transform = GetGameObject().GetComponent<Transform>();
+		XMFLOAT4 currentRot = vector_cast<XMFLOAT4>(transform.rotation);
 		XMVECTOR deltaRot = XMQuaternionRotationRollPitchYaw(0, deltaTime, 0);
 		XMVECTOR qCurrent = XMLoadFloat4(&currentRot);
 		XMVECTOR qResult = XMQuaternionMultiply(qCurrent, deltaRot);
 		XMVECTOR qResultGlobal = XMQuaternionMultiply(deltaRot, qCurrent);
 		qResult = XMQuaternionNormalize(qResult);
-		transform->rotation = vector_cast<Vector4>(qResult);
+		transform.rotation = vector_cast<Vector4>(qResult);
 	}
 };
 

@@ -1,67 +1,80 @@
 #pragma once
 
 #include "Frost/Core/Timer.h"
-#include "Frost/Scene/ECS/ECS.h"
-#include "Frost/Scene/ECS/GameObject.h"
-#include "Frost/Scene/ECS/System.h"
 #include "Frost/Utils/NoCopy.h"
+#include "Frost/Scene/Components/Disabled.h"
+#include "Frost/Scene/Components/Disabled.h"
+#include "Frost/Scene/Components/Scriptable.h"
+#include "Frost/Scene/ECS/GameObject.h"
 
 #include <vector>
 #include <memory>
 #include <string>
+#include <entt/entt.hpp>
 
 namespace Frost
 {
+	class System;
+	class GameObject;
+
 	class Scene : NoCopy
 	{
 	public:
 		Scene(std::string&& name);
+		~Scene();
 
-		GameObject::Id CreateGameObject();
-		GameObject::Id CreateGameObject(std::string name);
-		GameObject::Id CreateGameObject(std::string name, GameObject::Id parentId);
-		void DestroyGameObject(GameObject::Id id);
+		GameObject CreateGameObject(std::string name = "Entity");
+		GameObject CreateGameObject(std::string name, GameObject parent);
+		void DestroyGameObject(GameObject gameObject);
 
 		void Update(float deltaTime);
 		void FixedUpdate(float deltaTime);
 		void LateUpdate(float deltaTime);
 
-		template <typename T, typename... Args>
-		void AddScript(GameObject::Id id, Args&&... args);
-
-		template <typename T, typename... Args>
-		void AddComponent(GameObject::Id id, Args&&... args)
-		{
-			_ecs.AddComponent<T>(id, std::forward<Args>(args)...);
-		}
-
-		template <typename T>
-		void RemoveComponent(GameObject::Id id)
-		{
-			_ecs.RemoveComponent<T>(id);
-		}
-
-		template <typename T>
-		T* GetComponent(GameObject::Id id)
-		{
-			return _ecs.GetComponent<T>(id);
-		}
-
+		entt::registry& GetRegistry() { return _registry; }
 		const std::string& GetName() const { return _name; }
-		ECS& GetECS() { return _ecs; }
+
+		template<typename... Components>
+		auto View()
+		{
+			return _registry.view<Components...>();
+		}
+
+		template<typename... Components>
+		auto ViewActive()
+		{
+			return _registry.view<Components...>(entt::exclude<Component::Disabled>);
+		}
+
+        // Helper methods for backward compatibility and ease of use
+        template<typename T, typename... Args>
+        T& AddComponent(GameObject gameObject, Args&&... args)
+        {
+            return gameObject.AddComponent<T>(std::forward<Args>(args)...);
+        }
+
+        template<typename T>
+        T* GetComponent(GameObject gameObject)
+        {
+            if (gameObject.HasComponent<T>())
+                return &gameObject.GetComponent<T>();
+            return nullptr;
+        }
+
+        template<typename T, typename... Args>
+        T& AddScript(GameObject gameObject, Args&&... args)
+        {
+            return gameObject.AddScript<T>(std::forward<Args>(args)...);
+        }
 
 	private:
-		ECS _ecs;
+		entt::registry _registry;
 		std::string _name;
 		std::vector<std::unique_ptr<System>> _systems;
-		void _InitializeSystems();
-	};
 
-	template <typename T, typename... Args>
-	void Scene::AddScript(GameObject::Id id, Args&&... args)
-	{
-		static_assert(std::is_base_of<Script, T>::value, "Type T must inherit from Frost::Script.");
-		std::unique_ptr<Script> script = std::make_unique<T>(std::forward<Args>(args)...);
-		_ecs.AddScript(id, std::move(script));
-	}
+		void _InitializeSystems();
+
+		void OnRelationshipDestroyed(entt::registry& registry, entt::entity entity);
+	};
 }
+

@@ -29,13 +29,13 @@ public:
 
 	std::pair<VehicleType, Vehicle*> GetCurrentVehicle() {	return { _currentVehicleType, _currentVehicle }; }
 	int GetVehicleNumber() { return _vehicles.size(); };
-	GameObject::Id GetPlayerID() { return _playerId; };
+	GameObject GetPlayerID() { return _playerId; };
 
 	Timer transitionTimer;
-	GameObject::Id transitionRenderer;
+	GameObject transitionRenderer;
 
 private:
-	GameObject::Id _playerId;
+	GameObject _playerId;
 
 	Scene* _scene = nullptr;
 	PlayerCamera* _playerCamera = nullptr;
@@ -47,8 +47,8 @@ private:
 	void _InitializeVehicles();
 	void _SummonVehicleTransition();
 	void _SetBodyID(JPH::BodyID bodyId) {
-		_scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId = bodyId;
-		auto a = _scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId;
+		_playerId.GetComponent<RigidBody>().physicBody->bodyId = bodyId;
+		auto a = _playerId.GetComponent<RigidBody>().physicBody->bodyId;
 		FT_ASSERT(a == bodyId);
 	}
 

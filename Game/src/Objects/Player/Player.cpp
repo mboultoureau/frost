@@ -33,27 +33,26 @@ Player::Player()
 
 	// Create Player Game Object -------------
 	_playerId = _scene->CreateGameObject("Player");
-	_scene->AddComponent<Transform>(
-		_playerId,
+	_playerId.AddComponent<Transform>(
 		Vector3{ -365.0f, 69.0f, -100.0f },
 		EulerAngles{ 0.0f, 0.0f, 0.0f },
 		Vector3{ 1.0f, 1.0f, 1.0f }
 	);
-	_scene->AddComponent<WorldTransform>(_playerId);
+	_playerId.AddComponent<WorldTransform>();
 
 	// Create TransitionModelRenderer -----------
 	transitionRenderer = _scene->CreateGameObject("Transition Model renderer", _playerId);
-	_scene->AddComponent<Transform>(transitionRenderer, 
+	transitionRenderer.AddComponent<Transform>(
 		Vector3{ 0.0f, 0, 0.0f },
 		EulerAngles{ 0.0f, 0.0f, 0.0f },
 		Vector3{ 10.0f, 10.0f, 10.0f });
-	_scene->AddComponent<WorldTransform>(transitionRenderer);
-	_scene->AddComponent<StaticMesh>(transitionRenderer, "./resources/meshes/sphere.fbx");
+	transitionRenderer.AddComponent<WorldTransform>();
+	transitionRenderer.AddComponent<StaticMesh>("./resources/meshes/sphere.fbx");
 
 	// Create Vehicules structures -------------
 	_InitializeVehicles();
 	SetPlayerVehicle(VehicleType::BIKE);
-	_scene->AddScript<PlayerScript>(_playerId, this);
+	_playerId.AddScript<PlayerScript>(this);
 
 
 	// Create playerCameras Game Objects -------------
@@ -114,7 +113,7 @@ void Player::SetPlayerVehicle(Player::VehicleType type)
 	if (_currentVehicle)
 	{
 		Physics::Get().body_interface->GetLinearAndAngularVelocity(
-			_scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId,
+			_playerId.GetComponent<RigidBody>().physicBody->bodyId,
 			linearSpeed,
 			angularSpeed
 		);
@@ -124,24 +123,24 @@ void Player::SetPlayerVehicle(Player::VehicleType type)
 	_currentVehicleType = type;
 	_SummonVehicleTransition();
 	auto bodyId = _currentVehicle->Appear();
-	if (_scene->GetComponent<RigidBody>(_playerId))
+	if (_playerId.HasComponent<RigidBody>())
 	{
 		_SetBodyID(bodyId);
 		Physics::Get().body_interface->SetLinearAndAngularVelocity(
-			_scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId,
+			_playerId.GetComponent<RigidBody>().physicBody->bodyId,
 			linearSpeed,
 			angularSpeed
 		);
 	}
 	else
 	{
-		_scene->AddComponent<RigidBody>(_playerId, _currentVehicle->GetBodyID(), _playerId);
+		_playerId.AddComponent<RigidBody>(_currentVehicle->GetBodyID(), _playerId);
 	}
 }
 void Player::_SummonVehicleTransition()
 {
 	FT_INFO("youhou, you have changed vehicle !");
-	_scene->GetComponent<StaticMesh>(transitionRenderer)->isActive = true;
+	transitionRenderer.SetActive(true);
 	transitionTimer.Resume();
 	transitionTimer.Start();
 }

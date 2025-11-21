@@ -10,10 +10,9 @@ public:
 	Plane();
 
 private:
-	Frost::GameObject::Id _plane;
+	Frost::GameObject _plane;
 	JPH::Body* _body;
 
 private:
 	void _SetupPhysics();
 };
-

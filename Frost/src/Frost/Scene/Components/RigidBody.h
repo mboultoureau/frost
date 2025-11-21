@@ -19,7 +19,7 @@ namespace Frost::Component
 		PhysicBody(JPH::BodyID bodyId, GameObject::Id id) :
 			bodyId{ bodyId }
 		{
-			Physics::Get().body_interface->SetUserData(bodyId, id);
+			Physics::Get().body_interface->SetUserData(bodyId, static_cast<JPH::uint64>(id));
 		};
 
 		~PhysicBody() {

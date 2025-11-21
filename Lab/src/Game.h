@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Scene/Scene.h"
+#include "Frost/Scene/Components/Script.h"
 #include "Frost/Utils/NoCopy.h"
 #include "Frost/Event/Events/PauseMenu/ResetEvent.h"
 

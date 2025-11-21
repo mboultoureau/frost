@@ -11,6 +11,6 @@ public:
 	FreeCamera();
 
 private:
-	GameObject::Id _camera;
+	GameObject _camera;
 };
 

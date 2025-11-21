@@ -11,10 +11,9 @@ public:
 	Sphere();
 
 private:
-	Frost::GameObject::Id _sphere;
+	Frost::GameObject _sphere;
 	JPH::Body* _bodyId;
 
 private:
 	void _SetupPhysics();
 };
-

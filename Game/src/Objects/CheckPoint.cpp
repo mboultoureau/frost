@@ -1,4 +1,5 @@
 #include "CheckPoint.h"
+#include "Frost/Scene/Components/Script.h"
 #include "../Physics/PhysicsLayer.h"
 #include "../Game.h"
 
@@ -51,13 +52,12 @@ CheckPoint::CheckPoint(Vector3 startpos)
 	Scene& scene = Game::GetScene();
 
 	_checkpoint = scene.CreateGameObject("CheckPoint");
-	scene.AddComponent<Transform>(
-		_checkpoint,
+	_checkpoint.AddComponent<Transform>(
 		startpos,
 		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
 		Vector3{ 5.0f, 5.0f, 5.0f }
 	);
-	scene.AddComponent<WorldTransform>(_checkpoint);
+	_checkpoint.AddComponent<WorldTransform>();
 }
 
 void CheckPoint::FixedUpdate(float deltaTime) 
@@ -82,15 +82,15 @@ void CheckPoint::InitializePhysics()
 	FT_ENGINE_ASSERT(_checkpoint != GameObject::InvalidId, "CheckPoint GameObject is invalid");
 	Scene& scene = Game::GetScene();
 
-	auto transform = scene.GetComponent<Transform>(_checkpoint);
-	RVec3 position = Math::vector_cast<Vec3>(transform->position);
+	auto& transform = _checkpoint.GetComponent<Transform>();
+	RVec3 position = Math::vector_cast<Vec3>(transform.position);
 	JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(5.0f, 5.0f, 5.0f)).Create().Get();
 	BodyCreationSettings checkpoint_body_settings(boxShape, position, Quat::sIdentity(), EMotionType::Static, ObjectLayers::CHECKPOINT);
 
 	checkpoint_body_settings.mGravityFactor = 0.0f;
 	checkpoint_body_settings.mIsSensor = true;
 
-	scene.AddComponent<RigidBody>(_checkpoint, checkpoint_body_settings, _checkpoint, EActivation::Activate);
+	_checkpoint.AddComponent<RigidBody>(checkpoint_body_settings, _checkpoint, EActivation::Activate);
 
 }
 
@@ -127,24 +127,23 @@ void CheckPoint::DeleteChildrenPhysics()
 
 	for (std::shared_ptr<CheckPoint> child : _nextCheckPoints)
 	{
-		GameObject::Id childId = child->_checkpoint;
+		GameObject childId = child->_checkpoint;
 
-		if (scene.GetComponent<Transform>(childId) == nullptr)
+		if (!childId.HasComponent<Transform>())
 		{
 			continue;
 		}
 
-		RigidBody* bodyComponent = scene.GetComponent<RigidBody>(childId);
-
-		if (bodyComponent)
+		if (childId.HasComponent<RigidBody>())
 		{
-			JPH::BodyID bodyId = bodyComponent->physicBody->bodyId;
+			RigidBody& bodyComponent = childId.GetComponent<RigidBody>();
+			JPH::BodyID bodyId = bodyComponent.physicBody->bodyId;
 
-			scene.RemoveComponent<RigidBody>(childId);
+			childId.RemoveComponent<RigidBody>();
 
-			scene.RemoveComponent<StaticMesh>(childId);
+			childId.RemoveComponent<StaticMesh>();
 
-			scene.RemoveComponent<CheckPointScript>(childId);
+			childId.RemoveComponent<CheckPointScript>();
 		}
 	}
 }
@@ -153,14 +152,13 @@ void CheckPoint::DestroyGameObject()
 {
 	using namespace JPH;
 	Scene& scene = Game::GetScene();
-	GameObject::Id id = _checkpoint;
+	GameObject id = _checkpoint;
 
-	RigidBody* bodyComponent = scene.GetComponent<RigidBody>(id);
-
-	if (bodyComponent)
+	if (id.HasComponent<RigidBody>())
 	{
+		RigidBody& bodyComponent = id.GetComponent<RigidBody>();
 		JPH::BodyInterface* bodyInter = Physics::Get().body_interface;
-		JPH::BodyID bodyId = bodyComponent->physicBody->bodyId;
+		JPH::BodyID bodyId = bodyComponent.physicBody->bodyId;
 
 		if (bodyId.IsInvalid() == false)
 		{
@@ -178,17 +176,17 @@ void CheckPoint::DestroyGameObject()
 void CheckPoint::ActivatePhysics()
 {
 	Scene& scene = Game::GetScene();
-	if (!scene.GetComponent<StaticMesh>(_checkpoint))
+	if (!_checkpoint.HasComponent<StaticMesh>())
 	{
-		scene.AddComponent<StaticMesh>(_checkpoint, "./resources/meshes/sphere.fbx");
+		_checkpoint.AddComponent<StaticMesh>("./resources/meshes/sphere.fbx");
 	}
-	if (scene.GetComponent<RigidBody>(_checkpoint))
+	if (_checkpoint.HasComponent<RigidBody>())
 	{
 		return;
 	}
 	InitializePhysics();
-	scene.AddScript<CheckPointScript>(_checkpoint, this);
+	_checkpoint.AddScript<CheckPointScript>(this);
 }
 
 
-GameObject::Id CheckPoint::lastCheckPoint{ GameObject::InvalidId };
+GameObject CheckPoint::lastCheckPoint{ GameObject::InvalidId };
