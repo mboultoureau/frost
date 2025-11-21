@@ -19,8 +19,7 @@ HUD_Logo::HUD_Logo()
 	viewport.x = 0.85f; 
 	viewport.y = 0.0f; 
 	
-	_scene.AddComponent<HUDImage>(
-		_hudLogo,
+	_hudLogo.AddComponent<HUDImage>(
 		viewport,
 		LOGO_PATH,
 		Material::FilterMode::POINT

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frost/Scene/ECS/ECS.h"
+#include "Frost/Scene/Scene.h"
 
 namespace Frost
 {
@@ -9,10 +9,10 @@ namespace Frost
 	public:
 		virtual ~System() = default;
 
-		virtual void OnAttach(ECS& ecs) {};
-		virtual void OnDetach(ECS& ecs) {};
-		virtual void Update(ECS& ecs, float deltaTime) {};
-		virtual void LateUpdate(ECS& ecs, float deltaTime) {};
-		virtual void FixedUpdate(ECS& ecs, float deltaTime) {};
+		virtual void OnAttach(Scene& scene) {};
+		virtual void OnDetach(Scene& scene) {};
+		virtual void Update(Scene& scene, float deltaTime) {};
+		virtual void LateUpdate(Scene& scene, float deltaTime) {};
+		virtual void FixedUpdate(Scene& scene, float deltaTime) {};
 	};
 }

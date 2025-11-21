@@ -10,11 +10,11 @@ class RotateOgre : public Frost::Script
 public:
 	void OnFixedUpdate(float deltaTime) override
 	{
-		auto transform = GetECS()->GetComponent<Transform>(GetGameObject());
+		auto& transform = GetGameObject().GetComponent<Transform>();
 
 		const float rotationSpeed = 1.0f;
 		float angle = rotationSpeed * deltaTime;
-		transform->Rotate(Vector3{ 0.0f, angle, 0.0f });
+		transform.Rotate(Vector3{ 0.0f, angle, 0.0f });
 	}
 };
 

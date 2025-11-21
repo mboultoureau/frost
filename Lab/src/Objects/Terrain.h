@@ -13,7 +13,7 @@ public:
 	std::string filepath;
 
 private:
-	GameObject::Id _terrain;
+	GameObject _terrain;
 };
 
 

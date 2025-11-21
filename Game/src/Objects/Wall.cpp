@@ -15,14 +15,13 @@ Wall::Wall()
 	Scene& scene = Game::GetScene();
 
 	_wall = scene.CreateGameObject("Plane");
-	scene.AddComponent<Transform>(
-		_wall,
+	_wall.AddComponent<Transform>(
 		Vector3{ -365, 100.0f, -130 },
 		Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
 		Vector3{ 50.0f, 50.0f, 1.0f }
 	);
-	scene.AddComponent<WorldTransform>(_wall);
-	scene.AddComponent<StaticMesh>(_wall, "./resources/meshes/cube.fbx");
+	_wall.AddComponent<WorldTransform>();
+	_wall.AddComponent<StaticMesh>("./resources/meshes/cube.fbx");
 
 	_SetupPhysics();
 }
@@ -35,7 +34,7 @@ void Wall::_SetupPhysics()
 
 	ShapeRefC boxShape = BoxShapeSettings(Vec3(50.0f, 50.f, 1.0f)).Create().Get();
 	BodyCreationSettings planeBodySettings(boxShape, RVec3(-365, 100.0f, -130), Quat::sIdentity(), EMotionType::Static, ObjectLayers::NON_MOVING);
-	planeBodySettings.mUserData = _wall;
-	scene.AddComponent<RigidBody>(_wall, planeBodySettings, _wall, EActivation::DontActivate);
-	auto bodyId = scene.GetComponent<RigidBody>(_wall)->physicBody->bodyId;
+	planeBodySettings.mUserData = static_cast<JPH::uint64>(reinterpret_cast<uintptr_t>(&_wall));
+	_wall.AddComponent<RigidBody>(planeBodySettings, _wall, EActivation::DontActivate);
+	auto bodyId = _wall.GetComponent<RigidBody>().physicBody->bodyId;
 }

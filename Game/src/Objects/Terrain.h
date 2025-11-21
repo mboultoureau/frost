@@ -10,6 +10,5 @@ public:
 	Terrain();
 
 private:
-	GameObject::Id _terrain;
+	GameObject _terrain;
 };
-

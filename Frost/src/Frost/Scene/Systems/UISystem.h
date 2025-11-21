@@ -9,8 +9,8 @@ namespace Frost
 	{
 	public:
 		UISystem();
-		void Update(Frost::ECS& ecs, float deltaTime) override;
-		void LateUpdate(Frost::ECS& ecs, float deltaTime) override;
+		void Update(Scene& scene, float deltaTime) override;
+		void LateUpdate(Scene& scene, float deltaTime) override;
 
 	private:
 		HUDRenderingPipeline _pipeline;

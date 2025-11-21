@@ -1,8 +1,4 @@
 ﻿#include "Frost/Scene/Systems/ModelRendererSystem.h"
-#include "Frost/Scene/Components/Camera.h"
-#include "Frost/Scene/Components/StaticMesh.h"
-#include "Frost/Scene/Components/WorldTransform.h"
-#include "Frost/Scene/Components/Light.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/Renderer.h"
 #include "Frost/Utils/Math/Transform.h"
@@ -18,7 +14,7 @@ namespace Frost
     {
     }
 
-    void ModelRendererSystem::LateUpdate(Frost::ECS& ecs, float deltaTime)
+    void ModelRendererSystem::LateUpdate(Scene& scene, float deltaTime)
     {
 #ifdef FT_DEBUG
         if (!Debug::RendererConfig::display)
@@ -34,56 +30,36 @@ namespace Frost
             return;
         }
 
-        const auto& cameras = ecs.GetDataArray<Component::Camera>();
-        const auto& cameraEntities = ecs.GetIndexMap<Component::Camera>();
-        if (cameras.empty()) return;
+        std::shared_ptr<Texture> skyboxTexture{};
 
-        const auto& lights = ecs.GetDataArray<Component::Light>();
-        const auto& lightEntities = ecs.GetIndexMap<Component::Light>();
+        auto cameraView = scene.ViewActive<Camera, WorldTransform>();
+        auto lightView = scene.ViewActive<Light, WorldTransform>();
+        auto skyboxView = scene.ViewActive<Skybox>();
+        auto meshView = scene.ViewActive<StaticMesh, WorldTransform>();
 
         std::vector<std::pair<Component::Light, Component::WorldTransform>> allLights;
-        allLights.reserve(lights.size());
-
-        for (size_t i = 0; i < lights.size(); ++i)
+        allLights.reserve(lightView.size_hint());
+        for (auto entity : lightView)
         {
-            const Component::Light& lightComponent = lights[i];
-            GameObject::Id lightId = lightEntities[i];
-
-            const Component::WorldTransform* transform = ecs.GetComponent<Component::WorldTransform>(lightId);
-
-            if (transform)
-            {
-                allLights.emplace_back(lightComponent, *transform);
-            }
+            const auto& [light, transform] = lightView.get<Component::Light, Component::WorldTransform>(entity);
+            allLights.emplace_back(light, transform);
         }
 
 		// Skybox (take only the first one but to be changed when portal rendering is implemented)
-        auto& skyboxes = ecs.GetDataArray<Component::Skybox>();
-        std::shared_ptr<Texture> activeSkyboxTexture = nullptr;
-
-        if (!skyboxes.empty())
+        if (skyboxView.begin() != skyboxView.end())
         {
-            auto& sceneSkybox = skyboxes[0];
-            activeSkyboxTexture = sceneSkybox.cubemapTexture;
+            const auto& skyboxEntity = *skyboxView.begin();
+			const auto& [skybox] = skyboxView.get(skyboxEntity);
+            skyboxTexture = skybox.cubemapTexture;
         }
 
-        const auto& staticMeshes = ecs.GetDataArray<Component::StaticMesh>();
-        const auto& staticMeshesEntities = ecs.GetIndexMap<Component::StaticMesh>();
-
-        for (size_t i = 0; i < cameras.size(); ++i)
+        for (auto entity : cameraView)
         {
-            const Component::Camera& currentCamera = cameras[i];
-            GameObject::Id cameraId = cameraEntities[i];
-            const Component::WorldTransform* cameraTransform = ecs.GetComponent<Component::WorldTransform>(cameraId);
-
-            if (!cameraTransform)
-            {
-                continue;
-            }
-
+            const auto& [camera, cameraTransform] = cameraView.get(entity);
+            
             // Get only active effects
             std::vector<std::shared_ptr<PostEffect>> activeEffects;
-            for (const auto& effect : currentCamera.postEffects)
+            for (const auto& effect : camera.postEffects)
             {
                 if (effect && effect->IsEnabled())
                 {
@@ -94,12 +70,12 @@ namespace Frost
 			// Calculate view and projection matrices
             const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
             const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
-            const float viewportWidth = currentCamera.viewport.width * windowWidth;
-            const float viewportHeight = currentCamera.viewport.height * windowHeight;
+            const float viewportWidth = camera.viewport.width * windowWidth;
+            const float viewportHeight = camera.viewport.height * windowHeight;
             const float aspectRatio = (viewportHeight > 0) ? (viewportWidth / viewportHeight) : 1.0f;
 
-            Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(*cameraTransform);
-            Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(currentCamera, aspectRatio);
+            Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
+            Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, aspectRatio);
 
 			// Apply post-processing effects pre-render
             for (auto& effect : activeEffects)
@@ -109,32 +85,29 @@ namespace Frost
             }
 
             // Draw meshes
-            _deferredRendering.BeginFrame(currentCamera, viewMatrix, projectionMatrix);
+            _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix);
 
-            for (size_t i = 0; i < staticMeshes.size(); ++i)
+            for (auto meshEntity : meshView)
             {
-                const StaticMesh& staticMesh = staticMeshes[i];
-                GameObject::Id entityId = staticMeshesEntities[i];
+                const auto& [staticMesh, meshTransform] = meshView.get(meshEntity);
 
-                const Component::WorldTransform* transform = ecs.GetComponent<Component::WorldTransform>(entityId);
-
-                if (transform && staticMesh.model && staticMesh.isActive)
+                if (staticMesh.model)
                 {
-                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(*transform);
+                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
                     _deferredRendering.SubmitModel(*staticMesh.model, worldMatrix);
                 }
             }
 
-            _deferredRendering.EndFrame(currentCamera, *cameraTransform, allLights);
+            _deferredRendering.EndFrame(camera, cameraTransform, allLights);
 
 			// Skybox rendering
-            if (activeSkyboxTexture)
+            if (skyboxTexture)
             {
                 Texture* gbufferDepth = _deferredRendering.GetDepthStencilTexture();
                 Texture* finalLitTexture = _deferredRendering.GetFinalLitTexture();
                 CommandList* commandList = _deferredRendering.GetCommandList();
 
-                _skyboxPipeline.Render(commandList, finalLitTexture, gbufferDepth, activeSkyboxTexture.get(), currentCamera, *cameraTransform);
+                _skyboxPipeline.Render(commandList, finalLitTexture, gbufferDepth, skyboxTexture.get(), camera, cameraTransform);
             }
 
             CommandList* commandList = _deferredRendering.GetCommandList();
@@ -142,7 +115,7 @@ namespace Frost
 
 			// Filter through post-processing effects
             std::vector<std::shared_ptr<PostEffect>> postProcessingPasses;
-            for (const auto& effect : currentCamera.postEffects)
+            for (const auto& effect : camera.postEffects)
             {
                 if (effect && effect->IsEnabled() && effect->IsPostProcessingPass())
                 {

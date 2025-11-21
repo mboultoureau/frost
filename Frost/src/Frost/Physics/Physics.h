@@ -2,7 +2,6 @@
 
 #include "Frost/Utils/NoCopy.h"
 #include "Frost/Scene/ECS/GameObject.h"
-#include "Frost/Scene/ECS/ECS.h"
 #include "Frost/Scene/Components/Transform.h"
 
 #include <Jolt/Jolt.h>
@@ -81,7 +80,7 @@ namespace Frost
 		static void AddStepListener(JPH::PhysicsStepListener* inListener);
 		static JPH::Body* CreateBody(const JPH::BodyCreationSettings& inSettings);
 		static void AddBody(const JPH::BodyID& inBodyID, JPH::EActivation inActivationMode);
-		static JPH::BodyID CreateAndAddBody(JPH::BodyCreationSettings& inSettings, const GameObject::Id& rigidBodyId, const JPH::EActivation& inActivationMode);
+		static JPH::BodyID CreateAndAddBody(JPH::BodyCreationSettings& inSettings, const entt::entity& rigidBodyId, const JPH::EActivation& inActivationMode);
 		static JPH::Vec3 GetGravity();
 		static void ActivateBody(const JPH::BodyID& inBodyID);
 		static void RemoveAndDestroyBody(const JPH::BodyID& inBodyID);
@@ -89,8 +88,7 @@ namespace Frost
 		static JPH::BodyInterface& GetBodyInterface();
 		static const JPH::BodyLockInterfaceLocking& GetBodyLockInterface();
 
-		GameObject::Id GetObjectID(const JPH::BodyID& inBodyID) { return body_interface->GetUserData(inBodyID); };
-		GameObject::Id GetObjectID(const JPH::Body& inBody) { return inBody.GetUserData(); };
+		static entt::entity GetEntityID(const JPH::BodyID& inBodyID);
 
 		static JPH::DebugRenderer* GetDebugRenderer();
 
@@ -104,9 +102,9 @@ namespace Frost
 		std::vector<Frost::BodyActivationParameters> bodiesOnSleep = {};
 		std::vector<Frost::BodyOnContactParameters> bodiesOnCollisionEnter = {};
 		std::vector<Frost::BodyOnContactParameters> bodiesOnCollisionStay = {};
-		std::set<std::pair<Frost::GameObject::Id, Frost::GameObject::Id>> lastFrameBodyIDsOnCollisionStay = {};
-		std::set<std::pair<Frost::GameObject::Id, Frost::GameObject::Id>> currentFrameBodyIDsOnCollisionStay = {};
-		
+		std::set<std::pair<entt::entity, entt::entity>> lastFrameBodyIDsOnCollisionStay = {};
+		std::set<std::pair<entt::entity, entt::entity>> currentFrameBodyIDsOnCollisionStay = {};
+
 		Frost::MyBodyActivationListener body_activation_listener;
 		Frost::MyContactListener contact_listener;
 		JPH::BroadPhaseLayerInterface* broad_phase_layer_interface;
