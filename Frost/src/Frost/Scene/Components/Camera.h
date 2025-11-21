@@ -24,6 +24,7 @@ namespace Frost::Component
 		float orthographicSize = 10.0f;
 		float nearClip = 0.1f;
 		float farClip = 1000.0f;
+		int priority = 0;
 
 		bool frustumCulling = true;
 		float frustumPadding = 10.0f;
