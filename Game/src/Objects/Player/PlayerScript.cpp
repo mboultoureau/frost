@@ -51,7 +51,7 @@ void PlayerScript::OnFixedUpdate(float deltaTime)
 
 void PlayerScript::OnUpdate(float deltaTime) {
 	if (player->transitionTimer.GetDuration() > 500ms) {
-		GetECS()->GetComponent<StaticMesh>(player->transitionRenderer)->isActive = false;
+		player->transitionRenderer.SetActive(false);
 		player->transitionTimer.Pause();
 	}
 

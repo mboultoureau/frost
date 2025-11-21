@@ -10,32 +10,31 @@ namespace Frost
 	class Script
 	{
 	public:
-		virtual void Initialize(GameObject::Id gameObject, ECS* ecs)
+		void Initialize(GameObject gameObject)
 		{
 			_gameObject = gameObject;
-			_ecs = ecs;
 			OnInitialize();
 		}
-		// Called after constructor, so you have gameobject and ecs that are accessible
-		virtual void OnInitialize() {}
 
+		// Lifecycle
+		virtual void OnInitialize() {}
 		virtual void OnUpdate(float deltaTime) {}
 		virtual void OnFixedUpdate(float fixedDeltaTime) {}
 		virtual void OnLateUpdate(float deltaTime) {}
 
+		// Physics
 		virtual void OnAwake(float deltaTime) {}
 		virtual void OnSleep(float deltaTime) {}
-
 		virtual void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) {}
 		virtual void OnCollisionStay(BodyOnContactParameters params, float deltaTime) {}
+		virtual void OnCollisionExit(std::pair<entt::entity, entt::entity> params, float deltaTime) {}
 
-		// Warning : params may contains bodies that are not valid at the moment
-		virtual void OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime) {}
+		// Accessors
+		GameObject GetGameObject() const { return _gameObject; }
+		entt::entity GetEntity() const { return _gameObject.GetHandle(); }
+		Scene* GetScene() const { return _gameObject.GetScene(); }
 
-		virtual ECS* GetECS() const { return _ecs; }
-		virtual GameObject::Id GetGameObject() const { return _gameObject; }
 	private:
-		GameObject::Id _gameObject = GameObject::InvalidId;
-		ECS* _ecs = nullptr;
+		GameObject _gameObject;
 	};
 }

@@ -11,7 +11,7 @@ public:
 	Moto();
 
 private:
-	GameObject::Id _moto;
+	GameObject _moto;
 };
 
 

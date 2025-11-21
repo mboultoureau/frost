@@ -9,7 +9,6 @@ public:
 	Wall();
 
 private:
-	GameObject::Id _wall;
+	GameObject _wall;
 	void _SetupPhysics();
 };
-

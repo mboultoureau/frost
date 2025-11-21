@@ -11,7 +11,7 @@ public:
 	OgreNormal();
 
 private:
-	GameObject::Id _ogreNormal;
+	GameObject _ogreNormal;
 };
 
 

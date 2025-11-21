@@ -16,16 +16,15 @@ Terrain::Terrain()
 
 	// Road
 	_terrain = _scene.CreateGameObject("Terrain");
-	_scene.AddComponent<Transform>(
-		_terrain,
+	_terrain.AddComponent<Transform>(
 		Vector3{ 0.0f, -10.0f, -150.0f },
 		EulerAngles{ 0.0f, 0.0f, 0.0f },
 		Vector3{ 1000.0f, 10.0f, 1000.0f }
 	);
-	auto transform = _scene.GetComponent<Transform>(_terrain);
+	auto& transform = _terrain.GetComponent<Transform>();
 
 	const std::string filepathHeightmap{ "./resources/textures/Map_RainbowRoad.png" };
-	_scene.AddComponent<WorldTransform>(_terrain, Vector3{ 0.0f, 0.0f, 0.0f });
+	_terrain.AddComponent<WorldTransform>(Vector3{ 0.0f, 0.0f, 0.0f });
 
 	TextureConfig heightmapConfig;
 	heightmapConfig.textureType = TextureType::HEIGHTMAP;
@@ -49,11 +48,11 @@ Terrain::Terrain()
 		material,
 		heightmapTexture,
 		50,
-		transform->scale
+		transform.scale
 	};
 
 	std::shared_ptr<Model> terrainMesh = ModelFactory::CreateFromHeightMap(heightMapConfig);
-	_scene.AddComponent<StaticMesh>(_terrain, terrainMesh);
+	_terrain.AddComponent<StaticMesh>(terrainMesh);
 
 	/*
 	auto material = Material();
@@ -76,19 +75,18 @@ Terrain::Terrain()
 	);
 	bodySettings.mRestitution = 0.0f;
 
-	_scene.AddComponent<RigidBody>(_terrain, bodySettings, _terrain, JPH::EActivation::Activate);
-	auto bodyId = _scene.GetComponent<RigidBody>(_terrain)->physicBody->bodyId;
+	_terrain.AddComponent<RigidBody>(bodySettings, _terrain, JPH::EActivation::Activate);
+	auto bodyId = _terrain.GetComponent<RigidBody>().physicBody->bodyId;
 
 
 	// Ground 
 	auto ground = _scene.CreateGameObject("Ground");
-	_scene.AddComponent<Transform>(
-		ground,
+	ground.AddComponent<Transform>(
 		Vector3{ 0.0f, -10.0f, -150.0f },
 		EulerAngles{ 0.0f, 0.0f, 0.0f },
 		Vector3{ 1000.0f, 100.0f, 1000.0f }
 	);
-	_scene.AddComponent<WorldTransform>(ground, Vector3{ 0.0f, 0.0f, 0.0f });
+	ground.AddComponent<WorldTransform>(Vector3{ 0.0f, 0.0f, 0.0f });
 
 	/*
 	auto material2 = Material();

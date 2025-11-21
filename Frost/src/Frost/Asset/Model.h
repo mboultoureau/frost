@@ -21,6 +21,11 @@ namespace Frost
 	public:
 		Model(const std::string& filepath);
 
+		Model(const Model&) = delete;
+		Model& operator=(const Model&) = delete;
+		Model(Model&&) noexcept = default;
+		Model& operator=(Model&&) noexcept = default;
+
 		const std::string& GetFilepath() const { return _filepath; }
 		const std::vector<Mesh>& GetMeshes() const { return _meshes; }
 		const std::vector<Material>& GetMaterials() const { return _materials; }

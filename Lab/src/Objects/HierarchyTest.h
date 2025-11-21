@@ -11,8 +11,7 @@ public:
 	HierarchyTest();
 
 private:
-	Frost::GameObject::Id _parent;
-	Frost::GameObject::Id _child;
+	Frost::GameObject _parent;
+	Frost::GameObject _child;
 
 };
-

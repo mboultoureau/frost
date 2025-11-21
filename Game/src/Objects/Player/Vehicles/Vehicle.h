@@ -32,12 +32,12 @@ public:
 	Vehicle(Player* playerManager, RendererParameters rendererParams) : _player{ playerManager }, _scene{ _player->GetScene() }
 	{
 		_gameObjectRenderer = _scene->CreateGameObject("Vehicle Renderer : " + rendererParams.name, playerManager->GetPlayerID());
-		_scene->AddComponent<Transform>(_gameObjectRenderer,
+		_gameObjectRenderer.AddComponent<Transform>(
 			rendererParams.localPosition,
 			rendererParams.localRotation,
 			rendererParams.localScale);
-		_scene->AddComponent<WorldTransform>(_gameObjectRenderer);
-		_scene->AddComponent<StaticMesh>(_gameObjectRenderer, rendererParams.modelPath);
+		_gameObjectRenderer.AddComponent<WorldTransform>();
+		_gameObjectRenderer.AddComponent<StaticMesh>(rendererParams.modelPath);
 	}
 
 	/*======= Virtual event functions ========= */
@@ -58,9 +58,9 @@ public:
 
 	/*======= public interface ========= */
 
-	GameObject::Id GetModelRendererObject() { return _gameObjectRenderer; };
+	GameObject GetModelRendererObject() { return _gameObjectRenderer; };
 	void RenderMesh(bool shouldRender) {
-		_scene->GetComponent<StaticMesh>(_gameObjectRenderer)->isActive = shouldRender;
+		_gameObjectRenderer.SetActive(shouldRender);
 	}
 	JPH::BodyID GetBodyID() const { return _bodyId; };
 
@@ -69,7 +69,7 @@ public:
 
 protected:
 	Player* _player;
-	GameObject::Id _gameObjectRenderer;
+	GameObject _gameObjectRenderer;
 	Scene* _scene;
 	JPH::BodyID _bodyId;
 	Timer _fireTimer;

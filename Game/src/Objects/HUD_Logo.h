@@ -10,5 +10,5 @@ public:
 	HUD_Logo();
 
 private:
-	GameObject::Id _hudLogo;
+	GameObject _hudLogo;
 };

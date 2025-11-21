@@ -24,19 +24,19 @@ namespace Frost
 
 	private:
 		const std::string pausePath = "resources/textures/pause-text.png";
-		GameObject::Id pauseTextId;
+		GameObject pauseTextId;
 		NormalizedRect pauseNRect;
 
 		const std::string idleResumePath = "resources/textures/unpause-idle.png";
 		const std::string hoverResumePath = "resources/textures/unpause-hover.png";
 		const std::string pressedResumePath = "resources/textures/unpause-press.png";
-		GameObject::Id resumeButtonId;
+		GameObject resumeButtonId;
 		NormalizedRect resumeNRect;
 
 		const std::string idleResetPath = "resources/textures/reset-idle.png";
 		const std::string hoverResetPath = "resources/textures/reset-hover.png";
 		const std::string pressedResetPath = "resources/textures/reset-press.png";
-		GameObject::Id resetButtonId;
+		GameObject resetButtonId;
 		NormalizedRect resetNRect;
 
 		void ProcessInput();

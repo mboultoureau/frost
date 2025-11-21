@@ -139,6 +139,19 @@ target_include_directories(stb INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb"
 )
 
+# entt
+set(ENTT_BUILD_TESTING OFF CACHE BOOL "Build EnTT tests" FORCE)
+set(ENTT_BUILD_DOCS OFF CACHE BOOL "Build EnTT documentation" FORCE)
+set(ENTT_BUILD_TOOLS OFF CACHE BOOL "Build EnTT tools" FORCE)
+set(ENTT_BUILD_EXAMPLES OFF CACHE BOOL "Build EnTT examples" FORCE)
+set(ENTT_INSTALL OFF CACHE BOOL "Install EnTT" FORCE)
+
+add_subdirectory(vendor/entt)
+
+if(TARGET entt)
+    set_property(TARGET entt PROPERTY FOLDER "Dependencies")
+endif()
+
 # Frost
 file(GLOB_RECURSE FROST_SOURCES
     "src/**.h"
@@ -177,6 +190,7 @@ target_link_libraries(Frost PRIVATE
 
 target_link_libraries(Frost PUBLIC
     spdlog::spdlog
+    EnTT
 )
 
 if(WIN32)

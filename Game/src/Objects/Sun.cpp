@@ -13,20 +13,19 @@ Sun::Sun()
 	auto sun = scene.CreateGameObject("Sun");
 
 	// Transform component
-	scene.AddComponent<Transform>(
-		sun,
+	sun.AddComponent<Transform>(
 		Math::Vector3{ 0.0f, 100.0f, 0.0f },
 		Math::EulerAngles{ 0.0f, 0.0f, -150.0_deg },
 		Math::Vector3{ 1.0f, 1.0f, 1.0f }
 	);
 
-	scene.AddComponent<WorldTransform>(sun);
+	sun.AddComponent<WorldTransform>();
 
 	// Light component
-	scene.AddComponent<Light>(
-		sun,
+	sun.AddComponent<Light>(
 		LightType::Directional,
-		Math::Vector3{ 1.0f, 1.0f, 1.0f },
-		2.0f
+		Math::Color3{ 1.0f, 1.0f, 1.0f },
+		2.0f,
+		100.0f  // radius parameter
 	);
 }

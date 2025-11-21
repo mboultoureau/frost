@@ -14,8 +14,8 @@ public:
 	void FixedUpdate(float deltaTime);
 
 private:
-	GameObject::Id _player;
-	GameObject::Id _camera;
+	GameObject _player;
+	GameObject _camera;
 	void InitializePhysics();
 };
 
