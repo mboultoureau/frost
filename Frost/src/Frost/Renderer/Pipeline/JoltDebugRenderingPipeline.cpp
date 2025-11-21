@@ -204,20 +204,20 @@ namespace Frost
                 {joltVtx.mNormal.x, joltVtx.mNormal.y, joltVtx.mNormal.z},
                 {joltVtx.mUV.x, joltVtx.mUV.y},
                 ConvertJoltColor(joltVtx.mColor)
-                });
+            });
         }
 
         batch->vertexBuffer = RendererAPI::GetRenderer()->CreateBuffer(BufferConfig{
             .usage = BufferUsage::VERTEX_BUFFER,
             .size = (uint32_t)(vertices.size() * sizeof(DebugTriangleVertex)),
             .dynamic = false,
-            }, vertices.data());
+        }, vertices.data());
 
         batch->indexBuffer = RendererAPI::GetRenderer()->CreateBuffer(BufferConfig{
             .usage = BufferUsage::INDEX_BUFFER,
             .size = (uint32_t)(inIndexCount * sizeof(uint32)),
             .dynamic = false,
-            }, inIndices);
+        }, inIndices);
 
         return JPH::StaticCast<JPH::RefTargetVirtual>(batch);
     }

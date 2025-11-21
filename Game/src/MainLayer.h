@@ -25,6 +25,7 @@ public:
 	void OnLateUpdate(float deltaTime) override;
 	void OnAttach() override;
 	void OnUpdate(float deltaTime) override;
+	void OnPreFixedUpdate(float deltaTime) override;
 	void OnFixedUpdate(float deltaTime) override;
 	void OnDetach() override;
 

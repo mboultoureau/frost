@@ -118,9 +118,8 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 	float desiredDistance = ray.mDirection.Length();
 
 	// Make a getter inside player
-	auto& renderer = playerManager->GetCurrentVehicle().second->GetModelRendererObject().GetComponent<StaticMesh>();
-	// TODO: StaticMesh doesn't have isActive property - need alternative approach
-	// renderer.isActive = ((playerPosition - cameraPos).Length() > 10.f);
+	auto renderer = playerManager->GetCurrentVehicle().second->GetModelRendererObject();
+	renderer.SetActive((playerPosition - cameraPos).Length() > playerCullingDistance);
 
 	if (isThirdPerson) {
 		RayCastBroadPhaseFilter bpFilter;
@@ -169,7 +168,7 @@ void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
 	{
 		isThirdPerson = !isThirdPerson;
 	}*/
-	isThirdPerson = !(Input::GetKeyboard().IsKeyDown(K_SPACE));
+	isThirdPerson = !(Input::GetMouse().IsButtonHold(Mouse::MouseBoutton::Left));
 }
 
 
@@ -186,8 +185,8 @@ PlayerCamera::PlayerCamera(Player* player) : _player{player}
 
 	// 3rdPersVirtualCamera
 	_3rdPersVirtCamera = scene.CreateGameObject("3rd Person Virtual Camera", _cameraPivot);
-	_3rdPersVirtCamera.AddComponent<Transform>(Vector3{ 0.0f, 10, -20.0f });
-	_3rdPersVirtCamera.AddComponent<WorldTransform>(Vector3{ 0.0f, 10.0f, -20.0f });
+	_3rdPersVirtCamera.AddComponent<Transform>(Vector3{ 0.0f, 2, -10.0f });
+	_3rdPersVirtCamera.AddComponent<WorldTransform>();
 	//debug
 		//scene.AddComponent<ModelRenderer>(_3rdPersVirtCamera, "./resources/meshes/sphere.fbx");
 	auto& tpCamWTransform = _3rdPersVirtCamera.GetComponent<WorldTransform>();
@@ -195,9 +194,7 @@ PlayerCamera::PlayerCamera(Player* player) : _player{player}
 	// Camera
 	_camera = scene.CreateGameObject("Camera");
 	_camera.AddComponent<Transform>(Vector3{ 0.0f, 10, -20.0f });
-	_camera.AddComponent<WorldTransform>(Vector3{ 0.0f, 10.0f, -20.0f });
 	_camera.AddComponent<Camera>();
-	_camera.AddComponent<StaticMesh>("./resources/meshes/sphere.fbx");
 
 	auto& cameraComponent = _camera.GetComponent<Camera>();
 	cameraComponent.backgroundColor.r = 47.0f / 255.0f;

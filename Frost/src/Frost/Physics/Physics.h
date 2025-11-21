@@ -90,6 +90,9 @@ namespace Frost
 
 		static entt::entity GetEntityID(const JPH::BodyID& inBodyID);
 
+		void Clear() {
+			Physics::Get().physics_system.~PhysicsSystem();
+		}
 		static JPH::DebugRenderer* GetDebugRenderer();
 
 		// ===== Layers Interface =================

@@ -1,4 +1,4 @@
-#include "Bike.h"
+#include "Boat.h"
 #include "../../../Physics/PhysicsLayer.h"
 #include "../../../Game.h"
 
@@ -26,15 +26,15 @@ using namespace Frost::Component;
 using namespace Frost::Math;
 
 
-Bike::Bike(Player* player, RendererParameters params) : Vehicle( player, params)
+Boat::Boat(Player* player, RendererParameters params) : Vehicle(player, params)
 {
-	using namespace JPH;
-	// Create motorcycle controller
-	// Set playerbody to made body
-	RenderMesh(false);
+    using namespace JPH;
+    // Create motorcycle controller
+    // Set playerbody to made body
+    RenderMesh(false);
 }
 
-JPH::BodyID Bike::Appear()
+JPH::BodyID Boat::Appear()
 {
     using namespace JPH;
 
@@ -66,7 +66,7 @@ JPH::BodyID Bike::Appear()
     const float half_vehicle_width = 0.2f;
     const float half_vehicle_height = 0.3f;
 
-    const float max_steering_angle_degree = 30.f;
+    const float max_steering_angle_degree = 75.f;
 
     // Angle of the front suspension
     const float caster_angle_degree = 30.f;
@@ -76,7 +76,6 @@ JPH::BodyID Bike::Appear()
     motorcycle_body_settings.mOverrideMassProperties = EOverrideMassProperties::CalculateInertia;
     motorcycle_body_settings.mMassPropertiesOverride.mMass = 240.0f;
     motorcycle_body_settings.mUserData = _player->GetPlayerID();
-    motorcycle_body_settings.mRestitution = 0;
     _body = Physics::CreateBody(motorcycle_body_settings);
     _bodyId = _body->GetID();
     Physics::AddBody(_bodyId, EActivation::Activate);
@@ -98,13 +97,6 @@ JPH::BodyID Bike::Appear()
     front->mSuspensionMaxLength = front_suspension_max_length;
     front->mSuspensionSpring.mFrequency = front_suspension_freq;
     front->mMaxBrakeTorque = front_brake_torque;
-    front->mLongitudinalFriction = LinearCurve();
-    front->mLongitudinalFriction.AddPoint(0.0f, 0.0f);
-    front->mLongitudinalFriction.AddPoint(1.0f, 0.0f);
-    
-    front->mLateralFriction = LinearCurve();
-    front->mLateralFriction.AddPoint(0.0f, 1.f);
-    front->mLateralFriction.AddPoint(1.0f, 1.f);
 
     WheelSettingsWV* back = new WheelSettingsWV;
     back->mPosition = Vec3(0.0f, -0.9f * half_vehicle_height, back_wheel_pos_z);
@@ -119,38 +111,39 @@ JPH::BodyID Bike::Appear()
     back->mSuspensionSpring.mFrequency = back_suspension_freq;
 
     back->mLongitudinalFriction = LinearCurve();
-    back->mLongitudinalFriction.AddPoint(0.0f, 3.0f); //3
+    back->mLongitudinalFriction.AddPoint(0.0f, 3.0f);
     back->mLongitudinalFriction.AddPoint(1.0f, 3.0f);
 
     back->mLateralFriction = LinearCurve();
-    back->mLateralFriction.AddPoint(0.0f, 2.5f);//2.5
+    back->mLateralFriction.AddPoint(0.0f, 2.5f);
     back->mLateralFriction.AddPoint(1.0f, 2.5f);
 
+    /*
     for (WheelSettingsWV* w : { front, back })
     {
-        //w->mSuspensionPreloadLength = 0.0f;
-        //w->mSuspensionForcePoint = w->mPosition; 
-        //w->mSuspensionSpring.mDamping = 0.7f;    
+        w->mSuspensionPreloadLength = 0.0f;
+        w->mSuspensionForcePoint = w->mPosition; 
+        w->mSuspensionSpring.mDamping = 0.7f;    
 
-        //w->mInertia *= 0.8f;
-        //w->mAngularDamping = 0.2f;
+        w->mInertia = 0.8f;
+        w->mAngularDamping = 0.2f;
 
-     /*   w->mLongitudinalFriction = LinearCurve();
+        w->mLongitudinalFriction = LinearCurve();
         w->mLongitudinalFriction.AddPoint(0.0f, 3.0f);
         w->mLongitudinalFriction.AddPoint(1.0f, 3.0f);
 
         w->mLateralFriction = LinearCurve();
-        w->mLateralFriction.AddPoint(0.0f, 0.7f);
-        w->mLateralFriction.AddPoint(1.0f, 0.7f);*/
+        w->mLateralFriction.AddPoint(0.0f, 2.5f);
+        w->mLateralFriction.AddPoint(1.0f, 2.5f);
     }
-    
-    bool sOverrideFrontSuspensionForcePoint = true;
+    */
+    bool sOverrideFrontSuspensionForcePoint = false;
     if (sOverrideFrontSuspensionForcePoint)
     {
         front->mEnableSuspensionForcePoint = true;
         front->mSuspensionForcePoint = front->mPosition + front->mSuspensionDirection * front->mSuspensionMinLength;
     }
-    bool sOverrideRearSuspensionForcePoint = true;
+    bool sOverrideRearSuspensionForcePoint = false;
     if (sOverrideRearSuspensionForcePoint)
     {
         back->mEnableSuspensionForcePoint = true;
@@ -189,11 +182,10 @@ JPH::BodyID Bike::Appear()
 
 
 
-void Bike::Disappear()
+void Boat::Disappear()
 {
     RenderMesh(false);
-    if (mConstraint)
-    {
+    if (mConstraint) {
         Physics::Get().physics_system.RemoveConstraint(mConstraint);
         Physics::Get().physics_system.RemoveStepListener(mConstraint);
     }
@@ -206,12 +198,12 @@ void Bike::Disappear()
 
 }
 
-void Bike::ProcessBikeInput(float deltaTime) {
+void Boat::ProcessBikeInput(float deltaTime) {
     using namespace JPH;
     // Determine acceleration and brake
     _forward = 0.0f;
     _brake = 0.0f;
-    if (_handBrakeInput || _specialInput)
+    if (_handBrakeInput)
         _brake = 1.0f;
     else if (_upDownInput > 0)
         _forward = _upDownInput;
@@ -237,16 +229,7 @@ void Bike::ProcessBikeInput(float deltaTime) {
     }
 
     // Steering
-    float steer_speed = 4.0f;
-
-    float speed = _body->GetLinearVelocity().Length();
-
-    float multiplier = 1.0f;
-    if (speed > 20.0f)
-        multiplier = 1.0f + (speed - 20.0f) * 0.03f;  // plus vite = tourne plus fort
-
-    steer_speed *= multiplier;
-
+    const float steer_speed = 4.0f;
     if (_leftRightInput > _right)
         _right = std::min(_right + steer_speed * deltaTime, _leftRightInput);
     else if (_leftRightInput < _right)
@@ -266,7 +249,7 @@ void Bike::ProcessBikeInput(float deltaTime) {
 
 
 
-void Bike::OnPreFixedUpdate(float deltaTime)
+void Boat::OnPreFixedUpdate(float deltaTime)
 {
     class SpecifiedObjectLayerFilter : public JPH::ObjectLayerFilter
     {
@@ -289,10 +272,10 @@ void Bike::OnPreFixedUpdate(float deltaTime)
     using namespace JPH;
     if (!mController || !mConstraint)
         return;
- 
+
     ProcessBikeInput(deltaTime);
 
-   
+
     // On user input, assure that the motorcycle is active
     if (_right != 0.0f || _forward != 0.0f || _brake != 0.0f)
         Physics::ActivateBody(_bodyId);
@@ -335,69 +318,38 @@ void Bike::OnPreFixedUpdate(float deltaTime)
 #endif
 }
 
-void Bike::OnFixedUpdate(float deltaTime)
+void Boat::OnFixedUpdate(float deltaTime)
 {
 }
 
-void Bike::OnLateUpdate(float deltaTime)
-{
-    auto vel = _body->GetLinearVelocity();
-    if (vel.Length() > _maxSpeed)
-        _body->SetLinearVelocity(vel.Normalized() * _maxSpeed);
-}
-
-void Bike::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
+void Boat::OnLateUpdate(float deltaTime)
 {
 }
 
-void Bike::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
+void Boat::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 {
 }
 
-void Bike::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime)
+void Boat::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
+{
+}
+
+void Boat::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime)
 {
 }
 
 
-void Bike::OnLeftRightInput(float deltaTime, float leftRightInput)
+void Boat::OnLeftRightInput(float deltaTime, float leftRightInput)
 {
     _leftRightInput = -leftRightInput;
 }
 
-void Bike::OnAccelerateInput(float deltaTime, float upDownInput)
+void Boat::OnAccelerateInput(float deltaTime, float upDownInput)
 {
     _upDownInput = upDownInput;
 }
 
-void Bike::OnBrake(float deltaTime, bool handBrakeInput)
+void Boat::OnBrake(float deltaTime, bool handBrakeInput)
 {
     _handBrakeInput = handBrakeInput;
-}
-
-void Bike::OnSpecial(float deltaTime, bool specialInput)
-{
-    using namespace JPH;
-
-    // Drift
-    if (_specialInput != specialInput) {
-        // On key pressed : start drift
-        if (specialInput && _leftRightInput != 0)
-        {
-            _specialDriftTimer.Start();
-            _speedAtDriftStart = Physics::GetBodyInterface().GetLinearVelocity(_bodyId).Length();
-        }
-        // On Key released : end drift
-        else
-        {
-            auto time = std::min(static_cast<float>(_specialDriftTimer.GetDurationAs<std::chrono::milliseconds>().count()), _specialDriftMaxDuration);
-            _specialDriftTimer.Pause();
-            auto dir = Physics::GetBodyInterface().GetRotation(_bodyId) * Vec3(0, 0, 1);
-            float antiMaxSpeedFactor = (_maxSpeed - _body->GetLinearVelocity().Length() ) / _maxSpeed + 0.1f;
-
-            Physics::GetBodyInterface().AddForce(_bodyId, dir * time * _speedAtDriftStart * _specialDriftPower * antiMaxSpeedFactor);
-           // Physics::GetBodyInterface().AddTorque(_bodyId, Vec3{ 0, _leftRightInput * _specialDriftRotationPower, 0 });
-        }
-    }
-
-    _specialInput = specialInput;
 }

@@ -15,9 +15,14 @@ public:
 	{
 	}
 
+	~PlayerScript() 
+	{
+		player->GetCurrentVehicle().second->Disappear();
+	}
+
 	void OnUpdate(float deltaTime) override;
 
-	void OnFixedUpdate(float fixedDeltaTime) override;
+	void OnPreFixedUpdate(float fixedDeltaTime) override;
 
 	void OnLateUpdate(float deltaTime) override;
 

@@ -19,6 +19,7 @@ namespace Frost
 		// Lifecycle
 		virtual void OnInitialize() {}
 		virtual void OnUpdate(float deltaTime) {}
+		virtual void OnPreFixedUpdate(float fixedDeltaTime) {}
 		virtual void OnFixedUpdate(float fixedDeltaTime) {}
 		virtual void OnLateUpdate(float deltaTime) {}
 
