@@ -32,8 +32,9 @@ public:
 	GameObject cameraPivot;
 	bool isThirdPerson = true;
 
-	float stiffness = 7.0f;
-	float defaultThirdPersonCameraDistance = -20.0f;
+	float stiffness = 15.0f;
+	float defaultThirdPersonCameraDistance = -10.0f;
+	float playerCullingDistance = 5.0f;
 	float thirdPersonCamVelocityToDistance = -0.0005f;
 
 

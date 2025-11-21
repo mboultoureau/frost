@@ -105,7 +105,10 @@ namespace Frost
 				{
 					float fixedDeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_physicsDuration).count();
 
-					if(!layer->isPaused()) layer->OnFixedUpdate(fixedDeltaTime);
+					if (!layer->isPaused()) {
+						layer->OnPreFixedUpdate(fixedDeltaTime);
+						layer->OnFixedUpdate(fixedDeltaTime);
+					}
 				}
 			}
 

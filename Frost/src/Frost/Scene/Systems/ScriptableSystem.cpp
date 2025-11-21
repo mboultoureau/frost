@@ -27,6 +27,27 @@ namespace Frost
 		}
 	}
 
+	void ScriptableSystem::PreFixedUpdate(Scene& scene, float fixedDeltaTime)
+	{
+		auto view = scene.ViewActive<Scriptable>();
+
+		for (auto entity : view)
+		{
+			auto& scriptable = view.get<Scriptable>(entity);
+			GameObject gameObject(entity, &scene);
+
+			for (auto& script : scriptable._scripts)
+			{
+				if (!script->GetGameObject())
+				{
+					script->Initialize(gameObject);
+				}
+
+				script->OnPreFixedUpdate(fixedDeltaTime);
+			}
+		}
+	}
+
 	void ScriptableSystem::FixedUpdate(Scene& scene, float fixedDeltaTime)
 	{
 		auto view = scene.ViewActive<Scriptable>();

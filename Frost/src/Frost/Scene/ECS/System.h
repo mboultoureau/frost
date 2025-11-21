@@ -14,5 +14,6 @@ namespace Frost
 		virtual void Update(Scene& scene, float deltaTime) {};
 		virtual void LateUpdate(Scene& scene, float deltaTime) {};
 		virtual void FixedUpdate(Scene& scene, float deltaTime) {};
+		virtual void PreFixedUpdate(Scene& scene, float deltaTime) {};
 	};
 }
