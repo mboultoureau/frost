@@ -21,12 +21,11 @@ namespace Frost
 
 		JoltRenderingPipeline* _joltDebugRendering = static_cast<JoltRenderingPipeline*>(Physics::GetDebugRenderer());
 
-        for (auto entity : cameraView)
-        {
-			const auto& [camera, cameraTransform] = cameraView.get<Component::Camera, Component::WorldTransform>(entity);
+		// Get the first active camera
+		auto entity = cameraView.front();
+		const auto& [camera, cameraTransform] = cameraView.get<Component::Camera, Component::WorldTransform>(entity);
 
-            _joltDebugRendering->BeginFrame(camera, cameraTransform);
-		    _joltDebugRendering->EndFrame();
-        }
+        _joltDebugRendering->BeginFrame(camera, cameraTransform);
+		_joltDebugRendering->EndFrame();
     }
 }

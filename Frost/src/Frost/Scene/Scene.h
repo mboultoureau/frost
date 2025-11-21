@@ -28,6 +28,7 @@ namespace Frost
 		void DestroyGameObject(GameObject gameObject);
 
 		void Update(float deltaTime);
+		void PreFixedUpdate(float deltaTime);
 		void FixedUpdate(float deltaTime);
 		void LateUpdate(float deltaTime);
 

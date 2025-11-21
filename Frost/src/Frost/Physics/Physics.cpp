@@ -128,13 +128,13 @@ namespace Frost
 
 	void Physics::RemoveAndDestroyBody(const JPH::BodyID& inBodyID)
 	{
-		if (inBodyID.IsInvalid() == false)
+		if (!inBodyID.IsInvalid())
 		{
 			if (Physics::Get().body_interface->IsAdded(inBodyID))
 			{
 				Physics::Get().body_interface->RemoveBody(inBodyID);
+				Physics::Get().body_interface->DestroyBody(inBodyID);
 			}
-			Physics::Get().body_interface->DestroyBody(inBodyID);
 		}
 	}
 

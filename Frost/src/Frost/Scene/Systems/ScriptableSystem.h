@@ -9,6 +9,7 @@ namespace Frost
 	{
 	public:
 		void Update(Scene& scene, float deltaTime) override;
+		void PreFixedUpdate(Scene& scene, float deltaTime) override;
 		void FixedUpdate(Scene& scene, float fixedDeltaTime) override;
 		void LateUpdate(Scene& scene, float deltaTime) override;
 	};
