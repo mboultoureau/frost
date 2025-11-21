@@ -5,6 +5,6 @@ void LapCheckPoint::InitializePhysics()
 {
     CheckPoint::InitializePhysics();
     Scene& scene = Game::GetScene();
-    scene.AddScript<LapCheckPointScript>(_checkpoint, this, _gamestate);
+    _checkpoint.AddScript<LapCheckPointScript>(this, _gamestate);
     CheckPoint::lastCheckPoint = _checkpoint;
 }

@@ -4,6 +4,10 @@
 #include "Frost/Renderer/Pipeline/SkyboxPipeline.h"
 #include "Frost/Scene/ECS/System.h"
 #include "Frost/Asset/Texture.h"
+#include "Frost/Scene/Components/Camera.h"
+#include "Frost/Scene/Components/StaticMesh.h"
+#include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Scene/Components/Light.h"
 
 #include <memory>
 
@@ -13,7 +17,7 @@ namespace Frost
 	{
 	public:
 		ModelRendererSystem();
-		void LateUpdate(Frost::ECS& ecs, float deltaTime) override;
+		void LateUpdate(Scene& scene, float deltaTime) override;
 
 	private:
 		DeferredRenderingPipeline _deferredRendering;

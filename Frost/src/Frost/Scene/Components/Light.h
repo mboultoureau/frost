@@ -21,5 +21,12 @@ namespace Frost::Component
 		float radius = 10.0f;
 		Math::Angle<Math::Radian> innerConeAngle = Math::Angle<Math::Degree>(15.0f);
 		Math::Angle<Math::Radian> outerConeAngle = Math::Angle<Math::Degree>(25.0f);
+
+		Light() = default;
+
+		Light(LightType type, const Math::Color3& color, float intensity, float radius)
+			: type(type), color(color), intensity(intensity), radius(radius)
+		{
+		}
 	};
 }

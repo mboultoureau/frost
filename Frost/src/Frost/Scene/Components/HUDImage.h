@@ -29,13 +29,9 @@ namespace Frost::Component
             texture = AssetManager::LoadAsset(pathTexture, config);
         }
 
-        const bool IsEnabled() const { return isEnabled; }
-		void SetEnabled(bool enabled) { isEnabled = enabled; }
-
         std::string textureFilepath;
         std::shared_ptr<Texture> texture;
         Material::FilterMode textureFilter;
         Viewport viewport;
-        bool isEnabled = true;
     };
 }

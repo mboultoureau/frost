@@ -1,6 +1,7 @@
 #pragma once
 #include "Player.h"
 #include "Vehicles/Bike.h"
+#include "Frost/Scene/Components/Script.h"
 
 class PlayerScript : public Script {
 	friend class Vehicle;

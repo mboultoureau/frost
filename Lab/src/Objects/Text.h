@@ -11,7 +11,7 @@ public:
 	Text();
 
 private:
-	GameObject::Id _text;
+	GameObject _text;
 };
 
 

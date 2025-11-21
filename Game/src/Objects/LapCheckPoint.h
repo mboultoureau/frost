@@ -1,5 +1,6 @@
 #pragma once
 #include "CheckPoint.h"
+#include "Frost/Scene/Components/Script.h"
 #include "GameState.h"
 #include "Frost.h"
 

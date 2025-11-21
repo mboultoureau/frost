@@ -10,7 +10,7 @@ using namespace Frost;
 class CheckPoint
 {
 public:
-	static GameObject::Id lastCheckPoint;
+	static GameObject lastCheckPoint;
 
 	CheckPoint(Math::Vector3 startpos);
 	void FixedUpdate(float deltaTime);
@@ -22,12 +22,12 @@ public:
 	virtual void ActivatePhysics();
 	std::vector<std::shared_ptr<CheckPoint>>& GetParent() { return _prevCheckPoints; };
 
-	GameObject::Id GetGameObjectId() const { return _checkpoint; }
+	GameObject GetGameObjectId() const { return _checkpoint; }
 private:
 	std::vector<std::shared_ptr<CheckPoint>> _nextCheckPoints;
 	std::vector<std::shared_ptr<CheckPoint>> _prevCheckPoints;
 protected:
-	GameObject::Id _checkpoint;
+	GameObject _checkpoint;
 
 	virtual void InitializePhysics();
 	void ProcessInput(float deltaTime);

@@ -9,61 +9,50 @@ namespace Frost
 	{
 	}
 
-	void UISystem::Update(Frost::ECS& ecs, float deltaTime)
+	void UISystem::Update(Scene& scene, float deltaTime)
 	{
-		auto& buttons = ecs.GetIndexMap<Component::UIButton>();
+		auto buttonView = scene.ViewActive<Component::UIButton>();
 
-		for (auto& b : buttons)
+		for (auto entity : buttonView)
 		{
-			auto button = ecs.GetComponent<Component::UIButton>(b);
+			auto [button] = buttonView.get(entity);
 
-			if (!button->isEnabled) continue;
-
-			if (Input::GetMouse().IsCursorInViewport(button->buttonHitbox) && button->onClick)
+			if (Input::GetMouse().IsCursorInViewport(button.buttonHitbox) && button.onClick)
 			{
 				if (Input::GetMouse().IsButtonPressed(Mouse::MouseBoutton::Left))
 				{
-					button->texture = button->pressedTexture;
-					button->onClick();
+					button.texture = button.pressedTexture;
+					button.onClick();
 				}
 				else
 				{
-					button->texture = button->hoverTexture;
+					button.texture = button.hoverTexture;
 				}
 			}
 			else
 			{
-				button->texture = button->idleTexture;
+				button.texture = button.idleTexture;
 			}
 		}
 	}
 
-	void UISystem::LateUpdate(ECS& ecs, float deltaTime)
+	void UISystem::LateUpdate(Scene& scene, float deltaTime)
 	{
-		const auto& hudImages = ecs.GetDataArray<Component::HUDImage>();
-		const auto& uiButtons = ecs.GetDataArray<Component::UIButton>();
-
-		if (hudImages.empty() && uiButtons.empty())
-		{
-			return;
-		}
+		auto buttonView = scene.ViewActive<Component::UIButton>();
+		auto hudImageView = scene.ViewActive<Component::HUDImage>();
 
 		_pipeline.BeginFrame();
 
-		for (const auto& image : hudImages)
+		for (auto entity : hudImageView)
 		{
-			if (image.IsEnabled())
-			{
-				_pipeline.Submit(image);
-			}
+			auto [image] = hudImageView.get(entity);
+			_pipeline.Submit(image);
 		}
 
-		for (const auto& button : uiButtons)
+		for (auto entity : buttonView)
 		{
-			if (button.IsEnabled())
-			{
-				_pipeline.Submit(button);
-			}
+			auto [button] = buttonView.get(entity);
+			_pipeline.Submit(button);
 		}
 
 		_pipeline.EndFrame();

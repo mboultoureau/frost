@@ -2,8 +2,9 @@
 
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
-#include "Frost/Scene/Components/Meta.h"
+#include "Frost/Scene/Components/Relationship.h"
 
+using namespace DirectX;
 using namespace Frost::Component;
 
 namespace Frost
@@ -12,56 +13,78 @@ namespace Frost
 	{
 	}
 
-	void WorldTransformSystem::Update(Frost::ECS& ecs, float deltaTime)
-	{
-		const auto& transforms = ecs.GetDataArray<Transform>();
-		const auto& transformEntities = ecs.GetIndexMap<Transform>();
+	void WorldTransformSystem::Update(Scene& scene, float deltaTime)
+	{	
+		auto& registry = scene.GetRegistry();
+		auto view = scene.ViewActive<Transform, WorldTransform, Relationship>();
 
-		for (size_t i = 0; i < transforms.size(); ++i)
+		XMVECTOR rootPos = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+		XMVECTOR rootRot = XMQuaternionIdentity();
+		XMVECTOR rootScale = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
+
+		for (auto entity : view)
 		{
-			GameObject::Id id = transformEntities[i];
-			const Transform& localTransform = transforms[i];
+			const auto& relationship = view.get<Relationship>(entity);
 
-			Meta* info = ecs.GetComponent<Meta>(id);
-			WorldTransform* worldTransform = ecs.GetComponent<WorldTransform>(id);
-			
-			if (!worldTransform)
+			if (relationship.parent == entt::null)
 			{
-				continue;
+				_UpdateHierarchy(registry, entity, rootPos, rootRot, rootScale);
 			}
+		}
 
-			// Check if parent exists
-			if (info && info->parentId != GameObject::InvalidId)
-			{
-				WorldTransform* parentTransform = ecs.GetComponent<WorldTransform>(info->parentId);
-
-				if (parentTransform)
-				{
-					DirectX::XMVECTOR parentRotation = vector_cast<DirectX::XMVECTOR>(parentTransform->rotation);
-					DirectX::XMVECTOR localPosition = vector_cast<DirectX::XMVECTOR>(localTransform.position);
-					DirectX::XMVECTOR rotatedPosition = DirectX::XMVector3Rotate(localPosition, parentRotation);
-
-					DirectX::XMVECTOR parentPosition = vector_cast<DirectX::XMVECTOR>(parentTransform->position);
-					DirectX::XMVECTOR worldPosition = DirectX::XMVectorAdd(parentPosition, rotatedPosition);
-
-					DirectX::XMVECTOR localRotation = vector_cast<DirectX::XMVECTOR>(localTransform.rotation);
-					DirectX::XMVECTOR worldRotation = DirectX::XMQuaternionMultiply(localRotation, parentRotation);
-
-					DirectX::XMVECTOR parentScale = vector_cast<DirectX::XMVECTOR>(parentTransform->scale);
-					DirectX::XMVECTOR localScale = vector_cast<DirectX::XMVECTOR>(localTransform.scale);
-					DirectX::XMVECTOR worldScale = DirectX::XMVectorMultiply(parentScale, localScale);
-
-					worldTransform->position = Math::vector_cast<Math::Vector3>(worldPosition);
-					worldTransform->rotation = Math::vector_cast<Math::Vector4>(worldRotation);
-					worldTransform->scale = Math::vector_cast<Math::Vector3>(worldScale);
-
-					continue;
-				}
-			}
-
-			worldTransform->position = localTransform.position;
-			worldTransform->rotation = localTransform.rotation;
-			worldTransform->scale = localTransform.scale;
+		auto flatView = registry.view<Transform, WorldTransform>(entt::exclude<Relationship>);
+		for (auto entity : flatView)
+		{
+			auto [local, world] = flatView.get(entity);
+			world.position = local.position;
+			world.rotation = local.rotation;
+			world.scale = local.scale;
 		}
 	}
+
+    void WorldTransformSystem::_UpdateHierarchy(
+        entt::registry& registry,
+        entt::entity entity,
+        DirectX::XMVECTOR parentPosition,
+        DirectX::XMVECTOR parentRotation,
+        DirectX::XMVECTOR parentScale
+    )
+    {
+        auto* localTransform = registry.try_get<Transform>(entity);
+        auto* worldTransform = registry.try_get<WorldTransform>(entity);
+        auto* relationship = registry.try_get<Relationship>(entity);
+
+        if (!localTransform || !worldTransform) return;
+
+        using namespace DirectX;
+
+        XMVECTOR localPosition = Math::vector_cast<XMVECTOR>(localTransform->position);
+        XMVECTOR localRotation = Math::vector_cast<XMVECTOR>(localTransform->rotation);
+        XMVECTOR localScale = Math::vector_cast<XMVECTOR>(localTransform->scale);
+
+        XMVECTOR newWorldScale = XMVectorMultiply(parentScale, localScale);
+        XMVECTOR newWorldRotation = XMQuaternionMultiply(localRotation, parentRotation);
+
+        XMVECTOR scaledLocalPosition = XMVectorMultiply(localPosition, parentScale);
+        XMVECTOR rotatedLocalPosition = XMVector3Rotate(scaledLocalPosition, parentRotation);
+        XMVECTOR newWorldPosition = XMVectorAdd(parentPosition, rotatedLocalPosition);
+
+        worldTransform->position = Math::vector_cast<Math::Vector3>(newWorldPosition);
+        worldTransform->rotation = Math::vector_cast<Math::Vector4>(newWorldRotation);
+        worldTransform->scale = Math::vector_cast<Math::Vector3>(newWorldScale);
+
+        if (relationship && relationship->firstChild != entt::null)
+        {
+            entt::entity currentChild = relationship->firstChild;
+            while (currentChild != entt::null)
+            {
+                // Update children
+                _UpdateHierarchy(registry, currentChild, newWorldPosition, newWorldRotation, newWorldScale);
+
+				// Update sibling
+                auto& childRel = registry.get<Relationship>(currentChild);
+                currentChild = childRel.nextSibling;
+            }
+        }
+    }
 }

@@ -109,8 +109,8 @@ namespace Frost
 		return Get().body_interface->AddBody(inBodyID, inActivationMode);
 	}
 
-	JPH::BodyID Physics::CreateAndAddBody(JPH::BodyCreationSettings& inSettings, const GameObject::Id& rigidBodyId, const JPH::EActivation& inActivationMode) {
-		inSettings.mUserData = rigidBodyId;
+	JPH::BodyID Physics::CreateAndAddBody(JPH::BodyCreationSettings& inSettings, const entt::entity& rigidBodyId, const JPH::EActivation& inActivationMode) {
+		inSettings.mUserData = static_cast<uint64>(rigidBodyId);
 		auto body = CreateBody(inSettings);
 		AddBody(body->GetID(), inActivationMode);
 		return body->GetID();
@@ -146,6 +146,11 @@ namespace Frost
 	const JPH::BodyLockInterfaceLocking& Physics::GetBodyLockInterface()
 	{
 		return Get().physics_system.GetBodyLockInterface();
+	}
+
+	entt::entity Physics::GetEntityID(const JPH::BodyID& inBodyID)
+	{
+		return static_cast<entt::entity>(GetBodyInterface().GetUserData(inBodyID));
 	}
 
 	void Physics::UpdatePhysics()

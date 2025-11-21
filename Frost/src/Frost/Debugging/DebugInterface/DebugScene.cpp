@@ -7,19 +7,23 @@
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/Scriptable.h"
+#include "Frost/Scene/Components/Script.h"
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/RigidBody.h"
 #include "Frost/Scene/Components/HUDImage.h"
 #include "Frost/Scene/Components/UIButton.h"
+#include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Debugging/DebugInterface/DebugUtils.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Physics/Physics.h"
+#include "Frost/Utils/Math/Vector.h"
 
 #include <imgui.h>
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 
 using namespace Frost::Component;
+using namespace Frost::Math;
 
 namespace Frost
 {
@@ -27,52 +31,334 @@ namespace Frost
 	{
 		_deltaTime = deltaTime;
 
-		if (ImGui::CollapsingHeader("Scenes"))
+		_DrawHierarchyPanel();
+		_DrawInspectorPanel();
+	}
+
+	void DebugScene::_DrawHierarchyPanel()
+	{
+
+		if (_reparentingRequested)
 		{
-			if (_scenes.empty())
-			{
-				ImGui::Text("No scene attached to DebugLayer");
-			}
-		
+			Scene* ownerScene = nullptr;
 			for (Scene* scene : _scenes)
 			{
-				if (ImGui::TreeNode(scene->GetName().c_str()))
+				if (scene->GetRegistry().valid(_entityToReparent))
 				{
-					for (GameObject::Id gameObjectId : scene->GetECS().GetActiveGameObjects())
-					{
-						Meta* info = scene->GetECS().GetComponent<Meta>(gameObjectId);
-		
-						static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
-						ImGuiTreeNodeFlags node_flags = base_flags;
-		
-						//bool is_root = (info && info->parentId == GameObject::InvalidId);
-						bool is_root = true;
-						if (!is_root) node_flags |= ImGuiTreeNodeFlags_Leaf;
-		
-						const bool is_open = ImGui::TreeNodeEx((void*)(intptr_t)gameObjectId, node_flags, "%s (ID: %llu)", info->name.c_str(), gameObjectId);
-		
-						if (is_open)
-						{
-							// Common
-							_DrawMetaComponent(scene, gameObjectId);
-							_DrawTransformComponent(scene, gameObjectId);
-							_DrawWorldTransformComponent(scene, gameObjectId);
-							
-							// Specific
-							_DrawCameraComponent(scene, gameObjectId);
-							_DrawLightComponent(scene, gameObjectId);
-							_DrawStaticMeshComponent(scene, gameObjectId);
-							_DrawRigidBodyComponent(scene, gameObjectId);
-							_DrawScriptableComponent(scene, gameObjectId);
-							_DrawHUDImageComponent(scene, gameObjectId);
-							_DrawUIButtonComponent(scene, gameObjectId);
-		
-							ImGui::TreePop();
-						}
-					}
-					ImGui::TreePop();
+					ownerScene = scene;
+					break;
 				}
 			}
+
+			if (ownerScene)
+			{
+				_ReparentEntity(ownerScene, _entityToReparent, _newParentOfEntity);
+			}
+
+			_reparentingRequested = false;
+			_entityToReparent = entt::null;
+			_newParentOfEntity = entt::null;
+		}
+
+		ImGui::Begin("Hierarchy");
+
+		if (_scenes.empty())
+		{
+			ImGui::Text("No scene attached to DebugLayer");
+		}
+
+		for (Scene* scene : _scenes)
+		{
+			if (ImGui::TreeNodeEx(scene->GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				auto& registry = scene->GetRegistry();
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"))
+					{
+						_entityToReparent = *(entt::entity*)payload->Data;
+						_newParentOfEntity = entt::null;
+						_reparentingRequested = true;
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				registry.view<Relationship, Meta>().each([&](auto entity, auto& relationship, auto& meta)
+					{
+						if (relationship.parent == entt::null)
+						{
+							_DrawEntityNode(scene, entity);
+						}
+					});
+
+				ImGui::TreePop();
+			}
+		}
+
+		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+		{
+			_selectedEntity = entt::null;
+		}
+
+		ImGui::End();
+	}
+
+	void DebugScene::_DrawInspectorPanel()
+	{
+		ImGui::Begin("Inspector");
+
+		if (_selectedEntity == entt::null)
+		{
+			ImGui::Text("Select an entity to inspect its components.");
+		}
+		else
+		{
+			Scene* ownerScene = nullptr;
+			for (Scene* scene : _scenes)
+			{
+				if (scene->GetRegistry().valid(_selectedEntity))
+				{
+					ownerScene = scene;
+					break;
+				}
+			}
+
+			if (ownerScene)
+			{
+				auto& registry = ownerScene->GetRegistry();
+
+				_DrawMetaComponent(ownerScene, _selectedEntity);
+				_DrawTransformComponent(ownerScene, _selectedEntity);
+				_DrawWorldTransformComponent(ownerScene, _selectedEntity);
+				_DrawStaticMeshComponent(ownerScene, _selectedEntity);
+				_DrawCameraComponent(ownerScene, _selectedEntity);
+				_DrawLightComponent(ownerScene, _selectedEntity);
+				_DrawRigidBodyComponent(ownerScene, _selectedEntity);
+				_DrawScriptableComponent(ownerScene, _selectedEntity);
+				_DrawHUDImageComponent(ownerScene, _selectedEntity);
+				_DrawUIButtonComponent(ownerScene, _selectedEntity);
+
+				ImGui::Separator();
+				ImGui::Spacing();
+
+				float buttonWidth = ImGui::GetContentRegionAvail().x * 0.8f;
+				float buttonPosX = (ImGui::GetContentRegionAvail().x - buttonWidth) * 0.5f;
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + buttonPosX);
+
+				if (ImGui::Button("Add Component", ImVec2(buttonWidth, 0)))
+				{
+					ImGui::OpenPopup("AddComponentPopup");
+				}
+
+				if (ImGui::BeginPopup("AddComponentPopup"))
+				{
+					ImGui::Text("Available Components");
+					ImGui::Separator();
+
+					if (!registry.all_of<Camera>(_selectedEntity))
+					{
+						if (ImGui::MenuItem("Camera"))
+						{
+							registry.emplace<Camera>(_selectedEntity);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+
+					if (!registry.all_of<Light>(_selectedEntity))
+					{
+						if (ImGui::MenuItem("Light"))
+						{
+							registry.emplace<Light>(_selectedEntity, LightType::Point, Color3(1.0f, 1.0f, 1.0f), 1.0f, 10.0f);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+
+					/*
+					if (!registry.all_of<StaticMesh>(_selectedEntity))
+					{
+						if (ImGui::MenuItem("Static Mesh"))
+						{
+							registry.emplace<StaticMesh>(_selectedEntity);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+					*/
+
+					/*
+					if (!registry.all_of<RigidBody>(_selectedEntity))
+					{
+						if (ImGui::MenuItem("Rigid Body"))
+						{
+							registry.emplace<RigidBody>(_selectedEntity);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+					*/
+
+					if (!registry.all_of<Scriptable>(_selectedEntity))
+					{
+						if (ImGui::MenuItem("Scriptable"))
+						{
+							registry.emplace<Scriptable>(_selectedEntity);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+
+					if (!registry.all_of<HUDImage>(_selectedEntity))
+					{
+						if (ImGui::MenuItem("HUD Image"))
+						{
+							registry.emplace<HUDImage>(_selectedEntity);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+
+					/*
+					if (!registry.all_of<UIButton>(_selectedEntity))
+					{
+						if (ImGui::MenuItem("UI Button"))
+						{
+							registry.emplace<UIButton>(_selectedEntity);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+					*/
+
+					ImGui::EndPopup();
+				}
+			}
+			else
+			{
+				_selectedEntity = entt::null;
+			}
+		}
+
+		ImGui::End();
+	}
+
+
+	void DebugScene::_DrawEntityNode(Scene* scene, entt::entity gameObjectId)
+	{
+		auto& registry = scene->GetRegistry();
+		Meta* info = registry.try_get<Meta>(gameObjectId);
+		Relationship* relationship = registry.try_get<Relationship>(gameObjectId);
+
+		if (!info || !relationship) return;
+
+		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (relationship->childrenCount == 0)
+			node_flags |= ImGuiTreeNodeFlags_Leaf;
+		if (_selectedEntity == gameObjectId)
+			node_flags |= ImGuiTreeNodeFlags_Selected;
+
+		bool isEnabled = !registry.all_of<Disabled>(gameObjectId);
+		ImGui::PushID((void*)(intptr_t)gameObjectId);
+		if (ImGui::Checkbox("##enabled", &isEnabled))
+		{
+			if (isEnabled)
+				registry.remove<Disabled>(gameObjectId);
+			else
+				registry.emplace<Disabled>(gameObjectId);
+		}
+		ImGui::PopID();
+
+		ImGui::SameLine();
+		const bool is_open = ImGui::TreeNodeEx((void*)(intptr_t)gameObjectId, node_flags, "%s", info->name.c_str());
+
+		if (ImGui::IsItemClicked())
+		{
+			_selectedEntity = gameObjectId;
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"))
+			{
+				entt::entity draggedEntity = *(entt::entity*)payload->Data;
+
+				bool isSafe = true;
+				entt::entity p = gameObjectId;
+				while (scene->GetRegistry().valid(p))
+				{
+					if (p == draggedEntity) { isSafe = false; break; }
+					Relationship* pRel = scene->GetRegistry().try_get<Relationship>(p);
+					p = pRel ? pRel->parent : entt::null;
+				}
+
+				if (isSafe && draggedEntity != gameObjectId)
+				{
+					_entityToReparent = draggedEntity;
+					_newParentOfEntity = gameObjectId;
+					_reparentingRequested = true;
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		if (ImGui::BeginDragDropSource())
+		{
+			ImGui::SetDragDropPayload("HIERARCHY_NODE", &gameObjectId, sizeof(entt::entity));
+			ImGui::Text("%s", scene->GetRegistry().get<Meta>(gameObjectId).name.c_str());
+			ImGui::EndDragDropSource();
+		}
+
+		if (is_open)
+		{
+			entt::entity currentChild = relationship->firstChild;
+			while (registry.valid(currentChild))
+			{
+				_DrawEntityNode(scene, currentChild);
+				Relationship* childRel = registry.try_get<Relationship>(currentChild);
+				currentChild = childRel ? childRel->nextSibling : entt::null;
+			}
+			ImGui::TreePop();
+		}
+	}
+
+	void DebugScene::_ReparentEntity(Scene* scene, entt::entity entityId, entt::entity newParentId)
+	{
+		auto& registry = scene->GetRegistry();
+		auto& childRel = registry.get<Relationship>(entityId);
+
+		entt::entity oldParentId = childRel.parent;
+
+		// Detach from old parent
+		if (registry.valid(oldParentId))
+		{
+			auto& oldParentRel = registry.get<Relationship>(oldParentId);
+
+			if (oldParentRel.firstChild == entityId)
+				oldParentRel.firstChild = childRel.nextSibling;
+
+			if (registry.valid(childRel.prevSibling))
+				registry.get<Relationship>(childRel.prevSibling).nextSibling = childRel.nextSibling;
+			if (registry.valid(childRel.nextSibling))
+				registry.get<Relationship>(childRel.nextSibling).prevSibling = childRel.prevSibling;
+
+			oldParentRel.childrenCount--;
+		}
+
+		childRel.parent = newParentId;
+		childRel.prevSibling = entt::null;
+
+		// Attach to new parent
+		if (registry.valid(newParentId))
+		{
+			auto& newParentRel = registry.get<Relationship>(newParentId);
+			entt::entity oldFirstChild = newParentRel.firstChild;
+
+			childRel.nextSibling = oldFirstChild;
+			newParentRel.firstChild = entityId;
+
+			if (registry.valid(oldFirstChild))
+				registry.get<Relationship>(oldFirstChild).prevSibling = entityId;
+
+			newParentRel.childrenCount++;
+		}
+		else
+		{
+			childRel.nextSibling = entt::null;
 		}
 	}
 
@@ -86,15 +372,15 @@ namespace Frost
 		_scenes.erase(std::remove(_scenes.begin(), _scenes.end(), scene), _scenes.end());
 	}
 
-	void DebugScene::_DrawMetaComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawMetaComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		Meta* info = scene->GetECS().GetComponent<Meta>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		Meta* info = registry.try_get<Meta>(gameObjectId);
 		if (!info) return;
 
 		if (DebugUtils::DrawComponentHeader("Meta"))
 		{
-			ImGui::Text("ID: %llu", info->id);
-			ImGui::Text("Parent ID: %llu", info->parentId);
+			ImGui::Text("ID: %llu", (uint64_t)gameObjectId);
 			char nameBuffer[256];
 			strncpy_s(nameBuffer, sizeof(nameBuffer), info->name.c_str(), sizeof(nameBuffer) - 1);
 			nameBuffer[sizeof(nameBuffer) - 1] = '\0';
@@ -106,9 +392,10 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawTransformComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawTransformComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		Transform* transform = scene->GetECS().GetComponent<Transform>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		Transform* transform = registry.try_get<Transform>(gameObjectId);
 		if (!transform) return;
 
 		if (DebugUtils::DrawComponentHeader("Transform (Local)"))
@@ -120,9 +407,10 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawWorldTransformComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawWorldTransformComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		WorldTransform* worldTransform = scene->GetECS().GetComponent<WorldTransform>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		WorldTransform* worldTransform = registry.try_get<WorldTransform>(gameObjectId);
 		if (!worldTransform) return;
 
 		if (DebugUtils::DrawComponentHeader("World Transform (Read-Only)"))
@@ -145,9 +433,10 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawStaticMeshComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawStaticMeshComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		StaticMesh* staticMesh = scene->GetECS().GetComponent<StaticMesh>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		StaticMesh* staticMesh = registry.try_get<StaticMesh>(gameObjectId);
 		if (!staticMesh) return;
 
 		if (DebugUtils::DrawComponentHeader("Mesh Renderer"))
@@ -158,9 +447,10 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawCameraComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawCameraComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		Camera* camera = scene->GetECS().GetComponent<Camera>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		Camera* camera = registry.try_get<Camera>(gameObjectId);
 		if (!camera) return;
 
 		if (DebugUtils::DrawComponentHeader("Camera"))
@@ -234,9 +524,10 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawScriptableComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawScriptableComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		Scriptable* scriptable = scene->GetECS().GetComponent<Scriptable>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		Scriptable* scriptable = registry.try_get<Scriptable>(gameObjectId);
 		if (!scriptable) return;
 
 		if (DebugUtils::DrawComponentHeader("Scriptable"))
@@ -273,9 +564,10 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawLightComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawLightComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		Light* light = scene->GetECS().GetComponent<Light>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		Light* light = registry.try_get<Light>(gameObjectId);
 		if (!light) return;
 
 		const char* lightTypeName = "Unknown";
@@ -336,9 +628,10 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawRigidBodyComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawRigidBodyComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		RigidBody* rigidBody = scene->GetECS().GetComponent<RigidBody>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		RigidBody* rigidBody = registry.try_get<RigidBody>(gameObjectId);
 		if (!rigidBody) return;
 
 		if (DebugUtils::DrawComponentHeader("Rigid Body (Jolt)"))
@@ -394,18 +687,14 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawHUDImageComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawHUDImageComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		if (scene->GetECS().GetComponent<UIButton>(gameObjectId)) return;
-
-		HUDImage* image = scene->GetECS().GetComponent<HUDImage>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		HUDImage* image = registry.try_get<HUDImage>(gameObjectId);
 		if (!image) return;
 
 		if (DebugUtils::DrawComponentHeader("HUD Image"))
 		{
-			ImGui::Checkbox("Enabled", &image->isEnabled);
-			ImGui::Separator();
-
 			ImGui::Text("Texture: %s", image->textureFilepath.c_str());
 			ImGui::Text("Status: %s", (image->texture ? "Loaded" : "Not Loaded"));
 
@@ -434,16 +723,14 @@ namespace Frost
 		}
 	}
 
-	void DebugScene::_DrawUIButtonComponent(Scene* scene, GameObject::Id gameObjectId)
+	void DebugScene::_DrawUIButtonComponent(Scene* scene, entt::entity gameObjectId)
 	{
-		UIButton* button = scene->GetECS().GetComponent<UIButton>(gameObjectId);
+		auto& registry = scene->GetRegistry();
+		UIButton* button = registry.try_get<UIButton>(gameObjectId);
 		if (!button) return;
 
 		if (DebugUtils::DrawComponentHeader("UI Button"))
 		{
-			ImGui::Checkbox("Enabled", &button->isEnabled);
-			ImGui::Separator();
-
 			ImGui::Text("Idle Texture: %s", button->textureFilepath.c_str());
 			ImGui::Text("  Status: %s", (button->idleTexture ? "Loaded" : "Not Loaded"));
 

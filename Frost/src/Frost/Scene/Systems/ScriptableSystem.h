@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Scene/Scene.h"
 #include "Frost/Scene/ECS/System.h"
 
 namespace Frost
@@ -7,8 +8,8 @@ namespace Frost
 	class ScriptableSystem : public System
 	{
 	public:
-		void Update(Frost::ECS& ecs, float deltaTime) override;
-		void FixedUpdate(Frost::ECS& ecs, float fixedDeltaTime) override;
-		void LateUpdate(Frost::ECS& ecs, float deltaTime) override;
+		void Update(Scene& scene, float deltaTime) override;
+		void FixedUpdate(Scene& scene, float fixedDeltaTime) override;
+		void LateUpdate(Scene& scene, float deltaTime) override;
 	};
 }

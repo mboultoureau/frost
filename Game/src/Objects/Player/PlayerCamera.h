@@ -9,6 +9,7 @@
 
 #include "Player.h"
 #include <Frost/Scene/Components/Meta.h>
+#include "Frost/Scene/Components/Script.h"
 
 using namespace Frost;
 
@@ -17,7 +18,7 @@ class Player;
 class PlayerSpringCameraScript : public Script
 {
 public:
-	PlayerSpringCameraScript(GameObject::Id cameraPivot, GameObject::Id thirdPersonCamera, GameObject::Id springCam, Player* player) :
+	PlayerSpringCameraScript(GameObject cameraPivot, GameObject thirdPersonCamera, GameObject springCam, Player* player) :
 		thirdPersonCamera{ thirdPersonCamera }, springCam{ springCam }, cameraPivot{ cameraPivot },
 		playerManager{ player }, player{player->GetPlayerID()}, scene{ player->GetScene() }
 	{
@@ -25,10 +26,10 @@ public:
 
 	Player* playerManager;
 	Scene* scene;
-	GameObject::Id thirdPersonCamera;
-	GameObject::Id player;
-	GameObject::Id springCam;
-	GameObject::Id cameraPivot;
+	GameObject thirdPersonCamera;
+	GameObject player;
+	GameObject springCam;
+	GameObject cameraPivot;
 	bool isThirdPerson = true;
 
 	float stiffness = 7.0f;
@@ -57,9 +58,9 @@ public:
 
 private:
 	Player* _player;
-	GameObject::Id _cameraPivot;
-	GameObject::Id _3rdPersVirtCamera;
-	GameObject::Id _camera;
+	GameObject _cameraPivot;
+	GameObject _3rdPersVirtCamera;
+	GameObject _camera;
 
 	JPH::BodyID _cameraBodyID;
 	JPH::BodyInterface* _bodyInter;

@@ -10,6 +10,6 @@ public:
 	TopCamera();
 
 private:
-	GameObject::Id _camera;
+	GameObject _camera;
 };
 

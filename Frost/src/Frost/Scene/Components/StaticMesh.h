@@ -24,8 +24,6 @@ namespace Frost::Component
 			: model{ AssetManager::LoadAsset<Model>(modelFilepath, modelFilepath) }
 		{
 		}
-
-		bool isActive = true;
 	};
 
 	
