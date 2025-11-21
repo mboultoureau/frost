@@ -10,7 +10,9 @@ namespace Frost
 	{
 		if (ImGui::CollapsingHeader("Physics"))
 		{
+			ImGui::PushID("PhysicsDebugHeader");
 			ImGui::Checkbox("Display", &Debug::PhysicsConfig::display);
+			ImGui::PopID();
 		}
 	}
 }

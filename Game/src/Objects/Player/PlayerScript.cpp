@@ -1,7 +1,7 @@
 #include "PlayerScript.h"
 
 
-void PlayerScript::OnFixedUpdate(float deltaTime)
+void PlayerScript::OnPreFixedUpdate(float deltaTime)
 {
 	auto vehiclePair = player->GetCurrentVehicle();
 	vehicle = vehiclePair.second;
@@ -22,31 +22,24 @@ void PlayerScript::OnFixedUpdate(float deltaTime)
 		return;
 	}
 
-
-	vehicle->OnFixedUpdate(deltaTime);
-
-	if (Input::GetKeyboard().IsKeyPressed(K_SHIFT))
-	{
-		vehicle->OnBrake(deltaTime);
-	}
+	vehicle->OnBrake(deltaTime, Input::GetKeyboard().IsKeyDown(K_SHIFT));
 
 	float leftRightInput = 0;
-	if (Input::GetKeyboard().IsKeyPressed(K_A)) leftRightInput -= 1;
-	if (Input::GetKeyboard().IsKeyPressed(K_D)) leftRightInput += 1;
+	if (Input::GetKeyboard().IsKeyDown(K_A)) leftRightInput -= 1;
+	if (Input::GetKeyboard().IsKeyDown(K_D)) leftRightInput += 1;
 	// TODO gamepad
 	vehicle->OnLeftRightInput(deltaTime, leftRightInput);
 
 
 	float upDownInput = 0;
-	if (Input::GetKeyboard().IsKeyPressed(K_W)) upDownInput -= 1;
-	if (Input::GetKeyboard().IsKeyPressed(K_S)) upDownInput += 1;
+	if (Input::GetKeyboard().IsKeyDown(K_S)) upDownInput -= 1;
+	if (Input::GetKeyboard().IsKeyDown(K_W)) upDownInput += 1;
 	vehicle->OnAccelerateInput(deltaTime, upDownInput);
 
+	vehicle->OnSpecial(deltaTime, Input::GetKeyboard().IsKeyDown(K_SPACE));
 
-	if (Input::GetKeyboard().IsKeyPressed(K_SHIFT))
-	{
-		vehicle->OnSpecial(deltaTime);
-	}
+	vehicle->OnPreFixedUpdate(deltaTime);
+
 };
 
 void PlayerScript::OnUpdate(float deltaTime) {

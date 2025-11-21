@@ -45,6 +45,13 @@ void MainLayer::OnUpdate(float deltaTime)
 	_scene.Update(deltaTime);
 }
 
+void MainLayer::OnPreFixedUpdate(float deltaTime)
+{
+	Frost::Scene& _scene = Game::GetScene();
+
+	_scene.PreFixedUpdate(deltaTime);
+}
+
 void MainLayer::OnFixedUpdate(float deltaTime)
 {
 	Frost::Scene& _scene = Game::GetScene();

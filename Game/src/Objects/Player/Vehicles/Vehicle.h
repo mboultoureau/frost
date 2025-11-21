@@ -43,6 +43,7 @@ public:
 	/*======= Virtual event functions ========= */
 
 	virtual void OnUpdate(float deltaTime) {};
+	virtual void OnPreFixedUpdate(float fixedDeltaTime) {};
 	virtual void OnFixedUpdate(float fixedDeltaTime) {};
 	virtual void OnLateUpdate(float deltaTime) {}
 
@@ -53,13 +54,21 @@ public:
 
 	virtual void OnLeftRightInput(float deltaTime, float leftRightInput) = 0;
 	virtual void OnAccelerateInput(float deltaTime, float upDownInput) = 0;
-	virtual void OnBrake(float deltaTime) = 0;
-	virtual void OnSpecial(float deltaTime) {};
+	virtual void OnBrake(float deltaTime, bool handBrakeInput) = 0;
+	virtual void OnSpecial(float deltaTime, bool specialInput) {};
 
 	/*======= public interface ========= */
 
 	GameObject GetModelRendererObject() { return _gameObjectRenderer; };
-	void RenderMesh(bool shouldRender) {
+	void RenderMesh(bool shouldRender)
+	{
+		auto& registry = _scene->GetRegistry();
+		if (!registry.valid(_gameObjectRenderer.GetHandle()))
+		{
+			return;
+		}
+
+		// Check if the game object is valid
 		_gameObjectRenderer.SetActive(shouldRender);
 	}
 	JPH::BodyID GetBodyID() const { return _bodyId; };
@@ -67,11 +76,11 @@ public:
 	virtual JPH::BodyID Appear() = 0;
 	virtual void Disappear() = 0;
 
+
 protected:
 	Player* _player;
 	GameObject _gameObjectRenderer;
 	Scene* _scene;
 	JPH::BodyID _bodyId;
-	Timer _fireTimer;
 };
 

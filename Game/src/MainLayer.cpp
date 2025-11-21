@@ -4,6 +4,7 @@
 #include "Objects/LevelCamera.h"
 #include "Objects/LapCheckPoint.h"
 #include "Objects/Wall.h"
+#include "Objects/Player/Vehicles/Vehicle.h"
 using namespace Frost;
 
 MainLayer::MainLayer() : Layer("MainLayer")
@@ -86,6 +87,12 @@ void MainLayer::OnLateUpdate(float deltaTime)
 	_scene.LateUpdate(deltaTime);
 }
 
+void MainLayer::OnPreFixedUpdate(float deltaTime)
+{
+	Frost::Scene& _scene = Game::GetScene();
+	_scene.PreFixedUpdate(deltaTime);
+}
+
 void MainLayer::OnFixedUpdate(float deltaTime)
 {
 	Frost::Scene& _scene = Game::GetScene();
@@ -120,6 +127,7 @@ void MainLayer::OnFixedUpdate(float deltaTime)
 
 void MainLayer::OnDetach()
 {
+	_player->GetCurrentVehicle().second->Disappear();
 	EventManager::Unsubscribe<PauseEvent>(_pauseHandlerUUID);
 	EventManager::Unsubscribe<UnPauseEvent>(_unpauseHandlerUUID);
 }

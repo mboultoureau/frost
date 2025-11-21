@@ -139,6 +139,15 @@ namespace Frost
         }
     }
 
+
+    void Scene::PreFixedUpdate(float deltaTime)
+    {
+        for (const auto& system : _systems)
+        {
+            system->PreFixedUpdate(*this, deltaTime);
+        }
+    }
+
     void Scene::FixedUpdate(float deltaTime)
     {
         for (const auto& system : _systems)
