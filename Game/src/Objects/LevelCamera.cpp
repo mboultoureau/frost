@@ -28,4 +28,5 @@ LevelCamera::LevelCamera()
 	cameraComp->backgroundColor.a = 1.0f;
 	cameraComp->clearOnRender = true;
 	cameraComp->viewport = Viewport(0.05f, 0.05f, 0.2f, 0.2f);
+	cameraComp->priority = 1;
 }

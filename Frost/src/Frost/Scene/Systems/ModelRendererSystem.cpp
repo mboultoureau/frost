@@ -53,10 +53,35 @@ namespace Frost
             skyboxTexture = skybox.cubemapTexture;
         }
 
+        struct RenderCamera {
+            entt::entity entity;
+            const Camera* camera;
+            const WorldTransform* transform;
+        };
+
+        std::vector<RenderCamera> sortedCameras;
+        sortedCameras.reserve(cameraView.size_hint());
+
         for (auto entity : cameraView)
         {
-            const auto& [camera, cameraTransform] = cameraView.get(entity);
-            
+            const auto& [camera, transform] = cameraView.get(entity);
+            sortedCameras.push_back({ entity, &camera, &transform });
+        }
+
+		// Sort by priority
+        std::sort(sortedCameras.begin(), sortedCameras.end(),
+            [](const RenderCamera& a, const RenderCamera& b)
+            {
+                return a.camera->priority < b.camera->priority;
+            }
+        );
+
+        for (const auto& camData : sortedCameras)
+        {
+            entt::entity entity = camData.entity;
+            const Camera& camera = *camData.camera;
+            const WorldTransform& cameraTransform = *camData.transform;
+
             // Get only active effects
             std::vector<std::shared_ptr<PostEffect>> activeEffects;
             for (const auto& effect : camera.postEffects)

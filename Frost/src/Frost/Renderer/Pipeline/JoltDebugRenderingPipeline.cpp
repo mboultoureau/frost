@@ -111,7 +111,7 @@ namespace Frost
 
         _commandList.reset();
 
-        ClearFrameData();
+        _ClearFrameData();
     }
 
     Math::Vector4 JoltRenderingPipeline::ConvertJoltColor(JPH::ColorArg color)
@@ -251,17 +251,28 @@ namespace Frost
         _frameTexts.push_back({ inPosition, std::string(inString), inColor, inHeight });
     }
 
-    void JoltRenderingPipeline::BeginFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform)
+    void JoltRenderingPipeline::Render(const Component::Camera& camera, const Component::WorldTransform& cameraTransform)
     {
         _commandList->BeginRecording();
 		_commandList->SetRasterizerState(RasterizerMode::Wireframe);
 
-        float aspectRatio = static_cast<float>(Application::GetWindow()->GetWidth()) / static_cast<float>(Application::GetWindow()->GetHeight());
+        float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
+        float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
+
+        float viewportX = camera.viewport.x * windowWidth;
+        float viewportY = camera.viewport.y * windowHeight;
+        float viewportW = camera.viewport.width * windowWidth;
+        float viewportH = camera.viewport.height * windowHeight;
+
+        _commandList->SetViewport(viewportX, viewportY, viewportW, viewportH, 0.0f, 1.0f);
+
+        float aspectRatio = (viewportH > 0) ? (viewportW / viewportH) : 1.0f;
         Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
         Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, aspectRatio);
 
         VS_DebugPerFrameConstants vsPerFrameData;
         vsPerFrameData.ViewProjectionMatrix = Math::Matrix4x4::CreateTranspose(viewMatrix * projectionMatrix);
+
         _vsPerFrameConstants->UpdateData(_commandList.get(), &vsPerFrameData, sizeof(VS_DebugPerFrameConstants));
         _commandList->SetConstantBuffer(_vsPerFrameConstants.get(), 0);
 
@@ -269,11 +280,6 @@ namespace Frost
         Texture* depthBuffer = RendererAPI::GetRenderer()->GetDepthBuffer();
         _commandList->SetRenderTargets(1, &backBuffer, depthBuffer);
 
-        _commandList->SetViewport(0.0f, 0.0f, (float)Application::GetWindow()->GetWidth(), (float)Application::GetWindow()->GetHeight(), 0.0f, 1.0f);
-    }
-
-    void JoltRenderingPipeline::EndFrame()
-    {
         // Draw accumulated lines
         if (!_frameLines.empty())
         {
@@ -356,11 +362,14 @@ namespace Frost
 #endif
 
         RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
-
-        ClearFrameData();
     }
 
-    void JoltRenderingPipeline::ClearFrameData()
+    void JoltRenderingPipeline::Clear()
+    {
+        _ClearFrameData();
+    }
+
+    void JoltRenderingPipeline::_ClearFrameData()
     {
         JPH::lock_guard lockLines(mLinesLock);
         _frameLines.clear();

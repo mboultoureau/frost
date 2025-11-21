@@ -496,6 +496,8 @@ namespace Frost
 			if (ImGui::DragFloat("##H", &camera->viewport.height, 0.01f, 0.001f, 1.0f, "H:%.2f")) {}
 			ImGui::PopItemWidth();
 
+			ImGui::DragInt("Priority", &camera->priority, 1, 0, 100);
+
 			// Post effects
 			ImGui::Separator();
 			ImGui::Text("Post Effects:");
