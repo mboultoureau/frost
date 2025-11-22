@@ -20,6 +20,7 @@
 
 #include "../CheckPoint.h"
 #include "Vehicles/Bike.h"
+#include "Vehicles/Plane.h"
 #include "PlayerScript.h"
 #include "Vehicles/Vehicle.h"
 
@@ -91,14 +92,14 @@ void Player::_InitializeVehicles()
 
 
 	// Plane
-	auto plane = new Bike(
+	auto plane = new Plane(
 		this,
 		Vehicle::RendererParameters(
 			"Plane Renderer",
-			"./resources/meshes/cube.fbx",
+			"./resources/meshes/paper_airplane.glb",
 			pos,
-			EulerAngles{ -90.0_deg, 0.0f, 0.0f },
-			Vector3{ .6f, .6f, .6f }
+			EulerAngles{ 0.0_deg, 180.0_deg, 0.0f },
+			Vector3{ 10.0f, 10.0f, 10.0f }
 		));
 	_vehicles.insert({ VehicleType::PLANE, plane });
 
