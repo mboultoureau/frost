@@ -121,9 +121,9 @@ Player::Player()
 	cameraComponent->backgroundColor.g = 116.0f / 255.0f;
 	cameraComponent->backgroundColor.b = 228.0f / 255.0f;
 	cameraComponent->backgroundColor.a = 1.0f;
-	cameraComponent->postEffects.push_back(std::make_shared<Frost::ScreenShakeEffect>());
-	cameraComponent->postEffects.push_back(std::make_shared<Frost::RadialBlurEffect>());
-	cameraComponent->postEffects.push_back(std::make_shared<Frost::ChromaticAberrationEffect>());
+	// cameraComponent->postEffects.push_back(std::make_shared<Frost::ScreenShakeEffect>());
+	// cameraComponent->postEffects.push_back(std::make_shared<Frost::RadialBlurEffect>());
+	// cameraComponent->postEffects.push_back(std::make_shared<Frost::ChromaticAberrationEffect>());
 
 	InitializePhysics();
 }
