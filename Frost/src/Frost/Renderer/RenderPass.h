@@ -8,6 +8,6 @@ namespace Frost
 	{
 	public:
 		RenderPass() = default;
-		virtual ~RenderPass() = default
-	}
+		virtual ~RenderPass() = default;
+	};
 }

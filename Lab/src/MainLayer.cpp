@@ -30,6 +30,7 @@ void MainLayer::OnAttach()
 	//auto _rain = std::make_unique<BallRain>();
 	//_hudLogo = std::make_unique<HUD_Logo>();
 	_sky = std::make_unique<Sky>();
+	_tv = std::make_unique<TV>();
 
 	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));

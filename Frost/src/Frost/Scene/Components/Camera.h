@@ -36,6 +36,10 @@ namespace Frost::Component
 		Math::Vector3 lookAtPosition = { 0.0f, 0.0f, 0.0f };
 
 		Viewport viewport;
+
+		// If set, the camera will render to this texture instead of the screen
+		std::shared_ptr<Texture> targetTexture = nullptr;
+
 		std::vector<std::shared_ptr<PostEffect>> postEffects;
 
 		template<typename T>
