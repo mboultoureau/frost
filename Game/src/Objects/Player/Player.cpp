@@ -20,6 +20,7 @@
 
 #include "../CheckPoint.h"
 #include "Vehicles/Bike.h"
+#include "Vehicles/Boat.h"
 #include "Vehicles/Plane.h"
 #include "PlayerScript.h"
 #include "Vehicles/Vehicle.h"
@@ -78,7 +79,7 @@ void Player::_InitializeVehicles()
 	_vehicles.insert({ VehicleType::BIKE, bike });
 
 	// Boat
-	auto boat = new Bike(
+	auto boat = new Boat(
 		this,
 		Vehicle::RendererParameters(
 			"Boat Renderer",
@@ -97,9 +98,9 @@ void Player::_InitializeVehicles()
 		Vehicle::RendererParameters(
 			"Plane Renderer",
 			"./resources/meshes/paper_airplane.glb",
-			pos,
+			Vector3{ 0,-0.4f,0 },
 			EulerAngles{ 0.0_deg, 180.0_deg, 0.0f },
-			Vector3{ 10.0f, 10.0f, 10.0f }
+			Vector3{ 7.5f, 7.5f, 7.5f }
 		));
 	_vehicles.insert({ VehicleType::PLANE, plane });
 

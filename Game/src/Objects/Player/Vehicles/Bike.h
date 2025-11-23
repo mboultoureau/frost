@@ -59,6 +59,8 @@ private:
 	Vehicle* _vehicle;
 
 	Timer _specialDriftTimer;
+	Timer _specialDriftCoolDown;
+	std::chrono::milliseconds _driftCoolDownDuration = 100ms;
 	float _specialDriftMaxDuration = 100; // in milliseconds
 	float _specialDriftPower = 250;
 	float _specialDriftRotationPower = -20;
