@@ -9,6 +9,7 @@ GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()
 	mObjectToBroadPhase[ObjectLayers::CHECKPOINT] = BroadPhaseLayers::NON_MOVING;
 	mObjectToBroadPhase[ObjectLayers::NO_COLLIDE] = BroadPhaseLayers::NON_MOVING;
 	mObjectToBroadPhase[ObjectLayers::CAMERA] = BroadPhaseLayers::MOVING;
+	mObjectToBroadPhase[ObjectLayers::WATER] = BroadPhaseLayers::NON_MOVING;
 }
 
 JPH::uint GameBroadPhaseLayerInterface::GetNumBroadPhaseLayers() const
@@ -45,7 +46,7 @@ bool GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::O
 	case ObjectLayers::NON_MOVING:
 		return inObject2 != ObjectLayers::NON_MOVING;
 	case ObjectLayers::PLAYER:
-		return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::CHECKPOINT;
+		return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::CHECKPOINT || inObject2 == ObjectLayers::WATER;
 	case ObjectLayers::BULLET:
 		return inObject2 == ObjectLayers::CARGO || inObject2 == ObjectLayers::NON_MOVING;
 	case ObjectLayers::CARGO:
@@ -56,6 +57,8 @@ bool GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::O
 		return inObject2 != ObjectLayers::PLAYER;
 	case ObjectLayers::NO_COLLIDE :
 		return false;
+	case ObjectLayers::WATER :
+		return inObject2 == ObjectLayers::PLAYER;
 	default:
 		FT_ENGINE_ASSERT(false, "Invalid object layer");
 		return false;
@@ -80,6 +83,8 @@ bool GameObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer inLayer1,
 		return true;
 	case ObjectLayers::NO_COLLIDE:
 		return false;
+	case ObjectLayers::WATER:
+		return inLayer2 == BroadPhaseLayers::MOVING;
 	default:
 		FT_ENGINE_ASSERT(false, "Invalid object layer");
 		return false;

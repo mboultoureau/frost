@@ -16,6 +16,7 @@
 #include <memory>
 #include "Objects/Terrain.h"
 #include "Objects/Wall.h"
+#include "Objects/Water.h"
 
 class MainLayer : public Frost::Layer
 {
@@ -39,6 +40,7 @@ private:
 	EventHandlerId _unpauseHandlerUUID;
 	
 	std::unique_ptr<Terrain> _terrain;
+	std::unique_ptr<Water> _water;
 	std::unique_ptr<Sun> _sun;
 	std::unique_ptr<Player> _player;
 	std::shared_ptr<CheckPoint> _checkPoint1;

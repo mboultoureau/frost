@@ -301,7 +301,7 @@ void Bike::OnPreFixedUpdate(float deltaTime)
     mController->SetDriverInput(_forward, _right, _brake, false);
     mController->EnableLeanController(true);
 
-    bool sOverrideGravity = false;
+    bool sOverrideGravity = true;
     if (sOverrideGravity)
     {
         // When overriding gravity is requested, we cast a sphere downwards (opposite to the previous up position) and use the contact normal as the new gravity direction
@@ -317,6 +317,13 @@ void Bike::OnPreFixedUpdate(float deltaTime)
             mConstraint->ResetGravityOverride();
     }
 
+    bool applyDriftForceAssist = true;
+    if (applyDriftForceAssist)
+    {
+        auto r = _body->GetRotation();
+       _body->AddForce(r*Vec3(-_right,0,0) * 1000);
+
+    }
 
 #ifdef FT_DEBUG
     // Draw our wheels (this needs to be done in the pre update since we draw the bodies too in the state before the step)
@@ -342,8 +349,13 @@ void Bike::OnFixedUpdate(float deltaTime)
 void Bike::OnLateUpdate(float deltaTime)
 {
     auto vel = _body->GetLinearVelocity();
-    if (vel.Length() > _maxSpeed)
-        _body->SetLinearVelocity(vel.Normalized() * _maxSpeed);
+    if (vel.Length() > _maxSpeed && _specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() == 0ms)
+        _body->SetLinearVelocity(vel * (1-deltaTime));
+    
+    if (_specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() > _driftCoolDownDuration) {
+        _specialDriftCoolDown.Start();
+        _specialDriftCoolDown.Pause();
+    }
 }
 
 void Bike::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
@@ -381,7 +393,7 @@ void Bike::OnSpecial(float deltaTime, bool specialInput)
     // Drift
     if (_specialInput != specialInput) {
         // On key pressed : start drift
-        if (specialInput && _leftRightInput != 0)
+        if (specialInput && _leftRightInput != 0 && _specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() == 0ms)
         {
             _specialDriftTimer.Start();
             _speedAtDriftStart = Physics::GetBodyInterface().GetLinearVelocity(_bodyId).Length();
@@ -396,6 +408,7 @@ void Bike::OnSpecial(float deltaTime, bool specialInput)
 
             Physics::GetBodyInterface().AddForce(_bodyId, dir * time * _speedAtDriftStart * _specialDriftPower * antiMaxSpeedFactor);
            // Physics::GetBodyInterface().AddTorque(_bodyId, Vec3{ 0, _leftRightInput * _specialDriftRotationPower, 0 });
+            _specialDriftCoolDown.Start();
         }
     }
 

@@ -14,8 +14,8 @@ Sun::Sun()
 
 	// Transform component
 	sun.AddComponent<Transform>(
-		Math::Vector3{ 0.0f, 100.0f, 0.0f },
-		Math::EulerAngles{ 0.0f, 0.0f, -150.0_deg },
+		Math::Vector3{ 0.0f, 500.0f, 0.0f },
+		Math::EulerAngles{ 0.0f, 0.0f, 140.0_deg },
 		Math::Vector3{ 1.0f, 1.0f, 1.0f }
 	);
 

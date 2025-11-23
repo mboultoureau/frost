@@ -40,6 +40,7 @@ public:
 
 	void OnFixedUpdate(float deltaTime) override;
 	void UpdateTPCam(float deltaTime);
+	JPH::Quat LookAtQuaternion(const JPH::Vec3& cameraPos, const JPH::Vec3& targetPos);
 	void UpdateSpringCam(float deltaTime);
 	void ProcessInput(float deltaTime);
 
