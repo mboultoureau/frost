@@ -27,9 +27,10 @@ public:
 
 	void SetPlayerVehicle(Player::VehicleType type);
 
-	std::pair<VehicleType, Vehicle*> GetCurrentVehicle() {	return { _currentVehicleType, _currentVehicle }; }
+	std::pair<VehicleType, Vehicle*> GetCurrentVehicle() { return { _currentVehicleType, _currentVehicle }; };
 	int GetVehicleNumber() { return _vehicles.size(); };
 	GameObject GetPlayerID() { return _playerId; };
+	JPH::BodyID GetBodyID() { return _playerId.GetComponent<RigidBody>().physicBody->bodyId; };
 
 	Timer transitionTimer;
 	GameObject transitionRenderer;

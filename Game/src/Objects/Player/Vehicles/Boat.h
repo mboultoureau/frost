@@ -8,7 +8,7 @@
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
 #include <Jolt/Physics/Vehicle/MotorcycleController.h>
-
+#include "../../Water.h"
 
 
 using namespace Frost;
@@ -50,12 +50,22 @@ public:
 	JPH::BodyID Appear() override;
 	void Disappear() override;
 
-	void ProcessBikeInput(float deltaTime);
+	void ProcessBoatInput(float deltaTime);
+
+	void SetBoatWater(Water* w) { _currentWater = w; };
+
+	static bool IsBoatID(JPH::BodyID id) { return boatIds.find(id) != boatIds.end(); }
+	static void RegisterBoat(JPH::BodyID id, Boat* b) { boatIds.insert({ id, b }); };
+	static void UnregisterBoat(JPH::BodyID id) { boatIds.erase(id);	};
+	static void SetBoatWater(JPH::BodyID id, Water* w) { boatIds[id]->SetBoatWater(w); };
 
 private:
-	JPH::VehicleConstraint* mConstraint = nullptr;
-	JPH::MotorcycleController* mController = nullptr;
+	static std::unordered_map<JPH::BodyID, Boat*> boatIds;
+
 	JPH::Body* _body;
+	Water* _currentWater = nullptr;
+
+	float frictionFactor = 0.25f;
 
 	float _forward = 0;
 	float _right = 0;
@@ -65,4 +75,16 @@ private:
 	float _leftRightInput;
 	float _upDownInput;
 	bool _handBrakeInput = false;
+
+	static constexpr float		cBoatMass = 1000.0f;
+	static constexpr float		cBoatFriction = 30.0f;
+
+	static constexpr float		cHalfBoatLength = .75f;
+	static constexpr float		cHalfBoatTopWidth = .4f;
+	static constexpr float		cHalfBoatBottomWidth = .25f;
+	static constexpr float		cBoatBowLength = 3.5f;
+	static constexpr float		cHalfBoatHeight = 0.2f;
+
+	static constexpr float		cForwardAcceleration = 30.0f;
+	static constexpr float		cSteerAcceleration = 3.0f;
 };

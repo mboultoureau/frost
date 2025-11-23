@@ -49,27 +49,7 @@ void PlayerSpringCameraScript::UpdateTPCam(float deltaTime)
 	auto& cameraPivotWTransform = cameraPivot.GetComponent<WorldTransform>();
 
 	auto& springCamRB = springCam.GetComponent<RigidBody>();
-
-	// set desired pos to 3rd pers cam
-	if (isThirdPerson) { 
-		auto& thirdPersonCameraWTransform = thirdPersonCamera.GetComponent<WorldTransform>();
-		Physics::Get().body_interface->SetRotation(springCamRB.physicBody->bodyId,
-			JPH::Quat(thirdPersonCameraWTransform.rotation.x,
-				thirdPersonCameraWTransform.rotation.y,
-				thirdPersonCameraWTransform.rotation.z,
-				thirdPersonCameraWTransform.rotation.w),
-			JPH::EActivation::Activate);
-	}//Set desired pos to player
-	else { 
-		auto& playerWTransform = player.GetComponent<WorldTransform>();
-		Physics::Get().body_interface->SetRotation(springCamRB.physicBody->bodyId,
-			JPH::Quat(playerWTransform.rotation.x,
-				playerWTransform.rotation.y,
-				playerWTransform.rotation.z,
-				playerWTransform.rotation.w),
-			JPH::EActivation::Activate);
-	}
-
+	auto& playerWTransform = player.GetComponent<WorldTransform>();
 
 	//Set camera pos according to player velocity
 	auto& playerRB = player.GetComponent<RigidBody>();
@@ -80,12 +60,41 @@ void PlayerSpringCameraScript::UpdateTPCam(float deltaTime)
 	thirdPersonCameraTransform.position.z = defaultThirdPersonCameraDistance + speed * thirdPersonCamVelocityToDistance;
 }
 
+JPH::Quat PlayerSpringCameraScript::LookAtQuaternion(const JPH::Vec3& cameraPos, const JPH::Vec3& targetPos)
+{
+	using namespace JPH;
+	// Vector from camera to target
+	Vec3 forward = (targetPos - cameraPos).Normalized();
+
+	// World up vector
+	Vec3 up = Vec3::sAxisY();
+
+	// Compute right vector
+	Vec3 right = up.Cross(forward).Normalized();
+
+	// Recompute true up
+	Vec3 newUp = forward.Cross(right);
+
+	// Build rotation matrix (camera looks along +Z)
+	Mat44 rot(
+		Vec4(right, 0),
+		Vec4(newUp, 0),
+		Vec4(forward, 0),
+		Vec4(0, 0, 0, 1)
+	);
+
+	// Convert to quaternion
+	return rot.GetQuaternion();
+}
+
+
+
 class IgnoreCameraLayerFilter : public JPH::ObjectLayerFilter
 {
 public:
 	bool ShouldCollide(JPH::ObjectLayer inLayer) const override
 	{
-		return inLayer != ObjectLayers::CAMERA && inLayer != ObjectLayers::PLAYER && inLayer != ObjectLayers::CHECKPOINT;   // ignore la camera
+		return inLayer == ObjectLayers::NON_MOVING;   // ignore la camera
 	}
 };
 
@@ -94,7 +103,7 @@ class RayCastBroadPhaseFilter : public JPH::BroadPhaseLayerFilter
 public:
 	bool ShouldCollide(JPH::BroadPhaseLayer inLayer) const override
 	{
-		return true;
+		return inLayer == Frost::BroadPhaseLayers::NON_MOVING;
 	}
 };
 
@@ -136,13 +145,31 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 
 	JPH::Vec3 displacement = desiredPos - cameraPos;
 	JPH::Vec3 springForce = displacement * stiffness;
-	Physics::Get().body_interface->SetPosition(springCamRigidBody.physicBody->bodyId, cameraPos + deltaTime * springForce, JPH::EActivation::Activate);
+	auto playerBodyId = playerManager->GetCurrentVehicle().second->GetBodyID();
+	springForce *= 1 / (1 + Physics::GetBodyInterface().GetAngularVelocity(playerBodyId).Length());
+	auto newPos = cameraPos + deltaTime * springForce;
+	Physics::Get().body_interface->SetPosition(springCamRigidBody.physicBody->bodyId, newPos, JPH::EActivation::Activate);
+
+	// Rotation ------------
+
+	auto springCamRot = Physics::Get().body_interface->GetRotation(springCamRigidBody.physicBody->bodyId);
+	auto newRot = LookAtQuaternion(
+		newPos,
+		Math::vector_cast<JPH::Vec3>(playerWTransform.position) + Physics::GetBodyInterface().GetLinearVelocity(playerBodyId)
+	);
+	auto rotLerpFactor = 0.5f;
+	Physics::Get().body_interface->SetRotation(
+		springCamRigidBody.physicBody->bodyId,
+		(rotLerpFactor * springCamRot + (1 - rotLerpFactor) * newRot).Normalized(),
+		JPH::EActivation::Activate);
 }
 
 
 
 
 void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
+	EulerAngles pivotRot = Math::QuaternionToEulerAngles(cameraPivot.GetComponent<Transform>().rotation);
+
 	// Rotate Y
 	if (Input::GetKeyboard().IsKeyDown(K_1) || Input::GetKeyboard().IsKeyDown(K_NUMPAD6))
 	{
@@ -156,11 +183,13 @@ void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
 	// Rotate X
 	if (Input::GetKeyboard().IsKeyDown(K_3) || Input::GetKeyboard().IsKeyDown(K_NUMPAD8))
 	{
-		_cameraPivotRotationX += 1.0f * deltaTime;
+		if (pivotRot.Roll < 0.5f)
+			_cameraPivotRotationX += 1.0f * deltaTime;
 	}
 	else if (Input::GetKeyboard().IsKeyDown(K_4) || Input::GetKeyboard().IsKeyDown(K_NUMPAD2))
 	{
-		_cameraPivotRotationX -= 1.0f * deltaTime;
+		if (pivotRot.Roll > -0.5f)
+			_cameraPivotRotationX -= 1.0f * deltaTime;
 	}
 
 	// Switch cam to 3rd person or 1st person
@@ -168,7 +197,7 @@ void PlayerSpringCameraScript::ProcessInput(float deltaTime) {
 	{
 		isThirdPerson = !isThirdPerson;
 	}*/
-	isThirdPerson = !(Input::GetMouse().IsButtonHold(Mouse::MouseBoutton::Left));
+	isThirdPerson = !(Input::GetMouse().IsButtonHold(Mouse::MouseBoutton::Middle));
 }
 
 
@@ -179,7 +208,7 @@ PlayerCamera::PlayerCamera(Player* player) : _player{player}
 
 	// Camera Pivot
 	_cameraPivot = scene.CreateGameObject("Camera Pivot", _player->GetPlayerID());
-	_cameraPivot.AddComponent<Transform>(Vector3{ 0.0f, 0.0f, 4.4f });
+	_cameraPivot.AddComponent<Transform>(Vector3{ 0.0f, 0.0f, 0.0f });
 	_cameraPivot.AddComponent<WorldTransform>();
 
 
