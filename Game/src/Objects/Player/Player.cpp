@@ -96,10 +96,10 @@ void Player::_InitializeVehicles()
 		this,
 		Vehicle::RendererParameters(
 			"Plane Renderer",
-			"./resources/meshes/paper_airplane.glb",
+			"./resources/meshes/StarSparrow01.fbx",
 			Vector3{ 0,-0.4f,0 },
-			EulerAngles{ 0.0_deg, 180.0_deg, 0.0f },
-			Vector3{ 7.5f, 7.5f, 7.5f }
+			EulerAngles{ 0.0_deg, 0.0_deg, 0.0f },
+			Vector3{ .003f, .003f, .003f }
 		));
 	_vehicles.insert({ VehicleType::PLANE, plane });
 
