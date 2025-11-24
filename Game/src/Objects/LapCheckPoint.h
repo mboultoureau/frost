@@ -11,8 +11,8 @@ using namespace Frost::Component;
 
 class LapCheckPointScript : public Script {
 private:
-	CheckPoint* checkPoint; 
-	GameState& gamestate;  
+	CheckPoint* checkPoint;
+	GameState& gamestate;
 
 public:
 	LapCheckPointScript(CheckPoint* checkpoint, GameState& gs) : checkPoint{ checkpoint }, gamestate(gs)
@@ -31,7 +31,7 @@ public:
 			checkPoint->DestroyGameObject();
 		}
 		else {
-			for (auto& parent : parents) { 
+			for (auto& parent : parents) {
 				parent->DeleteChildrenPhysics();
 			}
 		}
@@ -39,13 +39,13 @@ public:
 };
 
 class LapCheckPoint : public CheckPoint {
-public : 
+public:
 	LapCheckPoint(Vector3 startpos, GameState& gamestate)
 		: CheckPoint(startpos), _gamestate{ gamestate }
 	{
 	}
 
-private: 
+private:
 	GameState& _gamestate;
 	void InitializePhysics() override;
 };

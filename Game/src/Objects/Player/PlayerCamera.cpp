@@ -145,10 +145,12 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 
 	JPH::Vec3 displacement = desiredPos - cameraPos;
 	JPH::Vec3 springForce = displacement * stiffness;
+
 	auto playerBodyId = playerManager->GetCurrentVehicle().second->GetBodyID();
 	springForce *= 1 / (1 + Physics::GetBodyInterface().GetAngularVelocity(playerBodyId).Length());
 	auto newPos = cameraPos + deltaTime * springForce;
-	Physics::Get().body_interface->SetPosition(springCamRigidBody.physicBody->bodyId, newPos, JPH::EActivation::Activate);
+	
+	if(!playerManager->forceSpecificCameraPos)  Physics::Get().body_interface->SetPosition(springCamRigidBody.physicBody->bodyId, newPos, JPH::EActivation::Activate);
 
 	// Rotation ------------
 
@@ -158,10 +160,12 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 		Math::vector_cast<JPH::Vec3>(playerWTransform.position) + Physics::GetBodyInterface().GetLinearVelocity(playerBodyId)
 	);
 	auto rotLerpFactor = 0.5f;
-	Physics::Get().body_interface->SetRotation(
+	if(!playerManager->forceSpecificCameraPos) Physics::Get().body_interface->SetRotation(
 		springCamRigidBody.physicBody->bodyId,
 		(rotLerpFactor * springCamRot + (1 - rotLerpFactor) * newRot).Normalized(),
 		JPH::EActivation::Activate);
+
+	playerManager->forceSpecificCameraPos = false;
 }
 
 

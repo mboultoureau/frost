@@ -33,6 +33,3 @@ protected:
 	void ProcessInput(float deltaTime);
 	void UpdatePhysics(float deltaTime);
 };
-
-
-

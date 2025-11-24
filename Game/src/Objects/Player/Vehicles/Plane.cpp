@@ -121,7 +121,7 @@ void Plane::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
 
 void Plane::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime)
 {
-    inContinuousCollision = false;
+    //inContinuousCollision = false;
 }
 
 JPH::BodyID Plane::Appear()
@@ -139,7 +139,7 @@ JPH::BodyID Plane::Appear()
 	BodyCreationSettings bodySettings(shape, joltPos, joltRot, EMotionType::Dynamic, ObjectLayers::PLAYER);
 	bodySettings.mRestitution = 0.0f;
 	bodySettings.mAllowSleeping = false;
-	bodySettings.mFriction = 200.f;
+	bodySettings.mFriction = 130.f;
     bodySettings.mGravityFactor = 0.2f;
 	bodySettings.mAllowedDOFs =
 		EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ;
@@ -147,7 +147,7 @@ JPH::BodyID Plane::Appear()
 
     auto& bodyInterface = Physics::GetBodyInterface();
 
-    bodyInterface.SetLinearVelocity(_bodyId, {0, 30, 30});
+    //bodyInterface.SetLinearVelocity(_bodyId, {0, 30, 30});
 	return _bodyId;
 }
 

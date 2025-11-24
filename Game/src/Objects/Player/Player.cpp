@@ -58,8 +58,7 @@ Player::Player()
 
 
 	// Create playerCameras Game Objects -------------
-	auto pCam = PlayerCamera(this);
-	_playerCamera = &pCam;
+	_playerCamera = new PlayerCamera(this);
 }
 
 
@@ -147,4 +146,41 @@ void Player::_SummonVehicleTransition()
 	transitionTimer.Start();
 }
 
+void Player::SetRespawnPoint(Math::Vector3 lastCheckPointPosition, Math::Vector4 lastRespawnRotation)//TODO : add lastVehiculeRespawnType
+{
+	_lastRespawnPosition = lastCheckPointPosition;
+	_lastRespawnRotation = lastRespawnRotation;
+	//TODO : add lastVehiculeRespawnType set
+
+}
+
+void Player::Warp(Vector3 position, Vector4 rotation, Vector3 speed)//TODO: add vehicle type
+{
+	auto& bodyInter = Physics::GetBodyInterface();
+	Scene& scene = Game::GetScene();
+	auto playerTransform = scene.GetComponent<WorldTransform>(_playerId);
+
+	playerTransform->position = position;
+	auto playerBodyId = _scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId;
+	bodyInter.SetPosition(playerBodyId, Math::vector_cast<JPH::Vec3>(position), JPH::EActivation::Activate);
+	bodyInter.SetLinearVelocity(playerBodyId, Math::vector_cast<JPH::Vec3>(speed));
+	bodyInter.SetRotation(playerBodyId, {rotation.x, rotation.y, rotation.z, rotation.w}, JPH::EActivation::Activate);
+}
+
+void Player::WarpCamera(Vector3 offset, Vector4 rotation, Vector3 speed)
+{
+	auto& bodyInter = Physics::GetBodyInterface();
+	Scene& scene = Game::GetScene();
+	auto playerTransform = scene.GetComponent<WorldTransform>(_playerId);
+
+	Vector3 forcedNewCameraPos = playerTransform->position + offset;
+
+	auto camBodyId = _scene->GetComponent<RigidBody>(_playerCamera->_camera)->physicBody->bodyId;
+
+	bodyInter.SetPosition(camBodyId, { forcedNewCameraPos.x, forcedNewCameraPos.y, forcedNewCameraPos.z}, JPH::EActivation::Activate);
+	bodyInter.SetLinearVelocity(camBodyId, {speed.x, speed.y, speed.z});
+	bodyInter.SetRotation(camBodyId, { rotation.x, rotation.y, rotation.z, rotation.w }, JPH::EActivation::Activate);
+
+	forceSpecificCameraPos = true;
+}
 

@@ -37,7 +37,6 @@ public:
 	float playerCullingDistance = 5.0f;
 	float thirdPersonCamVelocityToDistance = -0.0005f;
 
-
 	void OnFixedUpdate(float deltaTime) override;
 	void UpdateTPCam(float deltaTime);
 	JPH::Quat LookAtQuaternion(const JPH::Vec3& cameraPos, const JPH::Vec3& targetPos);
@@ -56,6 +55,7 @@ class PlayerCamera
 public:
 	friend class Player;
 
+	GameObject& GetCameraId() { return _camera; }
 	PlayerCamera(Player* _player);
 
 private:
