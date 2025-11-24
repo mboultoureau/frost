@@ -1,7 +1,7 @@
 #include "Frost/Scene/Scene.h"
 
 #include "Frost/Scene/Systems/JoltRendererSystem.h"
-#include "Frost/Scene/Systems/ModelRendererSystem.h"
+#include "Frost/Scene/Systems/RendererSystem.h"
 #include "Frost/Scene/Systems/WorldTransformSystem.h"
 #include "Frost/Scene/Systems/ScriptableSystem.h"
 #include "Frost/Scene/Systems/PhysicSystem.h"
@@ -63,11 +63,11 @@ namespace Frost
     void Scene::_InitializeSystems()
     {
 		_systems.push_back(std::make_unique<WorldTransformSystem>());
-        _systems.push_back(std::make_unique<ModelRendererSystem>());
 		_systems.push_back(std::make_unique<ScriptableSystem>());
         _systems.push_back(std::make_unique<PhysicSystem>());
+        _systems.push_back(std::make_unique<RendererSystem>());
         _systems.push_back(std::make_unique<UISystem>());
-        
+
 #ifdef FT_DEBUG
         _systems.push_back(std::make_unique<JoltRendererSystem>());
 #endif

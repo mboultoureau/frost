@@ -5,19 +5,39 @@
 #include "Frost/Scene/ECS/System.h"
 #include "Frost/Asset/Texture.h"
 #include "Frost/Scene/Components/Camera.h"
+#include "Frost/Scene/Components/VirtualCamera.h"
 #include "Frost/Scene/Components/StaticMesh.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/Light.h"
 
+#include <entt/entt.hpp>
 #include <memory>
 
 namespace Frost
 {
-	class ModelRendererSystem : public System
+	struct RenderCameraData
+	{
+		entt::entity entity;
+		const Component::Camera* camera;
+		const Component::WorldTransform* transform;
+	};
+
+	class RendererSystem : public System
 	{
 	public:
-		ModelRendererSystem();
+		RendererSystem();
 		void LateUpdate(Scene& scene, float deltaTime) override;
+
+	private:
+		void _RenderSceneForCamera(
+			Scene& scene,
+			const RenderCameraData& camData,
+			float deltaTime,
+			const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
+			const std::shared_ptr<Texture>& skyboxTexture,
+			Texture* overrideRenderTarget = nullptr,
+			float overrideAspectRatio = 0.0f
+		);
 
 	private:
 		DeferredRenderingPipeline _deferredRendering;
@@ -27,5 +47,3 @@ namespace Frost
 		std::unique_ptr<Texture> _destination;
 	};
 }
-
-

@@ -88,8 +88,17 @@
                 EventManager::Emit<Frost::WindowResizeEvent>(_width, _height);
             }
 
+            _resizeEventHandlerId = EventManager::SubscribeFront<WindowResizeEvent>(
+                FROST_BIND_EVENT_FN(WindowWin::OnWindowResize)
+            );
+
             ShowWindow(_hwnd, SW_SHOWNORMAL);
 	    }
+
+        WindowWin::~WindowWin()
+        {
+            EventManager::Unsubscribe<WindowResizeEvent>(_resizeEventHandlerId);
+        }
 
         void WindowWin::SetFullscreen(const bool isFullscreen)
         {
@@ -136,7 +145,7 @@
 
             if (_sizeChanged)
             {
-                EventManager::Emit<Frost::WindowResizeEvent>(_width, _height);
+                EventManager::Emit<Frost::WindowResizeEvent>(_pendingWidth, _pendingHeight);
                 _sizeChanged = false;
             }
         }
@@ -179,8 +188,8 @@
                     UINT width = LOWORD(lParam);
                     UINT height = HIWORD(lParam);
 
-				    window->_width = width;
-				    window->_height = height;
+                    window->_pendingWidth = width;
+                    window->_pendingHeight = height;
 
                     window->_sizeChanged = true;
                 }
@@ -221,6 +230,14 @@
             }
 
             return 0;
+        }
+
+        bool WindowWin::OnWindowResize(WindowResizeEvent& e)
+        {
+            _width = e.GetWidth();
+            _height = e.GetHeight();
+
+            return false;
         }
 
     }

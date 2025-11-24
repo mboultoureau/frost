@@ -28,7 +28,7 @@ namespace Frost
 		virtual Texture* GetBackBuffer() = 0;
 		virtual Texture* GetDepthBuffer() = 0;
 
-		virtual std::unique_ptr<Buffer> CreateBuffer(const BufferConfig& config, const void* initialData = nullptr) = 0;
+		virtual std::shared_ptr<Buffer> CreateBuffer(const BufferConfig& config, const void* initialData = nullptr) = 0;
 
 		void RegisterPipeline(Pipeline* pipeline);
 		void UnregisterPipeline(Pipeline* pipeline);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Renderer/GPUResource.h"
+#include "Frost/Event/Events/Window/WindowResizeEvent.h"
 
 #include <cstdint>
 
@@ -14,5 +15,6 @@ namespace Frost
 
 		virtual void Initialize() = 0;
 		virtual void Shutdown() = 0;
+		virtual void OnWindowResize(WindowResizeEvent& resizeEvent) {};
 	};
 }
