@@ -57,6 +57,16 @@ namespace Frost
 			assetCache[path] = texture;
 			return texture;
 		}
+
+		static std::shared_ptr<Texture> CreateTexture(const TextureConfig& config)
+		{
+#ifdef FT_PLATFORM_WINDOWS
+			TextureConfig cfg = config;
+			return std::make_shared<TextureDX11>(cfg);
+#else
+#error "Texture creation not implemented for this platform"
+#endif
+		}
 	};
 }
 

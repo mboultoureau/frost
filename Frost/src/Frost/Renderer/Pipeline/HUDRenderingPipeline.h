@@ -36,9 +36,9 @@ namespace Frost
         std::unique_ptr<Shader> _pixelShader;
         std::unique_ptr<InputLayout> _inputLayout;
 
-        std::unique_ptr<Buffer> _vertexBuffer;
-        std::unique_ptr<Buffer> _indexBuffer;
-        std::unique_ptr<Buffer> _constantBuffer;
+        std::shared_ptr<Buffer> _vertexBuffer;
+        std::shared_ptr<Buffer> _indexBuffer;
+        std::shared_ptr<Buffer> _constantBuffer;
         uint32_t _indexCount = 0;
 
         std::unique_ptr<Sampler> _samplerPoint;

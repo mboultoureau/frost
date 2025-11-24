@@ -32,7 +32,7 @@ namespace Frost
 	private:
 		std::unique_ptr<Shader> _vertexShader;
 		std::unique_ptr<Shader> _pixelShader;
-		std::unique_ptr<Buffer> _constantsBuffer;
+		std::shared_ptr<Buffer> _constantsBuffer;
 		std::unique_ptr<Sampler> _sampler;
 	};
 }

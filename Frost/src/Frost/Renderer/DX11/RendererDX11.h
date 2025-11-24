@@ -22,7 +22,7 @@ namespace Frost
 		virtual std::shared_ptr<CommandList> GetNewCommandList() override;
 		virtual Texture* GetBackBuffer() override { return _backBufferTexture.get(); }
 		virtual Texture* GetDepthBuffer() override { return _depthBufferTexture.get(); }
-		std::unique_ptr<Buffer> CreateBuffer(const BufferConfig& config, const void* initialData) override;
+		std::shared_ptr<Buffer> CreateBuffer(const BufferConfig& config, const void* initialData) override;
 
 		ID3D11Device1* GetDevice() const { return _device.Get(); }
 		ID3D11DeviceContext* GetDeviceContext() const { return _immediateContext.Get(); }

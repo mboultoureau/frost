@@ -20,6 +20,34 @@ namespace Frost
 		while (::ShowCursor(FALSE) >= 0);
 	}
 
+	void Mouse::LockCursor()
+	{
+		HWND windowHandle = GetForegroundWindow();
+		if (windowHandle == NULL) return;
+		RECT clientRect;
+		if (GetClientRect(windowHandle, &clientRect))
+		{
+			POINT topLeft = { clientRect.left, clientRect.top };
+			POINT bottomRight = { clientRect.right, clientRect.bottom };
+
+			if (ClientToScreen(windowHandle, &topLeft) && ClientToScreen(windowHandle, &bottomRight))
+			{
+				RECT clipRect = {
+					topLeft.x,
+					topLeft.y,
+					bottomRight.x,
+					bottomRight.y
+				};
+				ClipCursor(&clipRect);
+			}
+		}
+	}
+
+	void Mouse::UnlockCursor()
+	{
+		ClipCursor(NULL);
+	}
+
 	bool Mouse::IsCursorVisible() const
 	{
 		CURSORINFO cursorInfo = { sizeof(CURSORINFO) };
@@ -43,6 +71,19 @@ namespace Frost
 	Mouse::MousePosition Mouse::GetPosition() const
 	{
 		return _position;
+	}
+
+	void Mouse::SetPosition(const MousePosition& position)
+	{
+		HWND windowHandle = GetForegroundWindow();
+		if (windowHandle == NULL) return;
+		POINT clientPoint = { static_cast<LONG>(position.x), static_cast<LONG>(position.y) };
+		POINT screenPoint = clientPoint;
+		if (ClientToScreen(windowHandle, &screenPoint))
+		{
+			SetCursorPos(screenPoint.x, screenPoint.y);
+			_position = position;
+		}
 	}
 
 	Mouse::MouseViewportPosition Mouse::GetViewportPosition() const

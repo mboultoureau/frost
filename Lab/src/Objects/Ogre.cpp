@@ -14,7 +14,7 @@ public:
 
 		const float rotationSpeed = 1.0f;
 		float angle = rotationSpeed * deltaTime;
-		transform.Rotate(Vector3{ 0.0f, angle, 0.0f });
+		transform.Rotate(EulerAngles{ 0.0f, angle, 0.0f });
 	}
 };
 

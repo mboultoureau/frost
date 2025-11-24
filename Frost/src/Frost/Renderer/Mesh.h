@@ -17,11 +17,6 @@ namespace Frost
 	public:
 		Mesh(std::span<const std::byte> vertices, uint32_t vertexStride, std::span<const uint32_t> indices);
 
-		Mesh(const Mesh&) = delete;
-		Mesh& operator=(const Mesh&) = delete;
-		Mesh(Mesh&&) noexcept = default;
-		Mesh& operator=(Mesh&&) noexcept = default;
-
 		const Buffer* GetVertexBuffer() const { return _vertexBuffer.get(); }
 		const Buffer* GetIndexBuffer() const { return _indexBuffer.get(); }
 
@@ -33,8 +28,8 @@ namespace Frost
 		BoundingBox GetBoundingBox() const { return _boundingBox; }
 
 	private:
-		std::unique_ptr<Buffer> _vertexBuffer;
-		std::unique_ptr<Buffer> _indexBuffer;
+		std::shared_ptr<Buffer> _vertexBuffer;
+		std::shared_ptr<Buffer> _indexBuffer;
 		BoundingBox _boundingBox;
 
 		uint32_t _vertexStride;

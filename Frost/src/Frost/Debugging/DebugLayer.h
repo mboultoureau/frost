@@ -25,7 +25,7 @@ namespace Frost
 		static Layer::LayerName GetStaticName() { return "DebugLayer"; }
 
 	private:
-		bool _displayDebug = true;
+		bool _displayDebug = false;
 		std::vector<std::unique_ptr<DebugPanel>> _debugPanels;
 	};
 }
