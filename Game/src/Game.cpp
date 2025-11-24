@@ -1,6 +1,5 @@
 ﻿#include "Game.h"
 #include "MainLayer.h"
-
 #include "Frost/Debugging/DebugLayer.h"
 #include "PauseMenu/PauseMenu.h"
 
@@ -33,7 +32,7 @@ bool Game::OnGameReset(Frost::ResetEvent& e)
 void Game::InitGame()
 {
 	_scene = std::make_unique<Frost::Scene>("Scene");
-	_app->PushLayer<MainLayer>();
+	_mainLayer = _app->PushLayer<MainLayer>();
 
 #if FT_DEBUG
 	DebugLayer* debugLayer = _app->PushLayer<DebugLayer>();

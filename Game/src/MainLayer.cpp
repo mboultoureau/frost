@@ -19,7 +19,18 @@ void MainLayer::OnAttach()
 	//_wall = std::make_unique<Wall>(Wall());
 
 	_gamestate = GameState();
-	_gamestate.SetLap(2);
+
+	_gamestate.SetLap(4);
+
+	_player = std::make_unique<Player>();
+
+	_portal1 = std::make_shared<Portal>(Vector3{ -365, 68, -32 }, EulerAngles{0_deg, 0_deg, 0_deg}, Vector3{ 3.0f, 3.0f, 3.0f }, _player.get());
+	_portal2 = std::make_shared<Portal>(Vector3{ -130, 68, 180 }, EulerAngles{0_deg, 90_deg, 0_deg}, Vector3{ 3.0f, 3.0f, 3.0f }, _player.get());
+
+	_portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
+	_portal2->SetupPortal(PortalType::Exit);
+
+	logo = HUD_Logo();
 
 	_terrain = std::make_unique<Terrain>();
 	_water = std::make_unique<Water>(
@@ -27,46 +38,41 @@ void MainLayer::OnAttach()
 	);
 	_sun = std::make_unique<Sun>();
 
-	_player = std::make_unique<Player>();
-	{
-		_checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 }, _gamestate);
-		_checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
-		_checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
-		_checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
-		_checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
+	_checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 }, _gamestate);
+	_checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
+	_checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
+	_checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
+	_checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
 
 
-		//link 1 / 2
-		_checkPoint1->AddChild(_checkPoint2);
-		_checkPoint2->AddParent(_checkPoint1);
-		//link 1 / 3
-		_checkPoint1->AddChild(_checkPoint3);
-		_checkPoint3->AddParent(_checkPoint1);
+	//link 1 / 2
+	_checkPoint1->AddChild(_checkPoint2);
+	_checkPoint2->AddParent(_checkPoint1);
+	//link 1 / 3
+	_checkPoint1->AddChild(_checkPoint3);
+	_checkPoint3->AddParent(_checkPoint1);
 
-		//DEBUG
-			//link 2 / 1
-	/*		_checkPoint2->AddChild(_checkPoint1);
-			_checkPoint1->AddParent(_checkPoint2);
-	*/
-	//link 2 / 4
-		_checkPoint2->AddChild(_checkPoint4);
-		_checkPoint4->AddParent(_checkPoint2);
-		//link 3 / 4
-		_checkPoint3->AddChild(_checkPoint4);
-		_checkPoint4->AddParent(_checkPoint3);
+	//DEBUG
+		//link 2 / 1
+/*	_checkPoint2->AddChild(_checkPoint1);
+	_checkPoint1->AddParent(_checkPoint2);
+*/
+//link 2 / 4
+	_checkPoint2->AddChild(_checkPoint4);
+	_checkPoint4->AddParent(_checkPoint2);
+	//link 3 / 4
+	_checkPoint3->AddChild(_checkPoint4);
+	_checkPoint4->AddParent(_checkPoint3);
 
-		//link 4 / 5
-		_checkPoint4->AddChild(_checkPoint5);
-		_checkPoint5->AddParent(_checkPoint4);
+	//link 4 / 5
+	_checkPoint4->AddChild(_checkPoint5);
+	_checkPoint5->AddParent(_checkPoint4);
 
-		//link 5 / 1
-		_checkPoint5->AddChild(_checkPoint1);
-		_checkPoint1->AddParent(_checkPoint5);
+	//link 5 / 1
+	_checkPoint5->AddChild(_checkPoint1);
+	_checkPoint1->AddParent(_checkPoint5);
 
-		_checkPoint1->ActivatePhysics();
-
-		CheckPoint::lastCheckPoint = _checkPoint1->GetGameObjectId();
-	}
+	_checkPoint1->ActivatePhysics();
 
 	logo = HUD_Logo();
 

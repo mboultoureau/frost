@@ -41,7 +41,7 @@ public:
 
 	void OnCollisionStay(BodyOnContactParameters params, float deltaTime) override;
 
-#if FT_DEBUG;
+#if FT_DEBUG
 	void OnFixedUpdate(float fixedDeltaTime) override;
 #endif
 	void OnLateUpdate(float deltaTime) override;
