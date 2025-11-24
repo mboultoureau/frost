@@ -7,6 +7,7 @@ GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()
 	mObjectToBroadPhase[ObjectLayers::BULLET] = BroadPhaseLayers::MOVING;
 	mObjectToBroadPhase[ObjectLayers::CARGO] = BroadPhaseLayers::MOVING;
 	mObjectToBroadPhase[ObjectLayers::CHECKPOINT] = BroadPhaseLayers::NON_MOVING;
+	mObjectToBroadPhase[ObjectLayers::PORTAL] = BroadPhaseLayers::NON_MOVING;
 	mObjectToBroadPhase[ObjectLayers::NO_COLLIDE] = BroadPhaseLayers::NON_MOVING;
 	mObjectToBroadPhase[ObjectLayers::CAMERA] = BroadPhaseLayers::MOVING;
 	mObjectToBroadPhase[ObjectLayers::WATER] = BroadPhaseLayers::NON_MOVING;
@@ -46,12 +47,14 @@ bool GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::O
 	case ObjectLayers::NON_MOVING:
 		return inObject2 != ObjectLayers::NON_MOVING;
 	case ObjectLayers::PLAYER:
-		return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::CHECKPOINT || inObject2 == ObjectLayers::WATER;
+		return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::CHECKPOINT || inObject2 == ObjectLayers::PORTAL || inObject2 == ObjectLayers::WATER;
 	case ObjectLayers::BULLET:
 		return inObject2 == ObjectLayers::CARGO || inObject2 == ObjectLayers::NON_MOVING;
 	case ObjectLayers::CARGO:
 		return inObject2 != ObjectLayers::PLAYER;
 	case ObjectLayers::CHECKPOINT:
+		return inObject2 == ObjectLayers::CARGO || inObject2 == ObjectLayers::PLAYER;
+	case ObjectLayers::PORTAL:
 		return inObject2 == ObjectLayers::CARGO || inObject2 == ObjectLayers::PLAYER;
 	case ObjectLayers::CAMERA :
 		return inObject2 != ObjectLayers::PLAYER;
@@ -78,6 +81,8 @@ bool GameObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer inLayer1,
 	case ObjectLayers::CARGO:
 		return true;
 	case ObjectLayers::CHECKPOINT:
+		return inLayer2 == BroadPhaseLayers::MOVING;
+	case ObjectLayers::PORTAL:
 		return inLayer2 == BroadPhaseLayers::MOVING;
 	case ObjectLayers::CAMERA:
 		return true;
