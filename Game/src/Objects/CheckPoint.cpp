@@ -21,10 +21,10 @@ using namespace Frost::Component;
 const float CHECKPOINT_SIZE = 5.0f;
 
 class CheckPointScript : public Script {
-private: 
+private:
 	CheckPoint* checkPoint;
 public:
-	CheckPointScript(CheckPoint* checkpoint) : checkPoint{checkpoint}
+	CheckPointScript(CheckPoint* checkpoint) : checkPoint{ checkpoint }
 	{
 	}
 	virtual void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override
@@ -41,7 +41,7 @@ public:
 				parent->DeleteChildrenPhysics();
 			}
 		}
-	
+
 		CheckPoint::lastCheckPoint = GetGameObject();
 	}
 
@@ -60,7 +60,7 @@ CheckPoint::CheckPoint(Vector3 startpos)
 	_checkpoint.AddComponent<WorldTransform>();
 }
 
-void CheckPoint::FixedUpdate(float deltaTime) 
+void CheckPoint::FixedUpdate(float deltaTime)
 {
 }
 
@@ -112,7 +112,7 @@ void CheckPoint::ReinitializeChildrenPhysics()
 
 	for (std::shared_ptr<CheckPoint> child : _nextCheckPoints)
 	{
-		child->ActivatePhysics();	
+		child->ActivatePhysics();
 	}
 }
 

@@ -15,8 +15,9 @@ namespace ObjectLayers
 	static constexpr JPH::ObjectLayer CHECKPOINT = 4;
 	static constexpr JPH::ObjectLayer NO_COLLIDE = 5;
 	static constexpr JPH::ObjectLayer CAMERA = 6;
-	static constexpr JPH::ObjectLayer WATER = 7;
-	static constexpr JPH::ObjectLayer NUM_LAYERS = 8;
+	static constexpr JPH::ObjectLayer PORTAL = 7;
+	static constexpr JPH::ObjectLayer WATER = 8;
+	static constexpr JPH::ObjectLayer NUM_LAYERS = 9;
 }
 
 namespace BroadPhaseLayers

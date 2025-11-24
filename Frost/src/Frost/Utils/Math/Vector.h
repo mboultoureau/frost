@@ -29,7 +29,7 @@ namespace Frost::Math
         {
             struct { float r, g, b; };
             struct { float x, y, z; };
-			struct { float width, height, depth; };
+            struct { float width, height, depth; };
             float values[3];
         };
 
@@ -51,7 +51,7 @@ namespace Frost::Math
     };
 
     using Color3 = Vector3;
-	using Color4 = Vector4;
+    using Color4 = Vector4;
 
     struct base_vector_traits
     {
@@ -182,7 +182,7 @@ namespace Frost::Math
 
         static constexpr neutral_type to_neutral(const internal_type& value) noexcept
         {
-			return neutral_type{ DirectX::XMVectorGetX(value), DirectX::XMVectorGetY(value), DirectX::XMVectorGetZ(value), DirectX::XMVectorGetW(value) };
+            return neutral_type{ DirectX::XMVectorGetX(value), DirectX::XMVectorGetY(value), DirectX::XMVectorGetZ(value), DirectX::XMVectorGetW(value) };
         }
 
         static constexpr internal_type from_neutral(const neutral_type& value) noexcept
@@ -210,12 +210,12 @@ namespace Frost::Math
 
         static neutral_type to_neutral(const internal_type& value) noexcept
         {
-            return neutral_type{ value.GetX(), value.GetY(), value.GetZ(), 0.0f};
+            return neutral_type{ value.GetX(), value.GetY(), value.GetZ(), 0.0f };
         }
 
         static internal_type from_neutral(const neutral_type& value) noexcept
         {
-			return internal_type{ value.x, value.y, value.z };
+            return internal_type{ value.x, value.y, value.z };
         }
 
         static constexpr auto name() noexcept
@@ -323,12 +323,52 @@ namespace Frost::Math
         );
     }
 
+    template<typename T>
+    concept IsVector = requires
+    {
+        typename vector_traits<T>::neutral_type;
+        vector_traits<T>::Dimensions;
+    };
+
+    template<IsVector T>
+    constexpr T operator-(const T& lhs, const T& rhs) noexcept
+    {
+        using traits = vector_traits<T>;
+
+        auto a_neutral = traits::to_neutral(lhs);
+        auto b_neutral = traits::to_neutral(rhs);
+
+        typename traits::neutral_type result_neutral;
+        for (int i = 0; i < traits::Dimensions; ++i)
+        {
+            result_neutral.values[i] = a_neutral.values[i] - b_neutral.values[i];
+        }
+
+        return traits::from_neutral(result_neutral);
+    }
+
+    template<IsVector T>
+    constexpr T operator+(const T& lhs, const T& rhs) noexcept
+    {
+        using traits = vector_traits<T>;
+        auto a_neutral = traits::to_neutral(lhs);
+        auto b_neutral = traits::to_neutral(rhs);
+
+        typename traits::neutral_type result_neutral;
+        for (int i = 0; i < traits::Dimensions; ++i)
+        {
+            result_neutral.values[i] = a_neutral.values[i] + b_neutral.values[i];
+        }
+
+        return traits::from_neutral(result_neutral);
+    }
+
     template<class T>
     class Vector
     {
     public:
         using traits = vector_traits<T>;
-		using neutral_type = typename traits::neutral_type;
+        using neutral_type = typename traits::neutral_type;
         using internal_type = typename traits::internal_type;
         using value_type = typename traits::value_type;
 
@@ -385,13 +425,13 @@ namespace Frost::Math
                 result_neutral.values[i] = a_neutral.values[i] - b_neutral.values[i];
             }
             return Vector{ traits::from_neutral(result_neutral) };
-		}
+        }
 
         constexpr Vector& operator+=(const Vector& other) noexcept
         {
             *this = *this + other;
             return *this;
-		}
+        }
 
         constexpr Vector& operator-=(const Vector& other) noexcept
         {
@@ -408,23 +448,23 @@ namespace Frost::Math
                 result_neutral.values[i] = -neutral.values[i];
             }
             return Vector{ traits::from_neutral(result_neutral) };
-		}
+        }
 
         constexpr Vector& operator=(const internal_type& value) noexcept
         {
             _value = value;
             return *this;
-		}
+        }
 
         constexpr Vector& operator=(internal_type&& value) noexcept
         {
             _value = std::move(value);
             return *this;
-		}
+        }
 
         constexpr Vector(internal_type&& value) noexcept : _value(std::move(value))
         {
-		}
+        }
 
     private:
         internal_type _value = traits::neutral_value();
@@ -444,6 +484,6 @@ namespace Frost::Math
             }
         }
         os << ")";
-		return os;
+        return os;
     }
 }
