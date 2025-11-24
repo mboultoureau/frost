@@ -30,10 +30,13 @@ namespace Frost
 
         void Initialize() override;
         void Shutdown() override;
+        void OnWindowResize(WindowResizeEvent& e) override;
 
-        void BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix);
+        void OnResize(uint32_t width, uint32_t height);
+
+        void BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix, const Viewport& viewport);
         void SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix);
-        void EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights);
+        void EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights, const Viewport& viewport);
 
         Texture* GetDepthStencilTexture() const { return _depthStencilTexture.get(); }
         CommandList* GetCommandList() const { return _commandList.get(); }
@@ -63,10 +66,10 @@ namespace Frost
         std::unique_ptr<Sampler> _gBufferSampler;
 
         // Constant Buffers
-        std::unique_ptr<Buffer> _vsPerFrameConstants;
-        std::unique_ptr<Buffer> _vsPerObjectConstants;
-        std::unique_ptr<Buffer> _lightConstantsBuffer;
-		std::unique_ptr<Buffer> _psMaterialConstants;
+        std::shared_ptr<Buffer> _vsPerFrameConstants;
+        std::shared_ptr<Buffer> _vsPerObjectConstants;
+        std::shared_ptr<Buffer> _lightConstantsBuffer;
+		std::shared_ptr<Buffer> _psMaterialConstants;
 
         // Default Textures (used when material textures are missing)
         std::unique_ptr<Texture> _defaultAlbedoTexture;
@@ -75,10 +78,13 @@ namespace Frost
         std::unique_ptr<Texture> _defaultRoughnessTexture;
         std::unique_ptr<Texture> _defaultAOTexture;
 
-        bool _enabled = true;
-
-        void CreateDefaultTextures();
-
         std::unique_ptr<CommandList> _commandList;
+
+        bool _enabled = true;
+        uint32_t _currentWidth = 0;
+        uint32_t _currentHeight = 0;
+
+    private:
+        void _CreateDefaultTextures();
     };
 }

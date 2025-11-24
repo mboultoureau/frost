@@ -159,9 +159,9 @@ namespace Frost
 		return std::make_shared<CommandListDX11>();
 	}
 
-	std::unique_ptr<Buffer> RendererDX11::CreateBuffer(const BufferConfig& config, const void* initialData)
+	std::shared_ptr<Buffer> RendererDX11::CreateBuffer(const BufferConfig& config, const void* initialData)
 	{
-		return std::make_unique<BufferDX11>(config, _device.Get(), initialData);
+		return std::make_shared<BufferDX11>(config, _device.Get(), initialData);
 	}
 
 	void RendererDX11::_CreateDevice()

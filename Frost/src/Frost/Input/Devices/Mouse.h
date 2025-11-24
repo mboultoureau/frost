@@ -51,9 +51,12 @@ namespace Frost
 		// Cursor
 		void ShowCursor();
 		void HideCursor();
+		void LockCursor();
+		void UnlockCursor();
 		bool IsCursorVisible() const;
 		bool IsCursorInViewport(const Viewport& viewport) const;
 		MousePosition GetPosition() const;
+		void SetPosition(const MousePosition& position);
 		MouseViewportPosition GetViewportPosition() const;
 
 		// Scroll wheel

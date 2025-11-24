@@ -6,6 +6,7 @@
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/Camera.h"
+#include "Frost/Scene/Components/VirtualCamera.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Components/Script.h"
 #include "Frost/Scene/Components/Light.h"
@@ -110,6 +111,7 @@ namespace Frost
 
 		if (_selectedEntity == entt::null)
 		{
+			_lastInspectedEntity = entt::null;
 			ImGui::Text("Select an entity to inspect its components.");
 		}
 		else
@@ -401,7 +403,28 @@ namespace Frost
 		if (DebugUtils::DrawComponentHeader("Transform (Local)"))
 		{
 			DebugUtils::DrawVec3Control("Position", transform->position);
-			DebugUtils::DrawQuaternionControl("Rotation", transform->rotation);
+			if (gameObjectId != _lastInspectedEntity)
+			{
+				Math::EulerAngles eulerRad = transform->GetEulerAngles();
+				_inspectorEulerCache = {
+					Math::Angle<Math::Degree>(eulerRad.Pitch).value(),
+					Math::Angle<Math::Degree>(eulerRad.Yaw).value(),
+					Math::Angle<Math::Degree>(eulerRad.Roll).value()
+				};
+				_lastInspectedEntity = gameObjectId;
+			}
+
+			if (DebugUtils::DrawVec3Control("Rotation", _inspectorEulerCache, 0.0f))
+			{
+				Math::EulerAngles newAnglesRad =
+				{
+					.Roll = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(_inspectorEulerCache.z)),
+					.Yaw = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(_inspectorEulerCache.y)),
+					.Pitch = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(_inspectorEulerCache.x))
+				};
+
+				transform->SetRotation(newAnglesRad);
+			}
 			DebugUtils::DrawVec3Control("Scale", transform->scale);
 			ImGui::TreePop();
 		}
@@ -497,6 +520,102 @@ namespace Frost
 			ImGui::PopItemWidth();
 
 			ImGui::DragInt("Priority", &camera->priority, 1, 0, 100);
+
+			// Post effects
+			ImGui::Separator();
+			ImGui::Text("Post Effects:");
+
+			for (size_t i = 0; i < camera->postEffects.size(); ++i)
+			{
+				PostEffect* effect = camera->postEffects[i].get();
+				if (!effect) continue;
+				ImGui::PushID((int)i);
+				bool enabled = effect->IsEnabled();
+				if (ImGui::Checkbox("##enabled", &enabled))
+				{
+					effect->SetEnabled(enabled);
+				}
+				ImGui::SameLine();
+				if (ImGui::CollapsingHeader(effect->GetName()))
+				{
+					ImGui::Indent();
+					effect->OnImGuiRender(_deltaTime);
+					ImGui::Unindent();
+				}
+				ImGui::PopID();
+			}
+
+			ImGui::TreePop();
+		}
+	}
+
+	void DebugScene::_DrawVirtualCameraComponent(Scene* scene, entt::entity gameObjectId)
+	{
+		auto& registry = scene->GetRegistry();
+		VirtualCamera* camera = registry.try_get<VirtualCamera>(gameObjectId);
+		if (!camera) return;
+
+		if (DebugUtils::DrawComponentHeader("Virtual Camera"))
+		{
+			const char* projectionTypes[] = { "Perspective", "Orthographic" };
+			int currentType = (int)camera->projectionType;
+			if (ImGui::Combo("Projection Type", &currentType, projectionTypes, IM_ARRAYSIZE(projectionTypes)))
+			{
+				camera->projectionType = (Camera::ProjectionType)currentType;
+			}
+
+			if (camera->projectionType == Camera::ProjectionType::Perspective)
+			{
+				float currentFOVDegrees = Math::Angle<Math::Degree>(camera->perspectiveFOV).value();
+				ImGui::DragFloat("FOV", &currentFOVDegrees, 0.5f, 30.0f, 120.0f);
+				camera->perspectiveFOV = Math::Angle<Math::Radian>{
+					Math::angle_cast<Math::Radian, Math::Degree>(currentFOVDegrees)
+				};
+			}
+			else
+			{
+				ImGui::DragFloat("Size", &camera->orthographicSize, 0.1f, 1.0f, 1000.0f);
+			}
+
+			ImGui::Separator();
+			ImGui::DragFloat("Near Clip", &camera->nearClip, 0.01f, 0.001f, camera->farClip - 0.1f, "%.3f");
+			ImGui::DragFloat("Far Clip", &camera->farClip, 1.0f, camera->nearClip + 0.1f, 10000.0f);
+
+			ImGui::Separator();
+			ImGui::Checkbox("Clear On Render", &camera->clearOnRender);
+			ImGui::ColorEdit4("Background Color", camera->backgroundColor.values, ImGuiColorEditFlags_NoAlpha);
+
+			ImGui::Text("Viewport");
+			ImGui::SameLine();
+
+			float totalAvailableWidth = ImGui::GetContentRegionAvail().x;
+			float itemWidth = (totalAvailableWidth - ImGui::GetStyle().ItemSpacing.x * 3) / 4;
+
+			ImGui::PushItemWidth(itemWidth);
+			if (ImGui::DragFloat("##X", &camera->viewport.x, 0.01f, 0.0f, 1.0f, "X:%.2f")) {} ImGui::SameLine();
+			if (ImGui::DragFloat("##Y", &camera->viewport.y, 0.01f, 0.0f, 1.0f, "Y:%.2f")) {} ImGui::SameLine();
+			if (ImGui::DragFloat("##W", &camera->viewport.width, 0.01f, 0.001f, 1.0f, "W:%.2f")) {} ImGui::SameLine();
+			if (ImGui::DragFloat("##H", &camera->viewport.height, 0.01f, 0.001f, 1.0f, "H:%.2f")) {}
+			ImGui::PopItemWidth();
+
+			ImGui::DragInt("Priority", &camera->priority, 1, 0, 100);
+
+			// Virtual camera settings
+			ImGui::Separator();
+			ImGui::Text("Virtual Camera Settings:");
+
+			// Aspect Ratio
+			ImGui::DragFloat("Aspect Ratio", &camera->aspectRatio, 0.01f, 0.1f, 10.0f);
+			ImGui::DragInt("Resolution Width", &camera->width, 1, 16, 7680);
+			ImGui::DragInt("Resolution Height", &camera->height, 1, 16, 4320);
+
+			// Respect Ratio
+			const char* respectRatioOptions[] = { "Width", "Height" };
+			int currentRespectRatio = (int)camera->respectRatio;
+			if (ImGui::Combo("Respect Ratio", &currentRespectRatio, respectRatioOptions, IM_ARRAYSIZE(respectRatioOptions)))
+			{
+				camera->respectRatio = (VirtualCamera::RespectRatio)currentRespectRatio;
+			}
 
 			// Post effects
 			ImGui::Separator();

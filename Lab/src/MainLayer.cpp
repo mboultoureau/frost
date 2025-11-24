@@ -3,7 +3,7 @@
 #include "Objects/BallRain.h"
 
 using namespace Frost;
-
+using namespace Frost::Math;
 
 MainLayer::MainLayer() : Layer("MainLayer")
 {
@@ -26,10 +26,15 @@ void MainLayer::OnAttach()
 	//_plane = std::make_unique<Plane>();
 	//_terrain = std::make_unique<Terrain>();
 	_player = std::make_unique<Player>();
-	_hierarchy = std::make_unique<HierarchyTest>();
+	//_hierarchy = std::make_unique<HierarchyTest>();
 	//auto _rain = std::make_unique<BallRain>();
 	//_hudLogo = std::make_unique<HUD_Logo>();
 	_sky = std::make_unique<Sky>();
+	_portal1 = std::make_unique<Portal>(Vector3{ 6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 220.0_deg, 0.0_deg });
+	_portal2 = std::make_unique<Portal>(Vector3{ -6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 150.0_deg, 0.0_deg });
+
+	_portal1->LinkTo(_portal2.get());
+	_portal2->LinkTo(_portal1.get());
 	_tv = std::make_unique<TV>();
 
 	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
@@ -42,6 +47,9 @@ void MainLayer::OnAttach()
 void MainLayer::OnUpdate(float deltaTime)
 {
 	Frost::Scene& _scene = Game::GetScene();
+
+	if (_portal1) _portal1->Update();
+	if (_portal2) _portal2->Update();
 
 	_scene.Update(deltaTime);
 }

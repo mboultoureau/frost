@@ -127,6 +127,8 @@ namespace Frost
         if (width == 0 || height == 0) return;
 
         _CreateGBufferTextures(width, height);
+        _currentWidth = width;
+        _currentHeight = height;
 
 #ifdef FT_PLATFORM_WINDOWS
         ShaderDesc gBufferVSDesc = { .type = ShaderType::Vertex, .debugName = "VS_GBuffer", .filePath = "../Frost/resources/shaders/VS_GBuffer.hlsl" };
@@ -163,7 +165,7 @@ namespace Frost
         _lightConstantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(LightConstants), .dynamic = true });
         _psMaterialConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(PS_MaterialConstants), .dynamic = true });
 
-        CreateDefaultTextures();
+        _CreateDefaultTextures();
     }
 
     void DeferredRenderingPipeline::Shutdown()
@@ -200,8 +202,26 @@ namespace Frost
         _commandList.reset();
     }
 
+    void DeferredRenderingPipeline::OnWindowResize(WindowResizeEvent& e)
+    {
+        Shutdown();
+		Initialize();
+    }
 
-    void DeferredRenderingPipeline::CreateDefaultTextures()
+    void DeferredRenderingPipeline::OnResize(uint32_t width, uint32_t height)
+    {
+        if (width == 0 || height == 0) return;
+
+        if (_currentWidth != width || _currentHeight != height)
+        {
+            _CreateGBufferTextures(width, height);
+            _currentWidth = width;
+            _currentHeight = height;
+        }
+    }
+
+
+    void DeferredRenderingPipeline::_CreateDefaultTextures()
     {
 #ifdef FT_PLATFORM_WINDOWS
         uint8_t whitePixel[4] = { 255, 255, 255, 255 };
@@ -251,7 +271,7 @@ namespace Frost
         _finalLitTexture = std::make_unique<TextureDX11>(litConfig);
     }
 
-    void DeferredRenderingPipeline::BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix)
+    void DeferredRenderingPipeline::BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix, const Viewport& viewport)
     {
         if (!_albedoTexture) return;
         _enabled = true;
@@ -265,17 +285,7 @@ namespace Frost
 		}
 #endif
 
-        const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
-        const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
-
-        const float viewportX = camera.viewport.x * windowWidth;
-        const float viewportY = camera.viewport.y * windowHeight;
-        const float viewportWidth = camera.viewport.width * windowWidth;
-        const float viewportHeight = camera.viewport.height * windowHeight;
-
-        const float aspectRatio = (viewportHeight > 0) ? (viewportWidth / viewportHeight) : 1.0f;
-
-        if (viewportWidth == 0 || viewportHeight == 0)
+        if (viewport.width == 0 || viewport.height == 0)
         {
             FT_ENGINE_ERROR("Viewport width and height should be > 0");
             _enabled = false;
@@ -293,13 +303,13 @@ namespace Frost
         _commandList->SetRenderTargets(ARRAYSIZE(gBufferRTs), gBufferRTs, _depthStencilTexture.get());
 
 
-        _commandList->SetViewport(viewportX, viewportY, viewportWidth, viewportHeight, 0.0f, 1.0f);
+        _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
 
         _commandList->SetScissorRect(
-            static_cast<int>(viewportX),
-            static_cast<int>(viewportY),
-            static_cast<int>(viewportWidth),
-            static_cast<int>(viewportHeight)
+            static_cast<int>(viewport.x),
+            static_cast<int>(viewport.y),
+            static_cast<int>(viewport.x + viewport.width),
+            static_cast<int>(viewport.y + viewport.height)
         );
 
         if (camera.clearOnRender)
@@ -395,7 +405,7 @@ namespace Frost
         }
     }
 
-    void DeferredRenderingPipeline::EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights)
+    void DeferredRenderingPipeline::EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights, const Viewport& viewport)
     {
         if (!_albedoTexture) return;
         if (!_enabled) return;
@@ -455,9 +465,7 @@ namespace Frost
         Texture* finalLitTexturePtr = _finalLitTexture.get();
         _commandList->SetRenderTargets(1, &finalLitTexturePtr, nullptr);
 
-        const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
-        const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
-        _commandList->SetViewport(0.0f, 0.0f, windowWidth, windowHeight, 0.0f, 1.0f);
+        _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
 
         _commandList->SetShader(_lightingVertexShader.get());
         _commandList->SetShader(_lightingPixelShader.get());
@@ -478,6 +486,11 @@ namespace Frost
         _commandList->SetRasterizerState(RasterizerMode::Solid);
 #endif
 
-        _commandList->SetScissorRect(0, 0, Application::GetWindow()->GetWidth(), Application::GetWindow()->GetHeight());
+        _commandList->SetScissorRect(
+            static_cast<int>(viewport.x),
+            static_cast<int>(viewport.y),
+            static_cast<int>(viewport.x + viewport.width),
+            static_cast<int>(viewport.y + viewport.height)
+        );
     }
 }

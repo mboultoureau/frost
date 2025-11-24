@@ -2,6 +2,7 @@
 
 #include "Frost/Debugging/DebugInterface/DebugPanel.h"
 #include "Frost/Scene/Scene.h"
+#include "Frost/Utils/Math/Vector.h"
 
 #include <vector>
 
@@ -24,8 +25,11 @@ namespace Frost
 		entt::entity _selectedEntity{ entt::null };
 
 		bool _reparentingRequested = false;
-		entt::entity _entityToReparent = entt::null;
-		entt::entity _newParentOfEntity = entt::null;
+		entt::entity _entityToReparent{ entt::null };
+		entt::entity _newParentOfEntity{ entt::null };
+
+		Math::Vector3 _inspectorEulerCache;
+		entt::entity _lastInspectedEntity{ entt::null };
 
 	private:
 		void _DrawHierarchyPanel();
@@ -44,5 +48,6 @@ namespace Frost
 		void _DrawRigidBodyComponent(Scene* scene, entt::entity gameObjectId);
 		void _DrawHUDImageComponent(Scene* scene, entt::entity gameObjectId);
 		void _DrawUIButtonComponent(Scene* scene, entt::entity gameObjectId);
+		void _DrawVirtualCameraComponent(Scene* scene, entt::entity gameObjectId);
 	};
 }

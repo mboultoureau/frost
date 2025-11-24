@@ -2,6 +2,7 @@
 
 #include "Frost/Asset/Texture.h"
 #include "Frost/Utils/Math/Vector.h"
+#include "Frost/Scene/ECS/GameObject.h"
 
 #include <string>
 #include <memory>
@@ -20,7 +21,6 @@ namespace Frost
 		float roughness = 0.5f;
 		float ao = 1.0f;
 		
-		
 		FilterMode filter = FilterMode::ANISOTROPIC;
 		std::vector<std::shared_ptr<Texture>> albedoTextures;
 		std::vector<std::shared_ptr<Texture>> normalTextures;
@@ -31,5 +31,8 @@ namespace Frost
 		
 		Math::Vector2 uvTiling = { 1,1 };
 		Math::Vector2 uvOffset = { 0,0 };
+
+		// If present, the render target of the camera will be used as albedo texture
+		GameObject::Id cameraRef;
 	};
 }

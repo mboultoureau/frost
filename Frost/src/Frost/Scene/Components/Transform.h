@@ -48,17 +48,35 @@ namespace Frost::Component
 			rotation = Math::vector_cast<Math::Vector4>(quaternion);
 		}
 
-		void Rotate(const Math::Vector3& euler_angles)
+		void Rotate(const Math::EulerAngles& eulerAngles)
 		{
 			using namespace DirectX;
 			XMVECTOR currentRotation = vector_cast<XMVECTOR>(rotation);
 			XMVECTOR deltaRotation = DirectX::XMQuaternionRotationRollPitchYaw(
-				euler_angles.x,
-				euler_angles.y,
-				euler_angles.z
+				eulerAngles.Pitch.value(),
+				eulerAngles.Yaw.value(),
+				eulerAngles.Roll.value()
 			);
 			XMVECTOR newRotation = DirectX::XMQuaternionMultiply(currentRotation, deltaRotation);
 			rotation = Math::vector_cast<Math::Vector4>(newRotation);
+		}
+
+		void SetRotation(const Math::EulerAngles& eulerAngles)
+		{
+			using namespace DirectX;
+
+			XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(
+				eulerAngles.Pitch.value(),
+				eulerAngles.Yaw.value(),
+				eulerAngles.Roll.value()
+			);
+
+			rotation = Math::vector_cast<Math::Vector4>(quaternion);
+		}
+
+		Math::EulerAngles GetEulerAngles() const
+		{
+			return Math::QuaternionToEulerAngles(rotation);
 		}
 
 		Math::Vector3 GetForward() const

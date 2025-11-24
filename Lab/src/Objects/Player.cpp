@@ -23,17 +23,30 @@ using namespace Frost::Component;
 
 class PlayerScript : public Frost::Script {
 	float _forward = 0.0f;
-	float _previousForward = 1.0f;
 	float _right = 0.0f;
 	float _up = 0.0f;
 	JPH::BodyID _playerBodyID;
 	JPH::BodyInterface* _bodyInter;
+	
+	// Mouse look
+	float _yaw = 0.0f;
+	float _pitch = 0.0f;
+	Mouse::MousePosition _lastMousePos;
+	bool _firstMouseUpdate = true;
+	const float _mouseSensitivity = 0.003f;
+	const float _moveSpeed = 10.0f;
 
 public:
 	void OnInitialize() override
 	{
 		_playerBodyID = Game::GetScene().GetComponent<RigidBody>(GetGameObject())->physicBody->bodyId;
 		_bodyInter = Physics::Get().body_interface;
+		
+		// Hide cursor for mouse look
+		Input::GetMouse().HideCursor();
+		Input::GetMouse().LockCursor();
+		_lastMousePos = Input::GetMouse().GetPosition();
+		_firstMouseUpdate = true;
 	}
 
 	void OnFixedUpdate(float deltaTime) override
@@ -41,14 +54,56 @@ public:
 		ProcessInput(deltaTime);
 		UpdatePhysics(deltaTime);
 	}
+	
 private:
 	void ProcessInput(float deltaTime)
 	{
 		auto& scene = Game::GetScene();
+		auto* window = Application::GetWindow();
+		uint32_t centerX = window->GetWidth() / 2;
+		uint32_t centerY = window->GetHeight() / 2;
 
+		if (Input::GetKeyboard().IsKeyPressed(K_F1))
+		{
+			if (Input::GetMouse().IsCursorVisible())
+			{
+				Input::GetMouse().HideCursor();
+				Input::GetMouse().LockCursor();
+				Input::GetMouse().SetPosition({ centerX, centerY });
+
+				_firstMouseUpdate = true;
+			}
+			else
+			{
+				Input::GetMouse().ShowCursor();
+				Input::GetMouse().UnlockCursor();
+			}
+		}
+
+		if (!Input::GetMouse().IsCursorVisible())
+		{
+			auto currentMousePos = Input::GetMouse().GetPosition();
+
+			int deltaX = static_cast<int>(currentMousePos.x) - static_cast<int>(centerX);
+			int deltaY = static_cast<int>(currentMousePos.y) - static_cast<int>(centerY);
+
+			if (deltaX != 0 || deltaY != 0)
+			{
+				_yaw += static_cast<float>(deltaX) * _mouseSensitivity;
+				_pitch += static_cast<float>(deltaY) * _mouseSensitivity;
+
+				Angle<Radian> limit = 89.0_deg;
+				_pitch = std::clamp(_pitch, -limit.value(), limit.value());
+
+				Input::GetMouse().SetPosition({ centerX, centerY });
+			}
+		}
+
+		// WASD movement
 		_forward = 0.0f;
 		_right = 0.0f;
 		_up = 0.0f;
+		
 		if (Input::GetKeyboard().IsKeyDown(K_UP) || Input::GetKeyboard().IsKeyDown(K_W))
 		{
 			_forward = 1.0f;
@@ -56,6 +111,15 @@ private:
 		else if (Input::GetKeyboard().IsKeyDown(K_DOWN) || Input::GetKeyboard().IsKeyDown(K_S))
 		{
 			_forward = -1.0f;
+		}
+
+		if (Input::GetKeyboard().IsKeyDown(K_LEFT) || Input::GetKeyboard().IsKeyDown(K_A))
+		{
+			_right = -1.0f;
+		}
+		else if (Input::GetKeyboard().IsKeyDown(K_RIGHT) || Input::GetKeyboard().IsKeyDown(K_D))
+		{
+			_right = 1.0f;
 		}
 
 		// Upward/Downward
@@ -67,16 +131,6 @@ private:
 		{
 			_up = -1.0f;
 		}
-
-		// Steering
-		if (Input::GetKeyboard().IsKeyDown(K_LEFT) || Input::GetKeyboard().IsKeyDown(K_A))
-		{
-			_right = -1.0f * deltaTime * 50.0f;
-		}
-		else if (Input::GetKeyboard().IsKeyDown(K_RIGHT) || Input::GetKeyboard().IsKeyDown(K_D))
-		{
-			_right = 1.0f * deltaTime * 50.0f;
-		}
 	}
 
 	void UpdatePhysics(float deltaTime)
@@ -84,15 +138,50 @@ private:
 		using namespace JPH;
 		using namespace DirectX;
 
-		if (_right != 0.0f || _forward != 0.0f)
+		auto& scene = Game::GetScene();
+		
+		JPH::Quat rotation = JPH::Quat::sRotation(Vec3::sAxisY(), _yaw);
+		_bodyInter->SetRotation(_playerBodyID, rotation, EActivation::DontActivate);
+
+		
+		// Apply pitch to camera child
+		auto children = GetGameObject().GetChildren();
+		for (auto& child : children)
+		{
+			if (auto* cam = scene.GetComponent<Camera>(child))
+			{
+				auto* cameraTransform = scene.GetComponent<Transform>(child);
+
+				XMVECTOR pitchQuat = XMQuaternionRotationRollPitchYaw(_pitch, 0.0f, 0.0f);
+				cameraTransform->rotation = vector_cast<Vector4>(pitchQuat);
+				break;
+			}
+		}
+
+		// Calculate movement direction based on yaw
+		XMVECTOR forwardDir = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+		XMVECTOR rightDir = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+		XMVECTOR upDir = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+		
+		XMMATRIX rotationMatrix = XMMatrixRotationY(_yaw);
+		forwardDir = XMVector3Transform(forwardDir, rotationMatrix);
+		rightDir = XMVector3Transform(rightDir, rotationMatrix);
+		
+		// Calculate velocity
+		XMVECTOR velocity = XMVectorScale(forwardDir, _forward * _moveSpeed);
+		velocity = XMVectorAdd(velocity, XMVectorScale(rightDir, _right * _moveSpeed));
+		velocity = XMVectorAdd(velocity, XMVectorScale(upDir, _up * _moveSpeed));
+		
+		XMFLOAT3 vel;
+		XMStoreFloat3(&vel, velocity);
+		
+		if (_right != 0.0f || _forward != 0.0f || _up != 0.0f)
 		{
 			Physics::ActivateBody(_playerBodyID);
 		}
 
-		_bodyInter->SetAngularVelocity(_playerBodyID, Vec3(0.0f, _right * 2.0f, 0.0f));
-		_bodyInter->SetLinearVelocity(_playerBodyID,
-			_bodyInter->GetRotation(_playerBodyID) * Vec3(0.0f, _up * 100.0f, _forward * 100.0f)
-		);
+		_bodyInter->SetAngularVelocity(_playerBodyID, Vec3(0.0f, 0.0f, 0.0f));
+		_bodyInter->SetLinearVelocity(_playerBodyID, Vec3(vel.x, vel.y, vel.z));
 	}
 };
 

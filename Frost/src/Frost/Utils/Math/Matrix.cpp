@@ -33,6 +33,16 @@ namespace Frost::Math
         return result;
     }
 
+    Matrix4x4 Matrix4x4::Invert(const Matrix4x4& matrix)
+    {
+        DirectX::XMMATRIX m = LoadMatrix(matrix);
+        DirectX::XMVECTOR det;
+        m = DirectX::XMMatrixInverse(&det, m);
+        Matrix4x4 result;
+        StoreMatrix(&result, m);
+        return result;
+    }
+
     Matrix4x4 Matrix4x4::CreateTranslation(const Vector3& position)
     {
         Matrix4x4 result;
