@@ -78,8 +78,8 @@ namespace Frost
         std::unique_ptr<InputLayout> _debugTriangleInputLayout;
 
         // Constant Buffers
-        std::unique_ptr<Buffer> _vsPerFrameConstants;
-        std::unique_ptr<Buffer> _vsPerObjectConstants;
+        std::shared_ptr<Buffer> _vsPerFrameConstants;
+        std::shared_ptr<Buffer> _vsPerObjectConstants;
 
         // Data to draw this frame
         std::vector<DebugLineVertex> _frameLines;
@@ -95,8 +95,8 @@ namespace Frost
         std::vector<DebugText3D> _frameTexts;
 
         // Buffers for lines and triangles
-        std::unique_ptr<Buffer> _lineVertexBuffer;
-        std::unique_ptr<Buffer> _triangleVertexBuffer;
+        std::shared_ptr<Buffer> _lineVertexBuffer;
+        std::shared_ptr<Buffer> _triangleVertexBuffer;
 
         // Mutexes for thread-safe access to frame data
         JPH::Mutex mLinesLock;
@@ -111,8 +111,8 @@ namespace Frost
             void AddRef() override { mRefCount++; }
             void Release() override { if (--mRefCount == 0) delete this; }
 
-            std::unique_ptr<Buffer> vertexBuffer;
-            std::unique_ptr<Buffer> indexBuffer;
+            std::shared_ptr<Buffer> vertexBuffer;
+            std::shared_ptr<Buffer> indexBuffer;
             JPH::uint32 vertexCount;
             JPH::uint32 indexCount;
 

@@ -58,6 +58,7 @@ namespace Frost
             return _entityHandle == other._entityHandle && _scene == other._scene;
         }
 
+		GameObject::Id GetId() const { return _entityHandle; }
         entt::entity GetHandle() const { return _entityHandle; }
 		Scene* GetScene() const { return _scene; }
 

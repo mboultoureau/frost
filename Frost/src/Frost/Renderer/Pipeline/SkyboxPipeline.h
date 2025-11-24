@@ -32,10 +32,10 @@ namespace Frost
         std::unique_ptr<InputLayout> _skyboxInputLayout;
         std::unique_ptr<Sampler> _skyboxSampler;
 
-        std::unique_ptr<Buffer> _cubeVertexBuffer;
-        std::unique_ptr<Buffer> _cubeIndexBuffer;
+        std::shared_ptr<Buffer> _cubeVertexBuffer;
+        std::shared_ptr<Buffer> _cubeIndexBuffer;
         uint32_t _cubeIndexCount;
 
-        std::unique_ptr<Buffer> _vsSkyboxConstants;
+        std::shared_ptr<Buffer> _vsSkyboxConstants;
     };
 }

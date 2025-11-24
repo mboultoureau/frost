@@ -2,6 +2,7 @@
 
 #include "Frost/Asset/AssetManager.h"
 #include "Frost/Asset/ModelFactory.h"
+#include "Frost/Asset/Texture.h"
 
 #include "Frost/Core/Application.h"
 #include "Frost/Core/Layer.h"
@@ -26,6 +27,8 @@
 #include "Frost/Scene/Components/RigidBody.h"
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/Skybox.h"
+#include "Frost/Scene/Components/VirtualCamera.h"
+#include "Frost/Scene/Components/PortalGate.h"
 
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/PostEffect/ScreenShakeEffect.h"

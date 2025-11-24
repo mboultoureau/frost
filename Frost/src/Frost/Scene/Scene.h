@@ -3,7 +3,6 @@
 #include "Frost/Core/Timer.h"
 #include "Frost/Utils/NoCopy.h"
 #include "Frost/Scene/Components/Disabled.h"
-#include "Frost/Scene/Components/Disabled.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/ECS/GameObject.h"
 

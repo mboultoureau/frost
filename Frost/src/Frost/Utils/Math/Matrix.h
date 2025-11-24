@@ -14,6 +14,7 @@ namespace Frost::Math
 
         static Matrix4x4 CreateIdentity();
         static Matrix4x4 CreateTranspose(const Matrix4x4& matrix);
+        static Matrix4x4 Invert(const Matrix4x4& matrix);
         static Matrix4x4 CreateTranslation(const Vector3& position);
         static Matrix4x4 CreateScale(const Vector3& scale);
         static Matrix4x4 CreateFromQuaternion(const Vector4& quaternion);

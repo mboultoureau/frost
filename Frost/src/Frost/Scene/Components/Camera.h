@@ -13,7 +13,7 @@ namespace Frost::Component
 {
 	struct Camera : public Component
 	{
-		enum ProjectionType
+		enum class ProjectionType
 		{
 			Perspective = 0,
 			Orthographic = 1
@@ -40,6 +40,7 @@ namespace Frost::Component
 		// If set, the camera will render to this texture instead of the screen
 		std::shared_ptr<Texture> targetTexture = nullptr;
 
+		// Post-effects
 		std::vector<std::shared_ptr<PostEffect>> postEffects;
 
 		template<typename T>

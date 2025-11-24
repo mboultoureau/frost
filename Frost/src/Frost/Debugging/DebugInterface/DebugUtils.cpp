@@ -149,7 +149,7 @@ namespace Frost
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##X", &eulerDegrees.x, 0.5f, -90.0f, 90.0f, format.c_str())) modified = true;
+		if (ImGui::DragFloat("##X", &eulerDegrees.x, 0.5f, -180.0f, 180.0f, format.c_str())) modified = true;
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
