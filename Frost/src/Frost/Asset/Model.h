@@ -20,13 +20,16 @@ namespace Frost
 	{
 	public:
 		Model(const std::string& filepath);
+		Model() = default;
 
 		const std::string& GetFilepath() const { return _filepath; }
 		const std::vector<Mesh>& GetMeshes() const { return _meshes; }
 		const std::vector<Material>& GetMaterials() const { return _materials; }
 		std::vector<Mesh>& GetMeshes() { return _meshes; }
 		std::vector<Material>& GetMaterials() { return _materials; }
-		Model() = default;
+
+		void AddMesh(Mesh&& mesh) { _meshes.emplace_back(std::move(mesh)); }
+		void AddMaterial(Material&& mat) { _materials.emplace_back(std::move(mat)); }
 
 	private:
 		void ProcessNode(Renderer* renderer, aiNode* aNode, const aiScene* aScene);
