@@ -51,6 +51,8 @@ void Plane::OnPreFixedUpdate(float deltaTime)
     using namespace JPH;
 
     auto& bodyInterface = Physics::GetBodyInterface();
+
+    currentSpeed = bodyInterface.GetLinearVelocity(_bodyId).Length();
     
     // Angles cibles selon les inputs
     float targetPitch = -upDownInput * maxPitchAngle;
@@ -133,6 +135,10 @@ JPH::BodyID Plane::Appear()
 	auto joltPos = Math::vector_cast<Vec3>(wTransform->position);
 	auto joltRot = Math::vector_cast<Quat>(wTransform->rotation);
 
+    currentPitch = joltRot.GetRotationAngle(Vec3(1, 0, 0));
+    currentYaw = joltRot.GetRotationAngle(Vec3(0, 1, 0));
+    currentRoll = joltRot.GetRotationAngle(Vec3(0, 0, 1));
+
     //JPH::ShapeRefC shape = new JPH::BoxShape(RVec3(1, 1, 1));
     JPH::ShapeRefC shape = new JPH::SphereShape(1.0f);
 
@@ -145,9 +151,7 @@ JPH::BodyID Plane::Appear()
 		EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ;
 	_bodyId = Physics::CreateAndAddBody(bodySettings, _player->GetPlayerID(), EActivation::Activate);
 
-    auto& bodyInterface = Physics::GetBodyInterface();
-
-    //bodyInterface.SetLinearVelocity(_bodyId, {0, 30, 30});
+    inContinuousCollision = false;
 	return _bodyId;
 }
 
