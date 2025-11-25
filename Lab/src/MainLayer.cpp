@@ -37,6 +37,8 @@ void MainLayer::OnAttach()
 	_portal2->LinkTo(_portal1.get());
 	_tv = std::make_unique<TV>();
 	_sphereCustomShader = std::make_unique<SphereCustomShader>();
+	_shapes = std::make_unique<Shapes>();
+	_waves = std::make_unique<Waves>();
 
 	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
@@ -51,6 +53,8 @@ void MainLayer::OnUpdate(float deltaTime)
 
 	if (_portal1) _portal1->Update();
 	if (_portal2) _portal2->Update();
+
+	_waves->Update(deltaTime);
 
 	_scene.Update(deltaTime);
 }

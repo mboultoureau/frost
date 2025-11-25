@@ -16,6 +16,8 @@
 #include "Objects/Portal.h"
 #include "Objects/TV.h"
 #include "Objects/SphereCustomShader.h"
+#include "Objects/Shapes.h"
+#include "Objects/Waves.h"
 #include "Frost/Event/Events/PauseMenu/PauseEvent.h"
 #include "Frost/Event/Events/PauseMenu/UnPauseEvent.h"
 #include <memory>
@@ -51,6 +53,8 @@ private:
 	std::unique_ptr<Portal> _portal1;
 	std::unique_ptr<Portal> _portal2;
 	std::unique_ptr<TV> _tv;
+	std::unique_ptr<Shapes> _shapes;
+	std::unique_ptr<Waves> _waves;
 	std::unique_ptr<SphereCustomShader> _sphereCustomShader;
 
 	bool OnGamePaused(Frost::PauseEvent& e);
