@@ -22,7 +22,6 @@
 #ifdef FT_PLATFORM_WINDOWS
 #include "Frost/Renderer/DX11/CommandListDX11.h"
 #include "Frost/Renderer/DX11/TextureDX11.h"
-#include "Frost/Renderer/DX11/ShaderDX11.h"
 #include "Frost/Renderer/DX11/InputLayoutDX11.h"
 #include "Frost/Renderer/DX11/BufferDX11.h"
 #include "Frost/Renderer/DX11/SamplerDX11.h"
@@ -130,19 +129,15 @@ namespace Frost
         _currentWidth = width;
         _currentHeight = height;
 
-#ifdef FT_PLATFORM_WINDOWS
         ShaderDesc gBufferVSDesc = { .type = ShaderType::Vertex, .debugName = "VS_GBuffer", .filePath = "../Frost/resources/shaders/VS_GBuffer.hlsl" };
         ShaderDesc gBufferPSDesc = { .type = ShaderType::Pixel, .debugName = "PS_GBuffer", .filePath = "../Frost/resources/shaders/PS_GBuffer.hlsl" };
-        _gBufferVertexShader = std::make_unique<ShaderDX11>(gBufferVSDesc);
-        _gBufferPixelShader = std::make_unique<ShaderDX11>(gBufferPSDesc);
+        _gBufferVertexShader = Shader::Create(gBufferVSDesc);
+        _gBufferPixelShader = Shader::Create(gBufferPSDesc);
 
         ShaderDesc lightingVSDesc = { .type = ShaderType::Vertex, .debugName = "VS_Lighting", .filePath = "../Frost/resources/shaders/VS_Lighting.hlsl" };
         ShaderDesc lightingPSDesc = { .type = ShaderType::Pixel, .debugName = "PS_Lighting", .filePath = "../Frost/resources/shaders/PS_Lighting.hlsl" };
-        _lightingVertexShader = std::make_unique<ShaderDX11>(lightingVSDesc);
-        _lightingPixelShader = std::make_unique<ShaderDX11>(lightingPSDesc);
-#else
-#error "DeferredRendering only supports Windows platform in this implementation."
-#endif
+        _lightingVertexShader = Shader::Create(lightingVSDesc);
+        _lightingPixelShader = Shader::Create(lightingPSDesc);
 
         const uint32_t gBufferVertexStride = sizeof(Vertex);
         InputLayout::VertexAttributeArray gBufferAttributes = {
@@ -164,6 +159,11 @@ namespace Frost
         _vsPerObjectConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_PerObjectConstants), .dynamic = true });
         _lightConstantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(LightConstants), .dynamic = true });
         _psMaterialConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(PS_MaterialConstants), .dynamic = true });
+
+        // Custom materials
+        _customMaterialConstantBuffer = renderer->CreateBuffer(
+            BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = 256, .dynamic = true }
+        );
 
         _CreateDefaultTextures();
     }
@@ -208,19 +208,6 @@ namespace Frost
 		Initialize();
     }
 
-    void DeferredRenderingPipeline::OnResize(uint32_t width, uint32_t height)
-    {
-        if (width == 0 || height == 0) return;
-
-        if (_currentWidth != width || _currentHeight != height)
-        {
-            _CreateGBufferTextures(width, height);
-            _currentWidth = width;
-            _currentHeight = height;
-        }
-    }
-
-
     void DeferredRenderingPipeline::_CreateDefaultTextures()
     {
 #ifdef FT_PLATFORM_WINDOWS
@@ -239,6 +226,42 @@ namespace Frost
 		uint8_t defaultAOPixel[4] = { 255, 255, 255, 255 };
 		_defaultAOTexture = std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, defaultAOPixel, "DefaultAOTexture");
 #endif
+    }
+
+    InputLayout* DeferredRenderingPipeline::_GetOrCreateInputLayout(Shader* vertexShader)
+    {
+        auto it = _inputLayoutCache.find(vertexShader);
+        if (it != _inputLayoutCache.end())
+        {
+            return it->second.get();
+        }
+
+        const uint32_t vertexStride = sizeof(Vertex);
+        InputLayout::VertexAttributeArray attributes = {
+            {.name = "POSITION", .format = Format::RGB32_FLOAT, .arraySize = 1, .bufferIndex = 0, .offset = 0,  .elementStride = vertexStride },
+            {.name = "NORMAL",   .format = Format::RGB32_FLOAT,  .arraySize = 1, .bufferIndex = 0, .offset = 12, .elementStride = vertexStride },
+            {.name = "TEXCOORD", .format = Format::RG32_FLOAT,   .arraySize = 1, .bufferIndex = 0, .offset = 24, .elementStride = vertexStride },
+            {.name = "TANGENT",  .format = Format::RGBA32_FLOAT, .arraySize = 1, .bufferIndex = 0, .offset = 32, .elementStride = vertexStride },
+        };
+
+        auto newLayout = std::make_unique<InputLayoutDX11>(attributes, *vertexShader);
+        InputLayout* ptr = newLayout.get();
+
+        _inputLayoutCache[vertexShader] = std::move(newLayout);
+
+        return ptr;
+    }
+
+    void DeferredRenderingPipeline::OnResize(uint32_t width, uint32_t height)
+    {
+        if (width == 0 || height == 0) return;
+
+        if (_currentWidth != width || _currentHeight != height)
+        {
+            _CreateGBufferTextures(width, height);
+            _currentWidth = width;
+            _currentHeight = height;
+        }
     }
 
     void DeferredRenderingPipeline::_CreateGBufferTextures(uint32_t width, uint32_t height)
@@ -261,7 +284,7 @@ namespace Frost
         textureConfig.format = Format::RGBA32_FLOAT;
         _worldPositionTexture = std::make_unique<TextureDX11>(textureConfig);
 
-        textureConfig.format = Format::RG8_UNORM;
+        textureConfig.format = Format::RGBA8_UNORM;
         _materialTexture = std::make_unique<TextureDX11>(textureConfig);
 
         TextureConfig depthConfig = { .format = Format::D24_UNORM_S8_UINT, .width = width, .height = height, .isRenderTarget = true, .isShaderResource = false, .hasMipmaps = false };
@@ -322,11 +345,6 @@ namespace Frost
         }
 
         _commandList->ClearDepthStencil(_depthStencilTexture.get(), true, 1.0f, true, 0);
-
-        _commandList->SetShader(_gBufferVertexShader.get());
-        _commandList->SetShader(_gBufferPixelShader.get());
-        _commandList->SetInputLayout(_gBufferInputLayout.get());
-
         _commandList->SetConstantBuffer(_vsPerFrameConstants.get(), 0);
     }
 
@@ -348,11 +366,74 @@ namespace Frost
         {
 			auto& material = model.GetMaterials()[mesh.GetMaterialIndex()];
 
+            // Vertex and pixel shader
+            Shader* vs = material.customVertexShader ? material.customVertexShader.get() : _gBufferVertexShader.get();
+            Shader* ps = material.customPixelShader ? material.customPixelShader.get() : _gBufferPixelShader.get();
+
+            _commandList->SetShader(vs);
+            _commandList->SetShader(ps);
+
+            if (material.customVertexShader)
+            {
+                InputLayout* layout = _GetOrCreateInputLayout(vs);
+                _commandList->SetInputLayout(layout);
+            }
+            else
+            {
+                _commandList->SetInputLayout(_gBufferInputLayout.get());
+            }
+
+			// Geometry Shader
+            if (material.geometryShader)
+            {
+                _commandList->SetShader(material.geometryShader.get());
+            }
+            else
+            {
+                _commandList->UnbindShader(ShaderType::Geometry);
+            }
+
+            // Hull & Domain
+            if (material.hullShader && material.domainShader)
+            {
+                _commandList->SetShader(material.hullShader.get());
+                _commandList->SetShader(material.domainShader.get());
+
+                _commandList->SetPrimitiveTopology(PrimitiveTopology::PATCHLIST_3);
+            }
+            else
+            {
+                _commandList->UnbindShader(ShaderType::Hull);
+                _commandList->UnbindShader(ShaderType::Domain);
+
+                _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+            }
+
             PS_MaterialConstants psMaterialData;
             psMaterialData.UVTiling = material.uvTiling;
             psMaterialData.UVOffset = material.uvOffset;
             _psMaterialConstants->UpdateData(_commandList.get(), &psMaterialData, sizeof(PS_MaterialConstants));
             _commandList->SetConstantBuffer(_psMaterialConstants.get(), 2);
+
+            if (!material.parameters.empty())
+            {
+                if (_customMaterialConstantBuffer->GetConfig().size < material.parameters.size())
+                {
+                    int32_t requiredSize = static_cast<uint32_t>(material.parameters.size());
+                    uint32_t alignedSize = (requiredSize + 15) & ~15;
+
+                    BufferConfig config = {
+                        .usage = BufferUsage::CONSTANT_BUFFER,
+                        .size = alignedSize,
+                        .dynamic = true
+                    };
+
+                    _customMaterialConstantBuffer = RendererAPI::GetRenderer()->CreateBuffer(config);
+                }
+
+                _customMaterialConstantBuffer->UpdateData(_commandList.get(), material.parameters.data(), material.parameters.size());
+                _commandList->SetConstantBuffer(_customMaterialConstantBuffer.get(), 3);
+            }
 
             if (!material.albedoTextures.empty())
             {
@@ -460,6 +541,7 @@ namespace Frost
             }
             }
         }
+
         _lightConstantsBuffer->UpdateData(_commandList.get(), &lightData, sizeof(LightConstants));
 
         Texture* finalLitTexturePtr = _finalLitTexture.get();

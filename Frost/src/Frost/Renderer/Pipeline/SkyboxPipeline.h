@@ -27,8 +27,8 @@ namespace Frost
     private:
         void CreateCubeMesh();
 
-        std::unique_ptr<Shader> _skyboxVertexShader;
-        std::unique_ptr<Shader> _skyboxPixelShader;
+        std::shared_ptr<Shader> _skyboxVertexShader;
+        std::shared_ptr<Shader> _skyboxPixelShader;
         std::unique_ptr<InputLayout> _skyboxInputLayout;
         std::unique_ptr<Sampler> _skyboxSampler;
 

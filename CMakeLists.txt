@@ -24,8 +24,9 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.12")
 endif()
 
 add_subdirectory(Frost)
+add_subdirectory(Editor)
 add_subdirectory(Lab)
 add_subdirectory(Game)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "Game")
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "Editor")

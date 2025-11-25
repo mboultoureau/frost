@@ -9,7 +9,6 @@
 #include "Frost/Renderer/InputLayout.h"
 
 #include "Frost/Renderer/DX11/CommandListDX11.h"
-#include "Frost/Renderer/DX11/ShaderDX11.h"
 #include "Frost/Renderer/DX11/InputLayoutDX11.h"
 #include "Frost/Renderer/DX11/SamplerDX11.h"
 #include "Frost/Debugging/Logger.h"
@@ -46,8 +45,8 @@ namespace Frost
 
         ShaderDesc vsDesc = { .type = ShaderType::Vertex, .debugName = "VS_HUD", .filePath = "../Frost/resources/shaders/VS_HUD.hlsl" };
         ShaderDesc psDesc = { .type = ShaderType::Pixel, .debugName = "PS_HUD", .filePath = "../Frost/resources/shaders/PS_HUD.hlsl" };
-        _vertexShader = std::make_unique<ShaderDX11>(vsDesc);
-        _pixelShader = std::make_unique<ShaderDX11>(psDesc);
+        _vertexShader = Shader::Create(vsDesc);
+        _pixelShader = Shader::Create(psDesc);
 
         HUD_Vertex vertices[] =
         {

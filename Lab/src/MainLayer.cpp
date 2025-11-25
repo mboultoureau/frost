@@ -17,7 +17,7 @@ void MainLayer::OnAttach()
 	_pointLight = std::make_unique<PointLight>();
 	//_topCamera = std::make_unique<TopCamera>();
 
-	//_sphere = std::make_unique<Sphere>();
+	_sphere = std::make_unique<Sphere>();
 	//_freeCamera = std::make_unique<FreeCamera>();
 	_moto = std::make_unique<Moto>();
 	_ogre = std::make_unique<Ogre>();
@@ -36,6 +36,7 @@ void MainLayer::OnAttach()
 	_portal1->LinkTo(_portal2.get());
 	_portal2->LinkTo(_portal1.get());
 	_tv = std::make_unique<TV>();
+	_sphereCustomShader = std::make_unique<SphereCustomShader>();
 
 	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
 		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));

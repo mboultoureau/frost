@@ -3,6 +3,7 @@
 #include "Frost/Core/Core.h"
 #include "Frost/Renderer/GraphicsTypes.h"
 #include "Frost/Renderer/Viewport.h"
+#include "Frost/Renderer/Shader.h"
 
 #include <cstdint>
 
@@ -56,6 +57,7 @@ namespace Frost
         virtual void SetDepthStencilState(DepthMode mode) = 0;
 
         virtual void SetShader(const Shader* shader) = 0;
+        virtual void UnbindShader(ShaderType type) = 0;
         virtual void SetInputLayout(const InputLayout* layout) = 0;
         virtual void SetVertexBuffer(const Buffer* buffer, uint32_t stride, uint32_t offset) = 0;
         virtual void SetIndexBuffer(const Buffer* buffer, uint32_t offset) = 0;

@@ -9,6 +9,7 @@ namespace Frost
         LINELIST,
         LINESTRIP,
         TRIANGLELIST,
-        TRIANGLESTRIP
+        TRIANGLESTRIP,
+		PATCHLIST_3
     };
 }

@@ -145,9 +145,36 @@ namespace Frost
 
 		switch (shader->GetType())
 		{
-		case ShaderType::Vertex:   _context->VSSetShader(static_cast<ID3D11VertexShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
-		case ShaderType::Pixel:    _context->PSSetShader(static_cast<ID3D11PixelShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
-		case ShaderType::Geometry: _context->GSSetShader(static_cast<ID3D11GeometryShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
+			case ShaderType::Vertex:   _context->VSSetShader(static_cast<ID3D11VertexShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
+			case ShaderType::Pixel:    _context->PSSetShader(static_cast<ID3D11PixelShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
+			case ShaderType::Geometry: _context->GSSetShader(static_cast<ID3D11GeometryShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
+			case ShaderType::Hull:     _context->HSSetShader(static_cast<ID3D11HullShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
+			case ShaderType::Domain:   _context->DSSetShader(static_cast<ID3D11DomainShader*>(shaderDX11->GetShaderObject()), nullptr, 0); break;
+		}
+	}
+
+	void CommandListDX11::UnbindShader(ShaderType type)
+	{
+		switch (type)
+		{
+		case ShaderType::Vertex:
+			_context->VSSetShader(nullptr, nullptr, 0);
+			break;
+		case ShaderType::Pixel:
+			_context->PSSetShader(nullptr, nullptr, 0);
+			break;
+		case ShaderType::Geometry:
+			_context->GSSetShader(nullptr, nullptr, 0);
+			break;
+		case ShaderType::Hull:
+			_context->HSSetShader(nullptr, nullptr, 0);
+			break;
+		case ShaderType::Domain:
+			_context->DSSetShader(nullptr, nullptr, 0);
+			break;
+		case ShaderType::Compute:
+			_context->CSSetShader(nullptr, nullptr, 0);
+			break;
 		}
 	}
 
@@ -238,6 +265,9 @@ namespace Frost
 		case PrimitiveTopology::TRIANGLESTRIP:
 			dxTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 			break;
+		case PrimitiveTopology::PATCHLIST_3:
+			dxTopology = D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
+			break;
 		}
 
 		_context->IASetPrimitiveTopology(dxTopology);
@@ -264,13 +294,11 @@ namespace Frost
 
 	void CommandListDX11::Draw(uint32_t vertexCount, uint32_t startVertexLocation)
 	{
-		_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		_context->Draw(vertexCount, startVertexLocation);
 	}
 
 	void CommandListDX11::DrawIndexed(uint32_t indexCount, uint32_t startIndexLocation, uint32_t baseVertexLocation)
 	{
-		_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		_context->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 	}
 }

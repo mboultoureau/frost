@@ -1,0 +1,62 @@
+# Editor
+file(GLOB_RECURSE EDITOR_SOURCES
+    "src/**.h"
+    "src/**.cpp"
+)
+
+add_executable(Editor WIN32
+    ${EDITOR_SOURCES}
+)
+
+set_property(TARGET Editor PROPERTY FOLDER "Engine")
+
+set_target_properties(Editor PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/Editor"
+    PDB_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/Editor"
+    ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/Editor"
+    LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/Editor"
+
+    CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${INT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/Editor"
+)
+
+target_include_directories(Editor PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/Frost/src
+)
+
+target_link_libraries(Editor PRIVATE
+    Frost
+    ImGui
+    Jolt
+    yaml-cpp
+)
+
+if(WIN32)
+    target_compile_options(Editor PRIVATE
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+        $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/bigobj>>
+    )
+    target_compile_definitions(Editor PUBLIC
+        FT_PLATFORM_WINDOWS
+        UNICODE
+        _UNICODE
+    )
+endif()
+
+target_compile_definitions(Editor PRIVATE
+    $<$<CONFIG:Debug>:FT_DEBUG>
+)
+
+target_compile_definitions(Editor PRIVATE
+    $<$<CONFIG:Release>:FT_RELEASE>
+)
+
+target_compile_definitions(Editor PRIVATE
+    $<$<CONFIG:Dist>:FT_DIST>
+)
+
+set_property(TARGET Editor APPEND PROPERTY COMPILE_OPTIONS
+    $<$<CONFIG:Dist>:$<$<CXX_COMPILER_ID:MSVC>:/O2>>
+)
