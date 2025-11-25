@@ -157,12 +157,12 @@ void PlayerSpringCameraScript::UpdateSpringCam(float deltaTime) {
 	auto springCamRot = Physics::Get().body_interface->GetRotation(springCamRigidBody.physicBody->bodyId);
 	auto newRot = LookAtQuaternion(
 		newPos,
-		Math::vector_cast<JPH::Vec3>(playerWTransform.position) + Physics::GetBodyInterface().GetLinearVelocity(playerBodyId)
+		Math::vector_cast<JPH::Vec3>(playerWTransform.position) // +Physics::GetBodyInterface().GetLinearVelocity(playerBodyId)
 	);
-	auto rotLerpFactor = 0.5f;
+	auto rotLerpFactor = 0.75f;
 	if(!playerManager->forceSpecificCameraPos) Physics::Get().body_interface->SetRotation(
 		springCamRigidBody.physicBody->bodyId,
-		(rotLerpFactor * springCamRot + (1 - rotLerpFactor) * newRot).Normalized(),
+		newRot, //(rotLerpFactor * springCamRot + (1 - rotLerpFactor) * newRot).Normalized(),
 		JPH::EActivation::Activate);
 
 	playerManager->forceSpecificCameraPos = false;

@@ -45,6 +45,7 @@ public:
 	void OnLeftRightInput(float deltaTime, float leftRightInput) override;
 	void OnAccelerateInput(float deltaTime, float upDownInput) override;
 	void OnBrake(float deltaTime, bool handBrakeInput) override;
+	void GiveBoost();
 	void OnSpecial(float deltaTime, bool specialInput) override;
 
 	JPH::BodyID Appear() override;
