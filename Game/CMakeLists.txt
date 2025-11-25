@@ -20,6 +20,7 @@ set_target_properties(Game PROPERTIES
 )
 
 target_include_directories(Game PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/Frost/src
 )
 

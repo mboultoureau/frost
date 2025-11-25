@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 namespace Frost
 {
@@ -27,6 +28,9 @@ namespace Frost
 	public:
 		Shader(const ShaderDesc& desc) : _desc(desc) {}
 		virtual ~Shader() = default;
+
+		// Factory
+		static std::shared_ptr<Shader> Create(const ShaderDesc& desc);
 
 		// Public accessors for shader properties
 		ShaderType GetType() const { return _desc.type; }

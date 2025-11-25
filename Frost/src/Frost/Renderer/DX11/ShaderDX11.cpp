@@ -53,7 +53,8 @@ namespace Frost
 		{
 			if (errorBlob)
 			{
-				FT_ENGINE_CRITICAL("Shader compilation failed for file: {0}", desc.filePath);
+				const char* errorMessage = static_cast<const char*>(errorBlob->GetBufferPointer());
+				FT_ENGINE_CRITICAL("Shader compilation failed for file: {0}\n---------------- DETAILS ----------------\n{1}\n-----------------------------------------", desc.filePath, errorMessage);
 			}
 			else
 			{
@@ -62,6 +63,12 @@ namespace Frost
 
 			FT_ENGINE_ASSERT(false, "Shader compilation failed!");
 			return;
+		}
+
+		if (errorBlob)
+		{
+			const char* warningMessage = static_cast<const char*>(errorBlob->GetBufferPointer());
+			FT_ENGINE_WARN("Shader compiled with warnings for file: {0}\n{1}", desc.filePath, warningMessage);
 		}
 
 		const void* bytecodePtr = _blob->GetBufferPointer();

@@ -69,12 +69,12 @@ namespace Frost
     private:
         std::unique_ptr<CommandList> _commandList;
 
-        std::unique_ptr<Shader> _debugLineVertexShader;
-        std::unique_ptr<Shader> _debugLinePixelShader;
+        std::shared_ptr<Shader> _debugLineVertexShader;
+        std::shared_ptr<Shader> _debugLinePixelShader;
         std::unique_ptr<InputLayout> _debugLineInputLayout;
 
-        std::unique_ptr<Shader> _debugTriangleVertexShader;
-        std::unique_ptr<Shader> _debugTrianglePixelShader;
+        std::shared_ptr<Shader> _debugTriangleVertexShader;
+        std::shared_ptr<Shader> _debugTrianglePixelShader;
         std::unique_ptr<InputLayout> _debugTriangleInputLayout;
 
         // Constant Buffers

@@ -54,14 +54,14 @@ namespace Frost
         std::unique_ptr<Texture> _finalLitTexture;
 
         // G-Buffer Pass Resources
-        std::unique_ptr<Shader> _gBufferVertexShader;
-        std::unique_ptr<Shader> _gBufferPixelShader;
+        std::shared_ptr<Shader> _gBufferVertexShader;
+        std::shared_ptr<Shader> _gBufferPixelShader;
         std::unique_ptr<InputLayout> _gBufferInputLayout;
         std::unique_ptr<Sampler> _materialSampler;
 
         // Lighting Pass Resources
-        std::unique_ptr<Shader> _lightingVertexShader;
-        std::unique_ptr<Shader> _lightingPixelShader;
+        std::shared_ptr<Shader> _lightingVertexShader;
+        std::shared_ptr<Shader> _lightingPixelShader;
         std::unique_ptr<InputLayout> _lightingInputLayout;
         std::unique_ptr<Sampler> _gBufferSampler;
 
@@ -78,7 +78,11 @@ namespace Frost
         std::unique_ptr<Texture> _defaultRoughnessTexture;
         std::unique_ptr<Texture> _defaultAOTexture;
 
-        std::unique_ptr<CommandList> _commandList;
+        // Materials buffers
+        std::shared_ptr<Buffer> _customMaterialConstantBuffer;
+        std::unordered_map<Shader*, std::unique_ptr<InputLayout>> _inputLayoutCache;
+
+		std::unique_ptr<CommandList> _commandList;
 
         bool _enabled = true;
         uint32_t _currentWidth = 0;
@@ -86,5 +90,6 @@ namespace Frost
 
     private:
         void _CreateDefaultTextures();
+        InputLayout* _GetOrCreateInputLayout(Shader* vertexShader);
     };
 }

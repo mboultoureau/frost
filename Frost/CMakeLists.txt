@@ -139,6 +139,31 @@ target_include_directories(stb INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb"
 )
 
+# yaml-cpp
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Disable yaml-cpp tests" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Disable yaml-cpp tools" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "Disable yaml-cpp contrib" FORCE)
+set(YAML_CPP_INSTALL OFF CACHE BOOL "Disable yaml-cpp install" FORCE)
+
+add_subdirectory(vendor/yaml-cpp)
+
+set_property(TARGET yaml-cpp PROPERTY FOLDER "Dependencies")
+
+if(WIN32)
+    set_target_properties(yaml-cpp PROPERTIES 
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+
+    target_compile_options(yaml-cpp PRIVATE
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+        
+        # Suppression de certains warnings courants avec yaml-cpp sous MSVC
+        $<$<CXX_COMPILER_ID:MSVC>:/wd4251>
+        $<$<CXX_COMPILER_ID:MSVC>:/wd4275>
+    )
+endif()
+
 # entt
 set(ENTT_BUILD_TESTING OFF CACHE BOOL "Build EnTT tests" FORCE)
 set(ENTT_BUILD_DOCS OFF CACHE BOOL "Build EnTT documentation" FORCE)
@@ -186,6 +211,7 @@ target_link_libraries(Frost PRIVATE
     Jolt
     ImGui
     stb
+    yaml-cpp
 )
 
 target_link_libraries(Frost PUBLIC

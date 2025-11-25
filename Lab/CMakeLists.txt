@@ -19,6 +19,7 @@ set_target_properties(Lab PROPERTIES
 )
 
 target_include_directories(Lab PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/Frost/src
 )
 

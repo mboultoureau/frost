@@ -32,8 +32,8 @@ namespace Frost
 
         std::unique_ptr<CommandList> _commandList;
 
-        std::unique_ptr<Shader> _vertexShader;
-        std::unique_ptr<Shader> _pixelShader;
+        std::shared_ptr<Shader> _vertexShader;
+        std::shared_ptr<Shader> _pixelShader;
         std::unique_ptr<InputLayout> _inputLayout;
 
         std::shared_ptr<Buffer> _vertexBuffer;

@@ -17,3 +17,6 @@
 [submodule "Frost/vendor/entt"]
 	path = Frost/vendor/entt
 	url = https://github.com/skypjack/entt.git
+[submodule "Frost/vendor/yaml-cpp"]
+	path = Frost/vendor/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git

@@ -31,6 +31,7 @@ namespace Frost
 		void SetDepthStencilState(DepthMode mode) override;
 
 		void SetShader(const Shader* shader) override;
+		void UnbindShader(ShaderType type) override;
 		void SetInputLayout(const InputLayout* layout) override;
 		void SetVertexBuffer(const Buffer* buffer, uint32_t stride, uint32_t offset) override;
 		void SetIndexBuffer(const Buffer* buffer, uint32_t offset) override;
