@@ -45,7 +45,7 @@ echo --- Nettoyage des Sous-répertoires (Frost, Lab, Game) ---
 set "SUB_DIRS_TO_CLEAN=Frost Lab Game"
 
 :: Répertoires à supprimer à l'INTÉRIEUR des sous-répertoires (noms explicites)
-set "SUB_EXPLICIT_DIRS=bin CMakeFiles Debug Release vendor"
+set "SUB_EXPLICIT_DIRS=bin CMakeFiles Debug Release"
 
 :: Fichiers de construction à supprimer à l'INTÉRIEUR des sous-répertoires
 set "SUB_BUILD_FILES_TO_REMOVE=*.vcxproj *.vcxproj.filters *.vcxproj.user cmake_install.cmake imgui.ini *.log"

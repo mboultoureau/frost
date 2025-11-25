@@ -10,7 +10,6 @@
 #include "Frost/Utils/Math/Transform.h"
 
 #include "Frost/Renderer/DX11/CommandListDX11.h"
-#include "Frost/Renderer/DX11/ShaderDX11.h"
 #include "Frost/Renderer/DX11/InputLayoutDX11.h"
 #include "Frost/Renderer/DX11/SamplerDX11.h"
 #include "Frost/Renderer/DX11/TextureDX11.h"
@@ -40,8 +39,8 @@ namespace Frost
         // Shaders
         ShaderDesc vsDesc = { .type = ShaderType::Vertex, .debugName = "VS_Skybox", .filePath = "../Frost/resources/shaders/VS_Skybox.hlsl" };
         ShaderDesc psDesc = { .type = ShaderType::Pixel, .debugName = "PS_Skybox", .filePath = "../Frost/resources/shaders/PS_Skybox.hlsl" };
-        _skyboxVertexShader = std::make_unique<ShaderDX11>(vsDesc);
-        _skyboxPixelShader = std::make_unique<ShaderDX11>(psDesc);
+        _skyboxVertexShader = Shader::Create(vsDesc);
+        _skyboxPixelShader = Shader::Create(psDesc);
 
         // Input Layout
         const uint32_t stride = sizeof(Math::Vector3);

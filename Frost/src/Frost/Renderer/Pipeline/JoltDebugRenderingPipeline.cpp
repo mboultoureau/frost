@@ -11,7 +11,6 @@
 #ifdef FT_PLATFORM_WINDOWS
 #include "Frost/Renderer/DX11/CommandListDX11.h"
 #include "Frost/Renderer/DX11/BufferDX11.h"
-#include "Frost/Renderer/DX11/ShaderDX11.h"
 #include "Frost/Renderer/DX11/InputLayoutDX11.h"
 #endif
 
@@ -58,8 +57,8 @@ namespace Frost
         // Shaders for lines
         ShaderDesc lineVSDesc = { .type = ShaderType::Vertex, .debugName = "VS_DebugLine", .filePath = "../Frost/resources/shaders/VS_DebugLine.hlsl" };
         ShaderDesc linePSDesc = { .type = ShaderType::Pixel, .debugName = "PS_DebugLine", .filePath = "../Frost/resources/shaders/PS_DebugLine.hlsl" };
-        _debugLineVertexShader = std::make_unique<ShaderDX11>(lineVSDesc);
-        _debugLinePixelShader = std::make_unique<ShaderDX11>(linePSDesc);
+        _debugLineVertexShader = Shader::Create(lineVSDesc);
+        _debugLinePixelShader = Shader::Create(linePSDesc);
 
         const uint32_t lineVertexStride = sizeof(DebugLineVertex);
         InputLayout::VertexAttributeArray lineAttributes = {
@@ -71,8 +70,8 @@ namespace Frost
         // Shaders for triangles
         ShaderDesc triVSDesc = { .type = ShaderType::Vertex, .debugName = "VS_DebugTriangle", .filePath = "../Frost/resources/shaders/VS_DebugTriangle.hlsl" };
         ShaderDesc triPSDesc = { .type = ShaderType::Pixel, .debugName = "PS_DebugTriangle", .filePath = "../Frost/resources/shaders/PS_DebugTriangle.hlsl" };
-        _debugTriangleVertexShader = std::make_unique<ShaderDX11>(triVSDesc);
-        _debugTrianglePixelShader = std::make_unique<ShaderDX11>(triPSDesc);
+        _debugTriangleVertexShader = Shader::Create(triVSDesc);
+        _debugTrianglePixelShader = Shader::Create(triPSDesc);
 
         const uint32_t triangleVertexStride = sizeof(DebugTriangleVertex);
         InputLayout::VertexAttributeArray triangleAttributes = {
