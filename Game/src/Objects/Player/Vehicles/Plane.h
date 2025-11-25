@@ -16,10 +16,10 @@ class Plane : public Vehicle
 public:
 	Plane(Player* player, RendererParameters params);
 	void OnPreFixedUpdate(float fixedDeltaTime) override;
-	//void OnLateUpdate(float deltaTime) override;
+	void OnLateUpdate(float deltaTime) override;
 
-	//void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
-	void OnCollisionStay(BodyOnContactParameters params, float deltaTime) override;
+	void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
+	//void OnCollisionStay(BodyOnContactParameters params, float deltaTime) override;
 	// Warning : params may contains bodies that are not valid at the moment
 	void OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime) override;
 
@@ -58,6 +58,9 @@ private:
 
     float maxPitchAngle = 0.5f;   // ~30 degres
     float maxRollAngle = 0.7f;    // ~40 degres
+
+    std::chrono::milliseconds collisionCoolDown = 750ms; //seconds
+    Timer collisionCoolDownTimer;
 
     float MoveTowards(float current, float target, float maxDelta) {
         float diff = target - current;
