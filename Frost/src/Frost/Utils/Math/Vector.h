@@ -363,6 +363,21 @@ namespace Frost::Math
         return traits::from_neutral(result_neutral);
     }
 
+    template<IsVector T>
+    constexpr T operator*(const T& vec, float scalar) noexcept
+    {
+        using traits = vector_traits<T>;
+        auto neutral = traits::to_neutral(vec);
+       
+        typename traits::neutral_type res;
+        for (int i = 0; i < traits::Dimensions; ++i)
+        {
+            res.values[i] = neutral.values[i] * scalar;
+        }
+        
+        return traits::from_neutral(res);
+    }
+
     template<class T>
     class Vector
     {

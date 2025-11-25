@@ -9,9 +9,9 @@ SphereCustomShader::SphereCustomShader()
 	StaticMesh& mesh = _sphere.AddComponent<StaticMesh>("./resources/meshes/plane.fbx");
 	Transform& transform = _sphere.AddComponent<Transform>();
 
-	transform.position = Math::Vector3(0.0f, -5.0f, 0.0f);
+	transform.position = Math::Vector3(0.0f, -1.0f, 0.0f);
 	transform.scale = Math::Vector3(50.0f, 50.0f, 1.0f);
-	transform.Rotate(EulerAngles{ -90.0_deg, 0.0f, 0.0f });
+	transform.Rotate(EulerAngles{ 0.0f, 0.0f, -90.0_deg });
 
 	// Custom Shader Material
 	struct alignas(16) GridMaterialParameters

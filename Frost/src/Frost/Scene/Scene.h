@@ -67,6 +67,16 @@ namespace Frost
             return gameObject.AddScript<T>(std::forward<Args>(args)...);
         }
 
+		GameObject GetGameObjectFromId(GameObject::Id id)
+		{
+			if (!_registry.valid(id))
+			{
+				return GameObject();
+			}
+
+			return GameObject(id, this);
+		}
+
 	private:
 		entt::registry _registry;
 		std::string _name;
