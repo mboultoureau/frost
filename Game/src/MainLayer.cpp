@@ -6,6 +6,7 @@
 #include "Objects/Wall.h"
 #include "Objects/Player/Vehicles/Vehicle.h"
 #include "Objects/Water.h"
+#include "Objects/Boost.h"
 using namespace Frost;
 
 MainLayer::MainLayer() : Layer("MainLayer")
@@ -44,7 +45,7 @@ void MainLayer::OnAttach()
 	_checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
 	_checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
 
-
+	auto boost = std::make_shared<Boost>(Vector3{ -385, 69, -32 }, EulerAngles(0, 0, 0), Vector3(2, 2, 2), Vector3(0, 1, 0), 15000);
 	//link 1 / 2
 	_checkPoint1->AddChild(_checkPoint2);
 	_checkPoint2->AddParent(_checkPoint1);
