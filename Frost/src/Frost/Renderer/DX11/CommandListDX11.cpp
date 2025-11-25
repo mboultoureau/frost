@@ -224,6 +224,9 @@ namespace Frost
 
 		_context->VSSetConstantBuffers(slot, 1, pBuffers);
 		_context->PSSetConstantBuffers(slot, 1, pBuffers);
+		_context->GSSetConstantBuffers(slot, 1, pBuffers);
+		_context->HSSetConstantBuffers(slot, 1, pBuffers);
+		_context->DSSetConstantBuffers(slot, 1, pBuffers);
 	}
 
 	void CommandListDX11::SetTexture(const Texture* texture, uint32_t slot)

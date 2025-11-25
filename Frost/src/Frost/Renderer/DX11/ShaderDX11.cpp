@@ -3,8 +3,11 @@
 #include "Frost/Debugging/Logger.h"
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Renderer/DX11/RendererDX11.h"
+#include "Frost/Renderer/DX11/ShaderIncludeDX11.h"
 
 #include <d3dcompiler.h>
+#include <filesystem>
+#include <fstream>
 
 namespace Frost
 {
@@ -35,12 +38,32 @@ namespace Frost
 #endif
 
 		Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
-		std::wstring wideFilePath(desc.filePath.begin(), desc.filePath.end());
+
+		std::filesystem::path shaderPath(desc.filePath);
+		std::filesystem::path absPath = std::filesystem::absolute(shaderPath);
+
+		if (!std::filesystem::exists(shaderPath))
+		{
+			std::filesystem::path currentPath = std::filesystem::current_path();
+
+			FT_ENGINE_CRITICAL("SHADER FILE NOT FOUND!");
+			FT_ENGINE_CRITICAL("Looking for: {0}", desc.filePath);
+			FT_ENGINE_CRITICAL("Resolved Absolute Path: {0}", absPath.string());
+			FT_ENGINE_CRITICAL("Current Working Directory: {0}", currentPath.string());
+
+			FT_ENGINE_ASSERT(false, "Shader file not found on disk");
+			return;
+		}
+
+		std::string shaderDir = shaderPath.parent_path().string();
+		std::wstring wideFilePath = shaderPath.wstring();
+
+		ShaderIncludeDX11 includeHandler(shaderDir);
 
 		HRESULT hr = D3DCompileFromFile(
 			wideFilePath.c_str(),
 			nullptr,
-			D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			&includeHandler,
 			"main",
 			GetShaderTarget(desc.type),
 			flags,
@@ -54,7 +77,7 @@ namespace Frost
 			if (errorBlob)
 			{
 				const char* errorMessage = static_cast<const char*>(errorBlob->GetBufferPointer());
-				FT_ENGINE_CRITICAL("Shader compilation failed for file: {0}\n---------------- DETAILS ----------------\n{1}\n-----------------------------------------", desc.filePath, errorMessage);
+				FT_ENGINE_CRITICAL("Shader compilation failed for file: {0}\n--- DETAILS ---\n{1}\n------------", desc.filePath, errorMessage);
 			}
 			else
 			{
@@ -81,6 +104,18 @@ namespace Frost
 			break;
 		case ShaderType::Pixel:
 			hr = device->CreatePixelShader(bytecodePtr, bytecodeSize, nullptr, (ID3D11PixelShader**)_shader.GetAddressOf());
+			break;
+		case ShaderType::Hull:
+			hr = device->CreateHullShader(bytecodePtr, bytecodeSize, nullptr, (ID3D11HullShader**)_shader.GetAddressOf());
+			break;
+		case ShaderType::Domain:
+			hr = device->CreateDomainShader(bytecodePtr, bytecodeSize, nullptr, (ID3D11DomainShader**)_shader.GetAddressOf());
+			break;
+		case ShaderType::Geometry:
+			hr = device->CreateGeometryShader(bytecodePtr, bytecodeSize, nullptr, (ID3D11GeometryShader**)_shader.GetAddressOf());
+			break;
+		case ShaderType::Compute:
+			hr = device->CreateComputeShader(bytecodePtr, bytecodeSize, nullptr, (ID3D11ComputeShader**)_shader.GetAddressOf());
 			break;
 		}
 
