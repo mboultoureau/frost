@@ -28,6 +28,9 @@ public:
 	void SetPlayerVehicle(Player::VehicleType type);
 
 	std::pair<VehicleType, Vehicle*> GetCurrentVehicle() { return { _currentVehicleType, _currentVehicle }; };
+	bool IsInWater() { return _isInWater; }
+	void SetIsInWater(bool b) { _isInWater = b; }
+
 	int GetVehicleNumber() { return _vehicles.size(); };
 	GameObject GetPlayerID() { return _playerId; };
 	JPH::BodyID GetBodyID() { return _playerId.GetComponent<RigidBody>().physicBody->bodyId; };
@@ -63,6 +66,7 @@ private:
 		auto a = _playerId.GetComponent<RigidBody>().physicBody->bodyId;
 		FT_ASSERT(a == bodyId);
 	}
+	bool _isInWater = false; 
 
 
 	//void InitializePhysics();

@@ -184,6 +184,7 @@ JPH::BodyID Bike::Appear()
     Physics::Get().physics_system.AddConstraint(mConstraint);
     Physics::Get().physics_system.AddStepListener(mConstraint);
     mController = static_cast<MotorcycleController*>(mConstraint->GetController());
+    _specialDriftCoolDown.Start();
     return _bodyId;
 }
 
@@ -352,8 +353,7 @@ void Bike::OnLateUpdate(float deltaTime)
     if (vel.Length() > _maxSpeed && _specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() == 0ms)
         _body->SetLinearVelocity(vel * (1-deltaTime));
     
-    if (_specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() > _driftCoolDownDuration) {
-        _specialDriftCoolDown.Start();
+    if (_specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() == _driftCoolDownDuration) {
         _specialDriftCoolDown.Pause();
     }
 }
@@ -386,31 +386,42 @@ void Bike::OnBrake(float deltaTime, bool handBrakeInput)
     _handBrakeInput = handBrakeInput;
 }
 
+void Bike::GiveBoost() {
+    using namespace JPH;
+
+    auto time = std::min(static_cast<float>(_specialDriftTimer.GetDurationAs<std::chrono::milliseconds>().count()), _specialDriftMaxDuration);
+    _specialDriftTimer.Pause();
+    auto dir = Physics::GetBodyInterface().GetRotation(_bodyId) * Vec3(0, 0, 1);
+    float antiMaxSpeedFactor = (_maxSpeed - _body->GetLinearVelocity().Length()) / _maxSpeed + 0.1f;
+
+    Physics::GetBodyInterface().AddForce(_bodyId, dir * time * _speedAtDriftStart * _specialDriftPower * antiMaxSpeedFactor);
+    // Physics::GetBodyInterface().AddTorque(_bodyId, Vec3{ 0, _leftRightInput * _specialDriftRotationPower, 0 });
+    _specialDriftCoolDown.Start();
+};
+
 void Bike::OnSpecial(float deltaTime, bool specialInput)
 {
     using namespace JPH;
 
+
+    bool canDrift = (_specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() >= _driftCoolDownDuration);
     // Drift
-    if (_specialInput != specialInput) {
+    if (_specialInput != specialInput && canDrift ) {
         // On key pressed : start drift
-        if (specialInput && _leftRightInput != 0 && _specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() == 0ms)
+        if (specialInput)
         {
-            _specialDriftTimer.Start();
-            _speedAtDriftStart = Physics::GetBodyInterface().GetLinearVelocity(_bodyId).Length();
+            if (_leftRightInput != 0) {
+                _specialDriftTimer.Start();
+                _speedAtDriftStart = Physics::GetBodyInterface().GetLinearVelocity(_bodyId).Length();
+            }
         }
         // On Key released : end drift
         else
         {
-            auto time = std::min(static_cast<float>(_specialDriftTimer.GetDurationAs<std::chrono::milliseconds>().count()), _specialDriftMaxDuration);
-            _specialDriftTimer.Pause();
-            auto dir = Physics::GetBodyInterface().GetRotation(_bodyId) * Vec3(0, 0, 1);
-            float antiMaxSpeedFactor = (_maxSpeed - _body->GetLinearVelocity().Length() ) / _maxSpeed + 0.1f;
-
-            Physics::GetBodyInterface().AddForce(_bodyId, dir * time * _speedAtDriftStart * _specialDriftPower * antiMaxSpeedFactor);
-           // Physics::GetBodyInterface().AddTorque(_bodyId, Vec3{ 0, _leftRightInput * _specialDriftRotationPower, 0 });
-            _specialDriftCoolDown.Start();
+            GiveBoost();
         }
     }
+    //else if (!_specialInput && specialInput && canDrift) GiveBoost();
 
     _specialInput = specialInput;
 }

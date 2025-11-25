@@ -1,4 +1,7 @@
 #include "PlayerScript.h"
+#include "../../Physics/PhysicsLayer.h"
+
+using namespace Frost;
 
 
 void PlayerScript::OnPreFixedUpdate(float deltaTime)
@@ -61,11 +64,34 @@ void PlayerScript::OnCollisionEnter(BodyOnContactParameters params, float deltaT
 };
 
 void PlayerScript::OnCollisionStay(BodyOnContactParameters params, float deltaTime) {
+	auto layer1 = Physics::GetBodyInterface().GetObjectLayer(params.inBody1.GetID());
+	auto layer2 = Physics::GetBodyInterface().GetObjectLayer(params.inBody2.GetID());
+	if(layer1 == ObjectLayers::WATER || layer2 == ObjectLayers::WATER)
+		player->SetIsInWater(true);
+
 	player->GetCurrentVehicle().second->OnCollisionStay(params, deltaTime);
 };
 
 // Warning : params may contains bodies that are not valid at the moment
 void PlayerScript::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime) {
+	auto scene = GetScene();
+	auto go1 = scene->GetGameObjectFromId(params.first);
+	if (go1.HasComponent<RigidBody>()) {
+		auto bodyId1 = go1.GetComponent<RigidBody>().physicBody->bodyId;
+		auto layer1 = Physics::GetBodyInterface().GetObjectLayer(bodyId1);
+		if (layer1 == ObjectLayers::WATER)
+			player->SetIsInWater(false);
+	}
+
+	auto go2 = scene->GetGameObjectFromId(params.second);
+	if (go2.HasComponent<RigidBody>()) {
+		auto bodyId2 = go2.GetComponent<RigidBody>().physicBody->bodyId;
+		auto layer2 = Physics::GetBodyInterface().GetObjectLayer(bodyId2);
+		if (layer2 == ObjectLayers::WATER)
+			player->SetIsInWater(false);
+	}
+
 	player->GetCurrentVehicle().second->OnCollisionExit(params, deltaTime);
+
 };
 
