@@ -50,6 +50,14 @@ void Plane::OnPreFixedUpdate(float deltaTime)
 {
     using namespace JPH;
 
+    if (_player->IsInWater()) {
+        return;
+    }
+
+    if (inContinuousCollision) {
+        return;
+    }
+
     auto& bodyInterface = Physics::GetBodyInterface();
 
     currentSpeed = bodyInterface.GetLinearVelocity(_bodyId).Length();
@@ -105,25 +113,32 @@ void Plane::OnPreFixedUpdate(float deltaTime)
     JPH::Vec3 horizontalDir(std::sin(currentYaw), 0, std::cos(currentYaw));
     JPH::Vec3 finalVelocity = horizontalDir * currentSpeed + JPH::Vec3(0, verticalRate, 0);
 
-    if (inContinuousCollision)
-    {
-
-    }
-    else
-    {
-        bodyInterface.SetRotation(_bodyId, newRotation, JPH::EActivation::Activate);
-        bodyInterface.SetLinearVelocity(_bodyId, finalVelocity);
-    }
+    bodyInterface.SetRotation(_bodyId, newRotation, JPH::EActivation::Activate);
+    bodyInterface.SetLinearVelocity(_bodyId, finalVelocity);   
 }
 
-void Plane::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
+void Plane::OnLateUpdate(float deltaTime)
+{
+    if (collisionCoolDownTimer.GetDurationAs<std::chrono::milliseconds>() > collisionCoolDown)
+    {
+        collisionCoolDownTimer.Start();
+        collisionCoolDownTimer.Pause();
+        inContinuousCollision = false;
+    }
+    //FT_INFO(collisionCoolDownTimer.GetDuration().);
+}
+
+void Plane::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 {
     inContinuousCollision = true;
+    collisionCoolDownTimer.Start();
+    FT_INFO("collision enter");
 }
 
 void Plane::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime)
 {
     //inContinuousCollision = false;
+    //FT_INFO("collision exit");
 }
 
 JPH::BodyID Plane::Appear()
@@ -137,13 +152,13 @@ JPH::BodyID Plane::Appear()
 
     currentPitch = joltRot.GetRotationAngle(Vec3(1, 0, 0));
     currentYaw = joltRot.GetRotationAngle(Vec3(0, 1, 0));
-    currentRoll = joltRot.GetRotationAngle(Vec3(0, 0, 1));
+    //currentRoll = joltRot.GetRotationAngle(Vec3(0, 0, 1));
 
     //JPH::ShapeRefC shape = new JPH::BoxShape(RVec3(1, 1, 1));
     JPH::ShapeRefC shape = new JPH::SphereShape(1.0f);
 
 	BodyCreationSettings bodySettings(shape, joltPos, joltRot, EMotionType::Dynamic, ObjectLayers::PLAYER);
-	bodySettings.mRestitution = 0.0f;
+	bodySettings.mRestitution = .5f;
 	bodySettings.mAllowSleeping = false;
 	bodySettings.mFriction = 130.f;
     bodySettings.mGravityFactor = 0.2f;
