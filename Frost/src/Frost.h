@@ -6,6 +6,10 @@
 
 #include "Frost/Core/Application.h"
 #include "Frost/Core/Layer.h"
+#include "Frost/Core/LayerStack.h"
+#include "Frost/Core/Window.h"
+#include "Frost/Core/Windows/WindowWin.h"
+#include "Frost/Core/Timer.h"
 
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/DebugLayer.h"
@@ -31,6 +35,7 @@
 #include "Frost/Scene/Components/PortalGate.h"
 
 #include "Frost/Renderer/RendererAPI.h"
+#include "Frost/Renderer/DX11/RendererDX11.h"
 #include "Frost/Renderer/PostEffect/ScreenShakeEffect.h"
 #include "Frost/Renderer/PostEffect/RadialBlurEffect.h"
 #include "Frost/Renderer/PostEffect/ChromaticAberrationEffect.h"
