@@ -48,11 +48,9 @@ namespace Frost
         std::vector<RenderCamera> sortedCameras;
         sortedCameras.reserve(cameraView.size_hint());
 
-        for (auto entity : cameraView)
-        {
-            const auto& [camera, transform] = cameraView.get(entity);
+        cameraView.each([&](entt::entity entity, const Component::Camera& camera, const Component::WorldTransform& transform) {
             sortedCameras.push_back({ entity, &camera, &transform });
-        }
+        });
 
         std::sort(sortedCameras.begin(), sortedCameras.end(),
             [](const RenderCamera& a, const RenderCamera& b)

@@ -40,20 +40,17 @@ namespace Frost
 
         std::vector<std::pair<Component::Light, Component::WorldTransform>> allLights;
         allLights.reserve(lightView.size_hint());
-        for (auto entity : lightView)
-        {
-            const auto& [light, transform] = lightView.get<Component::Light, Component::WorldTransform>(entity);
+        lightView.each([&](const Component::Light& light, const Component::WorldTransform& transform) {
             allLights.emplace_back(light, transform);
-        }
+        });
 
         // Skybox (take only the first one but to be changed when portal rendering is implemented)
         std::shared_ptr<Texture> skyboxTexture{};
-        if (skyboxView.begin() != skyboxView.end())
-        {
-            const auto& skyboxEntity = *skyboxView.begin();
-            const auto& [skybox] = skyboxView.get(skyboxEntity);
-            skyboxTexture = skybox.cubemapTexture;
-        }
+        skyboxView.each([&](const Skybox& skybox) {
+            if (!skyboxTexture) {
+                skyboxTexture = skybox.cubemapTexture;
+            }
+        });
 
         struct RenderCamera {
             entt::entity entity;
@@ -66,17 +63,13 @@ namespace Frost
         virtualCameras.reserve(virtualCameraView.size_hint());
         classicCameras.reserve(cameraView.size_hint());
 
-        for (auto entity : cameraView)
-        {
-            const auto& [camera, transform] = cameraView.get(entity);
+        cameraView.each([&](entt::entity entity, const Camera& camera, const WorldTransform& transform) {
             classicCameras.push_back({ entity, &camera, &transform });
-        }
+        });
 
-        for (auto entity : virtualCameraView)
-        {
-            const auto& [virtualCamera, transform] = virtualCameraView.get(entity);
+        virtualCameraView.each([&](entt::entity entity, const VirtualCamera& virtualCamera, const WorldTransform& transform) {
             virtualCameras.push_back({ entity, &virtualCamera, &transform });
-        }
+        });
 
         // Sort by priority
         auto sortCam = [](const RenderCameraData& a, const RenderCameraData& b) { return a.camera->priority < b.camera->priority; };
@@ -149,24 +142,24 @@ namespace Frost
 			}
 
 			// Apply materials that use virtual camera textures
-			for (auto entity : meshView)
-			{
-				auto& staticMesh = meshView.get<StaticMesh>(entity);
-				if (!staticMesh.model) continue;
-
-				for (auto& material : staticMesh.model->GetMaterials())
-				{
-					if (material.cameraRef != entt::null)
-					{
-						auto it = virtualCameraTargets.find(static_cast<entt::entity>(material.cameraRef));
-						if (it != virtualCameraTargets.end())
-						{
-							material.albedoTextures.clear();
-							material.albedoTextures.push_back(it->second);
-						}
-					}
-				}
-			}
+            meshView.each([&](StaticMesh& staticMesh, const WorldTransform& /*unused*/)
+            {
+                if (staticMesh.model)
+                {
+                    for (auto& material : staticMesh.model->GetMaterials())
+                    {
+                        if (material.cameraRef != entt::null)
+                        {
+                            auto it = virtualCameraTargets.find(static_cast<entt::entity>(material.cameraRef));
+                            if (it != virtualCameraTargets.end())
+                            {
+                                material.albedoTextures.clear();
+                                material.albedoTextures.push_back(it->second);
+                            }
+                        }
+                    }
+                }
+            });
 
             _RenderSceneForCamera(scene, camData, deltaTime, allLights, skyboxTexture, nullptr);
         }
@@ -243,16 +236,14 @@ namespace Frost
         // Draw meshes
         _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, renderViewport);
 
-        for (auto meshEntity : meshView)
+        meshView.each([&](const StaticMesh& staticMesh, const WorldTransform& meshTransform)
         {
-            const auto& [staticMesh, meshTransform] = meshView.get(meshEntity);
-
             if (staticMesh.model)
             {
                 Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
                 _deferredRendering.SubmitModel(*staticMesh.model, worldMatrix);
             }
-        }
+        });
 
         _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport);
 

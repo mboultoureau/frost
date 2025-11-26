@@ -22,24 +22,21 @@ namespace Frost
 		XMVECTOR rootRot = XMQuaternionIdentity();
 		XMVECTOR rootScale = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
 
-		for (auto entity : view)
-		{
-			const auto& relationship = view.get<Relationship>(entity);
-
-			if (relationship.parent == entt::null)
-			{
-				_UpdateHierarchy(registry, entity, rootPos, rootRot, rootScale);
-			}
-		}
+        view.each([&](entt::entity entity, const Transform&, const WorldTransform&, const Relationship& relationship)
+        {
+            if (relationship.parent == entt::null)
+            {
+                _UpdateHierarchy(registry, entity, rootPos, rootRot, rootScale);
+            }
+        });
 
 		auto flatView = registry.view<Transform, WorldTransform>(entt::exclude<Relationship>);
-		for (auto entity : flatView)
-		{
-			auto [local, world] = flatView.get(entity);
-			world.position = local.position;
-			world.rotation = local.rotation;
-			world.scale = local.scale;
-		}
+        flatView.each([&](const Transform& local, WorldTransform& world)
+        {
+            world.position = local.position;
+            world.rotation = local.rotation;
+            world.scale = local.scale;
+        });
 	}
 
     void WorldTransformSystem::_UpdateHierarchy(
