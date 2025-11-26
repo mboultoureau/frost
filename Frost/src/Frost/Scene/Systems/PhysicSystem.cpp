@@ -44,10 +44,8 @@ namespace Frost
 		auto& physics = Physics::Get();
 		auto rigidBodyView = scene.ViewActive<RigidBody, Transform>();
 
-		for (auto entity : rigidBodyView)
+		rigidBodyView.each([&](const RigidBody& rbody, Transform& transform)
 		{
-			const auto& [rbody, transform] = rigidBodyView.get(entity);
-
 			auto jBodyPos = Physics::Get().body_interface->GetPosition(rbody.physicBody->bodyId);
 			auto jBodyRot = Physics::Get().body_interface->GetRotation(rbody.physicBody->bodyId);
 
@@ -56,7 +54,7 @@ namespace Frost
 			transform.rotation.y = jBodyRot.GetY();
 			transform.rotation.z = jBodyRot.GetZ();
 			transform.rotation.w = jBodyRot.GetW();
-		}
+		});
 	}
 
 	void Frost::PhysicSystem::_HandleAwakeVector(Scene& scene, float deltaTime)
