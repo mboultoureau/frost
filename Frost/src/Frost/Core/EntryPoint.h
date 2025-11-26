@@ -25,6 +25,8 @@ int WINAPI wWinMain(
 	application->OnApplicationReady();
 	application->Run();
 	delete application;
+
+	return 0;
 }
 
 #endif
