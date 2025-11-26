@@ -158,9 +158,10 @@ if(WIN32)
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
         $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
         
-        # Suppression de certains warnings courants avec yaml-cpp sous MSVC
+        # Remove warnings yaml-cpp
         $<$<CXX_COMPILER_ID:MSVC>:/wd4251>
         $<$<CXX_COMPILER_ID:MSVC>:/wd4275>
+        $<$<CXX_COMPILER_ID:MSVC>:/wd4267>
     )
 endif()
 
