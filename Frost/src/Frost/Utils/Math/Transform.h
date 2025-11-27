@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "Matrix.h"
-#include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/Camera.h"
+#include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Utils/Math/Angle.h"
+#include "Matrix.h"
 
 namespace Frost::Math
 {
@@ -27,12 +27,7 @@ namespace Frost::Math
         else
         {
             float fov = Angle<Radian>(camera.perspectiveFOV).value();
-            return Matrix4x4::CreatePerspectiveFovLH(
-                fov,
-                aspectRatio,
-                camera.nearClip,
-                camera.farClip
-            );
+            return Matrix4x4::CreatePerspectiveFovLH(fov, aspectRatio, camera.nearClip, camera.farClip);
         }
     }
 
@@ -51,11 +46,8 @@ namespace Frost::Math
         DirectX::XMVECTOR cameraDirection = DirectX::XMVector3Rotate(worldForward, cameraRotationQuat);
 
         Matrix4x4 viewMatrix = Matrix4x4::CreateLookToLH(
-            vector_cast<Vector3>(positionVec),
-            vector_cast<Vector3>(cameraDirection),
-            vector_cast<Vector3>(cameraUp)
-        );
+            vector_cast<Vector3>(positionVec), vector_cast<Vector3>(cameraDirection), vector_cast<Vector3>(cameraUp));
 
         return viewMatrix;
     }
-}
+} // namespace Frost::Math

@@ -4,14 +4,14 @@
 
 namespace Frost
 {
-	class ResetEvent : public Event
-	{
-	public:
-		ResetEvent() = default;
+    class ResetEvent : public Event
+    {
+    public:
+        ResetEvent() = default;
 
-		EventType GetEventType() const override { return GetStaticType(); }
-		std::string ToString() const override { return "ResetEvent"; }
+        EventType GetEventType() const override { return GetStaticType(); }
+        std::string ToString() const override { return "ResetEvent"; }
 
-		static EventType GetStaticType() { return EventType::GameReset; }
-	};
-}
+        static EventType GetStaticType() { return EventType::GameReset; }
+    };
+} // namespace Frost

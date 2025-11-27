@@ -5,94 +5,99 @@
 using namespace Frost;
 using namespace Frost::Math;
 
-MainLayer::MainLayer() : Layer("MainLayer")
-{
+MainLayer::MainLayer() : Layer("MainLayer") {}
 
+void
+MainLayer::OnAttach()
+{
+    Frost::Scene& _scene = Game::GetScene();
+
+    _pointLight = std::make_unique<PointLight>();
+    //_topCamera = std::make_unique<TopCamera>();
+
+    _sphere = std::make_unique<Sphere>();
+    //_freeCamera = std::make_unique<FreeCamera>();
+    _moto = std::make_unique<Moto>();
+    _ogre = std::make_unique<Ogre>();
+    _ogreNormal = std::make_unique<OgreNormal>();
+    //_text = std::make_unique<Text>();
+    //_plane = std::make_unique<Plane>();
+    //_terrain = std::make_unique<Terrain>();
+    _player = std::make_unique<Player>();
+    //_hierarchy = std::make_unique<HierarchyTest>();
+    // auto _rain = std::make_unique<BallRain>();
+    //_hudLogo = std::make_unique<HUD_Logo>();
+    _sky = std::make_unique<Sky>();
+    _portal1 = std::make_unique<Portal>(Vector3{ 6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 220.0_deg, 0.0_deg });
+    _portal2 = std::make_unique<Portal>(Vector3{ -6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 150.0_deg, 0.0_deg });
+
+    _portal1->LinkTo(_portal2.get());
+    _portal2->LinkTo(_portal1.get());
+    _tv = std::make_unique<TV>();
+    _sphereCustomShader = std::make_unique<SphereCustomShader>();
+    _shapes = std::make_unique<Shapes>();
+    _waves = std::make_unique<Waves>();
+
+    _pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
+
+    _unpauseHandlerUUID = EventManager::Subscribe<Frost::UnPauseEvent>(FROST_BIND_EVENT_FN(MainLayer::OnGameUnpaused));
 }
 
-void MainLayer::OnAttach()
+void
+MainLayer::OnUpdate(float deltaTime)
 {
-	Frost::Scene& _scene = Game::GetScene();
+    Frost::Scene& _scene = Game::GetScene();
 
-	_pointLight = std::make_unique<PointLight>();
-	//_topCamera = std::make_unique<TopCamera>();
+    if (_portal1)
+        _portal1->Update();
+    if (_portal2)
+        _portal2->Update();
 
-	_sphere = std::make_unique<Sphere>();
-	//_freeCamera = std::make_unique<FreeCamera>();
-	_moto = std::make_unique<Moto>();
-	_ogre = std::make_unique<Ogre>();
-	_ogreNormal = std::make_unique<OgreNormal>();
-	//_text = std::make_unique<Text>();
-	//_plane = std::make_unique<Plane>();
-	//_terrain = std::make_unique<Terrain>();
-	_player = std::make_unique<Player>();
-	//_hierarchy = std::make_unique<HierarchyTest>();
-	//auto _rain = std::make_unique<BallRain>();
-	//_hudLogo = std::make_unique<HUD_Logo>();
-	_sky = std::make_unique<Sky>();
-	_portal1 = std::make_unique<Portal>(Vector3{ 6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 220.0_deg, 0.0_deg });
-	_portal2 = std::make_unique<Portal>(Vector3{ -6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 150.0_deg, 0.0_deg });
+    _waves->Update(deltaTime);
 
-	_portal1->LinkTo(_portal2.get());
-	_portal2->LinkTo(_portal1.get());
-	_tv = std::make_unique<TV>();
-	_sphereCustomShader = std::make_unique<SphereCustomShader>();
-	_shapes = std::make_unique<Shapes>();
-	_waves = std::make_unique<Waves>();
-
-	_pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(
-		FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
-
-	_unpauseHandlerUUID = EventManager::Subscribe<Frost::UnPauseEvent>(
-		FROST_BIND_EVENT_FN(MainLayer::OnGameUnpaused));
+    _scene.Update(deltaTime);
 }
 
-void MainLayer::OnUpdate(float deltaTime)
+void
+MainLayer::OnPreFixedUpdate(float deltaTime)
 {
-	Frost::Scene& _scene = Game::GetScene();
+    Frost::Scene& _scene = Game::GetScene();
 
-	if (_portal1) _portal1->Update();
-	if (_portal2) _portal2->Update();
-
-	_waves->Update(deltaTime);
-
-	_scene.Update(deltaTime);
+    _scene.PreFixedUpdate(deltaTime);
 }
 
-void MainLayer::OnPreFixedUpdate(float deltaTime)
+void
+MainLayer::OnFixedUpdate(float deltaTime)
 {
-	Frost::Scene& _scene = Game::GetScene();
+    Frost::Scene& _scene = Game::GetScene();
 
-	_scene.PreFixedUpdate(deltaTime);
+    _scene.FixedUpdate(deltaTime);
 }
 
-void MainLayer::OnFixedUpdate(float deltaTime)
+void
+MainLayer::OnLateUpdate(float deltaTime)
 {
-	Frost::Scene& _scene = Game::GetScene();
-
-	_scene.FixedUpdate(deltaTime);
+    Frost::Scene& _scene = Game::GetScene();
+    _scene.LateUpdate(deltaTime);
 }
 
-void MainLayer::OnLateUpdate(float deltaTime)
+void
+MainLayer::OnDetach()
 {
-	Frost::Scene& _scene = Game::GetScene();
-	_scene.LateUpdate(deltaTime);
+    // EventManager::Unsubscribe<EventType::GamePaused>(_pauseHandlerUUID);
+    // EventManager::Unsubscribe<EventType::GameUnpaused>(_unpauseHandlerUUID);
 }
 
-void MainLayer::OnDetach()
+bool
+MainLayer::OnGamePaused(Frost::PauseEvent& e)
 {
-	//EventManager::Unsubscribe<EventType::GamePaused>(_pauseHandlerUUID);
-	//EventManager::Unsubscribe<EventType::GameUnpaused>(_unpauseHandlerUUID);
+    _paused = true;
+    return true;
 }
 
-bool MainLayer::OnGamePaused(Frost::PauseEvent& e)
+bool
+MainLayer::OnGameUnpaused(Frost::UnPauseEvent& e)
 {
-	_paused = true;
-	return true;
-}
-
-bool MainLayer::OnGameUnpaused(Frost::UnPauseEvent& e)
-{
-	_paused = false;
-	return true;
+    _paused = false;
+    return true;
 }

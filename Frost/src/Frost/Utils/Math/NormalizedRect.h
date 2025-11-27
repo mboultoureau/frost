@@ -2,10 +2,11 @@
 
 namespace Frost
 {
-	struct NormalizedRect {
-		float x;      // centre du rectangle
-		float y;
-		float width;  // largeur
-		float height;
-	};
-}
+    struct NormalizedRect
+    {
+        float x; // centre du rectangle
+        float y;
+        float width; // largeur
+        float height;
+    };
+} // namespace Frost

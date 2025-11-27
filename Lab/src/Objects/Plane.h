@@ -7,12 +7,12 @@
 class Plane
 {
 public:
-	Plane();
+    Plane();
 
 private:
-	Frost::GameObject _plane;
-	JPH::Body* _body;
+    Frost::GameObject _plane;
+    JPH::Body* _body;
 
 private:
-	void _SetupPhysics();
+    void _SetupPhysics();
 };

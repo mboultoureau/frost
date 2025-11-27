@@ -2,8 +2,8 @@
 
 #include "Frost/Core/Core.h"
 #include "Frost/Renderer/GraphicsTypes.h"
-#include "Frost/Renderer/Viewport.h"
 #include "Frost/Renderer/Shader.h"
+#include "Frost/Renderer/Viewport.h"
 
 #include <cstdint>
 
@@ -48,7 +48,11 @@ namespace Frost
         virtual void SetRenderTargets(uint32_t count, Texture** renderTargets, Texture* depthStencil = nullptr) = 0;
         virtual void ClearRenderTarget(Texture* renderTarget, const float color[4]) = 0;
         virtual void ClearRenderTarget(Texture* renderTarget, const float color[4], Viewport viewport) = 0;
-        virtual void ClearDepthStencil(Texture* depthStencil, bool clearDepth, float depthValue, bool clearStencil, uint8_t stencilValue) = 0;
+        virtual void ClearDepthStencil(Texture* depthStencil,
+                                       bool clearDepth,
+                                       float depthValue,
+                                       bool clearStencil,
+                                       uint8_t stencilValue) = 0;
 
         virtual void SetScissorRect(int x, int y, int width, int height) = 0;
         virtual void SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) = 0;
@@ -73,4 +77,4 @@ namespace Frost
 
         virtual void* GetNativeRenderContext() = 0;
     };
-}
+} // namespace Frost

@@ -8,10 +8,9 @@ class HierarchyTest
 {
 
 public:
-	HierarchyTest();
+    HierarchyTest();
 
 private:
-	Frost::GameObject _parent;
-	Frost::GameObject _child;
-
+    Frost::GameObject _parent;
+    Frost::GameObject _child;
 };

@@ -2,10 +2,10 @@
 
 #include "Frost/Core/Core.h"
 #include "Frost/Renderer/Pipeline.h"
-#include "Frost/Utils/Math/Matrix.h"
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Utils/Math/Matrix.h"
 
 #include <memory>
 
@@ -22,7 +22,7 @@ namespace Frost
     class Component::Light;
     struct Component::WorldTransform;
 
-	class DeferredRenderingPipeline : public Pipeline
+    class DeferredRenderingPipeline : public Pipeline
     {
     public:
         DeferredRenderingPipeline();
@@ -34,9 +34,15 @@ namespace Frost
 
         void OnResize(uint32_t width, uint32_t height);
 
-        void BeginFrame(const Component::Camera& camera, const Math::Matrix4x4& viewMatrix, const Math::Matrix4x4& projectionMatrix, const Viewport& viewport);
+        void BeginFrame(const Component::Camera& camera,
+                        const Math::Matrix4x4& viewMatrix,
+                        const Math::Matrix4x4& projectionMatrix,
+                        const Viewport& viewport);
         void SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix);
-        void EndFrame(const Component::Camera& camera, const Component::WorldTransform& cameraTransform, const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights, const Viewport& viewport);
+        void EndFrame(const Component::Camera& camera,
+                      const Component::WorldTransform& cameraTransform,
+                      const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
+                      const Viewport& viewport);
 
         Texture* GetDepthStencilTexture() const { return _depthStencilTexture.get(); }
         CommandList* GetCommandList() const { return _commandList.get(); }
@@ -69,7 +75,7 @@ namespace Frost
         std::shared_ptr<Buffer> _vsPerFrameConstants;
         std::shared_ptr<Buffer> _vsPerObjectConstants;
         std::shared_ptr<Buffer> _lightConstantsBuffer;
-		std::shared_ptr<Buffer> _psMaterialConstants;
+        std::shared_ptr<Buffer> _psMaterialConstants;
 
         // Default Textures (used when material textures are missing)
         std::unique_ptr<Texture> _defaultAlbedoTexture;
@@ -82,7 +88,7 @@ namespace Frost
         std::shared_ptr<Buffer> _customMaterialConstantBuffer;
         std::unordered_map<Shader*, std::unique_ptr<InputLayout>> _inputLayoutCache;
 
-		std::unique_ptr<CommandList> _commandList;
+        std::unique_ptr<CommandList> _commandList;
 
         bool _enabled = true;
         uint32_t _currentWidth = 0;
@@ -92,4 +98,4 @@ namespace Frost
         void _CreateDefaultTextures();
         InputLayout* _GetOrCreateInputLayout(Shader* vertexShader);
     };
-}
+} // namespace Frost

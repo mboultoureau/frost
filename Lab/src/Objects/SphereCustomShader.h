@@ -9,9 +9,8 @@ using namespace Frost::Component;
 class SphereCustomShader
 {
 public:
-	SphereCustomShader();
+    SphereCustomShader();
 
 private:
-	GameObject _sphere;
+    GameObject _sphere;
 };
-

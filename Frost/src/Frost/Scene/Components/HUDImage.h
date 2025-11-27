@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Frost/Asset/AssetManager.h"
-#include "Frost/Scene/ECS/Component.h"
 #include "Frost/Renderer/Material.h"
 #include "Frost/Renderer/Viewport.h"
+#include "Frost/Scene/ECS/Component.h"
 
-#include <string>
 #include <memory>
+#include <string>
 
 namespace Frost::Component
 {
@@ -17,15 +17,12 @@ namespace Frost::Component
     public:
         HUDImage() = default;
 
-        HUDImage(
-            Viewport viewport,
-            std::string pathTexture,
-            Material::FilterMode textureFilter
-        ) : viewport{ viewport }, textureFilepath{ pathTexture }
+        HUDImage(Viewport viewport, std::string pathTexture, Material::FilterMode textureFilter) :
+            viewport{ viewport }, textureFilepath{ pathTexture }
         {
-			TextureConfig config;
-			config.path = pathTexture;
-			config.textureType = TextureType::HUD;
+            TextureConfig config;
+            config.path = pathTexture;
+            config.textureType = TextureType::HUD;
             texture = AssetManager::LoadAsset(pathTexture, config);
         }
 
@@ -34,4 +31,4 @@ namespace Frost::Component
         Material::FilterMode textureFilter;
         Viewport viewport;
     };
-}
+} // namespace Frost::Component

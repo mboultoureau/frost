@@ -7,13 +7,10 @@
 
 namespace Frost::Component
 {
-	struct Meta : public Component
-	{
-		std::string name;
+    struct Meta : public Component
+    {
+        std::string name;
 
-		Meta(std::string name = "GameObject")
-			: name(std::move(name))
-		{
-		}
-	};
-}
+        Meta(std::string name = "GameObject") : name(std::move(name)) {}
+    };
+} // namespace Frost::Component

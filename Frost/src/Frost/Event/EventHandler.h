@@ -7,51 +7,48 @@
 
 namespace Frost
 {
-	class EventHandlerInterface
-	{
-	public:
-		using Id = UUID<EventHandlerInterface>;
+    class EventHandlerInterface
+    {
+    public:
+        using Id = UUID<EventHandlerInterface>;
 
-		virtual ~EventHandlerInterface() = default;
-		virtual bool OnEvent(Event& event) = 0;
-		virtual Id GetID() const = 0;
+        virtual ~EventHandlerInterface() = default;
+        virtual bool OnEvent(Event& event) = 0;
+        virtual Id GetID() const = 0;
 
-	protected:
-		EventHandlerInterface() = default;
-	};
+    protected:
+        EventHandlerInterface() = default;
+    };
 
-	template<typename EventType>
-	class EventHandler : public EventHandlerInterface
-	{
-		static_assert(std::is_base_of<Event, EventType>::value, "EventType must inherit from Frost::Event");
+    template<typename EventType>
+    class EventHandler : public EventHandlerInterface
+    {
+        static_assert(std::is_base_of<Event, EventType>::value, "EventType must inherit from Frost::Event");
 
-	public:
-		using EventCallback = std::function<bool(EventType&)>;
+    public:
+        using EventCallback = std::function<bool(EventType&)>;
 
-		EventHandler(const EventCallback& callback)
-			: _callback(callback), _id(Id::generate())
-		{
-		}
+        EventHandler(const EventCallback& callback) : _callback(callback), _id(Id::generate()) {}
 
-		virtual ~EventHandler() override = default;
+        virtual ~EventHandler() override = default;
 
-		bool OnEvent(Event& event) override
-		{
-			if (event.GetEventType() == EventType::GetStaticType())
-			{
-				if (_callback(static_cast<EventType&>(event)))
-				{
-					event.Handle();
-					return true;
-				}
-			}
-			return false;
-		}
+        bool OnEvent(Event& event) override
+        {
+            if (event.GetEventType() == EventType::GetStaticType())
+            {
+                if (_callback(static_cast<EventType&>(event)))
+                {
+                    event.Handle();
+                    return true;
+                }
+            }
+            return false;
+        }
 
-		Id GetID() const override { return _id; }
+        Id GetID() const override { return _id; }
 
-	private:
-		EventCallback _callback;
-		Id _id;
-	};
-}
+    private:
+        EventCallback _callback;
+        Id _id;
+    };
+} // namespace Frost

@@ -2,11 +2,9 @@
 
 namespace Editor
 {
-	class EditorTheme
-	{
-	public:
-		static void Apply();
-	};
-}
-
-
+    class EditorTheme
+    {
+    public:
+        static void Apply();
+    };
+} // namespace Editor

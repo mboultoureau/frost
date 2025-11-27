@@ -10,26 +10,28 @@ using namespace Frost;
 class CheckPoint
 {
 public:
-	static GameObject lastCheckPoint;
+    static GameObject lastCheckPoint;
 
-	CheckPoint(Math::Vector3 startpos);
-	void FixedUpdate(float deltaTime);
-	void AddChild(std::shared_ptr<CheckPoint> child);
-	void AddParent(std::shared_ptr<CheckPoint> parent);
-	void ReinitializeChildrenPhysics();
-	void DeleteChildrenPhysics();
-	void DestroyGameObject();
-	virtual void ActivatePhysics();
-	std::vector<std::shared_ptr<CheckPoint>>& GetParent() { return _prevCheckPoints; };
+    CheckPoint(Math::Vector3 startpos);
+    void FixedUpdate(float deltaTime);
+    void AddChild(std::shared_ptr<CheckPoint> child);
+    void AddParent(std::shared_ptr<CheckPoint> parent);
+    void ReinitializeChildrenPhysics();
+    void DeleteChildrenPhysics();
+    void DestroyGameObject();
+    virtual void ActivatePhysics();
+    std::vector<std::shared_ptr<CheckPoint>>& GetParent() { return _prevCheckPoints; };
 
-	GameObject GetGameObjectId() const { return _checkpoint; }
+    GameObject GetGameObjectId() const { return _checkpoint; }
+
 private:
-	std::vector<std::shared_ptr<CheckPoint>> _nextCheckPoints;
-	std::vector<std::shared_ptr<CheckPoint>> _prevCheckPoints;
-protected:
-	GameObject _checkpoint;
+    std::vector<std::shared_ptr<CheckPoint>> _nextCheckPoints;
+    std::vector<std::shared_ptr<CheckPoint>> _prevCheckPoints;
 
-	virtual void InitializePhysics();
-	void ProcessInput(float deltaTime);
-	void UpdatePhysics(float deltaTime);
+protected:
+    GameObject _checkpoint;
+
+    virtual void InitializePhysics();
+    void ProcessInput(float deltaTime);
+    void UpdatePhysics(float deltaTime);
 };

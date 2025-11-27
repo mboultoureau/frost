@@ -13,12 +13,10 @@ namespace Frost
         void Update(Scene& scene, float deltaTime) override;
 
     private:
-        void _UpdateHierarchy(
-            entt::registry& registry,
-            entt::entity entity,
-            DirectX::XMVECTOR parentPosition,
-            DirectX::XMVECTOR parentRotation,
-            DirectX::XMVECTOR parentScale
-        );
+        void _UpdateHierarchy(entt::registry& registry,
+                              entt::entity entity,
+                              DirectX::XMVECTOR parentPosition,
+                              DirectX::XMVECTOR parentRotation,
+                              DirectX::XMVECTOR parentScale);
     };
-}
+} // namespace Frost

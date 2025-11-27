@@ -7,8 +7,8 @@ using namespace Frost;
 class HUD_Logo
 {
 public:
-	HUD_Logo();
+    HUD_Logo();
 
 private:
-	GameObject _hudLogo;
+    GameObject _hudLogo;
 };

@@ -2,12 +2,12 @@
 
 namespace Editor
 {
-	class EditorPanel
-	{
-	public:
-		virtual void Draw() = 0;
-		
-	protected:
-		bool _isOpen = true;
-	};
-}
+    class EditorPanel
+    {
+    public:
+        virtual void Draw() = 0;
+
+    protected:
+        bool _isOpen = true;
+    };
+} // namespace Editor

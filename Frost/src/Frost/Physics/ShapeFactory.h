@@ -6,9 +6,9 @@
 
 namespace Frost
 {
-	class ShapeFactory
-	{
-	public:
-		static JPH::ShapeRefC CreateHeightMap(const HeightMapConfig& config);
-	};
-}
+    class ShapeFactory
+    {
+    public:
+        static JPH::ShapeRefC CreateHeightMap(const HeightMapConfig& config);
+    };
+} // namespace Frost

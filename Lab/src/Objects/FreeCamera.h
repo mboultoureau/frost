@@ -8,9 +8,8 @@ class FreeCamera
 {
 
 public:
-	FreeCamera();
+    FreeCamera();
 
 private:
-	GameObject _camera;
+    GameObject _camera;
 };
-

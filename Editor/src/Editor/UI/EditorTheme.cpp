@@ -4,8 +4,8 @@
 
 namespace Editor
 {
-	void EditorTheme::Apply()
-	{
+    void EditorTheme::Apply()
+    {
         ImGuiStyle& style = ImGui::GetStyle();
         ImVec4* colors = style.Colors;
 
@@ -33,12 +33,12 @@ namespace Editor
         style.GrabMinSize = 10.0f;
 
         // Colors
-        ImVec4 color_bg_main = ImVec4(0.117f, 0.117f, 0.117f, 1.00f); // #1E1E1E (Base)
+        ImVec4 color_bg_main = ImVec4(0.117f, 0.117f, 0.117f, 1.00f);  // #1E1E1E (Base)
         ImVec4 color_bg_panel = ImVec4(0.176f, 0.176f, 0.176f, 1.00f); // #2D2D2D (Panel)
         ImVec4 color_bg_input = ImVec4(0.090f, 0.090f, 0.090f, 1.00f); // #171717 (Input Fields)
 
         // Buttons
-        ImVec4 color_button = ImVec4(0.220f, 0.220f, 0.220f, 1.00f); // #383838
+        ImVec4 color_button = ImVec4(0.220f, 0.220f, 0.220f, 1.00f);     // #383838
         ImVec4 color_button_hov = ImVec4(0.260f, 0.260f, 0.260f, 1.00f); // #424242
         ImVec4 color_button_act = ImVec4(0.300f, 0.300f, 0.300f, 1.00f); // #4D4D4D
 
@@ -134,5 +134,5 @@ namespace Editor
         colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
         colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
         colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
-	}
-}
+    }
+} // namespace Editor
