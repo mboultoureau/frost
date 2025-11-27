@@ -1,57 +1,56 @@
 #include "WorldTransformSystem.h"
 
+#include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
-#include "Frost/Scene/Components/Relationship.h"
 
 using namespace DirectX;
 using namespace Frost::Component;
 
 namespace Frost
 {
-	WorldTransformSystem::WorldTransformSystem()
-	{
-	}
+    WorldTransformSystem::WorldTransformSystem() {}
 
-	void WorldTransformSystem::Update(Scene& scene, float deltaTime)
-	{	
-		auto& registry = scene.GetRegistry();
-		auto view = scene.ViewActive<Transform, WorldTransform, Relationship>();
+    void WorldTransformSystem::Update(Scene& scene, float deltaTime)
+    {
+        auto& registry = scene.GetRegistry();
+        auto view = scene.ViewActive<Transform, WorldTransform, Relationship>();
 
-		XMVECTOR rootPos = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-		XMVECTOR rootRot = XMQuaternionIdentity();
-		XMVECTOR rootScale = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
+        XMVECTOR rootPos = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+        XMVECTOR rootRot = XMQuaternionIdentity();
+        XMVECTOR rootScale = XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f);
 
-        view.each([&](entt::entity entity, const Transform&, const WorldTransform&, const Relationship& relationship)
-        {
-            if (relationship.parent == entt::null)
+        view.each(
+            [&](entt::entity entity, const Transform&, const WorldTransform&, const Relationship& relationship)
             {
-                _UpdateHierarchy(registry, entity, rootPos, rootRot, rootScale);
-            }
-        });
+                if (relationship.parent == entt::null)
+                {
+                    _UpdateHierarchy(registry, entity, rootPos, rootRot, rootScale);
+                }
+            });
 
-		auto flatView = registry.view<Transform, WorldTransform>(entt::exclude<Relationship>);
-        flatView.each([&](const Transform& local, WorldTransform& world)
-        {
-            world.position = local.position;
-            world.rotation = local.rotation;
-            world.scale = local.scale;
-        });
-	}
+        auto flatView = registry.view<Transform, WorldTransform>(entt::exclude<Relationship>);
+        flatView.each(
+            [&](const Transform& local, WorldTransform& world)
+            {
+                world.position = local.position;
+                world.rotation = local.rotation;
+                world.scale = local.scale;
+            });
+    }
 
-    void WorldTransformSystem::_UpdateHierarchy(
-        entt::registry& registry,
-        entt::entity entity,
-        DirectX::XMVECTOR parentPosition,
-        DirectX::XMVECTOR parentRotation,
-        DirectX::XMVECTOR parentScale
-    )
+    void WorldTransformSystem::_UpdateHierarchy(entt::registry& registry,
+                                                entt::entity entity,
+                                                DirectX::XMVECTOR parentPosition,
+                                                DirectX::XMVECTOR parentRotation,
+                                                DirectX::XMVECTOR parentScale)
     {
         auto* localTransform = registry.try_get<Transform>(entity);
         auto* worldTransform = registry.try_get<WorldTransform>(entity);
         auto* relationship = registry.try_get<Relationship>(entity);
 
-        if (!localTransform || !worldTransform) return;
+        if (!localTransform || !worldTransform)
+            return;
 
         using namespace DirectX;
 
@@ -78,10 +77,10 @@ namespace Frost
                 // Update children
                 _UpdateHierarchy(registry, currentChild, newWorldPosition, newWorldRotation, newWorldScale);
 
-				// Update sibling
+                // Update sibling
                 auto& childRel = registry.get<Relationship>(currentChild);
                 currentChild = childRel.nextSibling;
             }
         }
     }
-}
+} // namespace Frost

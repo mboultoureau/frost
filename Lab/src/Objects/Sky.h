@@ -3,5 +3,5 @@
 class Sky
 {
 public:
-	Sky();
+    Sky();
 };

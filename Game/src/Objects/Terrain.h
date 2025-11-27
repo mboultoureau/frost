@@ -7,8 +7,8 @@ using namespace Frost;
 class Terrain
 {
 public:
-	Terrain();
+    Terrain();
 
 private:
-	GameObject _terrain;
+    GameObject _terrain;
 };

@@ -4,7 +4,7 @@
 
 namespace Frost::Component
 {
-	struct Disabled : public Component
-	{
-	};
-}
+    struct Disabled : public Component
+    {
+    };
+} // namespace Frost::Component

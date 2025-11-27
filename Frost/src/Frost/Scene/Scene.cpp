@@ -1,13 +1,13 @@
 #include "Frost/Scene/Scene.h"
 
-#include "Frost/Scene/Systems/JoltRendererSystem.h"
-#include "Frost/Scene/Systems/RendererSystem.h"
-#include "Frost/Scene/Systems/WorldTransformSystem.h"
-#include "Frost/Scene/Systems/ScriptableSystem.h"
-#include "Frost/Scene/Systems/PhysicSystem.h"
-#include "Frost/Scene/Systems/UISystem.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Relationship.h"
+#include "Frost/Scene/Systems/JoltRendererSystem.h"
+#include "Frost/Scene/Systems/PhysicSystem.h"
+#include "Frost/Scene/Systems/RendererSystem.h"
+#include "Frost/Scene/Systems/ScriptableSystem.h"
+#include "Frost/Scene/Systems/UISystem.h"
+#include "Frost/Scene/Systems/WorldTransformSystem.h"
 
 using namespace Frost::Component;
 
@@ -29,7 +29,7 @@ namespace Frost
             }
         }
         _systems.clear();
-        
+
         _registry.on_destroy<Component::Relationship>().disconnect<&Scene::OnRelationshipDestroyed>(this);
         _registry.clear();
     }
@@ -37,7 +37,7 @@ namespace Frost
     GameObject Scene::CreateGameObject(std::string name)
     {
         auto entity = _registry.create();
-        
+
         // Meta, Relationship, Transform and WorldTransform is used
         // by 99% of all gameobjects
         _registry.emplace<Component::Meta>(entity, name);
@@ -62,8 +62,8 @@ namespace Frost
 
     void Scene::_InitializeSystems()
     {
-		_systems.push_back(std::make_unique<WorldTransformSystem>());
-		_systems.push_back(std::make_unique<ScriptableSystem>());
+        _systems.push_back(std::make_unique<WorldTransformSystem>());
+        _systems.push_back(std::make_unique<ScriptableSystem>());
         _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<RendererSystem>());
         _systems.push_back(std::make_unique<UISystem>());
@@ -88,7 +88,8 @@ namespace Frost
                     parentRel.firstChild = relationship.nextSibling;
                 }
 
-                if (parentRel.childrenCount > 0) parentRel.childrenCount--;
+                if (parentRel.childrenCount > 0)
+                    parentRel.childrenCount--;
             }
         }
 
@@ -139,7 +140,6 @@ namespace Frost
         }
     }
 
-
     void Scene::PreFixedUpdate(float deltaTime)
     {
         for (const auto& system : _systems)
@@ -163,5 +163,4 @@ namespace Frost
             system->LateUpdate(*this, deltaTime);
         }
     }
-}
-
+} // namespace Frost

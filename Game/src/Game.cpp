@@ -1,45 +1,49 @@
 ﻿#include "Game.h"
-#include "MainLayer.h"
 #include "Frost/Debugging/DebugLayer.h"
+#include "MainLayer.h"
 #include "PauseMenu/PauseMenu.h"
 
 Game* Game::_singleton = nullptr;
 
 Game::Game(Lab* app) : _app{ app }
 {
-	FT_ASSERT(_singleton == nullptr && "Game: Attempting to create a second instance of the singleton.");
-	_singleton = this;
+    FT_ASSERT(_singleton == nullptr && "Game: Attempting to create a second instance of the singleton.");
+    _singleton = this;
 
-	InitGame();
+    InitGame();
 
-	EventManager::Subscribe<Frost::ResetEvent>(FROST_BIND_EVENT_FN(Game::OnGameReset));
+    EventManager::Subscribe<Frost::ResetEvent>(FROST_BIND_EVENT_FN(Game::OnGameReset));
 }
 
-Game& Game::Get()
+Game&
+Game::Get()
 {
-	FT_ASSERT(_singleton != nullptr && "Game: Get() called before Game was initialized. Ensure it is created in LabApp.");
-	return *_singleton;
+    FT_ASSERT(_singleton != nullptr && "Game: Get() called before Game was initialized. Ensure it is "
+                                       "created in LabApp.");
+    return *_singleton;
 }
 
-bool Game::OnGameReset(Frost::ResetEvent& e)
+bool
+Game::OnGameReset(Frost::ResetEvent& e)
 {
-	_app->Reset();
-	_scene.reset();
-	InitGame();
-	return true;
+    _app->Reset();
+    _scene.reset();
+    InitGame();
+    return true;
 }
 
-void Game::InitGame()
+void
+Game::InitGame()
 {
-	_scene = std::make_unique<Frost::Scene>("Scene");
-	_mainLayer = _app->PushLayer<MainLayer>();
+    _scene = std::make_unique<Frost::Scene>("Scene");
+    _mainLayer = _app->PushLayer<MainLayer>();
 
 #if FT_DEBUG
-	DebugLayer* debugLayer = _app->PushLayer<DebugLayer>();
-	debugLayer->AddScene(_scene.get());
+    DebugLayer* debugLayer = _app->PushLayer<DebugLayer>();
+    debugLayer->AddScene(_scene.get());
 #endif
 
-	PauseMenu* pauseLayer = _app->PushLayer<PauseMenu>();
-	
-	//pauseLayer->AddScene(_scene.get());
+    PauseMenu* pauseLayer = _app->PushLayer<PauseMenu>();
+
+    // pauseLayer->AddScene(_scene.get());
 }

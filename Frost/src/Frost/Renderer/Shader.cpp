@@ -12,5 +12,4 @@ namespace Frost
         return nullptr;
 #endif
     }
-}
-
+} // namespace Frost

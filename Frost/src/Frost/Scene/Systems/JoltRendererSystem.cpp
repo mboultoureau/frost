@@ -1,7 +1,7 @@
 #include "Frost/Scene/Systems/JoltRendererSystem.h"
 #include "Frost/Core/Application.h"
-#include "Frost/Physics/Physics.h"
 #include "Frost/Debugging/DebugInterface/DebugPhysics.h"
+#include "Frost/Physics/Physics.h"
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 
@@ -9,9 +9,7 @@ using namespace Frost::Component;
 
 namespace Frost
 {
-    JoltRendererSystem::JoltRendererSystem()
-    {
-    }
+    JoltRendererSystem::JoltRendererSystem() {}
 
     void JoltRendererSystem::LateUpdate(Scene& scene, float deltaTime)
     {
@@ -35,11 +33,13 @@ namespace Frost
         }
 
         JoltRenderingPipeline* _joltDebugRendering = static_cast<JoltRenderingPipeline*>(Physics::GetDebugRenderer());
-        if (!_joltDebugRendering) return;
+        if (!_joltDebugRendering)
+            return;
 
         auto cameraView = scene.ViewActive<Component::Camera, Component::WorldTransform>();
 
-        struct RenderCamera {
+        struct RenderCamera
+        {
             entt::entity entity;
             const Camera* camera;
             const WorldTransform* transform;
@@ -48,16 +48,13 @@ namespace Frost
         std::vector<RenderCamera> sortedCameras;
         sortedCameras.reserve(cameraView.size_hint());
 
-        cameraView.each([&](entt::entity entity, const Component::Camera& camera, const Component::WorldTransform& transform) {
-            sortedCameras.push_back({ entity, &camera, &transform });
-        });
+        cameraView.each(
+            [&](entt::entity entity, const Component::Camera& camera, const Component::WorldTransform& transform)
+            { sortedCameras.push_back({ entity, &camera, &transform }); });
 
-        std::sort(sortedCameras.begin(), sortedCameras.end(),
-            [](const RenderCamera& a, const RenderCamera& b)
-            {
-                return a.camera->priority < b.camera->priority;
-            }
-        );
+        std::sort(sortedCameras.begin(),
+                  sortedCameras.end(),
+                  [](const RenderCamera& a, const RenderCamera& b) { return a.camera->priority < b.camera->priority; });
 
         for (const auto& camData : sortedCameras)
         {
@@ -69,4 +66,4 @@ namespace Frost
 
         _joltDebugRendering->Clear();
     }
-}
+} // namespace Frost

@@ -3,14 +3,15 @@
 
 namespace Frost
 {
-	HeightMapModel::HeightMapModel(const HeightMapConfig& config) : _config{ config }
-	{
-		FT_ENGINE_ASSERT(config.texture, "HeightMapModel: Heightmap texture is null.");
-		FT_ENGINE_ASSERT(config.chunkSize > 0, "HeightMapModel: Chunk size must be greater than zero.");
-		FT_ENGINE_ASSERT(config.texture->GetWidth() > 0 && config.texture->GetHeight() > 0, "HeightMapModel: Heightmap texture has invalid dimensions.");
+    HeightMapModel::HeightMapModel(const HeightMapConfig& config) : _config{ config }
+    {
+        FT_ENGINE_ASSERT(config.texture, "HeightMapModel: Heightmap texture is null.");
+        FT_ENGINE_ASSERT(config.chunkSize > 0, "HeightMapModel: Chunk size must be greater than zero.");
+        FT_ENGINE_ASSERT(config.texture->GetWidth() > 0 && config.texture->GetHeight() > 0,
+                         "HeightMapModel: Heightmap texture has invalid dimensions.");
 
-		uint32_t imageWidth = config.texture->GetWidth();
-		uint32_t imageHeight = config.texture->GetHeight();
+        uint32_t imageWidth = config.texture->GetWidth();
+        uint32_t imageHeight = config.texture->GetHeight();
 
         _materials.push_back(config.material);
 
@@ -18,48 +19,45 @@ namespace Frost
         {
             for (int x = 0; x < imageWidth; x += config.chunkSize)
             {
-                GenerateHeightMapMesh(
-                    x,
-					x + config.chunkSize,
-                    z,
-					z + config.chunkSize,
-                    config.scale.height
-				);
+                GenerateHeightMapMesh(x, x + config.chunkSize, z, z + config.chunkSize, config.scale.height);
             }
         }
-	}
+    }
 
-    void HeightMapModel::GenerateHeightMapMesh(uint32_t xMin, uint32_t xMax, uint32_t zMin, uint32_t zMax, float heightScale)
+    void HeightMapModel::GenerateHeightMapMesh(uint32_t xMin,
+                                               uint32_t xMax,
+                                               uint32_t zMin,
+                                               uint32_t zMax,
+                                               float heightScale)
     {
         using namespace DirectX;
 
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
-		xMin = xMin == 0 ? 0 : xMin - 1;
-		xMax = std::min(xMax + 1, _config.texture->GetWidth());
+        xMin = xMin == 0 ? 0 : xMin - 1;
+        xMax = std::min(xMax + 1, _config.texture->GetWidth());
 
-		zMin = zMin == 0 ? 0 : zMin - 1;
-		zMax = std::min(zMax + 1, _config.texture->GetHeight());
+        zMin = zMin == 0 ? 0 : zMin - 1;
+        zMax = std::min(zMax + 1, _config.texture->GetHeight());
 
         int localWidth = (xMax - xMin);
         int localHeight = (zMax - zMin);
 
         vertices.reserve(localWidth * localHeight);
-		auto data = _config.texture->GetData();
+        auto data = _config.texture->GetData();
 
         auto getPos = [&](int px, int pz)
-            {
-                int pidx = (pz * _config.texture->GetWidth() + px) * _config.texture->GetChannels();
-				float ph = data[pidx] / 255.0f;
-  
-                float worldX = (float)px / _config.texture->GetWidth();
-                float worldZ = (float)pz / _config.texture->GetHeight();
-                float worldY = ph * heightScale;
+        {
+            int pidx = (pz * _config.texture->GetWidth() + px) * _config.texture->GetChannels();
+            float ph = data[pidx] / 255.0f;
 
-                return XMVECTOR{ worldX, worldY, worldZ, 0 };
-            };
+            float worldX = (float)px / _config.texture->GetWidth();
+            float worldZ = (float)pz / _config.texture->GetHeight();
+            float worldY = ph * heightScale;
 
+            return XMVECTOR{ worldX, worldY, worldZ, 0 };
+        };
 
         for (int z = zMin; z < zMax; z++)
         {
@@ -75,20 +73,24 @@ namespace Frost
                 XMVECTOR p0 = { worldX, worldY, worldZ, 0 };
 
                 // Vecteurs voisins
-                XMVECTOR v1 = { 0,0,0,0 };
-                XMVECTOR v2 = { 0,0,0,0 };
-                XMVECTOR v3 = { 0,0,0,0 };
-                XMVECTOR v4 = { 0,0,0,0 };
+                XMVECTOR v1 = { 0, 0, 0, 0 };
+                XMVECTOR v2 = { 0, 0, 0, 0 };
+                XMVECTOR v3 = { 0, 0, 0, 0 };
+                XMVECTOR v4 = { 0, 0, 0, 0 };
 
                 bool hasUp = (z < _config.texture->GetHeight() - 1);
                 bool hasRight = (x < _config.texture->GetWidth() - 1);
                 bool hasDown = (z > 0);
                 bool hasLeft = (x > 0);
 
-                if (hasUp)    v1 = XMVectorSubtract(getPos(x, z + 1), p0);
-                if (hasRight) v2 = XMVectorSubtract(getPos(x + 1, z), p0);
-                if (hasDown)  v3 = XMVectorSubtract(getPos(x, z - 1), p0);
-                if (hasLeft)  v4 = XMVectorSubtract(getPos(x - 1, z), p0);
+                if (hasUp)
+                    v1 = XMVectorSubtract(getPos(x, z + 1), p0);
+                if (hasRight)
+                    v2 = XMVectorSubtract(getPos(x + 1, z), p0);
+                if (hasDown)
+                    v3 = XMVectorSubtract(getPos(x, z - 1), p0);
+                if (hasLeft)
+                    v4 = XMVectorSubtract(getPos(x - 1, z), p0);
 
                 XMVECTOR n1 = XMVectorZero();
                 XMVECTOR n2 = XMVectorZero();
@@ -96,14 +98,18 @@ namespace Frost
                 XMVECTOR n4 = XMVectorZero();
 
                 // Produits vectoriels
-                if (hasUp && hasRight) n1 = XMVector3Cross(v2, v1);
-                if (hasDown && hasRight) n2 = XMVector3Cross(v3, v2);
-                if (hasDown && hasLeft)  n3 = XMVector3Cross(v4, v3);
-                if (hasUp && hasLeft)  n4 = XMVector3Cross(v1, v4);
+                if (hasUp && hasRight)
+                    n1 = XMVector3Cross(v2, v1);
+                if (hasDown && hasRight)
+                    n2 = XMVector3Cross(v3, v2);
+                if (hasDown && hasLeft)
+                    n3 = XMVector3Cross(v4, v3);
+                if (hasUp && hasLeft)
+                    n4 = XMVector3Cross(v1, v4);
 
                 // Somme -> normalisation
                 XMVECTOR normalVec = XMVectorAdd(XMVectorAdd(XMVectorAdd(n1, n2), n3), n4);
-                normalVec = XMVector3Normalize(-1*normalVec);
+                normalVec = XMVector3Normalize(-1 * normalVec);
 
                 XMFLOAT3 normal;
                 XMStoreFloat3(&normal, normalVec);
@@ -133,7 +139,6 @@ namespace Frost
                 auto vtopR = vertices[topRight].position;
                 auto vBL = vertices[bottomLeft].position;
                 auto vBR = vertices[bottomRight].position;
-
 
                 indices.push_back(topLeft);
                 indices.push_back(bottomLeft);
@@ -169,7 +174,8 @@ namespace Frost
             XMVECTOR deltaUV1 = XMVectorSubtract(uv1, uv0);
             XMVECTOR deltaUV2 = XMVectorSubtract(uv2, uv0);
 
-            float denominator = XMVectorGetX(deltaUV1) * XMVectorGetY(deltaUV2) - XMVectorGetY(deltaUV1) * XMVectorGetX(deltaUV2);
+            float denominator =
+                XMVectorGetX(deltaUV1) * XMVectorGetY(deltaUV2) - XMVectorGetY(deltaUV1) * XMVectorGetX(deltaUV2);
             float f = (fabs(denominator) < 1e-6f) ? 1.0f : (1.0f / denominator);
 
             float deltaUV2Y = XMVectorGetY(deltaUV2);
@@ -177,8 +183,10 @@ namespace Frost
             float deltaUV1X = XMVectorGetX(deltaUV1);
             float deltaUV2X = XMVectorGetX(deltaUV2);
 
-            XMVECTOR tangent = XMVectorScale(XMVectorSubtract(XMVectorScale(edge1, deltaUV2Y), XMVectorScale(edge2, deltaUV1Y)), f);
-            XMVECTOR bitangent = XMVectorScale(XMVectorSubtract(XMVectorScale(edge2, deltaUV1X), XMVectorScale(edge1, deltaUV2X)), f);
+            XMVECTOR tangent =
+                XMVectorScale(XMVectorSubtract(XMVectorScale(edge1, deltaUV2Y), XMVectorScale(edge2, deltaUV1Y)), f);
+            XMVECTOR bitangent =
+                XMVectorScale(XMVectorSubtract(XMVectorScale(edge2, deltaUV1X), XMVectorScale(edge1, deltaUV2X)), f);
 
             tangents[i0] = XMVectorAdd(tangents[i0], tangent);
             tangents[i1] = XMVectorAdd(tangents[i1], tangent);
@@ -193,8 +201,8 @@ namespace Frost
         {
             XMVECTOR normal = XMVectorSet(vertices[i].normal.x, vertices[i].normal.y, vertices[i].normal.z, 0.0f);
             XMVECTOR tangent = tangents[i];
-            
-			// Check if tangent is zero vector
+
+            // Check if tangent is zero vector
             float tangentLength = XMVectorGetX(XMVector3Length(tangent));
             if (tangentLength < 1e-6f)
             {
@@ -207,12 +215,12 @@ namespace Frost
                     tangent = XMVector3Cross(normal, right);
                 }
             }
-            
+
             tangent = XMVector3Normalize(tangent);
-            
+
             float dotProduct = XMVectorGetX(XMVector3Dot(normal, tangent));
             tangent = XMVector3Normalize(XMVectorSubtract(tangent, XMVectorScale(normal, dotProduct)));
-            
+
             XMVECTOR bitangent = bitangents[i];
             float bitangentLength = XMVectorGetX(XMVector3Length(bitangent));
             if (bitangentLength < 1e-6f)
@@ -223,14 +231,14 @@ namespace Frost
             {
                 bitangent = XMVector3Normalize(bitangent);
             }
-            
+
             XMVECTOR crossResult = XMVector3Cross(normal, tangent);
             float dotResult = XMVectorGetX(XMVector3Dot(crossResult, bitangent));
             float handedness = (dotResult < 0.0f) ? -1.0f : 1.0f;
 
             XMFLOAT4 tangentResult;
             XMStoreFloat4(&tangentResult, XMVectorSetW(tangent, handedness));
-            
+
             vertices[i].tangent = Math::vector_cast<Math::Vector4>(tangentResult);
         }
 
@@ -238,4 +246,4 @@ namespace Frost
         _meshes.emplace_back(vertexData, static_cast<uint32_t>(sizeof(Vertex)), indices);
         _meshes.back().SetMaterialIndex(0);
     }
-}
+} // namespace Frost

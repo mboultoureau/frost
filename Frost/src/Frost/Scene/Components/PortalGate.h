@@ -4,8 +4,8 @@
 
 namespace Frost::Component
 {
-	struct PortalGate
-	{
-		entt::entity entrancePortal;
-	};
-}
+    struct PortalGate
+    {
+        entt::entity entrancePortal;
+    };
+} // namespace Frost::Component

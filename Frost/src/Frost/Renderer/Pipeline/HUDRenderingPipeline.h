@@ -47,4 +47,4 @@ namespace Frost
 
         bool _enabled = false;
     };
-}
+} // namespace Frost

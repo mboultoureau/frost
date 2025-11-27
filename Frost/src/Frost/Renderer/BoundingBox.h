@@ -13,16 +13,10 @@ namespace Frost
         static BoundingBox TransformAABB(const BoundingBox& box, const DirectX::XMMATRIX& world)
         {
             using namespace DirectX;
-            XMFLOAT3 corners[8] = {
-                { box.min.x, box.min.y, box.min.z },
-                { box.max.x, box.min.y, box.min.z },
-                { box.min.x, box.max.y, box.min.z },
-                { box.max.x, box.max.y, box.min.z },
-                { box.min.x, box.min.y, box.max.z },
-                { box.max.x, box.min.y, box.max.z },
-                { box.min.x, box.max.y, box.max.z },
-                { box.max.x, box.max.y, box.max.z }
-            };
+            XMFLOAT3 corners[8] = { { box.min.x, box.min.y, box.min.z }, { box.max.x, box.min.y, box.min.z },
+                                    { box.min.x, box.max.y, box.min.z }, { box.max.x, box.max.y, box.min.z },
+                                    { box.min.x, box.min.y, box.max.z }, { box.max.x, box.min.y, box.max.z },
+                                    { box.min.x, box.max.y, box.max.z }, { box.max.x, box.max.y, box.max.z } };
 
             XMFLOAT3 newMin = { FLT_MAX, FLT_MAX, FLT_MAX };
             XMFLOAT3 newMax = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
@@ -45,4 +39,4 @@ namespace Frost
             return { newMin, newMax };
         }
     };
-}
+} // namespace Frost

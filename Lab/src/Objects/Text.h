@@ -8,10 +8,8 @@ class Text
 {
 
 public:
-	Text();
+    Text();
 
 private:
-	GameObject _text;
+    GameObject _text;
 };
-
-

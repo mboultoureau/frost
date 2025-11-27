@@ -3,11 +3,13 @@
 
 namespace Frost
 {
-    ShaderIncludeDX11::ShaderIncludeDX11(const std::string& shaderDir) : _shaderDir(shaderDir)
-    {
-    }
+    ShaderIncludeDX11::ShaderIncludeDX11(const std::string& shaderDir) : _shaderDir(shaderDir) {}
 
-    HRESULT __stdcall ShaderIncludeDX11::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
+    HRESULT __stdcall ShaderIncludeDX11::Open(D3D_INCLUDE_TYPE IncludeType,
+                                              LPCSTR pFileName,
+                                              LPCVOID pParentData,
+                                              LPCVOID* ppData,
+                                              UINT* pBytes)
     {
         std::filesystem::path finalPath = _shaderDir / pFileName;
 
@@ -37,4 +39,4 @@ namespace Frost
         delete[] buffer;
         return S_OK;
     }
-}
+} // namespace Frost

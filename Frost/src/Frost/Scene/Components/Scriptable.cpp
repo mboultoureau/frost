@@ -3,8 +3,8 @@
 
 namespace Frost::Component
 {
-	Scriptable::Scriptable() = default;
-	Scriptable::Scriptable(Scriptable&&) = default;
-	Scriptable& Scriptable::operator=(Scriptable&&) = default;
-	Scriptable::~Scriptable() = default;
-}
+    Scriptable::Scriptable() = default;
+    Scriptable::Scriptable(Scriptable&&) = default;
+    Scriptable& Scriptable::operator=(Scriptable&&) = default;
+    Scriptable::~Scriptable() = default;
+} // namespace Frost::Component

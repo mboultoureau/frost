@@ -1,8 +1,8 @@
 #include "Frost/Renderer/PostEffect/RadialBlurEffect.h"
-#include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Renderer/DX11/ShaderDX11.h"
-#include "Frost/Renderer/DX11/SamplerDX11.h"
 #include "Frost/Renderer/DX11/CommandListDX11.h"
+#include "Frost/Renderer/DX11/SamplerDX11.h"
+#include "Frost/Renderer/DX11/ShaderDX11.h"
+#include "Frost/Renderer/RendererAPI.h"
 
 #include "Frost/Renderer/DX11/TextureDX11.h"
 
@@ -18,26 +18,39 @@ namespace Frost
         Math::Vector2 center;
         float strength;
         int sampleCount;
-	};
+    };
 
     RadialBlurEffect::RadialBlurEffect()
     {
 #ifdef FT_PLATFORM_WINDOWS
-        ShaderDesc vsDesc = { .type = ShaderType::Vertex, .debugName = "VS_RadialBlur", .filePath = "../Frost/resources/shaders/PostEffect/VS_RadialBlur.hlsl" };
+        ShaderDesc vsDesc = { .type = ShaderType::Vertex,
+                              .debugName = "VS_RadialBlur",
+                              .filePath = "../Frost/resources/shaders/PostEffect/VS_RadialBlur.hlsl" };
         _vertexShader = std::make_unique<ShaderDX11>(vsDesc);
 
-        ShaderDesc psDesc = { .type = ShaderType::Pixel, .debugName = "PS_RadialBlur", .filePath = "../Frost/resources/shaders/PostEffect/PS_RadialBlur.hlsl" };
+        ShaderDesc psDesc = { .type = ShaderType::Pixel,
+                              .debugName = "PS_RadialBlur",
+                              .filePath = "../Frost/resources/shaders/PostEffect/PS_RadialBlur.hlsl" };
         _pixelShader = std::make_unique<ShaderDX11>(psDesc);
 #endif
 
         auto* renderer = RendererAPI::GetRenderer();
-        _constantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(RadialBlurConstants), .dynamic = true, .debugName = "CB_RadialBlur" });
+        _constantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER,
+                                                                .size = sizeof(RadialBlurConstants),
+                                                                .dynamic = true,
+                                                                .debugName = "CB_RadialBlur" });
 
-        SamplerConfig samplerConfig = { .filter = Filter::MIN_MAG_MIP_LINEAR, .addressU = AddressMode::CLAMP, .addressV = AddressMode::CLAMP, .addressW = AddressMode::CLAMP };
+        SamplerConfig samplerConfig = { .filter = Filter::MIN_MAG_MIP_LINEAR,
+                                        .addressU = AddressMode::CLAMP,
+                                        .addressV = AddressMode::CLAMP,
+                                        .addressW = AddressMode::CLAMP };
         _sampler = std::make_unique<SamplerDX11>(samplerConfig);
     }
 
-    void RadialBlurEffect::OnPostRender(float deltaTime, CommandList* commandList, Texture* source, Texture* destination)
+    void RadialBlurEffect::OnPostRender(float deltaTime,
+                                        CommandList* commandList,
+                                        Texture* source,
+                                        Texture* destination)
     {
         RadialBlurConstants constants;
         constants.center = _center;
@@ -101,4 +114,4 @@ namespace Frost
         drawList->AddCircleFilled(pointPos, 6.0f, IM_COL32(255, 50, 50, 255));
         drawList->AddCircle(pointPos, 7.0f, IM_COL32(255, 255, 255, 255), 0, 1.5f);
     }
-}
+} // namespace Frost

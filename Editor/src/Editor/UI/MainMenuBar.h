@@ -4,18 +4,18 @@
 
 namespace Editor
 {
-	class MainMenuBar : public EditorPanel
-	{
-	public:
-		MainMenuBar() = default;
-		~MainMenuBar() = default;
+    class MainMenuBar : public EditorPanel
+    {
+    public:
+        MainMenuBar() = default;
+        ~MainMenuBar() = default;
 
-		void Draw() override;
+        void Draw() override;
 
-	private:
-		void _RenderFileMenu();
-		void _RenderEditMenu();
+    private:
+        void _RenderFileMenu();
+        void _RenderEditMenu();
 
-		void _RenderProjectName();
-	};
-}
+        void _RenderProjectName();
+    };
+} // namespace Editor

@@ -8,10 +8,8 @@ class Ogre
 {
 
 public:
-	Ogre();
+    Ogre();
 
 private:
-	GameObject _ogre;
+    GameObject _ogre;
 };
-
-

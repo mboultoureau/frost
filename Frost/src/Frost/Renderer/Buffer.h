@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Frost/Renderer/GPUResource.h"
 #include "Frost/Renderer/CommandList.h"
+#include "Frost/Renderer/GPUResource.h"
 
 #include <cstdint>
 
@@ -33,4 +33,4 @@ namespace Frost
         virtual void UpdateData(CommandList* commandList, const void* data, uint32_t size, uint32_t offset = 0) = 0;
         virtual uint32_t GetSize() const = 0;
     };
-}
+} // namespace Frost

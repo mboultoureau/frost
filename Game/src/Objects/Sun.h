@@ -3,5 +3,5 @@
 class Sun
 {
 public:
-	Sun();
+    Sun();
 };

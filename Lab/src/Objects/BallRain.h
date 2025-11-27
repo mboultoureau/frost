@@ -6,12 +6,12 @@ using namespace Frost;
 
 class BallRain
 {
-	int scale = 1000;
-	int dist = 50;
+    int scale = 1000;
+    int dist = 50;
+
 public:
-	BallRain();
+    BallRain();
 
 private:
-	void InstantiateDroplet(float x, float y);
+    void InstantiateDroplet(float x, float y);
 };
-

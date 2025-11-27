@@ -1,158 +1,158 @@
 #include "Application.h"
 
 #include "Frost/Core/Windows/WindowWin.h"
+#include "Frost/Event/EventManager.h"
 #include "Frost/Renderer/DX11/RendererDX11.h"
 #include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Event/EventManager.h"
-
-#include "Frost/Physics/Physics.h"
-#include "Frost/Event/Events/Window/WindowCloseEvent.h"
-#include "Frost/Input/Input.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Event/Event.h"
 #include "Frost/Asset/AssetManager.h"
+#include "Frost/Physics/Physics.h"
+#include "Frost/Input/Input.h"
 
 #include <cassert>
 #include <iostream>
 
 namespace Frost
 {
-	Application* Application::_singleton = nullptr;
+    Application* Application::_singleton = nullptr;
 
-	Application::Application(const ApplicationEntryPoint& entryPoint):
-		_hInstance{ entryPoint.hInstance }, _running{ true }
-	{
-		FT_ENGINE_ASSERT(!_singleton, "Application already exists!");
-		_singleton = this;
+    Application::Application(const ApplicationEntryPoint& entryPoint) :
+        _hInstance{ entryPoint.hInstance }, _running{ true }
+    {
+        FT_ENGINE_ASSERT(!_singleton, "Application already exists!");
+        _singleton = this;
 
 #ifdef FT_PLATFORM_WINDOWS
-		_window = std::make_unique<WindowWin>(entryPoint.title);
-		_renderer = std::make_unique<RendererDX11>();
+        _window = std::make_unique<WindowWin>(entryPoint.title);
+        _renderer = std::make_unique<RendererDX11>();
 
-		RendererAPI::SetRenderer(_renderer.get());
+        RendererAPI::SetRenderer(_renderer.get());
 #else
-	#error "Platform not supported!"
+#error "Platform not supported!"
 #endif
 
-		_closeEventHandlerId = EventManager::Subscribe<WindowCloseEvent>(FROST_BIND_EVENT_FN(_OnWindowClose));
-	}
+        _closeEventHandlerId = EventManager::Subscribe<WindowCloseEvent>(FROST_BIND_EVENT_FN(_OnWindowClose));
+    }
 
-	void Application::Setup()
-	{
-		Physics::InitPhysics(_physicsConfig, _physicsConfigured);
-	}
-	
-	Application::~Application()
-	{
-		FT_ENGINE_INFO("Application is shutting down...");
-		EventManager::Unsubscribe<WindowCloseEvent>(_closeEventHandlerId);
+    void Application::Setup()
+    {
+        Physics::InitPhysics(_physicsConfig, _physicsConfigured);
+    }
 
-		// Clean up layers
-		_layerStack.Clear();
+    Application::~Application()
+    {
+        FT_ENGINE_INFO("Application is shutting down...");
+        EventManager::Unsubscribe<WindowCloseEvent>(_closeEventHandlerId);
 
-		// Clean up assets
-		AssetManager::Shutdown();
+        // Clean up layers
+        _layerStack.Clear();
 
-		// Clean up physics
-		Physics::Shutdown();
-		
-		// Clean up renderer
-		RendererAPI::SetRenderer(nullptr);
-		_renderer.reset();
-	}
+        // Clean up assets
+        AssetManager::Shutdown();
 
-	void Application::PopLayer(Layer* layer)
-	{
-		_layerStack.PopLayer(layer);
-	}
+        // Clean up physics
+        Physics::Shutdown();
 
+        // Clean up renderer
+        RendererAPI::SetRenderer(nullptr);
+        _renderer.reset();
+    }
 
-	void Application::Reset()
-	{
-		_layerStack.Clear();
-	}
+    void Application::PopLayer(Layer* layer)
+    {
+        _layerStack.PopLayer(layer);
+    }
 
-	std::optional<Layer*> Application::GetLayer(const Layer::LayerName& name)
-	{
-		for (const auto& uniqueLayer : _layerStack)
-		{
-			Layer* layerPtr = uniqueLayer.get();
+    void Application::Reset()
+    {
+        _layerStack.Clear();
+    }
 
-			if (layerPtr->GetName() == name)
-			{
-				return layerPtr;
-			}
-		}
+    std::optional<Layer*> Application::GetLayer(const Layer::LayerName& name)
+    {
+        for (const auto& uniqueLayer : _layerStack)
+        {
+            Layer* layerPtr = uniqueLayer.get();
 
-		return std::nullopt;
-	}
-	
-	void Application::ConfigurePhysics(const PhysicsConfig& config)
-	{
-		_physicsConfig = config;
-		_physicsConfigured = true;
-	}
+            if (layerPtr->GetName() == name)
+            {
+                return layerPtr;
+            }
+        }
 
-	void Application::Run()
-	{
-		_renderTimer.Start();
-		_physicsTimer.Start();
+        return std::nullopt;
+    }
 
-		while (_running)
-		{
-			Input::Update();
-			EventManager::ProcessEvents();
+    void Application::ConfigurePhysics(const PhysicsConfig& config)
+    {
+        _physicsConfig = config;
+        _physicsConfigured = true;
+    }
 
-			if (!_running)
-			{
-				break;
-			}
+    void Application::Run()
+    {
+        _renderTimer.Start();
+        _physicsTimer.Start();
 
-			Timer::Duration _physicsDuration = _physicsTimer.GetDuration();
-			if (_physicsDuration >= _physicsRefreshDuration)
-			{
-				_physicsTimer.Start();
-				_window->MainLoop();
+        while (_running)
+        {
+            Input::Update();
+            EventManager::ProcessEvents();
 
-				for (const auto& layer : _layerStack)
-				{
-					float fixedDeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_physicsDuration).count();
+            if (!_running)
+            {
+                break;
+            }
 
-					if (!layer->isPaused()) {
-						layer->OnPreFixedUpdate(fixedDeltaTime);
-						layer->OnFixedUpdate(fixedDeltaTime);
-					}
-				}
-			}
+            Timer::Duration _physicsDuration = _physicsTimer.GetDuration();
+            if (_physicsDuration >= _physicsRefreshDuration)
+            {
+                _physicsTimer.Start();
+                _window->MainLoop();
 
-			Timer::Duration _renderDuration = _renderTimer.GetDuration();
-			if (_renderDuration >= _renderRefreshDuration)
-			{
-				_renderTimer.Start();
-				RendererAPI::BeginFrame();
+                for (const auto& layer : _layerStack)
+                {
+                    float fixedDeltaTime =
+                        std::chrono::duration<float, std::chrono::seconds::period>(_physicsDuration).count();
 
-				for (const auto& layer : _layerStack)
-				{
-					float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(_renderDuration).count();
+                    if (!layer->isPaused())
+                    {
+                        layer->OnPreFixedUpdate(fixedDeltaTime);
+                        layer->OnFixedUpdate(fixedDeltaTime);
+                    }
+                }
+            }
 
-					layer->OnUpdate(deltaTime);
-					layer->OnLateUpdate(deltaTime);
-				}
+            Timer::Duration _renderDuration = _renderTimer.GetDuration();
+            if (_renderDuration >= _renderRefreshDuration)
+            {
+                _renderTimer.Start();
+                RendererAPI::BeginFrame();
 
-				RendererAPI::EndFrame();
-			}
-		}
-	}
+                for (const auto& layer : _layerStack)
+                {
+                    float deltaTime =
+                        std::chrono::duration<float, std::chrono::seconds::period>(_renderDuration).count();
 
-	Application& Application::Get()
-	{
-		assert(_singleton);
-		return *_singleton;
-	}
+                    layer->OnUpdate(deltaTime);
+                    layer->OnLateUpdate(deltaTime);
+                }
 
-	bool Application::_OnWindowClose(WindowCloseEvent& e)
-	{
-		_running = false;
-		return true;
-	}
-}
+                RendererAPI::EndFrame();
+            }
+        }
+    }
+
+    Application& Application::Get()
+    {
+        assert(_singleton);
+        return *_singleton;
+    }
+
+    bool Application::_OnWindowClose(WindowCloseEvent& e)
+    {
+        _running = false;
+        return true;
+    }
+} // namespace Frost

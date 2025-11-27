@@ -8,10 +8,8 @@ class Moto
 {
 
 public:
-	Moto();
+    Moto();
 
 private:
-	GameObject _moto;
+    GameObject _moto;
 };
-
-

@@ -4,31 +4,30 @@
 
 namespace Frost
 {
-	class Timer
-	{
-	public:
-		using Clock = std::chrono::high_resolution_clock;
-		using TimePoint = Clock::time_point;
-		using Duration = Clock::duration;
+    class Timer
+    {
+    public:
+        using Clock = std::chrono::high_resolution_clock;
+        using TimePoint = Clock::time_point;
+        using Duration = Clock::duration;
 
-		Timer();
+        Timer();
 
-		void Start();
-		void Pause();
-		void Resume();
-		
-		Duration GetDuration() const;
+        void Start();
+        void Pause();
+        void Resume();
 
-		template<typename DurationT>
-		DurationT GetDurationAs() const
-		{
-			return std::chrono::duration_cast<DurationT>(GetDuration());
-		}
+        Duration GetDuration() const;
 
-	private:
-		Duration _duration = Duration::zero();
-		TimePoint _lastTime;
-		bool _running;
-	};
-}
+        template<typename DurationT>
+        DurationT GetDurationAs() const
+        {
+            return std::chrono::duration_cast<DurationT>(GetDuration());
+        }
 
+    private:
+        Duration _duration = Duration::zero();
+        TimePoint _lastTime;
+        bool _running;
+    };
+} // namespace Frost

@@ -5,8 +5,8 @@
 
 namespace Editor
 {
-	void StatusBar::Draw()
-	{
+    void StatusBar::Draw()
+    {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
 
         float height = ImGui::GetFrameHeight() + ImGui::GetStyle().WindowPadding.y * 2.0f;
@@ -16,14 +16,9 @@ namespace Editor
 
         viewport->WorkSize.y -= height;
 
-        ImGuiWindowFlags flags =
-            ImGuiWindowFlags_NoDecoration |
-            ImGuiWindowFlags_NoDocking |
-            ImGuiWindowFlags_NoMove |
-            ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoSavedSettings |
-            ImGuiWindowFlags_NoNav |
-            ImGuiWindowFlags_NoBringToFrontOnFocus;
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoNav |
+                                 ImGuiWindowFlags_NoBringToFrontOnFocus;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -52,5 +47,5 @@ namespace Editor
 
         ImGui::PopStyleColor();
         ImGui::PopStyleVar(2);
-	}
-}
+    }
+} // namespace Editor

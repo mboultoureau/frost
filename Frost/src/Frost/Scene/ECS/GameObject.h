@@ -1,18 +1,20 @@
 #pragma once
 
-#include <entt/entt.hpp>
 #include "Frost/Scene/Components/Scriptable.h"
+#include <entt/entt.hpp>
 
 namespace Frost
 {
     class Scene;
-    namespace Component { struct Scriptable; }
+    namespace Component
+    {
+        struct Scriptable;
+    }
 
-
-	class GameObject
-	{
+    class GameObject
+    {
     public:
-		using Id = entt::entity;
+        using Id = entt::entity;
 
         GameObject() = default;
         GameObject(entt::entity handle, Scene* scene);
@@ -58,9 +60,9 @@ namespace Frost
             return _entityHandle == other._entityHandle && _scene == other._scene;
         }
 
-		GameObject::Id GetId() const { return _entityHandle; }
+        GameObject::Id GetId() const { return _entityHandle; }
         entt::entity GetHandle() const { return _entityHandle; }
-		Scene* GetScene() const { return _scene; }
+        Scene* GetScene() const { return _scene; }
 
         static const GameObject InvalidId;
 
@@ -71,24 +73,20 @@ namespace Frost
         entt::entity _entityHandle{ entt::null };
         Scene* _scene{ nullptr };
         entt::registry* _registry{ nullptr };
-	};
+    };
 
+    // Implementation
+    template<typename T, typename... Args>
+    inline T& GameObject::AddScript(Args&&... args)
+    {
+        if (!HasComponent<Component::Scriptable>())
+            AddComponent<Component::Scriptable>();
 
-	// Implementation
-	template<typename T, typename... Args>
-	inline T& GameObject::AddScript(Args&&... args)
-	{
-		if (!HasComponent<Component::Scriptable>())
-			AddComponent<Component::Scriptable>();
-
-		auto& scriptable = GetComponent<Component::Scriptable>();
-		auto script = std::make_unique<T>(std::forward<Args>(args)...);
-		T& scriptRef = *script;
-		script->Initialize(*this);
-		scriptable._scripts.push_back(std::move(script));
-		return scriptRef;
-	}
-}
-
-
-
+        auto& scriptable = GetComponent<Component::Scriptable>();
+        auto script = std::make_unique<T>(std::forward<Args>(args)...);
+        T& scriptRef = *script;
+        script->Initialize(*this);
+        scriptable._scripts.push_back(std::move(script));
+        return scriptRef;
+    }
+} // namespace Frost

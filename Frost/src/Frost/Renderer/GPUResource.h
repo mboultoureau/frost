@@ -2,9 +2,9 @@
 
 namespace Frost
 {
-	class GPUResource
-	{
-	public:
-		virtual ~GPUResource() = default;
-	};
-}
+    class GPUResource
+    {
+    public:
+        virtual ~GPUResource() = default;
+    };
+} // namespace Frost

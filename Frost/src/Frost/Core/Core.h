@@ -2,5 +2,5 @@
 
 #ifdef FT_PLATFORM_WINDOWS
 #else
-	#error Frost only supports Windows!
+#error Frost only supports Windows!
 #endif
