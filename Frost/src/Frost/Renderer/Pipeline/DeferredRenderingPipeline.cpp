@@ -155,14 +155,14 @@ namespace Frost
         _gBufferSampler = std::make_unique<SamplerDX11>(gBufferSamplerConfig);
 
         auto* renderer = RendererAPI::GetRenderer();
-        _vsPerFrameConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_PerFrameConstants), .dynamic = true });
-        _vsPerObjectConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_PerObjectConstants), .dynamic = true });
-        _lightConstantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(LightConstants), .dynamic = true });
-        _psMaterialConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(PS_MaterialConstants), .dynamic = true });
+        _vsPerFrameConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_PerFrameConstants), .dynamic = true, .debugName = "DR_VS_PerFrame" });
+        _vsPerObjectConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_PerObjectConstants), .dynamic = true, .debugName = "DS_VS_PerObject" });
+        _lightConstantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(LightConstants), .dynamic = true, .debugName = "DS_LightConstants" });
+        _psMaterialConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(PS_MaterialConstants), .dynamic = true, .debugName = "DS_PS_MaterialConstants" });
 
         // Custom materials
         _customMaterialConstantBuffer = renderer->CreateBuffer(
-            BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = 256, .dynamic = true }
+            BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = 256, .dynamic = true, .debugName = "DS_CustomMaterial" }
         );
 
         _CreateDefaultTextures();
@@ -425,7 +425,8 @@ namespace Frost
                     BufferConfig config = {
                         .usage = BufferUsage::CONSTANT_BUFFER,
                         .size = alignedSize,
-                        .dynamic = true
+                        .dynamic = true,
+						.debugName = "DS_CustomMaterial_Resized"
                     };
 
                     _customMaterialConstantBuffer = RendererAPI::GetRenderer()->CreateBuffer(config);

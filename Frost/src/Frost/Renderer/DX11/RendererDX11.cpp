@@ -51,19 +51,56 @@ namespace Frost
 
 	RendererDX11::~RendererDX11()
 	{
+		FT_ENGINE_INFO("RendererDX11: destroying...");
+
+		_backBufferTexture.reset();
+		_depthBufferTexture.reset();
+
+		if (_immediateContext)
+		{
+			ID3D11RenderTargetView* nullViews[] = { nullptr };
+			_immediateContext->OMSetRenderTargets(1, nullViews, nullptr);
+
+			ID3D11ShaderResourceView* nullSRV[16] = { nullptr };
+			_immediateContext->PSSetShaderResources(0, 16, nullSRV);
+			_immediateContext->VSSetShaderResources(0, 16, nullSRV);
+
+			_immediateContext->ClearState();
+			_immediateContext->Flush();
+		}
+
+		_swapChain.Reset();
+		_backBufferRTV.Reset();
+		_depthTexture.Reset();
+		_depthStencilView.Reset();
+		_solidRasterizerState.Reset();
+		_wireframeRasterizerState.Reset();
+		_cullNoneRasterizerState.Reset();
+		_depthStateReadWrite.Reset();
+		_depthStateReadOnly.Reset();
+		_depthStateNone.Reset();
+		_blendStateAlpha.Reset();
+
+		_immediateContext.Reset();
+		_dxgiFactory.Reset();
+
 /**
 * @see https://seanmiddleditch.github.io/direct3d-11-debug-api-tricks/
 */
 #ifdef FT_DEBUG
-		FT_ENGINE_TRACE("Reporting live D3D11 device objects...");
-
-		// Log all resource to see memory leak in GPU
 		ComPtr<ID3D11Debug> debugController;
-		HRESULT hr = _device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(debugController.GetAddressOf()));
-		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to get D3D11 debug interface!");
+		if (_device)
+		{
+			_device.As(&debugController);
+		}
 
-		hr = debugController->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to report live device objects!");
+		_device.Reset();
+
+		if (debugController)
+		{
+			FT_ENGINE_TRACE("Reporting live D3D11 device objects...");
+			debugController->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+		}
 #endif
 
 		FT_ENGINE_INFO("RendererDX11: destroyed.");

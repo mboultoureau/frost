@@ -55,7 +55,7 @@ namespace Frost
 
         // Constant Buffer
         auto* renderer = RendererAPI::GetRenderer();
-        _vsSkyboxConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_SkyboxConstants), .dynamic = true });
+        _vsSkyboxConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_SkyboxConstants), .dynamic = true, .debugName = "SB_VS_SkyboxConstants" });
 
         // Create cube geomtry
         CreateCubeMesh();
@@ -92,8 +92,8 @@ namespace Frost
         _cubeIndexCount = ARRAYSIZE(indices);
 
         auto* renderer = RendererAPI::GetRenderer();
-        _cubeVertexBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::VERTEX_BUFFER, .size = sizeof(vertices) }, vertices);
-        _cubeIndexBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::INDEX_BUFFER, .size = sizeof(indices) }, indices);
+        _cubeVertexBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::VERTEX_BUFFER, .size = sizeof(vertices), .debugName = "SB_CubeVertexBuffer" }, vertices);
+        _cubeIndexBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::INDEX_BUFFER, .size = sizeof(indices), .debugName = "SB_CubeIndexBuffer" }, indices);
     }
 
     void SkyboxPipeline::Render(CommandList* commandList, Texture* renderTarget, Texture* gbufferDepth, Texture* skyboxTexture, const Component::Camera& camera, const Component::WorldTransform& cameraTransform)
