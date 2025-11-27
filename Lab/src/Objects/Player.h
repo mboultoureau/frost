@@ -10,12 +10,11 @@ using namespace Frost;
 class Player
 {
 public:
-	Player();
-	void FixedUpdate(float deltaTime);
+    Player();
+    void FixedUpdate(float deltaTime);
 
 private:
-	GameObject _player;
-	GameObject _camera;
-	void InitializePhysics();
+    GameObject _player;
+    GameObject _camera;
+    void InitializePhysics();
 };
-

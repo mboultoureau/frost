@@ -7,9 +7,8 @@ using namespace Frost;
 class LevelCamera
 {
 public:
-	LevelCamera();
+    LevelCamera();
 
 private:
-	GameObject::Id _camera;
+    GameObject::Id _camera;
 };
-

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Frost/Scene/ECS/System.h"
 #include "Frost/Physics/Physics.h"
-#include "Frost/Scene/Scene.h"
-#include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Components/RigidBody.h"
+#include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Components/Transform.h"
+#include "Frost/Scene/ECS/System.h"
+#include "Frost/Scene/Scene.h"
 
 #include <Jolt/Jolt.h>
 
@@ -20,7 +20,7 @@ namespace Frost
 
     private:
         void _UpdateAllJoltBodies(Scene& scene, float deltaTime);
-        
+
         void _HandleAwakeVector(Scene& scene, float deltaTime);
         void _HandleSleepVector(Scene& scene, float deltaTime);
         void _HandleOnCollisionEnterVector(Scene& scene, float deltaTime);
@@ -32,18 +32,18 @@ namespace Frost
         {
             auto& registry = scene.GetRegistry();
 
-            if (!registry.valid(entity)) return;
+            if (!registry.valid(entity))
+                return;
 
             auto* scriptable = registry.try_get<Component::Scriptable>(entity);
             if (scriptable)
             {
                 for (auto& script : scriptable->_scripts)
                 {
-                    if (script) func(script.get());
+                    if (script)
+                        func(script.get());
                 }
             }
         }
     };
-}
-
-
+} // namespace Frost

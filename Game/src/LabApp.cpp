@@ -7,27 +7,26 @@
 #include "MainLayer.h"
 #include "Physics/PhysicsLayer.h"
 
-Lab::Lab(Frost::ApplicationEntryPoint entryPoint) : Frost::Application(entryPoint), _physicsConfig{
-	new GameBroadPhaseLayerInterface(),
-	new GameObjectLayerPairFilter(),
-	new GameObjectVsBroadPhaseLayerFilter()
-}
+Lab::Lab(Frost::ApplicationEntryPoint entryPoint) :
+    Frost::Application(entryPoint),
+    _physicsConfig{ new GameBroadPhaseLayerInterface(),
+                    new GameObjectLayerPairFilter(),
+                    new GameObjectVsBroadPhaseLayerFilter() }
 {
-	ConfigurePhysics(_physicsConfig);
-}
-
-Lab::~Lab()
-{
+    ConfigurePhysics(_physicsConfig);
 }
 
-void Lab::OnApplicationReady()
+Lab::~Lab() {}
+
+void
+Lab::OnApplicationReady()
 {
-	_game = std::make_unique<Game>(this);
+    _game = std::make_unique<Game>(this);
 }
 
-
-Frost::Application* Frost::CreateApplication(ApplicationEntryPoint entryPoint)
+Frost::Application*
+Frost::CreateApplication(ApplicationEntryPoint entryPoint)
 {
-	entryPoint.title = L"Lab";
-	return new Lab(entryPoint);
+    entryPoint.title = L"Lab";
+    return new Lab(entryPoint);
 }

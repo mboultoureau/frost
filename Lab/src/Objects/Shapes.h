@@ -3,5 +3,5 @@
 class Shapes
 {
 public:
-	Shapes();
+    Shapes();
 };

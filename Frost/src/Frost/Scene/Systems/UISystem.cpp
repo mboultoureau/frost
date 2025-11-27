@@ -5,56 +5,54 @@
 
 namespace Frost
 {
-	UISystem::UISystem()
-	{
-	}
+    UISystem::UISystem() {}
 
-	void UISystem::Update(Scene& scene, float deltaTime)
-	{
-		auto buttonView = scene.ViewActive<Component::UIButton>();
+    void UISystem::Update(Scene& scene, float deltaTime)
+    {
+        auto buttonView = scene.ViewActive<Component::UIButton>();
 
-		for (auto entity : buttonView)
-		{
-			auto [button] = buttonView.get(entity);
+        for (auto entity : buttonView)
+        {
+            auto [button] = buttonView.get(entity);
 
-			if (Input::GetMouse().IsCursorInViewport(button.buttonHitbox) && button.onClick)
-			{
-				if (Input::GetMouse().IsButtonPressed(Mouse::MouseBoutton::Left))
-				{
-					button.texture = button.pressedTexture;
-					button.onClick();
-				}
-				else
-				{
-					button.texture = button.hoverTexture;
-				}
-			}
-			else
-			{
-				button.texture = button.idleTexture;
-			}
-		}
-	}
+            if (Input::GetMouse().IsCursorInViewport(button.buttonHitbox) && button.onClick)
+            {
+                if (Input::GetMouse().IsButtonPressed(Mouse::MouseBoutton::Left))
+                {
+                    button.texture = button.pressedTexture;
+                    button.onClick();
+                }
+                else
+                {
+                    button.texture = button.hoverTexture;
+                }
+            }
+            else
+            {
+                button.texture = button.idleTexture;
+            }
+        }
+    }
 
-	void UISystem::LateUpdate(Scene& scene, float deltaTime)
-	{
-		auto buttonView = scene.ViewActive<Component::UIButton>();
-		auto hudImageView = scene.ViewActive<Component::HUDImage>();
+    void UISystem::LateUpdate(Scene& scene, float deltaTime)
+    {
+        auto buttonView = scene.ViewActive<Component::UIButton>();
+        auto hudImageView = scene.ViewActive<Component::HUDImage>();
 
-		_pipeline.BeginFrame();
+        _pipeline.BeginFrame();
 
-		for (auto entity : hudImageView)
-		{
-			auto [image] = hudImageView.get(entity);
-			_pipeline.Submit(image);
-		}
+        for (auto entity : hudImageView)
+        {
+            auto [image] = hudImageView.get(entity);
+            _pipeline.Submit(image);
+        }
 
-		for (auto entity : buttonView)
-		{
-			auto [button] = buttonView.get(entity);
-			_pipeline.Submit(button);
-		}
+        for (auto entity : buttonView)
+        {
+            auto [button] = buttonView.get(entity);
+            _pipeline.Submit(button);
+        }
 
-		_pipeline.EndFrame();
-	}
-}
+        _pipeline.EndFrame();
+    }
+} // namespace Frost

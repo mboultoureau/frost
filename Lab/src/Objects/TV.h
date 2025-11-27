@@ -5,8 +5,8 @@
 class TV
 {
 public:
-	TV();
+    TV();
 
 private:
-	Frost::GameObject gameObject;
+    Frost::GameObject gameObject;
 };

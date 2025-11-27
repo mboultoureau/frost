@@ -40,29 +40,18 @@ namespace Frost
             // Application de la marge
             d += margin;
 
-            XMStoreFloat4(&planes[i].equation, XMVectorSet(
-                XMVectorGetX(n),
-                XMVectorGetY(n),
-                XMVectorGetZ(n),
-                d
-            ));
+            XMStoreFloat4(&planes[i].equation, XMVectorSet(XMVectorGetX(n), XMVectorGetY(n), XMVectorGetZ(n), d));
         }
     }
 
-    bool Frustum::IsInside(const BoundingBox & box)
+    bool Frustum::IsInside(const BoundingBox& box)
     {
 
         // 8 coins du cube
-        XMFLOAT3 corners[8] = {
-            { box.min.x, box.min.y, box.min.z },
-            { box.max.x, box.min.y, box.min.z },
-            { box.min.x, box.max.y, box.min.z },
-            { box.max.x, box.max.y, box.min.z },
-            { box.min.x, box.min.y, box.max.z },
-            { box.max.x, box.min.y, box.max.z },
-            { box.min.x, box.max.y, box.max.z },
-            { box.max.x, box.max.y, box.max.z }
-        };
+        XMFLOAT3 corners[8] = { { box.min.x, box.min.y, box.min.z }, { box.max.x, box.min.y, box.min.z },
+                                { box.min.x, box.max.y, box.min.z }, { box.max.x, box.max.y, box.min.z },
+                                { box.min.x, box.min.y, box.max.z }, { box.max.x, box.min.y, box.max.z },
+                                { box.min.x, box.max.y, box.max.z }, { box.max.x, box.max.y, box.max.z } };
 
         // Pour chaque plan du frustum
         for (int i = 0; i < 6; ++i)
@@ -76,7 +65,8 @@ namespace Frost
                 if (dist >= 0.0f)
                 {
                     insideCount++;
-                    break; // un coin suffit a prouver que la boite n est pas entierement derriere le plan
+                    break; // un coin suffit a prouver que la boite n est pas
+                           // entierement derriere le plan
                 }
             }
 
@@ -86,4 +76,4 @@ namespace Frost
 
         return true; // au moins partiellement visible
     }
-}
+} // namespace Frost

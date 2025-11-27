@@ -1,7 +1,8 @@
 #include "LapCheckPoint.h"
 #include "../Game.h"
 
-void LapCheckPoint::InitializePhysics()
+void
+LapCheckPoint::InitializePhysics()
 {
     CheckPoint::InitializePhysics();
     Scene& scene = Game::GetScene();

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <windows.h>
 #include <unordered_map>
+#include <windows.h>
 
 namespace Frost
 {
@@ -226,5 +226,4 @@ namespace Frost
     private:
         std::unordered_map<VirtualKeyCode, KeyState> _keyStates;
     };
-}
-
+} // namespace Frost

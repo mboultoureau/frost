@@ -7,9 +7,8 @@ using namespace Frost;
 class TopCamera
 {
 public:
-	TopCamera();
+    TopCamera();
 
 private:
-	GameObject _camera;
+    GameObject _camera;
 };
-

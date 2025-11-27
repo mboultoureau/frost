@@ -10,7 +10,7 @@ struct alignas(16) WaveMaterialParameters
     float Amplitude = 1.0f;
     float Frequency = 1.0f;
     float TessellationFactor = 16.0f;
-    //float Padding[4];
+    // float Padding[4];
 };
 
 class Waves
