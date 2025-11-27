@@ -2,6 +2,8 @@
 
 #include "Frost/Asset/Asset.h"
 #include "Frost/Asset/Texture.h"
+#include "Frost/Debugging/Assert.h"
+#include "Frost/Debugging/Logger.h"
 
 #ifdef FT_PLATFORM_WINDOWS
 	#include "Frost/Renderer/DX11/TextureDX11.h"
@@ -16,6 +18,7 @@ namespace Frost
 	{
 	public:
 
+		static void Shutdown();
 
 		// Generic asset loading function
 		template<typename T, typename... Args>
@@ -23,28 +26,39 @@ namespace Frost
 		{
 			static_assert(std::is_base_of<Asset, T>::value, "T must be derived from Frost::Asset");
 
-			static std::map<Asset::Path, std::shared_ptr<Asset>> assetCache;
-
 			// Check if asset is already loaded
-			auto it = assetCache.find(path);
-			if (it != assetCache.end())
+			auto it = _loadedAssets.find(path);
+			if (it != _loadedAssets.end())
 			{
 				return std::static_pointer_cast<T>(it->second);
 			}
 
 			// Load new asset
-			std::shared_ptr<T> asset = std::make_shared<T>(std::forward<Args>(args)...);
-			assetCache[path] = asset;
-			return asset;
+			try
+			{
+				std::shared_ptr<T> asset = std::make_shared<T>(std::forward<Args>(args)...);
+				_loadedAssets[path] = asset;
+				return asset;
+			}
+			catch (const std::exception& e)
+			{
+				FT_ENGINE_ERROR("Failed to load asset '{}': {}", path, e.what());
+				FT_ENGINE_ASSERT(false, "Failed to load asset");
+				return nullptr;
+			}
+			catch (...)
+			{
+				FT_ENGINE_ERROR("Unknown error while loading asset '{}'", path);
+				FT_ENGINE_ASSERT(false, "Failed to load asset");
+				return nullptr;
+			}
 		}
 
 		// Specialized function to get already loaded asset
 		static std::shared_ptr<Texture> LoadAsset(const Asset::Path& path, TextureConfig& config)
 		{
-			static std::map<Asset::Path, std::shared_ptr<Asset>> assetCache;
-
-			auto it = assetCache.find(path);
-			if (it != assetCache.end())
+			auto it = _loadedAssets.find(path);
+			if (it != _loadedAssets.end())
 			{
 				return std::static_pointer_cast<Texture>(it->second);
 			}
@@ -54,7 +68,7 @@ namespace Frost
 #else
 #error "Texture loading not implemented for this platform"
 #endif
-			assetCache[path] = texture;
+			_loadedAssets[path] = texture;
 			return texture;
 		}
 
@@ -67,6 +81,9 @@ namespace Frost
 #error "Texture creation not implemented for this platform"
 #endif
 		}
+
+	private:
+		static std::map<Asset::Path, std::shared_ptr<Asset>> _loadedAssets;
 	};
 }
 

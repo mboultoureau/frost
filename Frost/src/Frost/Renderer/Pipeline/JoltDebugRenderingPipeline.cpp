@@ -38,10 +38,6 @@ namespace Frost
 
     JoltRenderingPipeline::~JoltRenderingPipeline()
     {
-        if (JPH::DebugRenderer::sInstance == this)
-        {
-            JPH::DebugRenderer::sInstance = nullptr;
-        }
         RendererAPI::GetRenderer()->UnregisterPipeline(this);
         Shutdown();
     }
@@ -84,8 +80,8 @@ namespace Frost
 
         // Constant Buffers
         auto* renderer = RendererAPI::GetRenderer();
-        _vsPerFrameConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_DebugPerFrameConstants), .dynamic = true });
-        _vsPerObjectConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_DebugPerObjectConstants), .dynamic = true });
+        _vsPerFrameConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_DebugPerFrameConstants), .dynamic = true, .debugName = "JOLT_VS_PerFrameConstants" });
+        _vsPerObjectConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(VS_DebugPerObjectConstants), .dynamic = true, .debugName = "JOLT_VS_PerObjectConstants" });
 
         JPH::DebugRenderer::Initialize();
     }
@@ -177,6 +173,7 @@ namespace Frost
             .usage = BufferUsage::VERTEX_BUFFER,
             .size = (uint32_t)(vertices.size() * sizeof(DebugTriangleVertex)),
             .dynamic = false,
+			.debugName = "JOLT_TriangleBatch_VB"
             }, vertices.data());
 
         return JPH::StaticCast<JPH::RefTargetVirtual>(batch);
@@ -210,12 +207,14 @@ namespace Frost
             .usage = BufferUsage::VERTEX_BUFFER,
             .size = (uint32_t)(vertices.size() * sizeof(DebugTriangleVertex)),
             .dynamic = false,
+			.debugName = "JOLT_TriangleBatch_VB"
         }, vertices.data());
 
         batch->indexBuffer = RendererAPI::GetRenderer()->CreateBuffer(BufferConfig{
             .usage = BufferUsage::INDEX_BUFFER,
             .size = (uint32_t)(inIndexCount * sizeof(uint32)),
             .dynamic = false,
+			.debugName = "JOLT_TriangleBatch_IB"
         }, inIndices);
 
         return JPH::StaticCast<JPH::RefTargetVirtual>(batch);
@@ -287,7 +286,8 @@ namespace Frost
                 _lineVertexBuffer = RendererAPI::GetRenderer()->CreateBuffer(BufferConfig{
                     .usage = BufferUsage::VERTEX_BUFFER,
                     .size = (uint32_t)(_frameLines.size() * sizeof(DebugLineVertex)),
-                    .dynamic = true
+                    .dynamic = true,
+					.debugName = "JOLT_LineVertexBuffer"
                 });
             }
             _lineVertexBuffer->UpdateData(_commandList.get(), _frameLines.data(), (uint32_t)(_frameLines.size() * sizeof(DebugLineVertex)));
@@ -308,7 +308,8 @@ namespace Frost
                 _triangleVertexBuffer = RendererAPI::GetRenderer()->CreateBuffer(BufferConfig{
                     .usage = BufferUsage::VERTEX_BUFFER,
                     .size = (uint32_t)(_frameTriangles.size() * sizeof(DebugTriangleVertex)),
-                    .dynamic = true
+                    .dynamic = true,
+					.debugName = "JOLT_TriangleVertexBuffer"
                 });
             }
             _triangleVertexBuffer->UpdateData(_commandList.get(), _frameTriangles.data(), (uint32_t)(_frameTriangles.size() * sizeof(DebugTriangleVertex)));

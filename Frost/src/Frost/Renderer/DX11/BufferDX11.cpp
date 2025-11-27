@@ -1,6 +1,12 @@
-﻿#include "BufferDX11.h"
+﻿#include "Frost/Renderer/DX11/BufferDX11.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Renderer/DX11/CommandListDX11.h"
+
+#include <cstring>
+
+#ifdef FT_DEBUG
+#pragma comment(lib, "dxguid.lib")
+#endif
 
 namespace Frost
 {
@@ -53,6 +59,13 @@ namespace Frost
 
 		HRESULT hr = device->CreateBuffer(&desc, pInitialData, _buffer.GetAddressOf());
 		FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create D3D11 buffer!");
+
+#ifdef FT_DEBUG
+		if (SUCCEEDED(hr) && _config.debugName != nullptr)
+		{
+			_buffer->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)strlen(_config.debugName), _config.debugName);
+		}
+#endif
 	}
 
 	const BufferConfig& BufferDX11::GetConfig() const

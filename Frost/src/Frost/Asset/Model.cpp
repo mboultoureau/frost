@@ -26,6 +26,9 @@ namespace Frost
 			aiProcess_FlipUVs |
 			aiProcess_CalcTangentSpace);
 
+
+		// If you load glb2 ou gltf2 an exception is throw but the model is loaded
+		// See: https://github.com/assimp/assimp/issues/2778
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
 			FT_ENGINE_ERROR("Assimp Error: {}", importer.GetErrorString());
