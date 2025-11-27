@@ -41,6 +41,7 @@ namespace Frost
 		~Physics();
 		void UpdatePhysics();
 		static void InitPhysics(PhysicsConfig& config, bool useConfig);
+		static void Shutdown();
 
 		JPH::PhysicsSystem physics_system;
 		JPH::BodyInterface* body_interface;

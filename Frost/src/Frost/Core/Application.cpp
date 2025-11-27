@@ -10,6 +10,7 @@
 #include "Frost/Input/Input.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Event/Event.h"
+#include "Frost/Asset/AssetManager.h"
 
 #include <cassert>
 #include <iostream>
@@ -45,7 +46,19 @@ namespace Frost
 	{
 		FT_ENGINE_INFO("Application is shutting down...");
 		EventManager::Unsubscribe<WindowCloseEvent>(_closeEventHandlerId);
+
+		// Clean up layers
 		_layerStack.Clear();
+
+		// Clean up assets
+		AssetManager::Shutdown();
+
+		// Clean up physics
+		Physics::Shutdown();
+		
+		// Clean up renderer
+		RendererAPI::SetRenderer(nullptr);
+		_renderer.reset();
 	}
 
 	void Application::PopLayer(Layer* layer)

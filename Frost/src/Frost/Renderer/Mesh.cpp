@@ -1,4 +1,4 @@
-﻿#include "Mesh.h"
+﻿#include "Frost/Renderer/Mesh.h"
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Debugging/Assert.h"
 
@@ -17,6 +17,7 @@ namespace Frost
 		vertexBufferConfig.size = static_cast<uint32_t>(vertices.size_bytes());
 		vertexBufferConfig.stride = vertexStride;
 		vertexBufferConfig.dynamic = false;
+		vertexBufferConfig.debugName = "Mesh_VertexBuffer";
 
 		Renderer* renderer = RendererAPI::GetRenderer();
 		_vertexBuffer = renderer->CreateBuffer(vertexBufferConfig, vertices.data());
@@ -26,6 +27,7 @@ namespace Frost
 		indexBufferConfig.size = static_cast<uint32_t>(indices.size_bytes());
 		indexBufferConfig.stride = sizeof(uint32_t);
 		indexBufferConfig.dynamic = false;
+		indexBufferConfig.debugName = "Mesh_IndexBuffer";
 
 		_indexBuffer = renderer->CreateBuffer(indexBufferConfig, indices.data());
 

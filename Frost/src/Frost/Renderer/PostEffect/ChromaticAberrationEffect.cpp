@@ -32,7 +32,7 @@ namespace Frost
 #endif
 
         auto* renderer = RendererAPI::GetRenderer();
-        _constantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(ChromaticAberrationConstants), .dynamic = true });
+        _constantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(ChromaticAberrationConstants), .dynamic = true, .debugName = "CB_ChromaticAberration" });
 
         SamplerConfig samplerConfig = { .filter = Filter::MIN_MAG_MIP_LINEAR, .addressU = AddressMode::CLAMP, .addressV = AddressMode::CLAMP, .addressW = AddressMode::CLAMP };
         _sampler = std::make_unique<SamplerDX11>(samplerConfig);
