@@ -55,16 +55,35 @@ namespace Frost
 #endif
 	}
 
+	Physics::~Physics()
+	{
+	}
+
 	Physics& Physics::Get()
 	{
 		static Physics _singleton;
 		return _singleton;
 	}
 
-
-	Physics::~Physics()
+	void Physics::Shutdown()
 	{
+		if (!_physicsInitialized) return;
+
+		FT_ENGINE_INFO("Shutting down Physics...");
+
+#ifdef FT_DEBUG
+		if (Get()._debugRenderer)
+		{
+			delete Get()._debugRenderer;
+			Get()._debugRenderer = nullptr;
+		}
+#endif
+
 		JPH::UnregisterTypes();
+		delete JPH::Factory::sInstance;
+		JPH::Factory::sInstance = nullptr;
+
+		_physicsInitialized = false;
 	}
 
 #ifdef FT_DEBUG

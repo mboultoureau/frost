@@ -21,6 +21,7 @@ namespace Frost
         uint32_t size = 0;
         uint32_t stride = 0;
         bool dynamic = false;
+        const char* debugName = nullptr;
     };
 
     class Buffer : public GPUResource
