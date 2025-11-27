@@ -6,10 +6,10 @@ using namespace Frost::Component;
 
 FreeCamera::FreeCamera()
 {
-	Scene& scene = Game::GetScene();
+    Scene& scene = Game::GetScene();
 
-	_camera = scene.CreateGameObject("FreeCamera");
-	_camera.AddComponent<Transform>(Math::Vector3{ 0.0f, 5.0f, 0.0f });
+    _camera = scene.CreateGameObject("FreeCamera");
+    _camera.AddComponent<Transform>(Math::Vector3{ 0.0f, 5.0f, 0.0f });
     _camera.AddComponent<Light>();
     auto& cameraComp = _camera.AddComponent<Camera>();
 

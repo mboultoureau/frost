@@ -9,13 +9,12 @@
 class Lab : public Frost::Application
 {
 public:
-	Lab(Frost::ApplicationEntryPoint entryPoint);
-	~Lab();
+    Lab(Frost::ApplicationEntryPoint entryPoint);
+    ~Lab();
 
-	void OnApplicationReady() override;
-
+    void OnApplicationReady() override;
 
 private:
-	std::unique_ptr<Game> _game;
-	Frost::PhysicsConfig _physicsConfig;
+    std::unique_ptr<Game> _game;
+    Frost::PhysicsConfig _physicsConfig;
 };

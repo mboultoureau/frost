@@ -4,10 +4,10 @@
 
 namespace Frost
 {
-	class RenderPass : public GPUResource
-	{
-	public:
-		RenderPass() = default;
-		virtual ~RenderPass() = default;
-	};
-}
+    class RenderPass : public GPUResource
+    {
+    public:
+        RenderPass() = default;
+        virtual ~RenderPass() = default;
+    };
+} // namespace Frost

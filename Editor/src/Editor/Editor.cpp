@@ -2,11 +2,7 @@
 
 namespace Editor
 {
-	Editor::Editor()
-	{
-	}
+    Editor::Editor() {}
 
-	Editor::~Editor()
-	{
-	}
-}
+    Editor::~Editor() {}
+} // namespace Editor

@@ -3,6 +3,6 @@
 
 TV::TV()
 {
-	auto& scene = Game::GetScene();
-	gameObject = scene.CreateGameObject("TV");
+    auto& scene = Game::GetScene();
+    gameObject = scene.CreateGameObject("TV");
 }

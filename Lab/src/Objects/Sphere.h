@@ -8,12 +8,12 @@ class Sphere
 {
 
 public:
-	Sphere();
+    Sphere();
 
 private:
-	Frost::GameObject _sphere;
-	JPH::Body* _bodyId;
+    Frost::GameObject _sphere;
+    JPH::Body* _bodyId;
 
 private:
-	void _SetupPhysics();
+    void _SetupPhysics();
 };

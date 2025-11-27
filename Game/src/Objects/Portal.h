@@ -11,35 +11,35 @@ using namespace Frost::Component;
 
 enum PortalType
 {
-	Entry,
-	Exit,
-	BothWays
+    Entry,
+    Exit,
+    BothWays
 };
 
 class PortalScript : public Script
 {
 public:
-	PortalScript(GameObject playerId, PortalType type, GameObject& linkedId);
-	PortalScript(GameObject playerId, PortalType type);
-	void OnInitialize() override;
-	void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
-	void WarpPlayer();
-	
-	GameObject playerId;
+    PortalScript(GameObject playerId, PortalType type, GameObject& linkedId);
+    PortalScript(GameObject playerId, PortalType type);
+    void OnInitialize() override;
+    void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
+    void WarpPlayer();
 
-	PortalType portalType;
+    GameObject playerId;
 
-	std::optional<GameObject> linkedPortalId;
+    PortalType portalType;
+
+    std::optional<GameObject> linkedPortalId;
 };
 
 class Portal
 {
 public:
-	Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player);
-	void SetupPortal(PortalType type, GameObject& otherPortal);
-	void SetupPortal(PortalType type);
-	GameObject _portal;
+    Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player);
+    void SetupPortal(PortalType type, GameObject& otherPortal);
+    void SetupPortal(PortalType type);
+    GameObject _portal;
 
 private:
-	Player* _player;
+    Player* _player;
 };

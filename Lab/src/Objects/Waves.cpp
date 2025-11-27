@@ -17,12 +17,16 @@ Waves::Waves()
     StaticMesh& meshComp = _planeObject.AddComponent<StaticMesh>(planeModel);
     Transform& transform = _planeObject.AddComponent<Transform>();
     transform.position = Vector3(0.0f, 0.0f, 0.0f);
-	transform.Rotate(EulerAngles(0.0_deg, 0.0_deg, -180.0_deg));
+    transform.Rotate(EulerAngles(0.0_deg, 0.0_deg, -180.0_deg));
 
-    ShaderDesc vsDesc = { .type = ShaderType::Vertex, .filePath = "../Frost/resources/shaders/Material/Waves/VS_Waves.hlsl" };
-    ShaderDesc hsDesc = { .type = ShaderType::Hull,   .filePath = "../Frost/resources/shaders/Material/Waves/HS_Waves.hlsl" };
-    ShaderDesc dsDesc = { .type = ShaderType::Domain, .filePath = "../Frost/resources/shaders/Material/Waves/DS_Waves.hlsl" };
-    ShaderDesc psDesc = { .type = ShaderType::Pixel,  .filePath = "../Frost/resources/shaders/Material/Waves/PS_Waves.hlsl" };
+    ShaderDesc vsDesc = { .type = ShaderType::Vertex,
+                          .filePath = "../Frost/resources/shaders/Material/Waves/VS_Waves.hlsl" };
+    ShaderDesc hsDesc = { .type = ShaderType::Hull,
+                          .filePath = "../Frost/resources/shaders/Material/Waves/HS_Waves.hlsl" };
+    ShaderDesc dsDesc = { .type = ShaderType::Domain,
+                          .filePath = "../Frost/resources/shaders/Material/Waves/DS_Waves.hlsl" };
+    ShaderDesc psDesc = { .type = ShaderType::Pixel,
+                          .filePath = "../Frost/resources/shaders/Material/Waves/PS_Waves.hlsl" };
 
     auto vs = Shader::Create(vsDesc);
     auto hs = Shader::Create(hsDesc);
@@ -48,7 +52,8 @@ Waves::Waves()
     planeModel->GetMaterials()[0] = std::move(waveMat);
 }
 
-void Waves::Update(float dt)
+void
+Waves::Update(float dt)
 {
     _params.Time += dt;
 

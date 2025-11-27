@@ -1,0 +1,33 @@
+#!/bin/sh
+
+if ! command -v clang-format &> /dev/null; then
+    echo "======================================================="
+    echo "[ERROR] clang-format executable not found in PATH."
+    echo "Commit aborted. Please install clang-format or add it to your PATH."
+    echo "======================================================="
+    exit 1
+fi
+
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(cpp|hpp|c|h)$')
+
+if [ -z "$FILES" ]; then
+    exit 0
+fi
+
+echo "======================================================="
+echo "  AUTO-FORMATTING IN PROGRESS (Clang-Format)"
+echo "======================================================="
+
+echo "$FILES" | while IFS= read -r file; do
+    if [ -f "$file" ]; then
+        echo " > Formatting: $file"
+        clang-format -i -style=file "$file"
+        git add "$file"
+    fi
+done
+
+echo "======================================================="
+echo "  FORMATTING COMPLETE"
+echo "======================================================="
+
+exit 0

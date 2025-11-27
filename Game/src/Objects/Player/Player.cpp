@@ -1,6 +1,6 @@
 #include "Player.h"
-#include "../../Physics/PhysicsLayer.h"
 #include "../../Game.h"
+#include "../../Physics/PhysicsLayer.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
 
@@ -12,17 +12,17 @@
 // TODO: remove windows header from polluting all the code
 #undef max
 #undef min
-#include <algorithm>
-#include <cmath>
-#include <DirectXMath.h>
 #include "Frost/Scene/Components/Meta.h"
 #include "PlayerCamera.h"
+#include <DirectXMath.h>
+#include <algorithm>
+#include <cmath>
 
 #include "../CheckPoint.h"
+#include "PlayerScript.h"
 #include "Vehicles/Bike.h"
 #include "Vehicles/Boat.h"
 #include "Vehicles/Plane.h"
-#include "PlayerScript.h"
 #include "Vehicles/Vehicle.h"
 
 using namespace Frost;
@@ -31,156 +31,139 @@ using namespace Frost::Component;
 
 Player::Player()
 {
-	_scene = &Game::GetScene();
+    _scene = &Game::GetScene();
 
-	// Create Player Game Object -------------
-	_playerId = _scene->CreateGameObject("Player");
-	_playerId.AddComponent<Transform>(
-		Vector3{ -365.0f, 68.5f, -100.0f },
-		EulerAngles{ 0.0f, 0.0f, 0.0f },
-		Vector3{ 1.0f, 1.0f, 1.0f }
-	);
-	_playerId.AddComponent<WorldTransform>();
+    // Create Player Game Object -------------
+    _playerId = _scene->CreateGameObject("Player");
+    _playerId.AddComponent<Transform>(
+        Vector3{ -365.0f, 68.5f, -100.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
+    _playerId.AddComponent<WorldTransform>();
 
-	// Create TransitionModelRenderer -----------
-	transitionRenderer = _scene->CreateGameObject("Transition Model renderer", _playerId);
-	transitionRenderer.AddComponent<Transform>(
-		Vector3{ 0.0f, 0, 0.0f },
-		EulerAngles{ 0.0f, 0.0f, 0.0f },
-		Vector3{ 2.0f, 2.0f, 2.0f });
-	transitionRenderer.AddComponent<WorldTransform>();
-	transitionRenderer.AddComponent<StaticMesh>("./resources/meshes/sphere.fbx");
+    // Create TransitionModelRenderer -----------
+    transitionRenderer = _scene->CreateGameObject("Transition Model renderer", _playerId);
+    transitionRenderer.AddComponent<Transform>(
+        Vector3{ 0.0f, 0, 0.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 2.0f, 2.0f, 2.0f });
+    transitionRenderer.AddComponent<WorldTransform>();
+    transitionRenderer.AddComponent<StaticMesh>("./resources/meshes/sphere.fbx");
 
-	// Create Vehicules structures -------------
-	_InitializeVehicles();
-	SetPlayerVehicle(VehicleType::BIKE);
-	_playerId.AddScript<PlayerScript>(this);
+    // Create Vehicules structures -------------
+    _InitializeVehicles();
+    SetPlayerVehicle(VehicleType::BIKE);
+    _playerId.AddScript<PlayerScript>(this);
 
-
-	// Create playerCameras Game Objects -------------
-	_playerCamera = new PlayerCamera(this);
+    // Create playerCameras Game Objects -------------
+    _playerCamera = new PlayerCamera(this);
 }
 
-
-void Player::_InitializeVehicles()
+void
+Player::_InitializeVehicles()
 {
-	auto pos = Vector3{ 0.0f, 0.0f, 0.0f };
-	// Bike
-	auto bike = new Bike(
-		this, 
-		Vehicle::RendererParameters(
-			"Moto Renderer",
-			"./resources/meshes/moto.glb",
-			Vector3{0,-0.4f,0},
-			EulerAngles{ 0.0, 0.0f, -90.0_deg },
-			Vector3{ .6f, .6f, .6f }
-		));
-	_vehicles.insert({ VehicleType::BIKE, bike });
+    auto pos = Vector3{ 0.0f, 0.0f, 0.0f };
+    // Bike
+    auto bike = new Bike(this,
+                         Vehicle::RendererParameters("Moto Renderer",
+                                                     "./resources/meshes/moto.glb",
+                                                     Vector3{ 0, -0.4f, 0 },
+                                                     EulerAngles{ 0.0, 0.0f, -90.0_deg },
+                                                     Vector3{ .6f, .6f, .6f }));
+    _vehicles.insert({ VehicleType::BIKE, bike });
 
-	// Boat
-	auto boat = new Boat(
-		this,
-		Vehicle::RendererParameters(
-			"Boat Renderer",
-			"./resources/meshes/pill.fbx",
-			pos,
-			EulerAngles{ -90.0_deg, 0.0f, 0.0f },
-			Vector3{ .6f, .6f, .6f }
-		));
-	_vehicles.insert({ VehicleType::BOAT, boat });
+    // Boat
+    auto boat = new Boat(this,
+                         Vehicle::RendererParameters("Boat Renderer",
+                                                     "./resources/meshes/pill.fbx",
+                                                     pos,
+                                                     EulerAngles{ -90.0_deg, 0.0f, 0.0f },
+                                                     Vector3{ .6f, .6f, .6f }));
+    _vehicles.insert({ VehicleType::BOAT, boat });
 
-
-
-	// Plane
-	auto plane = new Plane(
-		this,
-		Vehicle::RendererParameters(
-			"Plane Renderer",
-			"./resources/meshes/StarSparrow01.fbx",
-			Vector3{ 0,-0.4f,0 },
-			EulerAngles{ 0.0_deg, 0.0_deg, 0.0f },
-			Vector3{ .003f, .003f, .003f }
-		));
-	_vehicles.insert({ VehicleType::PLANE, plane });
-
+    // Plane
+    auto plane = new Plane(this,
+                           Vehicle::RendererParameters("Plane Renderer",
+                                                       "./resources/meshes/StarSparrow01.fbx",
+                                                       Vector3{ 0, -0.4f, 0 },
+                                                       EulerAngles{ 0.0_deg, 0.0_deg, 0.0f },
+                                                       Vector3{ .003f, .003f, .003f }));
+    _vehicles.insert({ VehicleType::PLANE, plane });
 }
 
-void Player::SetPlayerVehicle(Player::VehicleType type)
+void
+Player::SetPlayerVehicle(Player::VehicleType type)
 {
-	using namespace JPH;
-	Vec3 linearSpeed;
-	Vec3 angularSpeed;
-	
-	if (_currentVehicle)
-	{
-		Physics::Get().body_interface->GetLinearAndAngularVelocity(
-			_playerId.GetComponent<RigidBody>().physicBody->bodyId,
-			linearSpeed,
-			angularSpeed
-		);
-		_currentVehicle->Disappear();
-	}
-	_currentVehicle = _vehicles[type];
-	_currentVehicleType = type;
-	_SummonVehicleTransition();
-	auto bodyId = _currentVehicle->Appear();
-	if (_playerId.HasComponent<RigidBody>())
-	{
-		_SetBodyID(bodyId);
-		Physics::Get().body_interface->SetLinearAndAngularVelocity(
-			_playerId.GetComponent<RigidBody>().physicBody->bodyId,
-			linearSpeed,
-			angularSpeed
-		);
-	}
-	else
-	{
-		_playerId.AddComponent<RigidBody>(_currentVehicle->GetBodyID(), _playerId);
-	}
+    using namespace JPH;
+    Vec3 linearSpeed;
+    Vec3 angularSpeed;
+
+    if (_currentVehicle)
+    {
+        Physics::Get().body_interface->GetLinearAndAngularVelocity(
+            _playerId.GetComponent<RigidBody>().physicBody->bodyId, linearSpeed, angularSpeed);
+        _currentVehicle->Disappear();
+    }
+    _currentVehicle = _vehicles[type];
+    _currentVehicleType = type;
+    _SummonVehicleTransition();
+    auto bodyId = _currentVehicle->Appear();
+    if (_playerId.HasComponent<RigidBody>())
+    {
+        _SetBodyID(bodyId);
+        Physics::Get().body_interface->SetLinearAndAngularVelocity(
+            _playerId.GetComponent<RigidBody>().physicBody->bodyId, linearSpeed, angularSpeed);
+    }
+    else
+    {
+        _playerId.AddComponent<RigidBody>(_currentVehicle->GetBodyID(), _playerId);
+    }
 }
-void Player::_SummonVehicleTransition()
+void
+Player::_SummonVehicleTransition()
 {
-	FT_INFO("youhou, you have changed vehicle !");
-	transitionRenderer.SetActive(true);
-	transitionTimer.Resume();
-	transitionTimer.Start();
+    FT_INFO("youhou, you have changed vehicle !");
+    transitionRenderer.SetActive(true);
+    transitionTimer.Resume();
+    transitionTimer.Start();
 }
 
-void Player::SetRespawnPoint(Math::Vector3 lastCheckPointPosition, Math::Vector4 lastRespawnRotation)//TODO : add lastVehiculeRespawnType
+void
+Player::SetRespawnPoint(Math::Vector3 lastCheckPointPosition,
+                        Math::Vector4 lastRespawnRotation) // TODO : add lastVehiculeRespawnType
 {
-	_lastRespawnPosition = lastCheckPointPosition;
-	_lastRespawnRotation = lastRespawnRotation;
-	//TODO : add lastVehiculeRespawnType set
-
+    _lastRespawnPosition = lastCheckPointPosition;
+    _lastRespawnRotation = lastRespawnRotation;
+    // TODO : add lastVehiculeRespawnType set
 }
 
-void Player::Warp(Vector3 position, Vector4 rotation, Vector3 speed)//TODO: add vehicle type
+void
+Player::Warp(Vector3 position,
+             Vector4 rotation,
+             Vector3 speed) // TODO: add vehicle type
 {
-	auto& bodyInter = Physics::GetBodyInterface();
-	Scene& scene = Game::GetScene();
-	auto playerTransform = scene.GetComponent<WorldTransform>(_playerId);
+    auto& bodyInter = Physics::GetBodyInterface();
+    Scene& scene = Game::GetScene();
+    auto playerTransform = scene.GetComponent<WorldTransform>(_playerId);
 
-	playerTransform->position = position;
-	auto playerBodyId = _scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId;
-	bodyInter.SetPosition(playerBodyId, Math::vector_cast<JPH::Vec3>(position), JPH::EActivation::Activate);
-	bodyInter.SetLinearVelocity(playerBodyId, Math::vector_cast<JPH::Vec3>(speed));
-	bodyInter.SetRotation(playerBodyId, {rotation.x, rotation.y, rotation.z, rotation.w}, JPH::EActivation::Activate);
+    playerTransform->position = position;
+    auto playerBodyId = _scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId;
+    bodyInter.SetPosition(playerBodyId, Math::vector_cast<JPH::Vec3>(position), JPH::EActivation::Activate);
+    bodyInter.SetLinearVelocity(playerBodyId, Math::vector_cast<JPH::Vec3>(speed));
+    bodyInter.SetRotation(playerBodyId, { rotation.x, rotation.y, rotation.z, rotation.w }, JPH::EActivation::Activate);
 }
 
-void Player::WarpCamera(Vector3 offset, Vector4 rotation, Vector3 speed)
+void
+Player::WarpCamera(Vector3 offset, Vector4 rotation, Vector3 speed)
 {
-	auto& bodyInter = Physics::GetBodyInterface();
-	Scene& scene = Game::GetScene();
-	auto playerTransform = scene.GetComponent<WorldTransform>(_playerId);
+    auto& bodyInter = Physics::GetBodyInterface();
+    Scene& scene = Game::GetScene();
+    auto playerTransform = scene.GetComponent<WorldTransform>(_playerId);
 
-	Vector3 forcedNewCameraPos = playerTransform->position + offset;
+    Vector3 forcedNewCameraPos = playerTransform->position + offset;
 
-	auto camBodyId = _scene->GetComponent<RigidBody>(_playerCamera->_camera)->physicBody->bodyId;
+    auto camBodyId = _scene->GetComponent<RigidBody>(_playerCamera->_camera)->physicBody->bodyId;
 
-	bodyInter.SetPosition(camBodyId, { forcedNewCameraPos.x, forcedNewCameraPos.y, forcedNewCameraPos.z}, JPH::EActivation::Activate);
-	bodyInter.SetLinearVelocity(camBodyId, {speed.x, speed.y, speed.z});
-	bodyInter.SetRotation(camBodyId, { rotation.x, rotation.y, rotation.z, rotation.w }, JPH::EActivation::Activate);
+    bodyInter.SetPosition(
+        camBodyId, { forcedNewCameraPos.x, forcedNewCameraPos.y, forcedNewCameraPos.z }, JPH::EActivation::Activate);
+    bodyInter.SetLinearVelocity(camBodyId, { speed.x, speed.y, speed.z });
+    bodyInter.SetRotation(camBodyId, { rotation.x, rotation.y, rotation.z, rotation.w }, JPH::EActivation::Activate);
 
-	forceSpecificCameraPos = true;
+    forceSpecificCameraPos = true;
 }
-

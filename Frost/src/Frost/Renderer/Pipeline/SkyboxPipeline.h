@@ -22,7 +22,12 @@ namespace Frost
         void Initialize() override;
         void Shutdown() override;
 
-        void Render(CommandList* commandList, Texture* renderTarget, Texture* gbufferDepth, Texture* skyboxTexture, const Component::Camera& camera, const Component::WorldTransform& cameraTransform);
+        void Render(CommandList* commandList,
+                    Texture* renderTarget,
+                    Texture* gbufferDepth,
+                    Texture* skyboxTexture,
+                    const Component::Camera& camera,
+                    const Component::WorldTransform& cameraTransform);
 
     private:
         void CreateCubeMesh();
@@ -38,4 +43,4 @@ namespace Frost
 
         std::shared_ptr<Buffer> _vsSkyboxConstants;
     };
-}
+} // namespace Frost

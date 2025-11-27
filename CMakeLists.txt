@@ -30,3 +30,43 @@ add_subdirectory(Game)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "Editor")
+
+find_program(CLANG_FORMAT_EXE clang-format)
+
+if(NOT CLANG_FORMAT_EXE)
+    find_program(CLANG_FORMAT_EXE clang-format)
+endif()
+
+if(CLANG_FORMAT_EXE)
+    file(GLOB_RECURSE FILES_TO_FORMAT
+        "${CMAKE_CURRENT_SOURCE_DIR}/Frost/src/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Frost/src/*.h"
+        
+        "${CMAKE_CURRENT_SOURCE_DIR}/Editor/src/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Editor/src/*.h"
+        
+        "${CMAKE_CURRENT_SOURCE_DIR}/Game/src/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Game/src/*.h"
+        
+        "${CMAKE_CURRENT_SOURCE_DIR}/Lab/src/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Lab/src/*.h"
+    )
+
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${FILES_TO_FORMAT}
+        COMMENT "Auto-formatting sources..."
+        VERBATIM
+    )
+    set_target_properties(format PROPERTIES FOLDER "Tools")
+
+    add_custom_target(check-format
+        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror -style=file ${FILES_TO_FORMAT}
+        COMMENT "Checking code formatting..."
+        VERBATIM
+    )
+    set_target_properties(check-format PROPERTIES FOLDER "Tools")
+
+    message(STATUS "Clang-format found: target 'format' is available.")
+else()
+    message(WARNING "Clang-format not found. The 'format' target will not be created.")
+endif()

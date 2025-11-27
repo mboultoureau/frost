@@ -1,17 +1,17 @@
 #include "Frost/Renderer/Pipeline/HUDRenderingPipeline.h"
 
 #include "Frost/Core/Application.h"
+#include "Frost/Renderer/Buffer.h"
+#include "Frost/Renderer/InputLayout.h"
 #include "Frost/Renderer/Renderer.h"
 #include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Sampler.h"
 #include "Frost/Renderer/Shader.h"
-#include "Frost/Renderer/InputLayout.h"
 
+#include "Frost/Debugging/Logger.h"
 #include "Frost/Renderer/DX11/CommandListDX11.h"
 #include "Frost/Renderer/DX11/InputLayoutDX11.h"
 #include "Frost/Renderer/DX11/SamplerDX11.h"
-#include "Frost/Debugging/Logger.h"
 
 namespace Frost
 {
@@ -43,13 +43,16 @@ namespace Frost
         //_commandList = Renderer::GetDevice()->CreateCommandList();
 #endif
 
-        ShaderDesc vsDesc = { .type = ShaderType::Vertex, .debugName = "VS_HUD", .filePath = "../Frost/resources/shaders/VS_HUD.hlsl" };
-        ShaderDesc psDesc = { .type = ShaderType::Pixel, .debugName = "PS_HUD", .filePath = "../Frost/resources/shaders/PS_HUD.hlsl" };
+        ShaderDesc vsDesc = { .type = ShaderType::Vertex,
+                              .debugName = "VS_HUD",
+                              .filePath = "../Frost/resources/shaders/VS_HUD.hlsl" };
+        ShaderDesc psDesc = { .type = ShaderType::Pixel,
+                              .debugName = "PS_HUD",
+                              .filePath = "../Frost/resources/shaders/PS_HUD.hlsl" };
         _vertexShader = Shader::Create(vsDesc);
         _pixelShader = Shader::Create(psDesc);
 
-        HUD_Vertex vertices[] =
-        {
+        HUD_Vertex vertices[] = {
             { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f }, // 0: Bottom-Left
             { 1.0f, 1.0f, 0.0f, 1.0f, 1.0f }, // 1: Bottom-Right
             { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }, // 2: Top-Left
@@ -59,17 +62,19 @@ namespace Frost
         _indexCount = sizeof(indices) / sizeof(uint32_t);
 
         auto* renderer = RendererAPI::GetRenderer();
-        _vertexBuffer = renderer->CreateBuffer({ .usage = BufferUsage::VERTEX_BUFFER, .size = sizeof(vertices) }, vertices);
+        _vertexBuffer =
+            renderer->CreateBuffer({ .usage = BufferUsage::VERTEX_BUFFER, .size = sizeof(vertices) }, vertices);
         _indexBuffer = renderer->CreateBuffer({ .usage = BufferUsage::INDEX_BUFFER, .size = sizeof(indices) }, indices);
 
         const uint32_t stride = sizeof(HUD_Vertex);
         InputLayout::VertexAttributeArray attributes = {
-            {.name = "POSITION", .format = Format::RGB32_FLOAT, .offset = 0,  .elementStride = stride },
-            {.name = "TEXCOORD", .format = Format::RG32_FLOAT,   .offset = 12, .elementStride = stride },
+            { .name = "POSITION", .format = Format::RGB32_FLOAT, .offset = 0, .elementStride = stride },
+            { .name = "TEXCOORD", .format = Format::RG32_FLOAT, .offset = 12, .elementStride = stride },
         };
         _inputLayout = std::make_unique<InputLayoutDX11>(attributes, *_vertexShader);
 
-        _constantBuffer = renderer->CreateBuffer({ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(HUDShaderParameters), .dynamic = true });
+        _constantBuffer = renderer->CreateBuffer(
+            { .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(HUDShaderParameters), .dynamic = true });
 
         _samplerPoint = std::make_unique<SamplerDX11>(SamplerConfig{ .filter = Filter::MIN_MAG_MIP_POINT });
         _samplerLinear = std::make_unique<SamplerDX11>(SamplerConfig{ .filter = Filter::MIN_MAG_MIP_LINEAR });
@@ -121,8 +126,8 @@ namespace Frost
 
     void HUDRenderingPipeline::Submit(const Component::HUDImage& image)
     {
-		float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
-		float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
+        float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
+        float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
 
         HUDShaderParameters params = {};
         params.viewport[0] = image.viewport.x;
@@ -144,7 +149,8 @@ namespace Frost
 
     void HUDRenderingPipeline::EndFrame()
     {
-        if (!_enabled) return;
+        if (!_enabled)
+            return;
 
         _commandList->SetRasterizerState(RasterizerMode::Solid);
         _commandList->SetBlendState(BlendMode::None);
@@ -161,16 +167,16 @@ namespace Frost
     {
         switch (filterMode)
         {
-        case Material::FilterMode::POINT:
-            _commandList->SetSampler(_samplerPoint.get(), 0);
-            break;
-        case Material::FilterMode::LINEAR:
-            _commandList->SetSampler(_samplerLinear.get(), 0);
-            break;
-        case Material::FilterMode::ANISOTROPIC:
-        default:
-            _commandList->SetSampler(_samplerAnisotropic.get(), 0);
-            break;
+            case Material::FilterMode::POINT:
+                _commandList->SetSampler(_samplerPoint.get(), 0);
+                break;
+            case Material::FilterMode::LINEAR:
+                _commandList->SetSampler(_samplerLinear.get(), 0);
+                break;
+            case Material::FilterMode::ANISOTROPIC:
+            default:
+                _commandList->SetSampler(_samplerAnisotropic.get(), 0);
+                break;
         }
     }
-}
+} // namespace Frost

@@ -4,20 +4,14 @@
 namespace Frost::Math
 {
 
-
     Matrix4x4::Matrix4x4()
     {
-        elements = {
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-        };
+        elements = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
     }
 
     Matrix4x4::Matrix4x4(const std::array<float, 16>& elements)
     {
-		this->elements = elements;
+        this->elements = elements;
     }
 
     Matrix4x4 Matrix4x4::CreateIdentity()
@@ -65,7 +59,9 @@ namespace Frost::Math
         return result;
     }
 
-    Matrix4x4 Matrix4x4::CreateLookToLH(const Vector3& eyePosition, const Vector3& eyeDirection, const Vector3& upDirection)
+    Matrix4x4 Matrix4x4::CreateLookToLH(const Vector3& eyePosition,
+                                        const Vector3& eyeDirection,
+                                        const Vector3& upDirection)
     {
         Matrix4x4 result;
         DirectX::XMVECTOR eyePosVec = vector_cast<DirectX::XMVECTOR>(eyePosition);
@@ -98,4 +94,4 @@ namespace Frost::Math
         return result;
     }
 
-}
+} // namespace Frost::Math

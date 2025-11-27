@@ -8,12 +8,10 @@ class Terrain
 {
 
 public:
-	Terrain();
-	float heightScale = 1.0f;
-	std::string filepath;
+    Terrain();
+    float heightScale = 1.0f;
+    std::string filepath;
 
 private:
-	GameObject _terrain;
+    GameObject _terrain;
 };
-
-

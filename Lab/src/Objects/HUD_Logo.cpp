@@ -1,28 +1,28 @@
 #include "HUD_Logo.h"
-#include "../Game.h" 
+#include "../Game.h"
 
 /*
 HUD_Logo::HUD_Logo()
 {
 
-	Scene& _scene = Game::GetScene();
+        Scene& _scene = Game::GetScene();
 
-	_hudLogo = _scene.CreateGameObject("Engine_Logo");
+        _hudLogo = _scene.CreateGameObject("Engine_Logo");
 
-	Viewport viewport;
-	viewport.height = 0.08;
-	viewport.width = 0.15f;
-	const std::string LOGO_PATH = "resources/textures/EngineLogo.png"; 
+        Viewport viewport;
+        viewport.height = 0.08;
+        viewport.width = 0.15f;
+        const std::string LOGO_PATH = "resources/textures/EngineLogo.png";
 
-	viewport.x = 0.85f; 
-	viewport.y = 0.0f; 
-	
-	_scene.AddComponent<Frost::HUD_Image>(
-		_hudLogo,
-		viewport,
-		LOGO_PATH,
-		Material::FilterMode::POINT
-	);
+        viewport.x = 0.85f;
+        viewport.y = 0.0f;
+
+        _scene.AddComponent<Frost::HUD_Image>(
+                _hudLogo,
+                viewport,
+                LOGO_PATH,
+                Material::FilterMode::POINT
+        );
 
 }
 

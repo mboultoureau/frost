@@ -3,17 +3,17 @@
 class PlayerInput
 {
 public:
-	PlayerInput();
-	~PlayerInput();
+    PlayerInput();
+    ~PlayerInput();
 
-	void ProcessInput();
+    void ProcessInput();
 
-	// Mouse
-	void ShowCursor();
-	void HideCursor();
+    // Mouse
+    void ShowCursor();
+    void HideCursor();
 
-	// Keyboard
-	void IsKeyPressed(int key);
+    // Keyboard
+    void IsKeyPressed(int key);
 
-	// Gamepad
+    // Gamepad
 };

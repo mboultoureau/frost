@@ -4,11 +4,9 @@
 
 namespace Editor
 {
-	class StatusBar : public EditorPanel
-	{
-	public:
-		void Draw() override;
-	};
-}
-
-
+    class StatusBar : public EditorPanel
+    {
+    public:
+        void Draw() override;
+    };
+} // namespace Editor

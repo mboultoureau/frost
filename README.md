@@ -4,7 +4,7 @@ Frost is a game engine created by the Uno team ([Elias Del Pozo](https://depot.d
 
 ## Constraints
 
-For the purposes of the course, we were not allowed to use any external libraries except those listed below. A more robust implementation of the engine would use entt, nvrhi, etc.
+For the purposes of the course, we were not allowed to use any external libraries except those listed below. A more robust implementation of the engine would use nvrhi, etc.
 
 ## Features
 
@@ -19,6 +19,10 @@ For the purposes of the course, we were not allowed to use any external librarie
 ## Installation
 
 To install and run the project, you must be running Windows and have Visual Studio 2022 and CMake installed. Then run the `Setup.bat` script to generate the project.
+
+## Development
+
+We use `clang-format` to format the code. Be sure it is included in your PATH (eg. `C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\bin`).
 
 ## Resources
 

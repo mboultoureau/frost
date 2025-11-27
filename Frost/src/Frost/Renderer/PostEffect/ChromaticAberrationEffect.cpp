@@ -1,8 +1,8 @@
 #include "Frost/Renderer/PostEffect/ChromaticAberrationEffect.h"
-#include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Renderer/DX11/ShaderDX11.h"
-#include "Frost/Renderer/DX11/SamplerDX11.h"
 #include "Frost/Renderer/DX11/CommandListDX11.h"
+#include "Frost/Renderer/DX11/SamplerDX11.h"
+#include "Frost/Renderer/DX11/ShaderDX11.h"
+#include "Frost/Renderer/RendererAPI.h"
 
 #include "Frost/Renderer/DX11/TextureDX11.h"
 
@@ -24,26 +24,41 @@ namespace Frost
     ChromaticAberrationEffect::ChromaticAberrationEffect()
     {
 #ifdef FT_PLATFORM_WINDOWS
-        ShaderDesc vsDesc = { .type = ShaderType::Vertex, .debugName = "VS_ChromaticAberration", .filePath = "../Frost/resources/shaders/PostEffect/VS_ChromaticAberration.hlsl" };
+        ShaderDesc vsDesc = { .type = ShaderType::Vertex,
+                              .debugName = "VS_ChromaticAberration",
+                              .filePath = "../Frost/resources/shaders/PostEffect/"
+                                          "VS_ChromaticAberration.hlsl" };
         _vertexShader = std::make_unique<ShaderDX11>(vsDesc);
 
-        ShaderDesc psDesc = { .type = ShaderType::Pixel, .debugName = "PS_ChromaticAberration", .filePath = "../Frost/resources/shaders/PostEffect/PS_ChromaticAberration.hlsl" };
+        ShaderDesc psDesc = { .type = ShaderType::Pixel,
+                              .debugName = "PS_ChromaticAberration",
+                              .filePath = "../Frost/resources/shaders/PostEffect/"
+                                          "PS_ChromaticAberration.hlsl" };
         _pixelShader = std::make_unique<ShaderDX11>(psDesc);
 #endif
 
         auto* renderer = RendererAPI::GetRenderer();
-        _constantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER, .size = sizeof(ChromaticAberrationConstants), .dynamic = true, .debugName = "CB_ChromaticAberration" });
+        _constantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER,
+                                                                .size = sizeof(ChromaticAberrationConstants),
+                                                                .dynamic = true,
+                                                                .debugName = "CB_ChromaticAberration" });
 
-        SamplerConfig samplerConfig = { .filter = Filter::MIN_MAG_MIP_LINEAR, .addressU = AddressMode::CLAMP, .addressV = AddressMode::CLAMP, .addressW = AddressMode::CLAMP };
+        SamplerConfig samplerConfig = { .filter = Filter::MIN_MAG_MIP_LINEAR,
+                                        .addressU = AddressMode::CLAMP,
+                                        .addressV = AddressMode::CLAMP,
+                                        .addressW = AddressMode::CLAMP };
         _sampler = std::make_unique<SamplerDX11>(samplerConfig);
     }
 
-    void ChromaticAberrationEffect::OnPostRender(float deltaTime, CommandList* commandList, Texture* source, Texture* destination)
+    void ChromaticAberrationEffect::OnPostRender(float deltaTime,
+                                                 CommandList* commandList,
+                                                 Texture* source,
+                                                 Texture* destination)
     {
         ChromaticAberrationConstants constants;
-		constants.centerRed = _centerRed;
-		constants.centerGreen = _centerGreen;
-		constants.centerBlue = _centerBlue;
+        constants.centerRed = _centerRed;
+        constants.centerGreen = _centerGreen;
+        constants.centerBlue = _centerBlue;
         constants.strength = _strength;
         _constantsBuffer->UpdateData(commandList, &constants, sizeof(constants));
 
@@ -76,8 +91,10 @@ namespace Frost
 
         ImGui::Text("Edit Center:");
         ImGui::SameLine();
-        ImGui::RadioButton("Red", &_activeCenter, 0); ImGui::SameLine();
-        ImGui::RadioButton("Green", &_activeCenter, 1); ImGui::SameLine();
+        ImGui::RadioButton("Red", &_activeCenter, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Green", &_activeCenter, 1);
+        ImGui::SameLine();
         ImGui::RadioButton("Blue", &_activeCenter, 2);
 
         float availableWidth = ImGui::GetContentRegionAvail().x;
@@ -102,15 +119,15 @@ namespace Frost
 
             switch (_activeCenter)
             {
-            case 0: // Red
-                _centerRed = { normalizedX, normalizedY };
-                break;
-            case 1: // Green
-                _centerGreen = { normalizedX, normalizedY };
-                break;
-            case 2: // Blue
-                _centerBlue = { normalizedX, normalizedY };
-                break;
+                case 0: // Red
+                    _centerRed = { normalizedX, normalizedY };
+                    break;
+                case 1: // Green
+                    _centerGreen = { normalizedX, normalizedY };
+                    break;
+                case 2: // Blue
+                    _centerBlue = { normalizedX, normalizedY };
+                    break;
             }
         }
 
@@ -119,13 +136,16 @@ namespace Frost
         ImVec2 pointPosB(zoneTopLeft.x + _centerBlue.x * zoneSize.x, zoneTopLeft.y + _centerBlue.y * zoneSize.y);
 
         ImVec2 selectedPos;
-        if (_activeCenter == 0) selectedPos = pointPosR;
-        else if (_activeCenter == 1) selectedPos = pointPosG;
-        else selectedPos = pointPosB;
+        if (_activeCenter == 0)
+            selectedPos = pointPosR;
+        else if (_activeCenter == 1)
+            selectedPos = pointPosG;
+        else
+            selectedPos = pointPosB;
         drawList->AddCircle(selectedPos, 8.0f, IM_COL32(255, 255, 255, 255), 0, 2.0f);
 
         drawList->AddCircleFilled(pointPosR, 6.0f, IM_COL32(255, 50, 50, 255));
         drawList->AddCircleFilled(pointPosG, 6.0f, IM_COL32(50, 255, 50, 255));
         drawList->AddCircleFilled(pointPosB, 6.0f, IM_COL32(50, 50, 255, 255));
     }
-}
+} // namespace Frost

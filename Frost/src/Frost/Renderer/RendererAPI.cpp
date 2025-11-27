@@ -2,5 +2,5 @@
 
 namespace Frost
 {
-	Renderer* RendererAPI::_renderer = nullptr;
+    Renderer* RendererAPI::_renderer = nullptr;
 }

@@ -6,9 +6,9 @@ using namespace Frost;
 class Wall
 {
 public:
-	Wall();
+    Wall();
 
 private:
-	GameObject _wall;
-	void _SetupPhysics();
+    GameObject _wall;
+    void _SetupPhysics();
 };

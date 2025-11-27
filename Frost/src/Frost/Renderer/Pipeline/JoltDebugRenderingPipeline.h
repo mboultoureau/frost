@@ -1,11 +1,10 @@
 #pragma once
 
 #include "Frost/Core/Core.h"
+#include "Frost/Renderer/Pipeline.h"
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/WorldTransform.h"
-#include "Frost/Renderer/Pipeline.h"
 #include "Frost/Utils/Math/Matrix.h"
-
 
 #ifdef JPH_DEBUG_RENDERER
 #include <Jolt/Renderer/DebugRenderer.h>
@@ -17,9 +16,9 @@
 #include <Jolt/Core/Mutex.h>
 #include <Jolt/Core/UnorderedMap.h>
 
+#include <atomic>
 #include <memory>
 #include <vector>
-#include <atomic>
 
 namespace Frost
 {
@@ -54,14 +53,32 @@ namespace Frost
         void Shutdown() override;
 
         void DrawLine(JPH::RVec3Arg inFrom, JPH::RVec3Arg inTo, JPH::ColorArg inColor) override;
-        void DrawTriangle(JPH::RVec3Arg inV1, JPH::RVec3Arg inV2, JPH::RVec3Arg inV3, JPH::ColorArg inColor, JPH::DebugRenderer::ECastShadow inCastShadow) override;
-        JPH::DebugRenderer::Batch CreateTriangleBatch(const JPH::DebugRenderer::Triangle* inTriangles, int inTriangleCount) override;
-        JPH::DebugRenderer::Batch CreateTriangleBatch(const JPH::DebugRenderer::Vertex* inVertices, int inVertexCount, const JPH::uint32* inIndices, int inIndexCount) override;
-        void DrawGeometry(JPH::RMat44Arg inModelMatrix, const JPH::AABox& inWorldSpaceBounds, float inLODScaleSq, JPH::ColorArg inModelColor, const JPH::DebugRenderer::GeometryRef& inGeometry, JPH::DebugRenderer::ECullMode inCullMode, JPH::DebugRenderer::ECastShadow inCastShadow, JPH::DebugRenderer::EDrawMode inDrawMode) override;
-        void DrawText3D(JPH::RVec3Arg inPosition, const std::string_view& inString, JPH::ColorArg inColor, float inHeight) override;
+        void DrawTriangle(JPH::RVec3Arg inV1,
+                          JPH::RVec3Arg inV2,
+                          JPH::RVec3Arg inV3,
+                          JPH::ColorArg inColor,
+                          JPH::DebugRenderer::ECastShadow inCastShadow) override;
+        JPH::DebugRenderer::Batch CreateTriangleBatch(const JPH::DebugRenderer::Triangle* inTriangles,
+                                                      int inTriangleCount) override;
+        JPH::DebugRenderer::Batch CreateTriangleBatch(const JPH::DebugRenderer::Vertex* inVertices,
+                                                      int inVertexCount,
+                                                      const JPH::uint32* inIndices,
+                                                      int inIndexCount) override;
+        void DrawGeometry(JPH::RMat44Arg inModelMatrix,
+                          const JPH::AABox& inWorldSpaceBounds,
+                          float inLODScaleSq,
+                          JPH::ColorArg inModelColor,
+                          const JPH::DebugRenderer::GeometryRef& inGeometry,
+                          JPH::DebugRenderer::ECullMode inCullMode,
+                          JPH::DebugRenderer::ECastShadow inCastShadow,
+                          JPH::DebugRenderer::EDrawMode inDrawMode) override;
+        void DrawText3D(JPH::RVec3Arg inPosition,
+                        const std::string_view& inString,
+                        JPH::ColorArg inColor,
+                        float inHeight) override;
 
         void Render(const Component::Camera& camera, const Component::WorldTransform& cameraTransform);
-		void Clear();
+        void Clear();
 
     private:
         void _ClearFrameData();
@@ -109,7 +126,11 @@ namespace Frost
         public:
             virtual ~FrostTriangleBatch() override = default;
             void AddRef() override { mRefCount++; }
-            void Release() override { if (--mRefCount == 0) delete this; }
+            void Release() override
+            {
+                if (--mRefCount == 0)
+                    delete this;
+            }
 
             std::shared_ptr<Buffer> vertexBuffer;
             std::shared_ptr<Buffer> indexBuffer;
@@ -128,7 +149,8 @@ namespace Frost
         };
         std::vector<GeometryDrawCommand> _geometryDrawCommands;
 
-        JPH::UnorderedMap<const JPH::DebugRenderer::Geometry*, std::vector<JPH::Ref<FrostTriangleBatch>>> _geometryBatches;
+        JPH::UnorderedMap<const JPH::DebugRenderer::Geometry*, std::vector<JPH::Ref<FrostTriangleBatch>>>
+            _geometryBatches;
         Math::Vector4 ConvertJoltColor(JPH::ColorArg color);
     };
-}
+} // namespace Frost

@@ -2,8 +2,8 @@
 
 #include "Frost/Renderer/GPUResource.h"
 
-#include <cstdint>
 #include <cfloat>
+#include <cstdint>
 
 namespace Frost
 {
@@ -49,4 +49,4 @@ namespace Frost
 
         virtual const SamplerConfig& GetConfig() const = 0;
     };
-}
+} // namespace Frost

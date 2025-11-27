@@ -2,7 +2,7 @@
 
 namespace Frost::Component
 {
-	class Component
-	{
-	};
-}
+    class Component
+    {
+    };
+} // namespace Frost::Component

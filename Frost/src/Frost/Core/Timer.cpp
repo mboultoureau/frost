@@ -2,43 +2,41 @@
 
 namespace Frost
 {
-	Timer::Timer() : _running{ false }
-	{
-	}
+    Timer::Timer() : _running{ false } {}
 
-	void Timer::Start()
-	{
-		_running = true;
-		_duration = Duration::zero();
-		_lastTime = Clock::now();
-	}
+    void Timer::Start()
+    {
+        _running = true;
+        _duration = Duration::zero();
+        _lastTime = Clock::now();
+    }
 
-	void Timer::Pause()
-	{
-		_running = false;
-		_duration += Clock::now() - _lastTime;
-	}
+    void Timer::Pause()
+    {
+        _running = false;
+        _duration += Clock::now() - _lastTime;
+    }
 
-	void Timer::Resume()
-	{
-		if (_running)
-		{
-			return;
-		}
+    void Timer::Resume()
+    {
+        if (_running)
+        {
+            return;
+        }
 
-		_running = true;
-		_lastTime = Clock::now();
-	}
+        _running = true;
+        _lastTime = Clock::now();
+    }
 
-	Timer::Duration Timer::GetDuration() const
-	{
-		if (_running)
-		{
-			return Clock::now() - _lastTime + _duration;
-		}
-		else
-		{
-			return _duration;
-		}
-	}
-}
+    Timer::Duration Timer::GetDuration() const
+    {
+        if (_running)
+        {
+            return Clock::now() - _lastTime + _duration;
+        }
+        else
+        {
+            return _duration;
+        }
+    }
+} // namespace Frost

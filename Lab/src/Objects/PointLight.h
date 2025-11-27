@@ -3,5 +3,5 @@
 class PointLight
 {
 public:
-	PointLight();
+    PointLight();
 };
