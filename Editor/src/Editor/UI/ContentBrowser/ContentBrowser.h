@@ -49,6 +49,9 @@ namespace Editor
         void _ShowInExplorer(const std::filesystem::path& path);
         void _OpenFileInExternalEditor(const std::filesystem::path& path);
 
+        // Helpers
+        bool _IsModelFormat(const std::string& extension);
+
     private:
         const ProjectInfo& _projectInfo;
 

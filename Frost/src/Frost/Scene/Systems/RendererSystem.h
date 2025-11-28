@@ -8,6 +8,7 @@
 #include "Frost/Scene/Components/StaticMesh.h"
 #include "Frost/Scene/Components/VirtualCamera.h"
 #include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Renderer/Frustum.h"
 #include "Frost/Scene/ECS/System.h"
 
 #include <entt/entt.hpp>
@@ -49,5 +50,7 @@ namespace Frost
         std::shared_ptr<Texture> _externalRenderTarget = nullptr;
         uint32_t _viewportWidth = 0;
         uint32_t _viewportHeight = 0;
+
+        Frustum _frustum;
     };
 } // namespace Frost

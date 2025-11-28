@@ -11,6 +11,8 @@
 
 #include <imgui.h>
 
+#include <imgui.h>
+
 namespace Editor
 {
     class EditorLayer : public Frost::Layer
@@ -27,6 +29,7 @@ namespace Editor
         static LayerName GetStaticName() { return "EditorLayer"; }
 
         void OpenPrefab(const std::filesystem::path& path);
+        void OpenMeshPreview(const std::filesystem::path& path);
         static EditorLayer& Get();
 
     private:
