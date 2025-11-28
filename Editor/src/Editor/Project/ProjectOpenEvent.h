@@ -14,9 +14,11 @@ namespace Editor
         std::string GetProjectPath() const { return _projectPath; }
 
         Frost::EventType GetEventType() const override { return GetStaticType(); }
+        const char* GetCustomEventTypeID() const override { return "ProjectOpen"; }
+        static const char* GetStaticCustomEventTypeID() { return "ProjectOpen"; }
         std::string ToString() const override { return "ProjectOpenEvent"; }
 
-        static Frost::EventType GetStaticType() { return Frost::EventType::AppCustom; }
+        static constexpr Frost::EventType GetStaticType() { return Frost::EventType::AppCustom; }
 
     private:
         std::string _projectPath;
