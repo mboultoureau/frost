@@ -60,7 +60,7 @@ private:
     float maxPitchAngle = 0.5f; // ~30 degres
     float maxRollAngle = 0.7f;  // ~40 degres
 
-    std::chrono::milliseconds collisionCoolDown = 750ms; // seconds
+    std::chrono::milliseconds collisionCoolDown = 750ms;
     Timer collisionCoolDownTimer;
 
     float MoveTowards(float current, float target, float maxDelta)
@@ -71,5 +71,20 @@ private:
             return target;
         }
         return current + std::copysign(maxDelta, diff);
+    }
+
+    void UpdateInternalStateFromBody() {
+        auto& bodyInterface = Physics::GetBodyInterface();
+
+        JPH::Quat rot = bodyInterface.GetRotation(_bodyId);
+
+        JPH::Vec3 fwd = rot.RotateAxisZ();
+        currentYaw = std::atan2(fwd.GetX(), fwd.GetZ());
+
+        JPH::Vec3 up = rot.RotateAxisY();
+        currentPitch = std::asin(-fwd.GetY());
+
+        JPH::Vec3 right = rot.RotateAxisX();
+        currentRoll = std::atan2(right.GetY(), up.GetY());
     }
 };

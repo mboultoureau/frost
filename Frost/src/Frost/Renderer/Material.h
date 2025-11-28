@@ -49,6 +49,9 @@ namespace Frost
         Math::Vector2 uvTiling = { 1, 1 };
         Math::Vector2 uvOffset = { 0, 0 };
 
+		// Currently disabled by grass blades
+		bool backFaceCulling = true;
+        
         // Custom shaders
         std::shared_ptr<Shader> customVertexShader;
         std::shared_ptr<Shader> customPixelShader;

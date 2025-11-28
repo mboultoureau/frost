@@ -14,7 +14,7 @@ MainLayer::OnAttach()
 
     _pointLight = std::make_unique<PointLight>();
     //_topCamera = std::make_unique<TopCamera>();
-
+    _sun = std::make_unique<Sun>();
     _sphere = std::make_unique<Sphere>();
     //_freeCamera = std::make_unique<FreeCamera>();
     _moto = std::make_unique<Moto>();
@@ -31,6 +31,10 @@ MainLayer::OnAttach()
     _portal1 = std::make_unique<Portal>(Vector3{ 6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 220.0_deg, 0.0_deg });
     _portal2 = std::make_unique<Portal>(Vector3{ -6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 150.0_deg, 0.0_deg });
 
+    _portal1->LinkTo(_portal2.get());
+    _portal2->LinkTo(_portal1.get());
+
+    _grass = std::make_unique<Grass>();
     _portal1->LinkTo(_portal2.get());
     _portal2->LinkTo(_portal1.get());
     _tv = std::make_unique<TV>();
@@ -54,7 +58,11 @@ MainLayer::OnUpdate(float deltaTime)
         _portal2->Update();
 
     _waves->Update(deltaTime);
+    _grass->Update(deltaTime);
 
+    _pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
+
+    _unpauseHandlerUUID = EventManager::Subscribe<Frost::UnPauseEvent>(FROST_BIND_EVENT_FN(MainLayer::OnGameUnpaused));
     _scene.Update(deltaTime);
 }
 

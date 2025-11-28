@@ -63,6 +63,8 @@ Plane::OnPreFixedUpdate(float deltaTime)
 
     auto& bodyInterface = Physics::GetBodyInterface();
 
+    UpdateInternalStateFromBody();
+
     currentSpeed = bodyInterface.GetLinearVelocity(_bodyId).Length();
 
     // Angles cibles selon les inputs
