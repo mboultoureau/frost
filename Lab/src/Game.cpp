@@ -31,7 +31,7 @@ void
 Game::InitGame()
 {
     _scene = std::make_unique<Frost::Scene>("Scene");
-    _app->PushLayer<MainLayer>();
+    _mainLayer = _app->PushLayer<MainLayer>();
     DebugLayer* debugLayer = _app->PushLayer<DebugLayer>();
     // Frost::PauseMenu* pauseLayer = _app->PushLayer<Frost::PauseMenu>();
 
