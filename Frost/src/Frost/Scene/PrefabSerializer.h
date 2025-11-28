@@ -1,0 +1,22 @@
+#pragma once
+
+#include "Frost/Scene/ECS/GameObject.h"
+#include "Frost/Scene/Scene.h"
+
+#include <filesystem>
+#include <string>
+
+namespace Frost
+{
+    class PrefabSerializer
+    {
+    public:
+        static void CreatePrefab(GameObject rootEntity, const std::filesystem::path& destinationPath);
+        static GameObject Instantiate(Scene* scene, const std::filesystem::path& path);
+
+    private:
+        static void _SerializeToYaml(const std::vector<GameObject>& entities, const std::filesystem::path& path);
+        static void _SerializeToBinary(const std::vector<GameObject>& entities, const std::filesystem::path& path);
+        static void _FlattenHierarchy(GameObject root, std::vector<GameObject>& outList);
+    };
+} // namespace Frost

@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Frost/Event/Event.h"
 #include "Frost/Utils/UUID.h"
 
 #include <functional>
+#include <string>
 
 namespace Frost
 {
@@ -36,6 +37,14 @@ namespace Frost
         {
             if (event.GetEventType() == EventType::GetStaticType())
             {
+                if constexpr (EventType::GetStaticType() == Frost::EventType::AppCustom)
+                {
+                    if (std::strcmp(event.GetCustomEventTypeID(), EventType::GetStaticCustomEventTypeID()) != 0)
+                    {
+                        return false;
+                    }
+                }
+
                 if (_callback(static_cast<EventType&>(event)))
                 {
                     event.Handle();

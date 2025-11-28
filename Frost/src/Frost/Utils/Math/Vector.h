@@ -29,6 +29,7 @@ namespace Frost::Math
 
         constexpr Vector2() noexcept : x(0.0f), y(0.0f) {}
         constexpr Vector2(float x, float y) noexcept : x(x), y(y) {}
+        operator DirectX::XMFLOAT2() const { return DirectX::XMFLOAT2(x, y); }
     };
 
     struct Vector3
@@ -52,6 +53,7 @@ namespace Frost::Math
 
         constexpr Vector3() noexcept : x(0.0f), y(0.0f), z(0.0f) {}
         constexpr Vector3(float x, float y, float z) noexcept : x(x), y(y), z(z) {}
+        operator DirectX::XMFLOAT3() const { return DirectX::XMFLOAT3(x, y, z); }
     };
 
     struct Vector4
@@ -71,6 +73,7 @@ namespace Frost::Math
 
         constexpr Vector4() noexcept : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
         constexpr Vector4(float x, float y, float z, float w) noexcept : x(x), y(y), z(z), w(w) {}
+        operator DirectX::XMFLOAT4() const { return DirectX::XMFLOAT4(x, y, z, w); }
     };
 
     using Color3 = Vector3;

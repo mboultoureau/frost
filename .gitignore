@@ -453,3 +453,6 @@ CMakeUserPresets.json
 imgui.ini
 /vendor
 *.dir
+
+# Editor
+editor_recents.yaml

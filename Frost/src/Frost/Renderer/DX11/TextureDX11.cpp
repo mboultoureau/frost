@@ -427,36 +427,177 @@ namespace Frost
         context->PSSetShaderResources(static_cast<UINT>(slot), 1, _srv.GetAddressOf());
     }
 
+    struct FaceMap
+    {
+        int x;
+        int y;
+    };
+    const FaceMap CROSS_FACE_COORDS[6] = {
+        { 2, 1 }, // 0: +X (Right)
+        { 0, 1 }, // 1: -X (Left)
+        { 1, 0 }, // 2: +Y (Top)
+        { 1, 2 }, // 3: -Y (Bottom)
+        { 1, 1 }, // 4: +Z (Front)
+        { 3, 1 }  // 5: -Z (Back)
+    };
+
     void TextureDX11::_CreateCubemap(TextureConfig& config)
     {
-        FT_ENGINE_ASSERT(config.faceFilePaths.size() == 6, "A cubemap requires exactly 6 texture faces.");
-        if (config.faceFilePaths.size() != 6)
-            return;
-
+        // 1. Initialisation
         RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
         ID3D11Device* device = renderer->GetDevice();
+        FT_ENGINE_ASSERT(device, "D3D11 Device is null.");
 
         int width = 0, height = 0, channels = 0;
         std::vector<stbi_uc*> loadedData(6, nullptr);
+        int faceWidth = 0;
+        int faceHeight = 0;
 
-        for (int i = 0; i < 6; ++i)
+        bool loadSuccess = true;
+
+        if (config.isUnfoldedCubemap)
         {
-            loadedData[i] = stbi_load(config.faceFilePaths[i].c_str(), &width, &height, &channels, 4);
-            if (!loadedData[i])
+            // Cubemap from unfolded texture
+            FT_ENGINE_INFO("Loading unfolded cubemap from file: {}", config.path);
+
+            stbi_uc* unfoldedData = stbi_load(config.path.c_str(), &width, &height, &channels, 4);
+            if (!unfoldedData)
             {
-                FT_ENGINE_ERROR("Failed to load cubemap face: {0}", config.faceFilePaths[i]);
-                for (int j = 0; j < i; ++j)
-                    stbi_image_free(loadedData[j]);
+                FT_ENGINE_ERROR("Failed to load unfolded cubemap texture: {0}", config.path);
+                return;
+            }
+
+            if (width % 6 == 0 && width / 6 == height)
+            {
+                faceWidth = width / 6;
+                faceHeight = height;
+
+                for (int i = 0; i < 6; ++i)
+                {
+                    FaceMap stripCoords[] = { { 0, 0 }, { 1, 0 }, { 2, 0 }, { 3, 0 }, { 4, 0 }, { 5, 0 } };
+
+                    int srcX = stripCoords[i].x * faceWidth;
+                    int srcY = stripCoords[i].y * faceHeight;
+                    int bytesPerPixel = 4;
+                    int faceRowPitch = faceWidth * bytesPerPixel;
+                    size_t faceDataSize = (size_t)faceWidth * faceHeight * bytesPerPixel;
+
+                    stbi_uc* faceData = new stbi_uc[faceDataSize];
+                    loadedData[i] = faceData;
+
+                    int totalImageRowPitch = width * bytesPerPixel;
+                    for (int y = 0; y < faceHeight; ++y)
+                    {
+                        int srcRowOffset = (srcY + y) * totalImageRowPitch + srcX * bytesPerPixel;
+                        const stbi_uc* src = unfoldedData + srcRowOffset;
+                        stbi_uc* dst = faceData + (y * faceRowPitch);
+                        std::memcpy(dst, src, faceRowPitch);
+                    }
+                }
+            }
+            else if ((width % 4 == 0 && width / 4 == height / 3) || (width % 3 == 0 && width / 3 == height / 4))
+            {
+                // Format Cross 4x3 or 3x4 (W=4*H/3 ou W=3*H/4)
+                faceWidth = width / 4;
+                faceHeight = height / 3;
+                if (width % 3 == 0 && width / 3 == height / 4)
+                {
+                    faceWidth = width / 3;
+                    faceHeight = height / 4;
+                }
+                FT_ENGINE_ASSERT(faceWidth == faceHeight, "Unfolded cubemap face dimensions must be square.");
+
+                // Cross 4x3
+                for (int i = 0; i < 6; ++i)
+                {
+                    int srcX = CROSS_FACE_COORDS[i].x * faceWidth;
+                    int srcY = CROSS_FACE_COORDS[i].y * faceHeight;
+
+                    if (srcX + faceWidth > width || srcY + faceHeight > height)
+                    {
+                        FT_ENGINE_ERROR(
+                            "Cubemap face coordinates ({}, {}) are outside the bounds of the image.", srcX, srcY);
+                        loadSuccess = false;
+                        break;
+                    }
+
+                    int bytesPerPixel = 4;
+                    int faceRowPitch = faceWidth * bytesPerPixel;
+                    size_t faceDataSize = (size_t)faceWidth * faceHeight * bytesPerPixel;
+
+                    stbi_uc* faceData = new stbi_uc[faceDataSize];
+                    loadedData[i] = faceData;
+
+                    int totalImageRowPitch = width * bytesPerPixel;
+
+                    for (int y = 0; y < faceHeight; ++y)
+                    {
+                        int srcRowOffset = (srcY + y) * totalImageRowPitch + srcX * bytesPerPixel;
+                        const stbi_uc* src = unfoldedData + srcRowOffset;
+
+                        stbi_uc* dst = faceData + (y * faceRowPitch);
+
+                        std::memcpy(dst, src, faceRowPitch);
+                    }
+                }
+            }
+            else
+            {
+                FT_ENGINE_ERROR("Unfolded cubemap dimensions ({0}x{1}) do not match standard 6x1, 1x6, 3x4, or 4x3 "
+                                "aspect ratio. Failed to determine face size.",
+                                width,
+                                height);
+                loadSuccess = false;
+            }
+
+            stbi_image_free(unfoldedData);
+
+            if (!loadSuccess)
+            {
+                for (int i = 0; i < 6; ++i)
+                {
+                    if (loadedData[i])
+                    {
+                        delete[] loadedData[i];
+                    }
+                }
+
                 return;
             }
         }
+        else
+        {
+            // 6 faces
+            FT_ENGINE_ASSERT(config.faceFilePaths.size() == 6, "A cubemap requires exactly 6 texture faces.");
+            if (config.faceFilePaths.size() != 6)
+                return;
 
-        _config.width = width;
-        _config.height = height;
+            for (int i = 0; i < 6; ++i)
+            {
+                loadedData[i] = stbi_load(config.faceFilePaths[i].c_str(), &width, &height, &channels, 4);
+                if (!loadedData[i])
+                {
+                    FT_ENGINE_ERROR("Failed to load cubemap face: {0}", config.faceFilePaths[i]);
+                    loadSuccess = false;
+                    for (int j = 0; j < i; ++j)
+                    {
+                        stbi_image_free(loadedData[j]);
+                    }
+                    return;
+                }
+            }
+            faceWidth = width;
+            faceHeight = height;
+        }
 
+        _config.width = faceWidth;
+        _config.height = faceHeight;
+        _config.format = Format::RGBA8_UNORM;
+
+        // Ressource Creation
         D3D11_TEXTURE2D_DESC textureDesc = {};
-        textureDesc.Width = width;
-        textureDesc.Height = height;
+        textureDesc.Width = faceWidth;
+        textureDesc.Height = faceHeight;
         textureDesc.MipLevels = 1;
         textureDesc.ArraySize = 6;
         textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -469,19 +610,39 @@ namespace Frost
         for (int i = 0; i < 6; ++i)
         {
             subresourceData[i].pSysMem = loadedData[i];
-            subresourceData[i].SysMemPitch = width * 4;
+            subresourceData[i].SysMemPitch = faceWidth * 4;
             subresourceData[i].SysMemSlicePitch = 0;
         }
 
         HRESULT hr = device->CreateTexture2D(&textureDesc, subresourceData, _texture.GetAddressOf());
 
-        for (int i = 0; i < 6; ++i)
-            stbi_image_free(loadedData[i]);
+        // Cleanup
+        if (config.isUnfoldedCubemap)
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                if (loadedData[i])
+                {
+                    delete[] loadedData[i];
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                if (loadedData[i])
+                {
+                    stbi_image_free(loadedData[i]);
+                }
+            }
+        }
 
         FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create D3D11 cubemap texture resource.");
         if (FAILED(hr))
             return;
 
+        // SRV Creation
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Format = textureDesc.Format;
         srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;

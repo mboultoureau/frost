@@ -101,9 +101,14 @@ namespace Frost
     void GameObject::SetParent(GameObject parent)
     {
         if (_entityHandle == entt::null)
+        {
             return;
+        }
+
         if (parent && _entityHandle == parent.GetHandle())
+        {
             return;
+        }
 
         entt::entity parentHandle = parent ? parent.GetHandle() : entt::null;
 

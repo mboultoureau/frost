@@ -133,6 +133,14 @@ namespace Frost
         return _buttonStates[buttonIndex] == ButtonState::Hold;
     }
 
+    bool Mouse::IsButtonDown(const MouseBoutton button) const
+    {
+        uint8_t buttonIndex = static_cast<uint8_t>(button);
+        assert(buttonIndex < BUTTON_COUNT && "Mouse button index out of range!");
+        ButtonState state = _buttonStates[buttonIndex];
+        return state == ButtonState::Pressed || state == ButtonState::Hold;
+    }
+
     void Mouse::Update()
     {
         _UpdatePosition();

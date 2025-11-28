@@ -12,6 +12,6 @@ namespace Frost
         EventType GetEventType() const override { return GetStaticType(); }
         std::string ToString() const override { return "WindowCloseEvent"; }
 
-        static EventType GetStaticType() { return EventType::WindowClose; }
+        static constexpr EventType GetStaticType() { return EventType::WindowClose; }
     };
 } // namespace Frost
