@@ -31,6 +31,10 @@ namespace Frost
         void AddMesh(Mesh&& mesh) { _meshes.emplace_back(std::move(mesh)); }
         void AddMaterial(Material&& mat) { _materials.emplace_back(std::move(mat)); }
 
+        bool HasMaterials() const { return !_materials.empty(); }
+        bool HasMeshes() const { return !_meshes.empty(); }
+        BoundingBox GetBoundingBox() const;
+
     private:
         void ProcessNode(Renderer* renderer, aiNode* aNode, const aiScene* aScene);
         void ProcessMesh(Renderer* renderer, aiMesh* aMesh, const aiScene* aScene);

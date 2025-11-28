@@ -49,5 +49,7 @@ namespace Frost
         void _DrawHUDImageComponent(Scene* scene, entt::entity gameObjectId);
         void _DrawUIButtonComponent(Scene* scene, entt::entity gameObjectId);
         void _DrawVirtualCameraComponent(Scene* scene, entt::entity gameObjectId);
+
+        void _DrawAddComponentButton(entt::registry& registry);
     };
 } // namespace Frost

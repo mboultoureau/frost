@@ -4,6 +4,7 @@
 #include "Editor/Utils/EditorCameraController.h"
 #include "Frost/Scene/Scene.h"
 #include "Frost/Scene/ECS/GameObject.h"
+#include "Frost/Renderer/BoundingBox.h"
 
 #include <imgui.h>
 #include <string>
@@ -15,8 +16,14 @@ namespace Editor
     class SceneView : public EditorPanel
     {
     public:
+        struct MeshPreviewTag
+        {
+        };
+
+    public:
         SceneView(const std::string& title, Frost::Scene* existingScene);
         SceneView(const std::filesystem::path& prefabPath);
+        SceneView(const std::filesystem::path& meshPath, MeshPreviewTag);
 
         void OnUpdate(float deltaTime);
 
@@ -42,10 +49,12 @@ namespace Editor
 
         void _DrawEntityNode(entt::entity entityID);
         void _ReparentEntity(entt::entity entity, entt::entity newParent);
+        void _FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds);
 
     private:
         std::string _title;
         bool _isOpen = true;
+        bool _isReadOnly = false;
         bool _isFocused = false;
         bool _isHovered = false;
 

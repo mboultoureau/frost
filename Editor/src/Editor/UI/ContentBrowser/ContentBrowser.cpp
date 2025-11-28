@@ -376,13 +376,14 @@ namespace Editor
                     }
                     else
                     {
-                        if (file.Extension == ".prefab")
+                        auto editorLayer = EditorApp::Get().GetEditorLayer();
+                        if (file.Extension == ".prefab" && editorLayer)
                         {
-                            auto editorLayer = EditorApp::Get().GetEditorLayer();
-                            if (editorLayer)
-                            {
-                                editorLayer->OpenPrefab(file.Path);
-                            }
+                            editorLayer->OpenPrefab(file.Path);
+                        }
+                        else if (_IsModelFormat(file.Extension) && editorLayer)
+                        {
+                            editorLayer->OpenMeshPreview(file.Path);
                         }
                         else
                         {
@@ -735,6 +736,12 @@ namespace Editor
     void ContentBrowser::_OpenFileInExternalEditor(const std::filesystem::path& path)
     {
         ShellExecuteA(NULL, "open", path.string().c_str(), NULL, NULL, SW_SHOW);
+    }
+
+    bool ContentBrowser::_IsModelFormat(const std::string& extension)
+    {
+        static const std::vector<std::string> modelExts = { ".fbx", ".glb", ".gltf", ".obj", ".dae", ".blend" };
+        return std::find(modelExts.begin(), modelExts.end(), extension) != modelExts.end();
     }
 
 } // namespace Editor

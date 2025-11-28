@@ -30,23 +30,23 @@ namespace Frost
 
         _indexBuffer = renderer->CreateBuffer(indexBufferConfig, indices.data());
 
-        // _indexCount = (uint32_t)indexCount;
-
         DirectX::XMFLOAT3 min = { FLT_MAX, FLT_MAX, FLT_MAX };
         DirectX::XMFLOAT3 max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 
-        /*
-        for (auto& v : vertices)
+        // BoundingBox calculation
+        size_t vertexCount = vertices.size_bytes() / vertexStride;
+        for (size_t i = 0; i < vertexCount; ++i)
         {
-                min.x = min.x < v.position.x ? min.x : v.position.x;
-                min.y = min.y < v.position.y ? min.y : v.position.y;
-                min.z = min.z < v.position.z ? min.z : v.position.z;
-
-                max.x = max.x > v.position.x ? max.x : v.position.x;
-                max.y = max.y > v.position.y ? max.y : v.position.y;
-                max.z = max.z > v.position.z ? max.z : v.position.z;
+            const std::byte* vertexPtr = vertices.data() + i * vertexStride;
+            const float* positionPtr = reinterpret_cast<const float*>(vertexPtr);
+            DirectX::XMFLOAT3 position = { positionPtr[0], positionPtr[1], positionPtr[2] };
+            min.x = std::min(min.x, position.x);
+            min.y = std::min(min.y, position.y);
+            min.z = std::min(min.z, position.z);
+            max.x = std::max(max.x, position.x);
+            max.y = std::max(max.y, position.y);
+            max.z = std::max(max.z, position.z);
         }
-        */
 
         _boundingBox = { min, max };
     }

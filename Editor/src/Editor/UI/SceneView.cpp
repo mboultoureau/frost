@@ -9,6 +9,8 @@
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Disabled.h"
 #include "Frost/Scene/Components/Skybox.h"
+#include "Frost/Scene/Components/Light.h"
+#include "Frost/Debugging/ComponentUIRegistry.h"
 
 #undef max
 
@@ -17,6 +19,8 @@
 
 namespace Editor
 {
+    using namespace Frost;
+    using namespace Frost::Math;
     using namespace Frost::Component;
 
     SceneView::SceneView(const std::string& title, Frost::Scene* existingScene) :
@@ -35,6 +39,77 @@ namespace Editor
             Frost::PrefabSerializer::Instantiate(_sceneContext, _assetPath);
 
         _Init();
+    }
+
+    SceneView::SceneView(const std::filesystem::path& meshPath, MeshPreviewTag)
+    {
+        _title = "Preview: " + meshPath.filename().string();
+
+        _localScene = std::make_unique<Frost::Scene>("Mesh Preview");
+        _sceneContext = _localScene.get();
+
+        _Init();
+
+        auto meshEntity = _sceneContext->CreateGameObject(meshPath.stem().string());
+
+        meshEntity.AddComponent<Transform>(
+            Vector3{ 0.0f, 0.0f, 0.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
+
+        auto& staticMesh = meshEntity.AddComponent<Frost::Component::StaticMesh>(meshPath.string());
+        if (!staticMesh.GetModel())
+        {
+            FT_ENGINE_ERROR("Failed to load model for mesh preview: {}", meshPath.string());
+            return;
+        }
+
+        if (staticMesh.GetModel()->HasMeshes())
+        {
+            BoundingBox bounds = staticMesh.GetModel()->GetBoundingBox();
+            auto& camTrans = _editorCamera.GetComponent<Transform>();
+            _FocusCameraOnEntity(camTrans, bounds);
+        }
+
+        auto light = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
+        auto& lightTransform = light.AddComponent<Transform>();
+        auto& lightComponent = light.AddComponent<Light>();
+
+        lightTransform.position = { 0.0f, 5.0f, -5.0f };
+        lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
+
+        lightComponent.type = LightType::Directional;
+        lightComponent.color = { 1.0f, 1.0f, 1.0f };
+        lightComponent.intensity = 1.0f;
+    }
+
+    void SceneView::_FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds)
+    {
+        using namespace DirectX;
+
+        if (bounds.min.x >= bounds.max.x)
+        {
+            return;
+        }
+
+        XMFLOAT3 center = { (bounds.min.x + bounds.max.x) * 0.5f,
+                            (bounds.min.y + bounds.max.y) * 0.5f,
+                            (bounds.min.z + bounds.max.z) * 0.5f };
+
+        float sizeX = bounds.max.x - bounds.min.x;
+        float sizeY = bounds.max.y - bounds.min.y;
+        float sizeZ = bounds.max.z - bounds.min.z;
+        float maxDim = std::max({ sizeX, sizeY, sizeZ });
+
+        if (maxDim < 0.1f)
+        {
+            maxDim = 0.1f;
+        }
+
+        float distance = maxDim * 1.5f;
+
+        cameraTransform.position =
+            Frost::Math::Vector3{ center.x + distance * 0.5f, center.y + distance * 0.5f, center.z - distance };
+
+        cameraTransform.LookAt(Frost::Math::Vector3{ center.x, center.y, center.z });
     }
 
     void SceneView::_Init()
@@ -141,13 +216,16 @@ namespace Editor
 
     void SceneView::OnRenderHierarchy()
     {
-        if (ImGui::BeginPopupContextWindow("HierarchyContext", 1))
+        if (!_isReadOnly)
         {
-            if (ImGui::MenuItem("Create Empty Entity"))
+            if (ImGui::BeginPopupContextWindow("HierarchyContext", 1))
             {
-                _sceneContext->CreateGameObject("Entity");
+                if (ImGui::MenuItem("Create Empty Entity"))
+                {
+                    _sceneContext->CreateGameObject("Entity");
+                }
+                ImGui::EndPopup();
             }
-            ImGui::EndPopup();
         }
 
         ImGuiTreeNodeFlags sceneFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow |
@@ -155,7 +233,7 @@ namespace Editor
 
         bool sceneOpen = ImGui::TreeNodeEx(_sceneContext->GetName().c_str(), sceneFlags);
 
-        if (ImGui::BeginDragDropTarget())
+        if (!_isReadOnly && ImGui::BeginDragDropTarget())
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"))
             {
@@ -223,19 +301,23 @@ namespace Editor
         bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entityID, flags, name.c_str());
 
         if (isDisabled)
+        {
             ImGui::PopStyleColor();
+        }
 
         if (ImGui::IsItemClicked())
+        {
             _selection = Frost::GameObject(entityID, _sceneContext);
+        }
 
-        if (ImGui::BeginDragDropSource())
+        if (!_isReadOnly && ImGui::BeginDragDropSource())
         {
             ImGui::SetDragDropPayload("HIERARCHY_NODE", &entityID, sizeof(entt::entity));
             ImGui::Text("%s", name.c_str());
             ImGui::EndDragDropSource();
         }
 
-        if (ImGui::BeginDragDropTarget())
+        if (!_isReadOnly && ImGui::BeginDragDropTarget())
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"))
             {
@@ -251,7 +333,7 @@ namespace Editor
 
         // Context Menu
         bool entityDeleted = false;
-        if (ImGui::BeginPopupContextItem())
+        if (!_isReadOnly && ImGui::BeginPopupContextItem())
         {
             if (ImGui::MenuItem("Create Child"))
             {
@@ -318,102 +400,17 @@ namespace Editor
             return;
         }
 
-        auto& registry = _sceneContext->GetRegistry();
-        entt::entity entityID = (entt::entity)_selection;
+        Frost::UIContext ctx;
+        ctx.isEditor = true;
+        ctx.deltaTime = ImGui::GetIO().DeltaTime;
 
-        bool isDisabled = registry.all_of<Disabled>(entityID);
-        bool isEnabled = !isDisabled;
-
-        // Disabled checkbox
-        ImGui::AlignTextToFramePadding();
-        if (ImGui::Checkbox("##Active", &isEnabled))
-        {
-            if (isEnabled)
-            {
-                registry.remove<Disabled>(entityID);
-            }
-            else
-            {
-                registry.emplace<Disabled>(entityID);
-            }
-        }
-        ImGui::SameLine();
-
-        // Meta
-        if (registry.all_of<Meta>(entityID))
-        {
-            auto& meta = registry.get<Meta>(entityID);
-            memset(_nameBuffer, 0, sizeof(_nameBuffer));
-            strncpy_s(_nameBuffer, meta.name.c_str(), sizeof(_nameBuffer) - 1);
-
-            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-            if (ImGui::InputText("##Name", _nameBuffer, sizeof(_nameBuffer)))
-            {
-                meta.name = std::string(_nameBuffer);
-            }
-            ImGui::PopItemWidth();
-        }
+        // Appel unifié
+        Frost::ComponentUIRegistry::DrawAll(_sceneContext, (entt::entity)_selection, ctx);
 
         ImGui::Separator();
 
-        // Transform
-        if (_selection.HasComponent<Transform>())
-        {
-            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                auto& tc = _selection.GetComponent<Transform>();
-                _DrawVec3Control("Position", (float*)&tc.position);
-
-                auto euler = tc.GetEulerAngles();
-                float rotDeg[3] = { Frost::Math::Angle<Frost::Math::Degree>(euler.Pitch).value(),
-                                    Frost::Math::Angle<Frost::Math::Degree>(euler.Yaw).value(),
-                                    Frost::Math::Angle<Frost::Math::Degree>(euler.Roll).value() };
-
-                if (_DrawVec3Control("Rotation", rotDeg))
-                {
-                    tc.SetRotation(Frost::Math::EulerAngles(Frost::Math::Angle<Frost::Math::Degree>(rotDeg[0]),
-                                                            Frost::Math::Angle<Frost::Math::Degree>(rotDeg[1]),
-                                                            Frost::Math::Angle<Frost::Math::Degree>(rotDeg[2])));
-                }
-                _DrawVec3Control("Scale", (float*)&tc.scale, 1.0f);
-            }
-        }
-
-        // Camera
-        if (_selection.HasComponent<Camera>())
-        {
-            if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                auto& cam = _selection.GetComponent<Camera>();
-
-                bool camActive = true;
-                if (ImGui::Checkbox("Enabled##Camera", &camActive))
-                {
-                }
-
-                ImGui::DragInt("Priority", &cam.priority);
-
-                float fov = Frost::Math::Angle<Frost::Math::Degree>(cam.perspectiveFOV).value();
-                if (ImGui::DragFloat("FOV", &fov))
-                    cam.perspectiveFOV = Frost::Math::Angle<Frost::Math::Degree>(fov);
-
-                ImGui::DragFloat("Near", &cam.nearClip);
-                ImGui::DragFloat("Far", &cam.farClip);
-            }
-        }
-
-        // Static Mesh
-        if (_selection.HasComponent<StaticMesh>())
-        {
-            if (ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::Text("Mesh Loaded");
-            }
-        }
-
-        ImGui::Separator();
-
-        // Add Component Button
+        // Bouton Add Component
+        // Vous pouvez garder votre logique spécifique éditeur ici (ex: pas de composants "Runtime only")
         float width = ImGui::GetContentRegionAvail().x;
         if (ImGui::Button("Add Component", ImVec2(width, 0)))
         {
@@ -428,17 +425,7 @@ namespace Editor
                     _selection.AddComponent<Camera>();
                 ImGui::CloseCurrentPopup();
             }
-
-            /*
-            if (ImGui::MenuItem("Static Mesh"))
-            {
-                if (!_selection.HasComponent<StaticMesh>())
-                {
-                    _selection.AddComponent<StaticMesh>();
-                }
-                ImGui::CloseCurrentPopup();
-            }
-            */
+            // ... autres composants ...
             ImGui::EndPopup();
         }
     }
@@ -459,7 +446,7 @@ namespace Editor
         {
         }
 
-        if (_isPrefabView)
+        if (_isPrefabView && !_isReadOnly)
         {
             ImGui::SameLine();
             ImGui::Separator();

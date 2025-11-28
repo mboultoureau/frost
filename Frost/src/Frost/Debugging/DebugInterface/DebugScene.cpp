@@ -18,6 +18,7 @@
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Math/Vector.h"
+#include "Frost/Debugging/ComponentUIRegistry.h"
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
@@ -129,6 +130,7 @@ namespace Frost
 
             if (ownerScene)
             {
+                /*
                 auto& registry = ownerScene->GetRegistry();
 
                 _DrawMetaComponent(ownerScene, _selectedEntity);
@@ -187,9 +189,8 @@ namespace Frost
                                     ImGui::CloseCurrentPopup();
                             }
                     }
-                    */
 
-                    /*
+
                     if (!registry.all_of<RigidBody>(_selectedEntity))
                     {
                             if (ImGui::MenuItem("Rigid Body"))
@@ -198,7 +199,7 @@ namespace Frost
                                     ImGui::CloseCurrentPopup();
                             }
                     }
-                    */
+
 
                     if (!registry.all_of<Scriptable>(_selectedEntity))
                     {
@@ -218,7 +219,7 @@ namespace Frost
                         }
                     }
 
-                    /*
+
                     if (!registry.all_of<UIButton>(_selectedEntity))
                     {
                             if (ImGui::MenuItem("UI Button"))
@@ -227,10 +228,23 @@ namespace Frost
                                     ImGui::CloseCurrentPopup();
                             }
                     }
-                    */
+
 
                     ImGui::EndPopup();
+
                 }
+                    */
+
+                UIContext ctx;
+                ctx.isEditor = false;
+                ctx.deltaTime = _deltaTime;
+
+                ComponentUIRegistry::DrawAll(ownerScene, _selectedEntity, ctx);
+
+                ImGui::Separator();
+                ImGui::Spacing();
+
+                _DrawAddComponentButton(ownerScene->GetRegistry());
             }
             else
             {
@@ -239,6 +253,31 @@ namespace Frost
         }
 
         ImGui::End();
+    }
+
+    void DebugScene::_DrawAddComponentButton(entt::registry& registry)
+    {
+        float buttonWidth = ImGui::GetContentRegionAvail().x * 0.8f;
+        float buttonPosX = (ImGui::GetContentRegionAvail().x - buttonWidth) * 0.5f;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + buttonPosX);
+
+        if (ImGui::Button("Add Component", ImVec2(buttonWidth, 0)))
+        {
+            ImGui::OpenPopup("AddComponentPopup");
+        }
+
+        if (ImGui::BeginPopup("AddComponentPopup"))
+        {
+            if (!registry.all_of<Camera>(_selectedEntity))
+            {
+                if (ImGui::MenuItem("Camera"))
+                {
+                    registry.emplace<Camera>(_selectedEntity);
+                }
+            }
+            // TODO: Add other components here
+            ImGui::EndPopup();
+        }
     }
 
     void DebugScene::_DrawEntityNode(Scene* scene, entt::entity gameObjectId)

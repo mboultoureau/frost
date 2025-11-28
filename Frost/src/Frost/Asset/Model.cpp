@@ -12,6 +12,8 @@
 #include <assimp/scene.h>
 #include <filesystem>
 
+#undef max
+
 namespace Frost
 {
     Model::Model(const std::string& filepath) : _filepath(filepath)
@@ -19,9 +21,10 @@ namespace Frost
         FT_ENGINE_INFO("Loading model from: {}", filepath);
 
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(filepath,
-                                                 aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                                                     aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        const aiScene* scene = importer.ReadFile(
+            filepath,
+            aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace |
+                aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder | aiProcess_PreTransformVertices);
 
         // If you load glb2 ou gltf2 an exception is throw but the model is loaded
         // See: https://github.com/assimp/assimp/issues/2778
@@ -233,5 +236,23 @@ namespace Frost
 
             outTextures.push_back(AssetManager::LoadAsset<TextureDX11>(assetId, config));
         }
+    }
+
+    BoundingBox Model::GetBoundingBox() const
+    {
+        Frost::BoundingBox totalBounds = { { FLT_MAX, FLT_MAX, FLT_MAX }, { -FLT_MAX, -FLT_MAX, -FLT_MAX } };
+
+        for (const auto& mesh : _meshes)
+        {
+            const BoundingBox& meshBounds = mesh.GetBoundingBox();
+            totalBounds.min.x = std::min(totalBounds.min.x, meshBounds.min.x);
+            totalBounds.min.y = std::min(totalBounds.min.y, meshBounds.min.y);
+            totalBounds.min.z = std::min(totalBounds.min.z, meshBounds.min.z);
+            totalBounds.max.x = std::max(totalBounds.max.x, meshBounds.max.x);
+            totalBounds.max.y = std::max(totalBounds.max.y, meshBounds.max.y);
+            totalBounds.max.z = std::max(totalBounds.max.z, meshBounds.max.z);
+        }
+
+        return totalBounds;
     }
 } // namespace Frost

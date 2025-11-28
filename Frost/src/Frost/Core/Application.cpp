@@ -9,6 +9,7 @@
 #include "Frost/Asset/AssetManager.h"
 #include "Frost/Physics/Physics.h"
 #include "Frost/Input/Input.h"
+#include "Frost/Debugging/ComponentUIRegistry.h"
 
 #include <cassert>
 #include <iostream>
@@ -38,6 +39,10 @@ namespace Frost
     void Application::Setup()
     {
         Physics::InitPhysics(_physicsConfig, _physicsConfigured);
+
+#ifdef FT_DEBUG
+        Frost::ComponentUIRegistry::InitEngineComponents();
+#endif
     }
 
     Application::~Application()
