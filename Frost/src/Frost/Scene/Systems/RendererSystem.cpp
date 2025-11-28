@@ -11,7 +11,7 @@ using namespace Frost::Component;
 
 namespace Frost
 {
-    RendererSystem::RendererSystem() {}
+    RendererSystem::RendererSystem() : _frustum{} {}
 
     void RendererSystem::LateUpdate(Scene& scene, float deltaTime)
     {
@@ -227,6 +227,16 @@ namespace Frost
         Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
         Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, aspectRatio);
 
+        // Frustum culling
+        if (camera.frustumCulling)
+        {
+            DirectX::XMMATRIX view = Math::LoadMatrix(viewMatrix);
+            DirectX::XMMATRIX proj = Math::LoadMatrix(projectionMatrix);
+            DirectX::XMMATRIX viewProj = DirectX::XMMatrixMultiply(view, proj);
+
+            _frustum.Extract(viewProj, camera.frustumPadding);
+        }
+
         // Apply post-processing effects pre-render
         for (auto& effect : activeEffects)
         {
@@ -243,7 +253,30 @@ namespace Frost
                 if (staticMesh.model)
                 {
                     Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                    _deferredRendering.SubmitModel(*staticMesh.model, worldMatrix);
+
+                    bool isVisible = true;
+
+                    if (camera.frustumCulling)
+                    {
+                        isVisible = false;
+                        DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
+
+                        for (const auto& mesh : staticMesh.model->GetMeshes())
+                        {
+                            BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
+
+                            if (_frustum.IsInside(worldBox))
+                            {
+                                isVisible = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (isVisible)
+                    {
+                        _deferredRendering.SubmitModel(*staticMesh.model, worldMatrix);
+                    }
                 }
             });
 

@@ -129,6 +129,28 @@ namespace Editor
         _activeSceneView = newView.get();
     }
 
+    void EditorLayer::OpenMeshPreview(const std::filesystem::path& path)
+    {
+        std::string titleToCheck = "Preview: " + path.filename().string();
+        for (const auto& view : _views)
+        {
+            if (view->GetTitle() == titleToCheck)
+            {
+                ImGui::SetWindowFocus(view->GetTitle().c_str());
+                return;
+            }
+        }
+
+        _views.push_back(std::make_unique<SceneView>(path, SceneView::MeshPreviewTag{}));
+        auto& newView = _views.back();
+        if (_dockMainID != 0)
+        {
+            ImGui::DockBuilderDockWindow(newView->GetTitle().c_str(), _dockMainID);
+        }
+
+        _activeSceneView = newView.get();
+    }
+
     void EditorLayer::_RenderUI()
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();

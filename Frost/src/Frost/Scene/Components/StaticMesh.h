@@ -18,6 +18,9 @@ namespace Frost::Component
         StaticMesh(std::shared_ptr<Model> model) : model{ model } {}
 
         StaticMesh(std::string modelFilepath) : model{ AssetManager::LoadAsset<Model>(modelFilepath, modelFilepath) } {}
+
+        std::shared_ptr<Model>& GetModel() { return model; }
+        const std::shared_ptr<Model>& GetModel() const { return model; }
     };
 
 } // namespace Frost::Component
