@@ -458,6 +458,16 @@ namespace Frost
         {
             auto& material = model.GetMaterials()[mesh.GetMaterialIndex()];
 
+#ifdef FT_DEBUG
+            if (Debug::RendererConfig::wireframeMode)
+            {
+                _commandList->SetRasterizerState(RasterizerMode::Wireframe);
+            }
+            else _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid : RasterizerMode::SolidCullNone);
+#else
+            _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid : RasterizerMode::SolidCullNone);
+#endif
+
             // Vertex and pixel shader
             Shader* vs = material.customVertexShader ? material.customVertexShader.get() : _gBufferVertexShader.get();
             Shader* ps = material.customPixelShader ? material.customPixelShader.get() : _gBufferPixelShader.get();

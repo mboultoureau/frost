@@ -6,7 +6,9 @@
 #include "Frost/Utils/NoCopy.h"
 
 #include <memory>
+// #include <MainLayer.h>
 
+class MainLayer;
 class Lab;
 
 class Game : Frost::NoCopy
@@ -16,9 +18,11 @@ public:
 
     static Game& Get();
     static Frost::Scene& GetScene() { return *Get()._scene; }
+    static MainLayer* GetMainLayer() { return Get()._mainLayer; }
 
 private:
     std::unique_ptr<Frost::Scene> _scene;
+    MainLayer* _mainLayer = nullptr;
     Lab* _app;
     bool OnGameReset(Frost::ResetEvent& e);
     void InitGame();

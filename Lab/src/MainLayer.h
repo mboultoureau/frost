@@ -21,7 +21,9 @@
 #include "Objects/Text.h"
 #include "Objects/TopCamera.h"
 #include "Objects/Waves.h"
+#include "Objects/Grass.h"
 #include <memory>
+#include "Objects/Sun.h"
 
 class MainLayer : public Frost::Layer
 {
@@ -34,6 +36,7 @@ public:
     void OnFixedUpdate(float deltaTime) override;
     void OnAttach() override;
     void OnDetach() override;
+    Player* GetPlayer() const { return _player.get(); };
 
 private:
     std::unique_ptr<PointLight> _pointLight;
@@ -45,6 +48,7 @@ private:
     std::unique_ptr<Ogre> _ogre;
     std::unique_ptr<OgreNormal> _ogreNormal;
     std::unique_ptr<Text> _text;
+    std::unique_ptr<Sun> _sun;
     std::unique_ptr<Terrain> _terrain;
     std::unique_ptr<Player> _player;
     std::unique_ptr<HUD_Logo> _hudLogo;
@@ -55,6 +59,7 @@ private:
     std::unique_ptr<TV> _tv;
     std::unique_ptr<Shapes> _shapes;
     std::unique_ptr<Waves> _waves;
+    std::unique_ptr<Grass> _grass;
     std::unique_ptr<SphereCustomShader> _sphereCustomShader;
 
     bool OnGamePaused(Frost::PauseEvent& e);
