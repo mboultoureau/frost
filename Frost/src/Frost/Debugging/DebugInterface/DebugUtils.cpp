@@ -12,8 +12,9 @@ namespace Frost
     {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
         ImGui::Separator();
-        bool open = ImGui::TreeNodeEx(
-            name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding);
+        bool open = ImGui::TreeNodeEx(name,
+                                      ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth |
+                                          ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_DefaultOpen);
         ImGui::PopStyleVar();
         return open;
     }

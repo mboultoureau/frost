@@ -80,5 +80,45 @@ namespace Frost::Component
             XMVECTOR rotatedVector = XMVector3Rotate(rightVector, currentRotation);
             return Math::vector_cast<Math::Vector3>(rotatedVector);
         }
+
+        void LookAt(const Math::Vector3& target)
+        {
+            using namespace DirectX;
+
+            XMVECTOR eyePosition = Math::vector_cast<XMVECTOR>(position);
+            XMVECTOR focusPosition = Math::vector_cast<XMVECTOR>(target);
+
+            if (XMVector3IsInfinite(eyePosition) || XMVector3IsNaN(eyePosition) || XMVector3IsInfinite(focusPosition) ||
+                XMVector3IsNaN(focusPosition))
+            {
+                return;
+            }
+
+            XMVECTOR upDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+            XMVECTOR direction = XMVectorSubtract(focusPosition, eyePosition);
+            XMVECTOR lengthSq = XMVector3LengthSq(direction);
+
+            if (XMVectorGetX(lengthSq) < 0.00001f)
+            {
+                return;
+            }
+
+            XMVECTOR dirNormalized = XMVector3Normalize(direction);
+            XMVECTOR dot = XMVector3Dot(dirNormalized, upDirection);
+            float dotVal = fabsf(XMVectorGetX(dot));
+
+            if (dotVal > 0.99f)
+            {
+                upDirection = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+            }
+
+            XMMATRIX viewMatrix = XMMatrixLookAtLH(eyePosition, focusPosition, upDirection);
+            XMVECTOR determinant;
+            XMMATRIX worldMatrix = XMMatrixInverse(&determinant, viewMatrix);
+
+            XMVECTOR quaternion = XMQuaternionRotationMatrix(worldMatrix);
+            rotation = Math::vector_cast<Math::Vector4>(quaternion);
+        }
     };
 } // namespace Frost::Component
