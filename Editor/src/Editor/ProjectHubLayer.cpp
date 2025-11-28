@@ -64,6 +64,16 @@ namespace Editor
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
 
+    void ProjectHubLayer::RemoveFromRecents(const std::string& path)
+    {
+        auto it = std::find(_recentProjects.begin(), _recentProjects.end(), path);
+        if (it != _recentProjects.end())
+        {
+            _recentProjects.erase(it);
+            _SaveRecents();
+        }
+    }
+
     void ProjectHubLayer::_RenderHubUI()
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -127,37 +137,41 @@ namespace Editor
             ImGui::BeginChild("RecentsList");
             for (int i = 0; i < _recentProjects.size(); i++)
             {
-                const std::string& path = _recentProjects[i];
-                std::string projectName = fs::path(path).parent_path().filename().string();
+                const std::string pathCopy = _recentProjects[i];
+                std::string projectName = fs::path(pathCopy).parent_path().filename().string();
                 if (projectName.empty())
-                    projectName = fs::path(path).filename().string();
+                {
+                    projectName = fs::path(pathCopy).filename().string();
+                }
 
                 ImGui::PushID(i);
 
-                if (ImGui::Selectable("##RecentItem", false, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(0, 55)))
+                if (ImGui::Selectable("##RecentItem", false, ImGuiSelectableFlags_None, ImVec2(0, 55)))
                 {
-                    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-                    {
-                        _OpenProject(path);
-                    }
+                    _OpenProject(pathCopy);
+                }
+
+                if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+                {
+                    ImGui::OpenPopup("RecentItemContextMenu");
                 }
 
                 ImGui::SameLine();
                 ImGui::BeginGroup();
                 ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", projectName.c_str());
-                ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f), "%s", path.c_str());
+                ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f), "%s", pathCopy.c_str());
                 ImGui::EndGroup();
 
                 // Context Menu
-                if (ImGui::BeginPopupContextItem())
+                if (ImGui::BeginPopup("RecentItemContextMenu"))
                 {
                     if (ImGui::MenuItem("Open Project"))
                     {
-                        _OpenProject(path);
+                        _OpenProject(pathCopy);
                     }
                     if (ImGui::MenuItem("Reveal in Explorer"))
                     {
-                        FileDialogs::OpenInExplorer(path);
+                        FileDialogs::OpenInExplorer(pathCopy);
                     }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Remove from list"))
@@ -176,7 +190,7 @@ namespace Editor
                 // Tooltip for long paths
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
                 {
-                    ImGui::SetTooltip("%s", path.c_str());
+                    ImGui::SetTooltip("%s", pathCopy.c_str());
                 }
 
                 ImGui::Separator();
@@ -227,14 +241,19 @@ namespace Editor
             // Name input
             ImGui::Text("Project Name");
             ImGui::SetNextItemWidth(-1);
-            ImGui::InputText("##PrjName", _newProjectNameBuffer, sizeof(_newProjectNameBuffer));
-
+            if (ImGui::InputText("##PrjName", _newProjectNameBuffer, sizeof(_newProjectNameBuffer)))
+            {
+                _showDirectoryWarning = false;
+            }
             ImGui::Dummy(ImVec2(0, 10));
 
             // Path input
             ImGui::Text("Location");
             ImGui::SetNextItemWidth(-40);
-            ImGui::InputText("##PrjLoc", _newProjectLocationBuffer, sizeof(_newProjectLocationBuffer));
+            if (ImGui::InputText("##PrjLoc", _newProjectLocationBuffer, sizeof(_newProjectLocationBuffer)))
+            {
+                _showDirectoryWarning = false;
+            }
             ImGui::SameLine();
 
             if (ImGui::Button("...", ImVec2(32, 0)))
@@ -243,6 +262,7 @@ namespace Editor
                 if (!folder.empty())
                 {
                     strncpy_s(_newProjectLocationBuffer, folder.c_str(), sizeof(_newProjectLocationBuffer));
+                    _showDirectoryWarning = false;
                 }
             }
 
@@ -250,21 +270,45 @@ namespace Editor
             fs::path fullPath = fs::path(_newProjectLocationBuffer) / _newProjectNameBuffer;
             ImGui::TextDisabled("Path: %s", fullPath.string().c_str());
 
+            // Check if folder empty
+            bool projectPathIsValid = strlen(_newProjectNameBuffer) > 0 && strlen(_newProjectLocationBuffer) > 0;
+            bool targetDirectoryExists = fs::exists(fullPath);
+            bool targetDirectoryIsNotEmpty = false;
+
+            if (targetDirectoryExists && fs::is_directory(fullPath))
+            {
+                targetDirectoryIsNotEmpty = !fs::is_empty(fullPath);
+            }
+
+            if (projectPathIsValid && targetDirectoryExists && targetDirectoryIsNotEmpty)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+                ImGui::TextWrapped(
+                    "Warning: Target directory is not empty. Files may be overwritten or creation may fail.");
+                ImGui::PopStyleColor();
+                _showDirectoryWarning = true;
+            }
+            else
+            {
+                _showDirectoryWarning = false;
+                ImGui::Dummy(ImVec2(0, ImGui::GetTextLineHeight()));
+            }
+
+            // Actions buttons
             ImGui::Dummy(ImVec2(0, 20));
             ImGui::Separator();
             ImGui::Dummy(ImVec2(0, 10));
 
+            bool disableCreate = !projectPathIsValid || (targetDirectoryExists && targetDirectoryIsNotEmpty);
+
+            if (disableCreate)
+            {
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            }
+
             if (ImGui::Button("Create Project", ImVec2(140, 35)))
             {
-                if (strlen(_newProjectNameBuffer) == 0)
-                {
-                    _ShowError("Project name cannot be empty.");
-                }
-                else if (strlen(_newProjectLocationBuffer) == 0)
-                {
-                    _ShowError("Project location cannot be empty.");
-                }
-                else
+                if (!disableCreate)
                 {
                     std::string templatePath = R"(resources/projects/templates/DefaultTemplate)";
 
@@ -277,11 +321,23 @@ namespace Editor
                     }
                     else
                     {
-                        _ShowError("Failed to create project.\nCheck console for "
-                                   "details or "
-                                   "ensure folder is empty.");
+                        _ShowError("Failed to create project. Check console for details (e.g., folder access or "
+                                   "template error).");
                     }
                 }
+                else if (!projectPathIsValid)
+                {
+                    _ShowError("Project name and location cannot be empty.");
+                }
+                else if (targetDirectoryIsNotEmpty)
+                {
+                    _ShowError("Target directory is not empty. Please select an empty folder or a non-existent path.");
+                }
+            }
+
+            if (disableCreate)
+            {
+                ImGui::PopStyleVar();
             }
 
             ImGui::SameLine();

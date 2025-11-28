@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <memory>
 
 struct aiTexture;
 
@@ -81,6 +82,7 @@ namespace Frost
 
         TextureLayout layout = TextureLayout::TEXTURE_2D;
         std::array<std::string, 6> faceFilePaths;
+        bool isUnfoldedCubemap = false;
     };
 
     class Texture : public Asset, GPUResource
@@ -90,6 +92,8 @@ namespace Frost
 
         Texture(const TextureConfig& config) : _config(config) {}
         virtual ~Texture() = default;
+
+        static std::shared_ptr<Texture> Create(TextureConfig& config);
 
         const std::string& GetPath() const { return _config.path; }
         const TextureType GetTextureType() const { return _config.textureType; }
@@ -101,6 +105,8 @@ namespace Frost
 
         virtual const std::vector<uint8_t> GetData() const = 0;
         virtual void Bind(Slot slot) const = 0;
+
+        virtual void* GetRendererID() const = 0;
 
     protected:
         TextureConfig _config;

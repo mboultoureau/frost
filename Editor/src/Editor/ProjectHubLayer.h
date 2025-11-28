@@ -15,14 +15,16 @@ namespace Editor
 
         static LayerName GetStaticName() { return "ProjectHubLayer"; }
 
-        void _LoadRecents();
-        void _SaveRecents();
-        void _AddToRecents(const std::string& path);
-        void _OpenProject(const std::string& path);
+        void RemoveFromRecents(const std::string& path);
 
     private:
         void _RenderHubUI();
         void _RenderCreateProjectPopup();
+
+        void _LoadRecents();
+        void _SaveRecents();
+        void _AddToRecents(const std::string& path);
+        void _OpenProject(const std::string& path);
 
         void _ShowError(const std::string& msg);
         void _RenderErrorPopup();
@@ -35,6 +37,7 @@ namespace Editor
         char _newProjectNameBuffer[256] = "MyNewGame";
         char _newProjectLocationBuffer[1024] = "";
 
+        bool _showDirectoryWarning = false;
         bool _showErrorModal = false;
         std::string _errorMessage = "";
     };

@@ -30,35 +30,26 @@ namespace Frost::Component
         Transform(const Math::Vector3& pos, const Math::EulerAngles& angles, const Math::Vector3& scl) noexcept :
             position(pos), scale(scl)
         {
+            SetRotation(angles);
+        }
+
+        void SetRotation(const Math::EulerAngles& eulerAngles)
+        {
             using namespace DirectX;
-
-            Math::Angle<Math::Radian> pitch = angles.Pitch;
-            Math::Angle<Math::Radian> yaw = angles.Yaw;
-            Math::Angle<Math::Radian> roll = angles.Roll;
-
-            XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(pitch.value(), yaw.value(), roll.value());
-
+            XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(
+                eulerAngles.Pitch.value(), eulerAngles.Yaw.value(), eulerAngles.Roll.value());
             rotation = Math::vector_cast<Math::Vector4>(quaternion);
         }
 
         void Rotate(const Math::EulerAngles& eulerAngles)
         {
             using namespace DirectX;
-            XMVECTOR currentRotation = vector_cast<XMVECTOR>(rotation);
-            XMVECTOR deltaRotation = DirectX::XMQuaternionRotationRollPitchYaw(
+            XMVECTOR currentRotation = Math::vector_cast<XMVECTOR>(rotation);
+            XMVECTOR deltaRotation = XMQuaternionRotationRollPitchYaw(
                 eulerAngles.Pitch.value(), eulerAngles.Yaw.value(), eulerAngles.Roll.value());
-            XMVECTOR newRotation = DirectX::XMQuaternionMultiply(currentRotation, deltaRotation);
+
+            XMVECTOR newRotation = XMQuaternionMultiply(currentRotation, deltaRotation);
             rotation = Math::vector_cast<Math::Vector4>(newRotation);
-        }
-
-        void SetRotation(const Math::EulerAngles& eulerAngles)
-        {
-            using namespace DirectX;
-
-            XMVECTOR quaternion = DirectX::XMQuaternionRotationRollPitchYaw(
-                eulerAngles.Pitch.value(), eulerAngles.Yaw.value(), eulerAngles.Roll.value());
-
-            rotation = Math::vector_cast<Math::Vector4>(quaternion);
         }
 
         Math::EulerAngles GetEulerAngles() const { return Math::QuaternionToEulerAngles(rotation); }

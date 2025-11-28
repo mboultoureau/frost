@@ -12,6 +12,13 @@ namespace fs = std::filesystem;
 
 namespace Editor
 {
+    void ProjectInfo::Clear()
+    {
+        _config = ProjectConfig{};
+        _projectDir.clear();
+        _projectFilePath.clear();
+    }
+
     bool ProjectInfo::LoadFromPath(const std::string& path)
     {
         fs::path fsPath(path);
@@ -43,13 +50,14 @@ namespace Editor
         try
         {
             YAML::Node data = YAML::LoadFile(_projectFilePath);
-            if (data["Project"])
+            auto projectNode = data["project"];
+            if (projectNode)
             {
-                _config.name = data["project"]["name"].as<std::string>();
-                _config.version = data["project"]["version"].as<std::string>();
-                _config.startScene = data["project"]["startScene"].as<std::string>();
-                _config.assetDirectory = data["project"]["assetDirectory"].as<std::string>();
-                _config.sourceDirectory = data["project"]["sourceDirectory"].as<std::string>();
+                _config.name = projectNode["name"].as<std::string>();
+                _config.version = projectNode["version"].as<std::string>();
+                _config.startScene = projectNode["start_scene"].as<std::string>();
+                _config.assetDirectory = projectNode["asset_directory"].as<std::string>();
+                _config.sourceDirectory = projectNode["source_directory"].as<std::string>();
                 return true;
             }
         }
@@ -96,9 +104,9 @@ namespace Editor
             out << YAML::Key << "project" << YAML::Value << YAML::BeginMap;
             out << YAML::Key << "name" << YAML::Value << name;
             out << YAML::Key << "version" << YAML::Value << VERSION;
-            out << YAML::Key << "startScene" << YAML::Value << "DefaultScene";
-            out << YAML::Key << "assetDirectory" << YAML::Value << "resources";
-            out << YAML::Key << "sourceDirectory" << YAML::Value << "src";
+            out << YAML::Key << "start_scene" << YAML::Value << "DefaultScene";
+            out << YAML::Key << "asset_directory" << YAML::Value << "assets";
+            out << YAML::Key << "source_directory" << YAML::Value << "src";
             out << YAML::EndMap;
             out << YAML::EndMap;
 

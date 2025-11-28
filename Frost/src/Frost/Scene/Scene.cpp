@@ -62,15 +62,14 @@ namespace Frost
 
     void Scene::_InitializeSystems()
     {
-        _systems.push_back(std::make_unique<WorldTransformSystem>());
         _systems.push_back(std::make_unique<ScriptableSystem>());
         _systems.push_back(std::make_unique<PhysicSystem>());
+        _systems.push_back(std::make_unique<WorldTransformSystem>());
         _systems.push_back(std::make_unique<RendererSystem>());
-        _systems.push_back(std::make_unique<UISystem>());
-
 #ifdef FT_DEBUG
         _systems.push_back(std::make_unique<JoltRendererSystem>());
 #endif
+        _systems.push_back(std::make_unique<UISystem>());
     }
 
     void Scene::OnRelationshipDestroyed(entt::registry& registry, entt::entity entity)
@@ -161,6 +160,17 @@ namespace Frost
         for (const auto& system : _systems)
         {
             system->LateUpdate(*this, deltaTime);
+        }
+    }
+
+    void Scene::SetEditorRenderTarget(std::shared_ptr<Texture> target)
+    {
+        for (auto& sys : _systems)
+        {
+            if (auto ren = dynamic_cast<RendererSystem*>(sys.get()))
+            {
+                ren->SetRenderTargetOverride(target);
+            }
         }
     }
 } // namespace Frost

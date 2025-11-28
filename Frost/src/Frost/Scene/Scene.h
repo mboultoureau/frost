@@ -5,6 +5,7 @@
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Utils/NoCopy.h"
+#include "Frost/Asset/Texture.h"
 
 #include <entt/entt.hpp>
 #include <memory>
@@ -19,7 +20,7 @@ namespace Frost
     class Scene : NoCopy
     {
     public:
-        Scene(std::string&& name);
+        Scene(std::string&& name = "Scene");
         ~Scene();
 
         GameObject CreateGameObject(std::string name = "Entity");
@@ -30,6 +31,7 @@ namespace Frost
         void PreFixedUpdate(float deltaTime);
         void FixedUpdate(float deltaTime);
         void LateUpdate(float deltaTime);
+        void SetEditorRenderTarget(std::shared_ptr<Texture> target);
 
         entt::registry& GetRegistry() { return _registry; }
         const std::string& GetName() const { return _name; }

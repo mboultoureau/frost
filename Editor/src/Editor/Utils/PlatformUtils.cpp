@@ -100,8 +100,12 @@ namespace Editor
                     PWSTR pszFilePath = NULL;
                     if (SUCCEEDED(psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)))
                     {
-                        std::wstring ws(pszFilePath);
-                        result = std::string(ws.begin(), ws.end());
+                        int size = WideCharToMultiByte(CP_ACP, 0, pszFilePath, -1, NULL, 0, NULL, NULL);
+                        if (size > 0)
+                        {
+                            result.resize(size - 1);
+                            WideCharToMultiByte(CP_ACP, 0, pszFilePath, -1, &result[0], size, NULL, NULL);
+                        }
                         CoTaskMemFree(pszFilePath);
                     }
                     psiResult->Release();

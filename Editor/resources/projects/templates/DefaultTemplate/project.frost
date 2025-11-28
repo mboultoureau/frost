@@ -1,0 +1,6 @@
+project:
+Name: DefaultProjectName
+Version: 1.0.0
+StartScene: assets/scenes/DefaultScene.frostscene
+AssetDirectory: assets
+SourceDirectory: src

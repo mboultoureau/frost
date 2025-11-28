@@ -32,7 +32,13 @@ namespace Frost
         }
 
         template<typename T>
-        bool HasComponent()
+        const T& GetComponent() const
+        {
+            return _registry->get<T>(_entityHandle);
+        }
+
+        template<typename T>
+        const bool HasComponent() const
         {
             return _registry->all_of<T>(_entityHandle);
         }

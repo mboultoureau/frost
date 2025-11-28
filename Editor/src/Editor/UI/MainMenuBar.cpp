@@ -1,6 +1,7 @@
 #include "MainMenuBar.h"
 #include "Frost/Event/EventManager.h"
 #include "Frost/Event/Events/Window/WindowCloseEvent.h"
+#include "Editor/Project/ProjectCloseEvent.h"
 
 #include <imgui.h>
 
@@ -8,6 +9,8 @@ using namespace Frost;
 
 namespace Editor
 {
+    MainMenuBar::MainMenuBar(const ProjectInfo& projectInfo) : _projectInfo(projectInfo) {}
+
     void MainMenuBar::Draw()
     {
         if (ImGui::BeginMainMenuBar())
@@ -25,6 +28,14 @@ namespace Editor
         {
             // if (ImGui::MenuItem("New Scene")) {}
             // if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+
+            if (ImGui::MenuItem("Close Project"))
+            {
+                EventManager::Emit<ProjectCloseEvent>();
+            }
+
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Exit"))
             {
                 EventManager::Emit<WindowCloseEvent>();
@@ -46,9 +57,9 @@ namespace Editor
 
     void MainMenuBar::_RenderProjectName()
     {
-        std::string ProjectName = "Game";
+        std::string projectName = _projectInfo.GetConfig().name;
 
-        float widthRight = ImGui::CalcTextSize(ProjectName.c_str()).x + 10.0;
+        float widthRight = ImGui::CalcTextSize(projectName.c_str()).x + 10.0;
         float avail = ImGui::GetContentRegionAvail().x;
 
         if (avail > widthRight)
@@ -56,6 +67,6 @@ namespace Editor
             ImGui::SameLine(ImGui::GetWindowWidth() - widthRight);
         }
 
-        ImGui::TextColored(ImVec4(0.6f, 0.6f, 1.0f, 1.0f), "%s", ProjectName.c_str());
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 1.0f, 1.0f), "%s", projectName.c_str());
     }
 } // namespace Editor

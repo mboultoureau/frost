@@ -40,5 +40,6 @@
 #include "Frost/Renderer/PostEffect/ScreenShakeEffect.h"
 #include "Frost/Renderer/RendererAPI.h"
 
+#include "Frost/Utils/NoCopy.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Random.h"

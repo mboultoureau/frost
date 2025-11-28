@@ -42,5 +42,20 @@ namespace Frost::Component
 
             cubemapTexture = AssetManager::LoadAsset(cubemapConfig.path, cubemapConfig);
         }
+
+        Skybox(const std::string& unfoldedFacePath) : faceFilePaths({}), cubemapTexture(nullptr)
+        {
+            FT_ENGINE_ASSERT(!unfoldedFacePath.empty(), "The unfolded cubemap file path must be provided.");
+
+            TextureConfig cubemapConfig;
+
+            cubemapConfig.path = unfoldedFacePath;
+            cubemapConfig.debugName = "SkyboxUnfolded";
+
+            cubemapConfig.layout = TextureLayout::CUBEMAP;
+            cubemapConfig.isUnfoldedCubemap = true;
+
+            cubemapTexture = AssetManager::LoadAsset(cubemapConfig.path, cubemapConfig);
+        }
     };
 } // namespace Frost::Component
