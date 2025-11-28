@@ -12,6 +12,6 @@ namespace Frost
         EventType GetEventType() const override { return GetStaticType(); }
         std::string ToString() const override { return "UnPauseEvent"; }
 
-        static EventType GetStaticType() { return EventType::GameUnpaused; }
+        static constexpr EventType GetStaticType() { return EventType::GameUnpaused; }
     };
 } // namespace Frost

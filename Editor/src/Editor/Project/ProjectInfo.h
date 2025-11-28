@@ -22,6 +22,8 @@ namespace Editor
         const std::string& GetProjectDir() const { return _projectDir; }
         const std::string& GetProjectFilePath() const { return _projectFilePath; }
 
+        void Clear();
+
         bool LoadFromPath(const std::string& path);
         static bool CreateNewProject(const std::string& name,
                                      const std::string& parentDir,

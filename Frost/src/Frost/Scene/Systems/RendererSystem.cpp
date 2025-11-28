@@ -22,9 +22,12 @@ namespace Frost
         }
 #endif
 
-        Window::WindowSizeUnit windowWidth = Application::GetWindow()->GetWidth();
-        Window::WindowSizeUnit windowHeight = Application::GetWindow()->GetHeight();
-        if (windowWidth == 0 || windowHeight == 0)
+        float currentWidth = _externalRenderTarget ? (float)_externalRenderTarget->GetWidth()
+                                                   : (float)Application::GetWindow()->GetWidth();
+        float currentHeight = _externalRenderTarget ? (float)_externalRenderTarget->GetHeight()
+                                                    : (float)Application::GetWindow()->GetHeight();
+
+        if (currentWidth == 0 || currentHeight == 0)
         {
             return;
         }
@@ -81,13 +84,11 @@ namespace Frost
         for (const auto& camData : classicCameras)
         {
             // Calculate Main Camera Aspect Ratio
-            const float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
-            const float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
-            Viewport renderViewport = { camData.camera->viewport.x * windowWidth,
-                                        camData.camera->viewport.y * windowHeight,
-                                        camData.camera->viewport.width * windowWidth,
-                                        camData.camera->viewport.height * windowHeight };
-            const float mainCameraAspectRatio =
+            Viewport renderViewport = { camData.camera->viewport.x * currentWidth,
+                                        camData.camera->viewport.y * currentHeight,
+                                        camData.camera->viewport.width * currentWidth,
+                                        camData.camera->viewport.height * currentHeight };
+            const float aspectRatio =
                 (renderViewport.height > 0) ? (renderViewport.width / renderViewport.height) : 1.0f;
 
             // Render virtual cameras for this camera
@@ -101,7 +102,7 @@ namespace Frost
                 float aspectRatioToUse = 0.0f;
                 if (virtualCam.useScreenSpaceAspectRatio)
                 {
-                    aspectRatioToUse = mainCameraAspectRatio;
+                    aspectRatioToUse = aspectRatio;
                 }
 
                 // Check if this virtual camera has a relative view
@@ -133,7 +134,7 @@ namespace Frost
                 }
 
                 _RenderSceneForCamera(
-                    scene, virtualCamData, deltaTime, allLights, skyboxTexture, renderTarget, aspectRatioToUse);
+                    scene, camData, deltaTime, allLights, skyboxTexture, _externalRenderTarget.get(), aspectRatioToUse);
                 virtualCameraTargets[virtualCamData.entity] = virtualCam.GetRenderTarget();
 
                 if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
@@ -164,7 +165,7 @@ namespace Frost
                     }
                 });
 
-            _RenderSceneForCamera(scene, camData, deltaTime, allLights, skyboxTexture, nullptr);
+            _RenderSceneForCamera(scene, camData, deltaTime, allLights, skyboxTexture, _externalRenderTarget.get());
         }
     }
 
@@ -260,6 +261,7 @@ namespace Frost
         }
 
         CommandList* commandList = _deferredRendering.GetCommandList();
+
         Texture* sceneTexture = _deferredRendering.GetFinalLitTexture();
         Texture* finalRenderTarget =
             overrideRenderTarget ? overrideRenderTarget : RendererAPI::GetRenderer()->GetBackBuffer();
@@ -326,9 +328,6 @@ namespace Frost
         commandList->EndRecording();
         commandList->Execute();
 
-        if (!overrideRenderTarget)
-        {
-            RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
-        }
+        RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
     }
 } // namespace Frost

@@ -15,7 +15,7 @@ namespace Frost
         EventType GetEventType() const override { return GetStaticType(); }
         std::string ToString() const override { return "WindowResizeEvent"; }
 
-        static EventType GetStaticType() { return EventType::WindowResize; }
+        static constexpr EventType GetStaticType() { return Frost::EventType::WindowResize; }
 
         Window::WindowSizeUnit GetWidth() const { return _width; }
         Window::WindowSizeUnit GetHeight() const { return _height; }

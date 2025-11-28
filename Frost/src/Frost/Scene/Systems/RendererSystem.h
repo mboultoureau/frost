@@ -27,6 +27,8 @@ namespace Frost
     public:
         RendererSystem();
         void LateUpdate(Scene& scene, float deltaTime) override;
+        void SetViewportSize(uint32_t width, uint32_t height);
+        void SetRenderTargetOverride(std::shared_ptr<Texture> target) { _externalRenderTarget = target; }
 
     private:
         void _RenderSceneForCamera(Scene& scene,
@@ -43,5 +45,9 @@ namespace Frost
 
         std::unique_ptr<Texture> _source;
         std::unique_ptr<Texture> _destination;
+
+        std::shared_ptr<Texture> _externalRenderTarget = nullptr;
+        uint32_t _viewportWidth = 0;
+        uint32_t _viewportHeight = 0;
     };
 } // namespace Frost

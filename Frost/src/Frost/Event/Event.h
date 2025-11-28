@@ -13,6 +13,8 @@ namespace Frost
     {
     public:
         virtual EventType GetEventType() const = 0;
+        virtual const char* GetCustomEventTypeID() const { return ""; }
+        static constexpr const char* GetStaticCustomEventTypeID() { return ""; }
         bool IsHandled() const { return _handled; }
         void Handle() { _handled = true; }
 

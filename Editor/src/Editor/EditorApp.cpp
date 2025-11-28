@@ -1,22 +1,35 @@
 #include "Editor/EditorApp.h"
 
 #include "Frost/Core/EntryPoint.h"
+#include "Frost/Core/Layer.h"
 
 using namespace Frost;
 
 namespace Editor
 {
-    EditorApp::EditorApp(Frost::ApplicationEntryPoint entryPoint) : Frost::Application(entryPoint) {}
+    EditorApp* EditorApp::_singleton = nullptr;
+
+    EditorApp::EditorApp(Frost::ApplicationEntryPoint entryPoint) : Frost::Application(entryPoint)
+    {
+        FT_ENGINE_ASSERT(!_singleton, "EditorApp already exists!");
+        _singleton = this;
+    }
 
     EditorApp::~EditorApp()
     {
+        _singleton = nullptr;
+
         EventManager::Unsubscribe<ProjectOpenEvent>(_projectOpenEventHandlerId);
+        EventManager::Unsubscribe<ProjectCloseEvent>(_projectCloseEventHandlerId);
     }
 
     void EditorApp::OnApplicationReady()
     {
         _projectOpenEventHandlerId =
             EventManager::Subscribe<ProjectOpenEvent>(FROST_BIND_EVENT_FN(EditorApp::OnProjectOpen));
+        _projectCloseEventHandlerId =
+            EventManager::Subscribe<ProjectCloseEvent>(FROST_BIND_EVENT_FN(EditorApp::OnProjectClose));
+
         _projectHubLayer = PushLayer<Editor::ProjectHubLayer>();
     }
 
@@ -29,6 +42,11 @@ namespace Editor
         {
             FT_ENGINE_ERROR("Failed to load project from path: {0}", projectPath);
 
+            if (_projectHubLayer)
+            {
+                _projectHubLayer->RemoveFromRecents(projectPath);
+            }
+
             // Display error to user
             std::string errorMessage = "Failed to load project from path:\n" + projectPath;
             MessageBoxA(nullptr, errorMessage.c_str(), "Error", MB_OK | MB_ICONERROR);
@@ -40,7 +58,28 @@ namespace Editor
             "Project '{0}' loaded from path: {1}", _projectInfo.GetConfig().name, _projectInfo.GetProjectFilePath());
 
         PopLayer(_projectHubLayer);
-        PushLayer<Editor::EditorLayer>();
+        _projectHubLayer = nullptr;
+        _editorLayer = PushLayer<Editor::EditorLayer>();
+
+        return true;
+    }
+
+    bool EditorApp::OnProjectClose(ProjectCloseEvent& e)
+    {
+        if (_editorLayer)
+        {
+            PopLayer(_editorLayer);
+            _editorLayer = nullptr;
+        }
+
+        _projectInfo.Clear();
+
+        if (!_projectHubLayer)
+        {
+            _projectHubLayer = PushLayer<Editor::ProjectHubLayer>();
+        }
+
+        FT_ENGINE_INFO("Project closed. Returning to Project Hub.");
 
         return true;
     }

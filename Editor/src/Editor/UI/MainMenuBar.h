@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Editor/UI/EditorPanel.h"
+#include "Editor/Project/ProjectInfo.h"
 
 namespace Editor
 {
     class MainMenuBar : public EditorPanel
     {
     public:
-        MainMenuBar() = default;
+        MainMenuBar(const ProjectInfo& projectInfo);
         ~MainMenuBar() = default;
 
         void Draw() override;
@@ -17,5 +18,8 @@ namespace Editor
         void _RenderEditMenu();
 
         void _RenderProjectName();
+
+    private:
+        const ProjectInfo& _projectInfo;
     };
 } // namespace Editor

@@ -30,6 +30,7 @@ namespace Frost
         ID3D11ShaderResourceView* GetShaderResourceView() const { return _srv.Get(); }
         ID3D11RenderTargetView* GetRenderTargetView() const { return _rtv.Get(); }
         ID3D11DepthStencilView* GetDepthStencilView() const { return _dsv.Get(); }
+        virtual void* GetRendererID() const override { return _srv.Get(); }
 
     private:
         Microsoft::WRL::ComPtr<ID3D11Texture2D> _texture;

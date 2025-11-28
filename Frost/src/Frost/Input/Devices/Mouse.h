@@ -69,6 +69,7 @@ namespace Frost
         bool IsButtonPressed(const MouseBoutton button) const;
         bool IsButtonReleased(const MouseBoutton button) const;
         bool IsButtonHold(const MouseBoutton button) const;
+        bool IsButtonDown(const MouseBoutton button) const;
 
         // Update
         void Update();
