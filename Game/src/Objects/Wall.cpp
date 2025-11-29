@@ -3,6 +3,7 @@
 #include "../Physics/PhysicsLayer.h"
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include "Water.h"
 
 using namespace Frost;
 using namespace Frost::Math;

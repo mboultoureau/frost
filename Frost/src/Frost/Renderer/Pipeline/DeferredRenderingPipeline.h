@@ -44,9 +44,12 @@ namespace Frost
                       const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
                       const Viewport& viewport);
 
+        Texture* GetNormalTexture() const { return _normalTexture.get(); }
+        Texture* GetMaterialTexture() const { return _depthStencilTexture.get(); }
         Texture* GetDepthStencilTexture() const { return _depthStencilTexture.get(); }
-        CommandList* GetCommandList() const { return _commandList.get(); }
         Texture* GetFinalLitTexture() const { return _finalLitTexture.get(); }
+
+        CommandList* GetCommandList() const { return _commandList.get(); }
 
     private:
         void _CreateGBufferTextures(uint32_t width, uint32_t height);

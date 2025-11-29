@@ -1,6 +1,7 @@
 #include "MainLayer.h"
 #include "Game.h"
 #include "Objects/Boost.h"
+#include "Objects/RenderingObjects/Sky.h"
 #include "Objects/LapCheckPoint.h"
 #include "Objects/LevelCamera.h"
 #include "Objects/Player/Vehicles/Vehicle.h"
@@ -34,8 +35,10 @@ MainLayer::OnAttach()
 
     logo = HUD_Logo();
 
-    _terrain = std::make_unique<Terrain>();
-    _water = std::make_unique<Water>(Vector3(), EulerAngles(), Vector3(500, 10, 500), 0.f);
+    //_terrain = std::make_unique<Terrain>();
+    _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
+    _sndWater = std::make_unique<Water>(Vector3(-315, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
+
     _sun = std::make_unique<Sun>();
 
     _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 }, _gamestate);
@@ -44,8 +47,8 @@ MainLayer::OnAttach()
     _checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
     _checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
 
-    auto boost = std::make_shared<Boost>(
-        Vector3{ -385, 69, -32 }, EulerAngles(0, 0, 0), Vector3(2, 2, 2), Vector3(0, 1, 0), 15000);
+    auto boost =
+        std::make_shared<Boost>(Vector3{ -385, 69, -32 }, EulerAngles(), Vector3(2, 2, 2), Vector3(0, 1, 0), 15000);
     // link 1 / 2
     _checkPoint1->AddChild(_checkPoint2);
     _checkPoint2->AddParent(_checkPoint1);
@@ -56,7 +59,7 @@ MainLayer::OnAttach()
     // DEBUG
     // link 2 / 1
     /*	_checkPoint2->AddChild(_checkPoint1);
-            _checkPoint1->AddParent(_checkPoint2);
+        _checkPoint1->AddParent(_checkPoint2);
     */
     // link 2 / 4
     _checkPoint2->AddChild(_checkPoint4);
@@ -77,7 +80,8 @@ MainLayer::OnAttach()
 
     logo = HUD_Logo();
 
-    LevelCamera levelCamera;
+    // LevelCamera levelCamera;
+    auto _sky = std::make_unique<Sky>();
 
     _pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
 
@@ -138,7 +142,7 @@ MainLayer::OnFixedUpdate(float deltaTime)
 void
 MainLayer::OnDetach()
 {
-    _player->GetCurrentVehicle().second->Disappear();
+    Player::ResetPlayers();
     EventManager::Unsubscribe<PauseEvent>(_pauseHandlerUUID);
     EventManager::Unsubscribe<UnPauseEvent>(_unpauseHandlerUUID);
 }

@@ -30,7 +30,8 @@ Boost::Boost(Vector3 pos, EulerAngles rot, Vector3 scale, Frost::Math::Vector3 d
 
     boost = scene.CreateGameObject("Boost");
     boost.AddComponent<Transform>(pos, rot, scale);
-    boost.AddComponent<StaticMesh>("./resources/meshes/cube.fbx");
+    auto cubeModel = ModelFactory::CreateCube(1.0f);
+    boost.AddComponent<StaticMesh>(cubeModel);
 
     ShapeRefC boxShape = BoxShapeSettings(Math::vector_cast<Vec3>(scale)).Create().Get();
     BodyCreationSettings bodySett(boxShape,

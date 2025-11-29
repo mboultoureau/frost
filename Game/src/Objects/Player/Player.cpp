@@ -31,6 +31,7 @@ using namespace Frost::Component;
 
 Player::Player()
 {
+    _players.push_back(this);
     _scene = &Game::GetScene();
 
     // Create Player Game Object -------------
@@ -71,10 +72,10 @@ Player::_InitializeVehicles()
     // Boat
     auto boat = new Boat(this,
                          Vehicle::RendererParameters("Boat Renderer",
-                                                     "./resources/meshes/pill.fbx",
-                                                     pos,
-                                                     EulerAngles{ -90.0_deg, 0.0f, 0.0f },
-                                                     Vector3{ .6f, .6f, .6f }));
+                                                     "./resources/meshes/boat.glb",
+                                                     Vector3(3.f, -0.2, 0),
+                                                     EulerAngles(0.0, 90.0_deg, 0.0_deg),
+                                                     Vector3{ .01f, .015f, .015f }));
     _vehicles.insert({ VehicleType::BOAT, boat });
 
     // Plane
@@ -118,7 +119,7 @@ Player::SetPlayerVehicle(Player::VehicleType type)
 void
 Player::_SummonVehicleTransition()
 {
-    FT_INFO("youhou, you have changed vehicle !");
+    FT_INFO("Vehicle changed");
     transitionRenderer.SetActive(true);
     transitionTimer.Resume();
     transitionTimer.Start();
@@ -166,4 +167,39 @@ Player::WarpCamera(Vector3 offset, Vector4 rotation, Vector3 speed)
     bodyInter.SetRotation(camBodyId, { rotation.x, rotation.y, rotation.z, rotation.w }, JPH::EActivation::Activate);
 
     forceSpecificCameraPos = true;
+}
+
+std::vector<Player*> Player::_players = {};
+Player*
+Player::GetClosestPlayer(Vector3 worldPos)
+{
+    if (_players.size() == 0)
+        return nullptr;
+
+    auto closestPlayer = _players[0];
+    auto playerPos = closestPlayer->GetPlayerID().GetComponent<WorldTransform>().position;
+    float distSq = (worldPos.x - playerPos.x) * (worldPos.x - playerPos.x) +
+                   (worldPos.y - playerPos.y) * (worldPos.y - playerPos.y) +
+                   (worldPos.z - playerPos.z) * (worldPos.z - playerPos.z);
+    for (auto p : _players)
+    {
+        auto newPos = p->GetPlayerID().GetComponent<WorldTransform>().position;
+        float newDistSq = (worldPos.x - newPos.x) * (worldPos.x - newPos.x) +
+                          (worldPos.y - newPos.y) * (worldPos.y - newPos.y) +
+                          (worldPos.z - newPos.z) * (worldPos.z - newPos.z);
+        if (newDistSq < distSq)
+        {
+            closestPlayer = p;
+            distSq = newDistSq;
+        }
+    }
+    return closestPlayer;
+}
+
+void
+Player::ResetPlayers()
+{
+    for (auto p : _players)
+        p->GetCurrentVehicle().second->Disappear();
+    _players.clear();
 }

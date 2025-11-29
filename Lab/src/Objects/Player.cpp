@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <Frost/Renderer/PostEffect/FogEffect.h>
 
 using namespace Frost;
 using namespace Frost::Math;

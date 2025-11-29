@@ -364,11 +364,11 @@ namespace Frost
         textureConfig.format = Format::RGBA8_UNORM;
         _materialTexture = std::make_unique<TextureDX11>(textureConfig);
 
-        TextureConfig depthConfig = { .format = Format::D24_UNORM_S8_UINT,
+        TextureConfig depthConfig = { .format = Format::R24G8_TYPELESS,
                                       .width = width,
                                       .height = height,
                                       .isRenderTarget = true,
-                                      .isShaderResource = false,
+                                      .isShaderResource = true,
                                       .hasMipmaps = false };
         _depthStencilTexture = std::make_unique<TextureDX11>(depthConfig);
 
@@ -434,7 +434,7 @@ namespace Frost
             }
         }
 
-        _commandList->ClearDepthStencil(_depthStencilTexture.get(), true, 1.0f, true, 0);
+        _commandList->ClearDepthStencil(_depthStencilTexture.get(), true, 1.0f, false, 0);
         _commandList->SetConstantBuffer(_vsPerFrameConstants.get(), 0);
     }
 
@@ -463,9 +463,12 @@ namespace Frost
             {
                 _commandList->SetRasterizerState(RasterizerMode::Wireframe);
             }
-            else _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid : RasterizerMode::SolidCullNone);
+            else
+                _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid
+                                                                          : RasterizerMode::SolidCullNone);
 #else
-            _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid : RasterizerMode::SolidCullNone);
+            _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid
+                                                                      : RasterizerMode::SolidCullNone);
 #endif
 
             // Vertex and pixel shader

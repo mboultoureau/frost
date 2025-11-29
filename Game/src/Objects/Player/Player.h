@@ -48,7 +48,12 @@ public:
 
     bool forceSpecificCameraPos = false;
 
+    static Player* GetClosestPlayer(Vector3 worldPos);
+    static void ResetPlayers();
+
 private:
+    static std::vector<Player*> _players;
+
     GameObject _playerId;
 
     Scene* _scene = nullptr;
