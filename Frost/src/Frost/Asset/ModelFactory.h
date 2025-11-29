@@ -12,7 +12,9 @@ namespace Frost
     public:
         static std::shared_ptr<Model> CreateFromFile(const std::string& filepath);
         static std::shared_ptr<Model> CreateFromHeightMap(HeightMapConfig config);
-        static std::shared_ptr<Model> CreateCube(float size = 1.0f);
+        static std::shared_ptr<Model> CreateCube(float size = 2.0f);
+        static std::shared_ptr<Model> CreateCubeWithBevel(float size = 2.0f, float bevel = 0.1f);
+        static std::shared_ptr<Model> CreateCubeWithPrecision(float size, const Frost::Math::Vector3& nbVertices);
         static std::shared_ptr<Model> CreateSphere(float radius = 1.0f,
                                                    uint32_t sliceCount = 32,
                                                    uint32_t stackCount = 16);

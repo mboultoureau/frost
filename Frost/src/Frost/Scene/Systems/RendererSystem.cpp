@@ -340,6 +340,10 @@ namespace Frost
                     destination = (i % 2 == 0) ? _source.get() : _destination.get();
                 }
 
+                postProcessingPasses[i]->SetNormalTexture(_deferredRendering.GetNormalTexture());
+                postProcessingPasses[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture());
+                postProcessingPasses[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture());
+
                 postProcessingPasses[i]->OnPostRender(deltaTime, commandList, source, destination);
                 source = destination;
             }

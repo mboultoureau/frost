@@ -43,6 +43,7 @@ private:
 
     std::unique_ptr<Terrain> _terrain;
     std::unique_ptr<Water> _water;
+    std::unique_ptr<Water> _sndWater;
     std::unique_ptr<Sun> _sun;
     std::unique_ptr<Player> _player;
     std::shared_ptr<Portal> _portal1;

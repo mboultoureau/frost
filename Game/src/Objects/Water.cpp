@@ -70,29 +70,27 @@ WaterScript::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
     }
 }
 
-#if FT_DEBUG
 void
-WaterScript::OnFixedUpdate(float fixedDeltaTime)
+WaterScript::OnUpdate(float deltaTime)
 {
+    _water->UpdateShader(deltaTime);
+    Physics::ActivateBody(_water->GetBodyId());
+
+#if FT_DEBUG
     using namespace JPH;
     auto tr = GetGameObject().GetComponent<WorldTransform>();
     // Draw the water surface
     const float step = 1.0f;
-    for (float z = tr.position.z - tr.scale.z / 2.0f; z < tr.position.z + tr.scale.z / 2.0f; z += step)
+    for (float z = tr.position.z; z < tr.position.z + tr.scale.z; z += step)
     {
-        RVec3 p1 = _water->GetWaterSurfacePosition(RVec3(-tr.scale.x, 0, z));
-        RVec3 p2 = _water->GetWaterSurfacePosition(RVec3(-tr.scale.x, 0, z + step));
-        RVec3 p3 = _water->GetWaterSurfacePosition(RVec3(tr.scale.x, 0, z));
-        RVec3 p4 = _water->GetWaterSurfacePosition(RVec3(tr.scale.x, 0, z + step));
-        Physics::GetDebugRenderer()->DrawTriangle(p1, p2, p3, Color::sBlue);
-        Physics::GetDebugRenderer()->DrawTriangle(p2, p4, p3, Color::sBlue);
+        RVec3 p1 = _water->GetWaterSurfacePosition(RVec3(tr.position.x, 0, z));
+        RVec3 p2 = _water->GetWaterSurfacePosition(RVec3(tr.position.x, 0, z + step));
+        RVec3 p3 = _water->GetWaterSurfacePosition(RVec3(tr.position.x + tr.scale.x, 0, z));
+        RVec3 p4 = _water->GetWaterSurfacePosition(RVec3(tr.position.x + tr.scale.x, 0, z + step));
+        Physics::GetDebugRenderer()->DrawTriangle(p1, p2, p3, Color::sWhite);
+        Physics::GetDebugRenderer()->DrawTriangle(p2, p4, p3, Color::sWhite);
     }
-}
 #endif
-
-void
-WaterScript::OnLateUpdate(float deltaTime)
-{
 }
 
 JPH::RVec3
@@ -109,29 +107,105 @@ Water::GetWaterSurfacePosition(JPH::RVec3Arg inXZPosition) const
                  inXZPosition.GetZ());
 }
 
+void
+Water::_SetClosestPlayerPosToShader()
+{
+    auto pos = _water.GetComponent<WorldTransform>().position;
+    auto player = Player::GetClosestPlayer(pos);
+    if (player)
+    {
+        auto playerPos = player->GetPlayerID().GetComponent<WorldTransform>().position;
+        _shaderParams.PlayerPosition[0] = playerPos.x;
+        _shaderParams.PlayerPosition[1] = playerPos.y;
+        _shaderParams.PlayerPosition[2] = playerPos.z;
+    }
+    else
+    {
+        _shaderParams.PlayerPosition[0] = 0.0f;
+        _shaderParams.PlayerPosition[1] = 0.0f;
+        _shaderParams.PlayerPosition[2] = 0.0f;
+    }
+}
+void
+Water::UpdateShader(float deltaTime)
+{
+    _shaderParams.Time += deltaTime;
+    _SetClosestPlayerPosToShader();
+
+    if (_water.HasComponent<StaticMesh>())
+    {
+        auto& mesh = _water.GetComponent<StaticMesh>();
+        if (mesh.model && !mesh.model->GetMaterials().empty())
+        {
+            std::vector<uint8_t> paramData(sizeof(WaterMaterialParameters));
+            memcpy(paramData.data(), &_shaderParams, sizeof(WaterMaterialParameters));
+
+            mesh.model->GetMaterials()[0].parameters = paramData;
+        }
+    }
+}
+
 Water::Water(Vector3 pos, EulerAngles rot, Vector3 scale, float waveAmplitude)
 {
     using namespace JPH;
-
     Scene& scene = Game::GetScene();
 
+    // Create game object -----------------------
     _water = scene.CreateGameObject("Water");
     _water.AddComponent<Transform>(pos, rot, scale);
-    _water.AddComponent<StaticMesh>("./resources/meshes/cube.fbx");
+    auto cubeModel = ModelFactory::CreateCubeWithPrecision(1.0f, scale * 0.5f);
+    _water.AddComponent<StaticMesh>(cubeModel);
 
-    ShapeRefC boxShape = BoxShapeSettings(Math::vector_cast<Vec3>(scale)).Create().Get();
+    Vec3 offset = 4 * waveAmplitude * Vec3(0, 1, 0);
+    ShapeRefC boxShape = BoxShapeSettings(Math::vector_cast<Vec3>(scale) * 0.5f + offset).Create().Get();
     BodyCreationSettings water_sensor(boxShape,
-                                      Math::vector_cast<Vec3>(pos),
+                                      Math::vector_cast<Vec3>(pos) - offset,
                                       Math::vector_cast<Quat>(EulerToQuaternion(rot)),
                                       EMotionType::Static,
                                       ObjectLayers::WATER);
     water_sensor.mIsSensor = true;
 
-    // Create water sensor. We use this to detect which bodies entered the water
-    // (in this sample we could have assumed everything is in the water)
+    // Create water sensor. We use this to detect which bodies entered the water (in this sample we could have assumed
+    // everything is in the water)
     _water.AddComponent<RigidBody>(water_sensor, _water, EActivation::DontActivate);
     _bodyId = _water.GetComponent<RigidBody>().physicBody->bodyId;
     _water.AddScript<WaterScript>(this);
+
+    cMinWaterHeight = pos.y + scale.y - waveAmplitude / 2.0f;
+    cMaxWaterHeight = pos.y + scale.y + waveAmplitude / 2.0f;
+
+    // Create shader -----------------------
+
+    ShaderDesc vsDesc = { .type = ShaderType::Vertex, .filePath = "../Game/resources/shaders/Water/VS_Water.hlsl" };
+    ShaderDesc hsDesc = { .type = ShaderType::Hull, .filePath = "../Game/resources/shaders/Water/HS_Water.hlsl" };
+    ShaderDesc dsDesc = { .type = ShaderType::Domain, .filePath = "../Game/resources/shaders/Water/DS_Water.hlsl" };
+    ShaderDesc psDesc = { .type = ShaderType::Pixel, .filePath = "../Game/resources/shaders/Water/PS_Water.hlsl" };
+
+    auto vs = Shader::Create(vsDesc);
+    auto hs = Shader::Create(hsDesc);
+    auto ds = Shader::Create(dsDesc);
+    auto ps = Shader::Create(psDesc);
+
+    Material waveMat;
+    waveMat.name = "TessellatedWaves";
+    waveMat.customVertexShader = vs;
+    waveMat.hullShader = hs;
+    waveMat.domainShader = ds;
+    waveMat.customPixelShader = ps;
+
+    _shaderParams.Time = 0.0f;
+    _shaderParams.TopAmplitude = waveAmplitude * 2;
+    _shaderParams.TopFrequency = waveFrequency;
+    _shaderParams.TopWaveLength = waveLength;
+    _shaderParams.TessellationFactor = 32.0f;
+    _shaderParams.BevelSize = 0.0001f;
+    _SetClosestPlayerPosToShader();
+
+    std::vector<uint8_t> paramData(sizeof(WaterMaterialParameters));
+    memcpy(paramData.data(), &_shaderParams, sizeof(WaterMaterialParameters));
+    waveMat.parameters = paramData;
+
+    cubeModel->GetMaterials()[0] = std::move(waveMat);
 
     cMinWaterHeight = pos.y + scale.y / 2 - waveAmplitude / 2.0f;
     cMaxWaterHeight = pos.y + scale.y / 2 + waveAmplitude / 2.0f;

@@ -9,6 +9,8 @@ PlayerScript::OnPreFixedUpdate(float deltaTime)
     auto vehiclePair = player->GetCurrentVehicle();
     vehicle = vehiclePair.second;
     type = vehiclePair.first;
+    // player->SetIsInWater(false);
+    Physics::ActivateBody(player->GetBodyID());
 
     // Switch to previous vehicle
     if (Input::GetKeyboard().IsKeyPressed(
@@ -82,7 +84,9 @@ PlayerScript::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
     auto layer1 = Physics::GetBodyInterface().GetObjectLayer(params.inBody1.GetID());
     auto layer2 = Physics::GetBodyInterface().GetObjectLayer(params.inBody2.GetID());
     if (layer1 == ObjectLayers::WATER || layer2 == ObjectLayers::WATER)
+    {
         player->SetIsInWater(true);
+    }
 
     player->GetCurrentVehicle().second->OnCollisionStay(params, deltaTime);
 };
@@ -98,7 +102,9 @@ PlayerScript::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, 
         auto bodyId1 = go1.GetComponent<RigidBody>().physicBody->bodyId;
         auto layer1 = Physics::GetBodyInterface().GetObjectLayer(bodyId1);
         if (layer1 == ObjectLayers::WATER)
+        {
             player->SetIsInWater(false);
+        }
     }
 
     auto go2 = scene->GetGameObjectFromId(params.second);
@@ -107,7 +113,9 @@ PlayerScript::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, 
         auto bodyId2 = go2.GetComponent<RigidBody>().physicBody->bodyId;
         auto layer2 = Physics::GetBodyInterface().GetObjectLayer(bodyId2);
         if (layer2 == ObjectLayers::WATER)
+        {
             player->SetIsInWater(false);
+        }
     }
 
     player->GetCurrentVehicle().second->OnCollisionExit(params, deltaTime);

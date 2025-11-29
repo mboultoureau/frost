@@ -4,8 +4,7 @@
 
 namespace Frost
 {
-    DXGI_FORMAT
-    ToDXGIFormat(Format format)
+    DXGI_FORMAT ToDXGIFormat(Format format)
     {
         switch (format)
         {
@@ -33,6 +32,8 @@ namespace Frost
                 return DXGI_FORMAT_R16_FLOAT;
             case Format::R32_FLOAT:
                 return DXGI_FORMAT_R32_FLOAT;
+            case Format::R24G8_TYPELESS:
+                return DXGI_FORMAT_R24G8_TYPELESS;
             default:
                 FT_ENGINE_ASSERT(false, "Unsupported format specified: {}", static_cast<int>(format));
                 return DXGI_FORMAT_UNKNOWN;
@@ -66,6 +67,8 @@ namespace Frost
             case Format::R16_FLOAT:
                 return 2;
             case Format::R32_FLOAT:
+                return 4;
+            case Format::R24G8_TYPELESS:
                 return 4;
             default:
                 FT_ENGINE_ASSERT(false, "Unsupported format specified");
