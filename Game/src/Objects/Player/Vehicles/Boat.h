@@ -60,7 +60,6 @@ public:
 private:
     static std::unordered_map<JPH::BodyID, Boat*> boatIds;
 
-    JPH::Body* _body;
     Water* _currentWater = nullptr;
 
     float frictionFactor = 0.25f;
@@ -77,10 +76,10 @@ private:
     static constexpr float cBoatMass = 1000.0f;
     static constexpr float cBoatFriction = 30.0f;
 
-    static constexpr float cHalfBoatLength = .75f;
+    static constexpr float cHalfBoatLength = 3.75f;
     static constexpr float cHalfBoatTopWidth = .4f;
     static constexpr float cHalfBoatBottomWidth = .25f;
-    static constexpr float cBoatBowLength = 3.5f;
+    static constexpr float cBoatBowLength = 0.5f; // 3.5f;
     static constexpr float cHalfBoatHeight = 0.2f;
 
     static constexpr float cForwardAcceleration = 30.0f;

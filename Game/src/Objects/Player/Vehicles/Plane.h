@@ -73,7 +73,8 @@ private:
         return current + std::copysign(maxDelta, diff);
     }
 
-    void UpdateInternalStateFromBody() {
+    void UpdateInternalStateFromBody()
+    {
         auto& bodyInterface = Physics::GetBodyInterface();
 
         JPH::Quat rot = bodyInterface.GetRotation(_bodyId);

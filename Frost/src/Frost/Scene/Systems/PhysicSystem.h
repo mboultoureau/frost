@@ -31,6 +31,7 @@ namespace Frost
         static void _ExecuteOnScripts(Scene& scene, entt::entity entity, Func func)
         {
             auto& registry = scene.GetRegistry();
+            auto go = scene.GetGameObjectFromId(entity);
 
             if (!registry.valid(entity))
                 return;

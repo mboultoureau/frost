@@ -39,6 +39,7 @@ Boat::Appear()
     using namespace JPH;
 
     RenderMesh(true);
+    _player->SetIsInWater(false);
 
     // ----- Transform -----
     auto tr = _scene->GetComponent<Transform>(_player->GetPlayerID());
@@ -62,13 +63,13 @@ Boat::Appear()
     BodyCreationSettings boat(&com_offset, pos, rot, EMotionType::Dynamic, ObjectLayers::PLAYER);
     boat.mOverrideMassProperties = EOverrideMassProperties::CalculateInertia;
     boat.mMassPropertiesOverride.mMass = cBoatMass;
+    boat.mAngularDamping = 0.1f;
+    // boat.mGravityFactor = 15.f;
     boat.mFriction = cBoatFriction;
-    _body = Physics::CreateBody(boat);
-    _bodyId = _body->GetID();
-    Physics::AddBody(_bodyId, EActivation::Activate);
+    _bodyId = Physics::CreateAndAddBody(boat, _player->GetPlayerID(), EActivation::Activate);
 
     Boat::RegisterBoat(_bodyId, this);
-
+    _isBodyValid = true;
     return _bodyId;
 }
 
@@ -79,6 +80,7 @@ Boat::Disappear()
 
     Physics::RemoveAndDestroyBody(_bodyId);
     Boat::UnregisterBoat(_bodyId);
+    _isBodyValid = false;
 }
 
 void
@@ -89,41 +91,6 @@ Boat::ProcessBoatInput(float deltaTime)
 void
 Boat::OnPreFixedUpdate(float deltaTime)
 {
-    using namespace JPH;
-    ProcessBoatInput(deltaTime);
-
-    // On user input, assure that the boat is active
-    if (_right != 0.0f || _forward != 0.0f)
-        Physics::ActivateBody(_bodyId);
-
-    // Apply forces to rear of boat where the propeller would be but only when
-    // the propeller is under water
-    RVec3 propeller_position = _body->GetWorldTransform() * Vec3(0, -cHalfBoatHeight, -cHalfBoatLength);
-    RVec3 bow_position = _body->GetWorldTransform() * Vec3(0, -cHalfBoatHeight, cHalfBoatLength);
-    Vec3 forward = _body->GetRotation().RotateAxisZ();
-    Vec3 realFwd = Vec3(forward.GetX(), 0, forward.GetZ());
-    Vec3 right = _body->GetRotation().RotateAxisX();
-
-    //    auto angVel = _body->GetAngularVelocity();
-    if (_currentWater)
-    {
-        // RVec3 propeller_surface_position =
-        // _currentWater->GetWaterSurfacePosition(propeller_position);
-        _body->AddImpulse((realFwd * _forward * cForwardAcceleration) * cBoatMass * deltaTime,
-                          bow_position); // _body->GetCenterOfMassPosition());
-        _body->AddImpulse((right * Sign(_forward) * _right * cSteerAcceleration) * cBoatMass * deltaTime,
-                          propeller_position);
-        //_body->AddImpulse((forward * _forward * cForwardAcceleration + right *
-        // Sign(_forward) * _right * cSteerAcceleration) * cBoatMass *
-        // deltaTime, propeller_position);
-    }
-    else
-    {
-        //_body->AddImpulse((forward * _forward * cForwardAcceleration + right *
-        // Sign(_forward) * _right * cSteerAcceleration) * frictionFactor *
-        // cBoatMass
-        //* deltaTime, propeller_position);
-    }
 }
 
 void
@@ -144,6 +111,31 @@ Boat::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 void
 Boat::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
 {
+    using namespace JPH;
+    if (!_isBodyValid || !_currentWater || !_player->IsInWater())
+        return;
+    ProcessBoatInput(deltaTime);
+
+    // On user input, assure that the boat is active
+    if (_right != 0.0f || _forward != 0.0f)
+        Physics::ActivateBody(_bodyId);
+
+    auto wTransform = _player->GetPlayerID().GetComponent<WorldTransform>();
+    Quat rot = vector_cast<Quat>(wTransform.rotation);
+    Vec3 pos = vector_cast<Vec3>(wTransform.position);
+
+    RVec3 propeller_position = pos + rot * Vec3(0, -cHalfBoatHeight, -cHalfBoatLength);
+    RVec3 bow_position = pos + rot * Vec3(0, -cHalfBoatHeight, cHalfBoatLength);
+
+    auto forward = rot.RotateAxisZ();
+    auto realFwd = Vec3(forward.GetX(), 0, forward.GetZ());
+    Vec3 right = rot.RotateAxisX();
+
+    Physics::GetBodyInterface().AddImpulse(_bodyId,
+                                           (realFwd * _forward * cForwardAcceleration) * cBoatMass * deltaTime,
+                                           bow_position); // _body->GetCenterOfMassPosition());
+    Physics::GetBodyInterface().AddImpulse(
+        _bodyId, (right * Sign(_forward) * _right * cSteerAcceleration) * cBoatMass * deltaTime, propeller_position);
 }
 
 void
@@ -160,7 +152,7 @@ Boat::OnLeftRightInput(float deltaTime, float leftRightInput)
 void
 Boat::OnAccelerateInput(float deltaTime, float upDownInput)
 {
-    _forward = upDownInput;
+    _forward = upDownInput > 0 ? upDownInput : 0;
 }
 
 void

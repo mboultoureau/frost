@@ -4,6 +4,10 @@
 
 using namespace Frost::Math;
 
+// windows.....
+#undef min;
+#undef max;
+
 namespace Frost
 {
     // Helper function to add a mesh
@@ -89,6 +93,166 @@ namespace Frost
         AddFace({ 1, 0, 0 }, { 0, 0, -1 }, { 0, 1, 0 });
         // Left (-X)
         AddFace({ -1, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 });
+
+        AddMeshToModel(model, vertices, indices);
+        return model;
+    }
+    std::shared_ptr<Model> ModelFactory::CreateCubeWithBevel(float size, float bevelSize)
+    {
+        auto model = std::make_shared<Model>();
+        float half = size * 0.5f;
+
+        bevelSize = std::min(bevelSize, half * 0.49f);
+
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+
+        auto AddBeveledFace = [&](Vector3 normal, Vector3 tangent, Vector3 up)
+        {
+            using namespace JPH;
+            Vector3 right = tangent;
+
+            float o = half;
+            float i = half - bevelSize;
+
+            float coords[4] = { -o, -i, i, o };
+
+            uint32_t baseIdx = static_cast<uint32_t>(vertices.size());
+
+            for (int iy = 0; iy < 4; iy++)
+            {
+                for (int ix = 0; ix < 4; ix++)
+                {
+                    Vector3 pos = normal * o + right * coords[ix] + up * coords[iy];
+
+                    Vector3 faceN = normal;
+                    Vector3 edgeXN = right;
+                    Vector3 edgeYN = up;
+
+                    float bx = (ix == 1 || ix == 2) ? 1.0f : 0.0f;
+                    float by = (iy == 1 || iy == 2) ? 1.0f : 0.0f;
+
+                    JPH::Vec3 _n = vector_cast<JPH::Vec3>(faceN);
+                    _n += vector_cast<Vec3>(edgeXN) * bx * 0.4f;
+                    _n += vector_cast<Vec3>(edgeYN) * by * 0.4f;
+                    auto n = vector_cast<Vector3>(_n.Normalized());
+
+                    float u = float(ix) / 3.0f;
+                    float v = 1.0f - float(iy) / 3.0f;
+
+                    vertices.push_back({ pos, n, { u, v }, { tangent.x, tangent.y, tangent.z, 1.0f } });
+                }
+            }
+
+            for (int y = 0; y < 3; y++)
+            {
+                for (int x = 0; x < 3; x++)
+                {
+                    uint32_t i0 = baseIdx + y * 4 + x;
+                    uint32_t i1 = baseIdx + y * 4 + x + 1;
+                    uint32_t i2 = baseIdx + (y + 1) * 4 + x;
+                    uint32_t i3 = baseIdx + (y + 1) * 4 + x + 1;
+
+                    indices.push_back(i0);
+                    indices.push_back(i1);
+                    indices.push_back(i3);
+                    indices.push_back(i0);
+                    indices.push_back(i3);
+                    indices.push_back(i2);
+                }
+            }
+        };
+
+        AddBeveledFace({ 0, 0, 1 }, { 1, 0, 0 }, { 0, 1, 0 });   // Front
+        AddBeveledFace({ 0, 0, -1 }, { -1, 0, 0 }, { 0, 1, 0 }); // Back
+        AddBeveledFace({ 0, 1, 0 }, { 1, 0, 0 }, { 0, 0, -1 });  // Top
+        AddBeveledFace({ 0, -1, 0 }, { 1, 0, 0 }, { 0, 0, 1 });  // Bottom
+        AddBeveledFace({ 1, 0, 0 }, { 0, 0, -1 }, { 0, 1, 0 });  // Right
+        AddBeveledFace({ -1, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 });  // Left
+
+        AddMeshToModel(model, vertices, indices);
+        return model;
+    }
+
+    std::shared_ptr<Model> ModelFactory::CreateCubeWithPrecision(float size, const Vector3& nbVertices)
+    {
+        auto model = std::make_shared<Model>();
+        float half = size * 0.5f;
+
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+
+        auto AddFace = [&](const Vector3& normal, const Vector3& tangent, const Vector3& up, int nx, int ny)
+        {
+            Vector3 right = tangent;
+
+            // Corners of the face
+            Vector3 c0 = normal * half - right * half - up * half;
+            Vector3 c1 = normal * half + right * half - up * half;
+            Vector3 c2 = normal * half + right * half + up * half;
+            Vector3 c3 = normal * half - right * half + up * half;
+
+            uint32_t baseIndex = (uint32_t)vertices.size();
+
+            for (int iy = 0; iy < ny; iy++)
+            {
+                float v = float(iy) / float(ny - 1);
+                Vector3 edgeL = c0 + (c3 - c0) * v;
+                Vector3 edgeR = c1 + (c2 - c1) * v;
+
+                for (int ix = 0; ix < nx; ix++)
+                {
+                    float u = float(ix) / float(nx - 1);
+                    Vector3 pos = edgeL + (edgeR - edgeL) * u;
+
+                    vertices.push_back({ pos, normal, { u, 1.0f - v }, { tangent.x, tangent.y, tangent.z, 1.0f } });
+                }
+            }
+
+            // Indices
+            for (int iy = 0; iy < ny - 1; iy++)
+            {
+                for (int ix = 0; ix < nx - 1; ix++)
+                {
+                    uint32_t i0 = baseIndex + ix + iy * nx;
+                    uint32_t i1 = baseIndex + (ix + 1) + iy * nx;
+                    uint32_t i2 = baseIndex + (ix + 1) + (iy + 1) * nx;
+                    uint32_t i3 = baseIndex + ix + (iy + 1) * nx;
+
+                    indices.push_back(i0);
+                    indices.push_back(i1);
+                    indices.push_back(i2);
+
+                    indices.push_back(i2);
+                    indices.push_back(i3);
+                    indices.push_back(i0);
+                }
+            }
+        };
+
+        int nx = (int)nbVertices.x;
+        int ny = (int)nbVertices.y;
+        int nz = (int)nbVertices.z;
+
+        // --- 6 faces avec subdivision correcte ---
+
+        // Front  (X × Y)
+        AddFace({ 0, 0, 1 }, { 1, 0, 0 }, { 0, 1, 0 }, nx, ny);
+
+        // Back   (X × Y)
+        AddFace({ 0, 0, -1 }, { -1, 0, 0 }, { 0, 1, 0 }, nx, ny);
+
+        // Top    (X × Z)
+        AddFace({ 0, 1, 0 }, { 1, 0, 0 }, { 0, 0, -1 }, nx, nz);
+
+        // Bottom (X × Z)
+        AddFace({ 0, -1, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, nx, nz);
+
+        // Right  (Z × Y)
+        AddFace({ 1, 0, 0 }, { 0, 0, -1 }, { 0, 1, 0 }, nz, ny);
+
+        // Left   (Z × Y)
+        AddFace({ -1, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 }, nz, ny);
 
         AddMeshToModel(model, vertices, indices);
         return model;
