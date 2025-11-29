@@ -6,6 +6,7 @@
 #include "Player.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
+#include "Frost/Renderer/PostEffect/FogEffect.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/CastResult.h>
@@ -33,6 +34,46 @@ PlayerSpringCameraScript::OnFixedUpdate(float deltaTime)
     UpdateTPCam(deltaTime);
     UpdateSpringCam(deltaTime);
 }
+
+void
+PlayerSpringCameraScript::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
+{
+    auto layer1 = Physics::GetBodyInterface().GetObjectLayer(params.inBody1.GetID());
+    auto layer2 = Physics::GetBodyInterface().GetObjectLayer(params.inBody2.GetID());
+    auto fog = springCam.GetComponent<Camera>().GetEffect<FogEffect>();
+    if (layer1 == ObjectLayers::WATER || layer2 == ObjectLayers::WATER)
+        fog->SetFog(waterFogMinDepth, waterFogStrength, waterFogColor);
+    else
+        fog->SetFog(skyFogMinDepth, skyFogStrength, skyFogColor);
+}
+
+// Warning : params may contains bodies that are not valid at the moment
+void
+PlayerSpringCameraScript::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime)
+{
+    auto fog = springCam.GetComponent<Camera>().GetEffect<FogEffect>();
+    auto go1 = scene->GetGameObjectFromId(params.first);
+    if (go1.HasComponent<RigidBody>())
+    {
+        auto bodyId1 = go1.GetComponent<RigidBody>().physicBody->bodyId;
+        auto layer1 = Physics::GetBodyInterface().GetObjectLayer(bodyId1);
+        if (layer1 == ObjectLayers::WATER)
+        {
+            fog->SetFog(skyFogMinDepth, skyFogStrength, skyFogColor);
+        }
+    }
+
+    auto go2 = scene->GetGameObjectFromId(params.second);
+    if (go2.HasComponent<RigidBody>())
+    {
+        auto bodyId2 = go2.GetComponent<RigidBody>().physicBody->bodyId;
+        auto layer2 = Physics::GetBodyInterface().GetObjectLayer(bodyId2);
+        if (layer2 == ObjectLayers::WATER)
+        {
+            fog->SetFog(skyFogMinDepth, skyFogStrength, skyFogColor);
+        }
+    }
+};
 
 void
 PlayerSpringCameraScript::UpdateTPCam(float deltaTime)
@@ -225,16 +266,18 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
     // Camera
     _camera = scene.CreateGameObject("Camera");
     _camera.AddComponent<Transform>(Vector3{ 0.0f, 10, -20.0f });
-    _camera.AddComponent<Camera>();
+    auto& camComponent = _camera.AddComponent<Camera>();
+    camComponent.postEffects.push_back(std::make_shared<FogEffect>());
+    camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
+    camComponent.postEffects.push_back(std::make_shared<ChromaticAberrationEffect>());
 
-    auto& cameraComponent = _camera.GetComponent<Camera>();
-    cameraComponent.backgroundColor.r = 47.0f / 255.0f;
-    cameraComponent.backgroundColor.g = 116.0f / 255.0f;
-    cameraComponent.backgroundColor.b = 228.0f / 255.0f;
-    cameraComponent.backgroundColor.a = 1.0f;
+    camComponent.backgroundColor.r = 47.0f / 255.0f;
+    camComponent.backgroundColor.g = 116.0f / 255.0f;
+    camComponent.backgroundColor.b = 228.0f / 255.0f;
+    camComponent.backgroundColor.a = 1.0f;
 
     // Create the Camera Sensor
-    JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(1.0f).Create().Get();
+    JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(0.01f).Create().Get();
     BodyCreationSettings camera_body_settings(
         sphereShape,
         Math::vector_cast<JPH::Vec3>(_player->GetPlayerID().GetComponent<Transform>().position),

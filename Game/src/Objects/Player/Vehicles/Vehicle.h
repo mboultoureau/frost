@@ -83,4 +83,5 @@ protected:
     GameObject _gameObjectRenderer;
     Scene* _scene;
     JPH::BodyID _bodyId;
+    bool _isBodyValid = false;
 };

@@ -145,7 +145,6 @@ Plane::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 {
     inContinuousCollision = true;
     collisionCoolDownTimer.Start();
-    FT_INFO("collision enter");
 }
 
 void
@@ -160,7 +159,7 @@ Plane::Appear()
 {
     using namespace JPH;
     RenderMesh(true);
-
+    _player->SetIsInWater(false);
     auto wTransform = _scene->GetComponent<Transform>(_player->GetPlayerID());
     auto joltPos = Math::vector_cast<Vec3>(wTransform->position);
     auto joltRot = Math::vector_cast<Quat>(wTransform->rotation);

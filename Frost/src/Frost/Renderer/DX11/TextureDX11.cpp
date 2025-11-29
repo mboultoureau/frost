@@ -15,7 +15,7 @@ namespace Frost
 {
     static bool IsDepthFormat(Format format)
     {
-        return format == Format::D24_UNORM_S8_UINT;
+        return format == Format::D24_UNORM_S8_UINT || format == Format::R24G8_TYPELESS;
     }
 
     TextureDX11::TextureDX11(TextureConfig& config) : Texture(config)
@@ -134,8 +134,7 @@ namespace Frost
         FT_ENGINE_ASSERT(dxgiFormat != DXGI_FORMAT_UNKNOWN, "Unsupported texture format provided.");
 
         FT_ENGINE_ASSERT(!(imageData.empty() && (width == 0 || height == 0)),
-                         "Texture creation failed: No data loaded and no "
-                         "dimensions specified.");
+                         "Texture creation failed: No data loaded and no dimensions specified.");
 
         D3D11_TEXTURE2D_DESC textureDesc = {};
         textureDesc.Width = width;
@@ -208,7 +207,9 @@ namespace Frost
             if (bindFlags & D3D11_BIND_SHADER_RESOURCE)
             {
                 D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.Format = dxgiFormat;
+                srvDesc.Format = (dxgiFormat == DXGI_FORMAT_R24G8_TYPELESS)
+                                     ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS // depth stencil case
+                                     : dxgiFormat;
                 srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
                 srvDesc.Texture2D.MostDetailedMip = 0;
                 srvDesc.Texture2D.MipLevels = (textureDesc.MipLevels == 0) ? -1 : 1;
@@ -222,7 +223,12 @@ namespace Frost
             }
             if (bindFlags & D3D11_BIND_DEPTH_STENCIL)
             {
-                hr = device->CreateDepthStencilView(_texture.Get(), nullptr, _dsv.GetAddressOf());
+                D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+                dsvDesc.Flags = 0;
+                dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+                dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                dsvDesc.Texture2D.MipSlice = 0;
+                hr = device->CreateDepthStencilView(_texture.Get(), &dsvDesc, _dsv.GetAddressOf());
                 FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create DSV.");
             }
         }
