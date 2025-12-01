@@ -1,5 +1,5 @@
 #include "HUD_Logo.h"
-#include "../Game.h"
+#include "../../Game.h"
 
 using namespace Frost;
 using namespace Frost::Component;

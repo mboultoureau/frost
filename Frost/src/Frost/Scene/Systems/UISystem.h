@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Frost/Renderer/Pipeline/HUDRenderingPipeline.h"
 #include "Frost/Scene/ECS/System.h"
+#include "Frost/Renderer/Pipeline/HUDRenderingPipeline.h"
+#include "Frost/Renderer/Pipeline/HUDTextRenderingPipeline.h"
 
 namespace Frost
 {
@@ -14,5 +15,6 @@ namespace Frost
 
     private:
         HUDRenderingPipeline _pipeline;
+        HUDTextRenderingPipeline _pipelineText;
     };
 } // namespace Frost
