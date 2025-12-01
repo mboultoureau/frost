@@ -9,7 +9,9 @@
 #include "LabApp.h"
 #include "Objects/CheckPoint.h"
 #include "Objects/GameState.h"
-#include "Objects/HUD_Logo.h"
+#include "Objects/HUD/HUD_Left.h"
+#include "Objects/HUD/HUD_Right.h"
+#include "Objects/HUD/HUD_Middle.h"
 #include "Objects/Player/Player.h"
 #include "Objects/Portal.h"
 #include "Objects/Sun.h"
@@ -55,5 +57,7 @@ private:
     std::shared_ptr<CheckPoint> _checkPoint5;
     std::shared_ptr<Wall> _wall;
 
-    HUD_Logo logo;
+    HUD_Left _left;
+    HUD_Middle _middle;
+    HUD_Right _right;
 };
