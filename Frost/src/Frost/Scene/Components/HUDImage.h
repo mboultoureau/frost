@@ -26,6 +26,17 @@ namespace Frost::Component
             texture = AssetManager::LoadAsset(pathTexture, config);
         }
 
+        void SetTexturePath(const std::string& newPath)
+        {
+            textureFilepath = newPath;
+
+            TextureConfig config;
+            config.path = newPath;
+            config.textureType = TextureType::HUD;
+
+            texture = AssetManager::LoadAsset(textureFilepath, config);
+        }
+
         std::string textureFilepath;
         std::shared_ptr<Texture> texture;
         Material::FilterMode textureFilter;
