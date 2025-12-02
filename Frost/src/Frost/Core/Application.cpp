@@ -133,6 +133,7 @@ namespace Frost
             if (_renderDuration >= _renderRefreshDuration)
             {
                 _renderTimer.Start();
+                AssetManager::Update();
                 RendererAPI::BeginFrame();
 
                 for (const auto& layer : _layerStack)

@@ -35,7 +35,7 @@ namespace Frost
         entt::entity GetEntity() const { return _gameObject.GetHandle(); }
         Scene* GetScene() const { return _gameObject.GetScene(); }
 
-    private:
+    protected:
         GameObject _gameObject;
     };
 } // namespace Frost

@@ -10,6 +10,8 @@ namespace Frost
     {
     public:
         UISystem();
+        ~UISystem();
+
         void Update(Scene& scene, float deltaTime) override;
         void LateUpdate(Scene& scene, float deltaTime) override;
 

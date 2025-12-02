@@ -1,11 +1,18 @@
 #include "Frost/Scene/Systems/UISystem.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Input/Input.h"
-#include <Frost/Scene/Components/UIButton.h>
+#include "Frost/Scene/Components/UIButton.h"
+
+#include "Frost/Debugging/Logger.h"
 
 namespace Frost
 {
     UISystem::UISystem() {}
+
+    UISystem::~UISystem()
+    {
+        FT_ENGINE_INFO("UISystem deleted");
+    }
 
     void UISystem::Update(Scene& scene, float deltaTime)
     {

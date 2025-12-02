@@ -47,7 +47,7 @@ Player::Player()
     transitionRenderer.AddComponent<Transform>(
         Vector3{ 0.0f, 0, 0.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 2.0f, 2.0f, 2.0f });
     transitionRenderer.AddComponent<WorldTransform>();
-    transitionRenderer.AddComponent<StaticMesh>("./resources/meshes/sphere.fbx");
+    transitionRenderer.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/sphere.fbx" });
 
     // Create Selection Images
     _imageManager = new Frost::SelectedImageManager();

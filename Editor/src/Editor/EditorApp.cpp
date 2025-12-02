@@ -59,6 +59,8 @@ namespace Editor
 
         PopLayer(_projectHubLayer);
         _projectHubLayer = nullptr;
+
+        Frost::Application::SetProjectDirectory(_projectInfo.GetProjectDir());
         _editorLayer = PushLayer<Editor::EditorLayer>();
 
         return true;
@@ -79,6 +81,7 @@ namespace Editor
             _projectHubLayer = PushLayer<Editor::ProjectHubLayer>();
         }
 
+        Frost::Application::SetProjectDirectory(".");
         FT_ENGINE_INFO("Project closed. Returning to Project Hub.");
 
         return true;

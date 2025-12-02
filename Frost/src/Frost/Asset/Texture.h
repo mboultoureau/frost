@@ -67,7 +67,7 @@ namespace Frost
     struct TextureConfig
     {
         TextureType textureType = TextureType::NONE;
-        aiTexture* aTexture = nullptr;
+        std::vector<uint8_t> fileData;
         Asset::Path path = "";
         Asset::DebugName debugName = "Texture";
         Format format = Format::UNKNOWN;
@@ -79,10 +79,12 @@ namespace Frost
         bool isRenderTarget = false;
         bool isShaderResource = true;
         bool hasMipmaps = true;
+        bool isCompressed = false;
 
         TextureLayout layout = TextureLayout::TEXTURE_2D;
         std::array<std::string, 6> faceFilePaths;
         bool isUnfoldedCubemap = false;
+        bool loadImmediately = true;
     };
 
     class Texture : public Asset, GPUResource
@@ -93,11 +95,15 @@ namespace Frost
         Texture(const TextureConfig& config) : _config(config) {}
         virtual ~Texture() = default;
 
+        // Async API
+        virtual void LoadCPU(const std::string& path, const TextureConfig& config) = 0;
+        virtual void UploadGPU() = 0;
+
         static std::shared_ptr<Texture> Create(TextureConfig& config);
 
-        const std::string& GetPath() const { return _config.path; }
-        const TextureType GetTextureType() const { return _config.textureType; }
-        const Format GetFormat() const { return _config.format; }
+        const std::string& GetPath() const noexcept { return _config.path; }
+        const TextureType GetTextureType() const noexcept { return _config.textureType; }
+        const Format GetFormat() const noexcept { return _config.format; }
 
         const uint32_t GetChannels() const { return _config.channels; }
         const uint32_t GetHeight() const { return _config.height; }
@@ -107,6 +113,8 @@ namespace Frost
         virtual void Bind(Slot slot) const = 0;
 
         virtual void* GetRendererID() const = 0;
+
+        virtual bool SaveToFile(const std::string& path) const = 0;
 
     protected:
         TextureConfig _config;

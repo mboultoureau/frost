@@ -12,10 +12,8 @@ Waves::Waves()
     Scene& scene = Game::GetScene();
     _planeObject = scene.CreateGameObject("WavesPlane");
 
-    auto planeModel = ModelFactory::CreatePlane(10.0f, 10.0f);
-
-    StaticMesh& meshComp = _planeObject.AddComponent<StaticMesh>(planeModel);
-    Transform& transform = _planeObject.AddComponent<Transform>();
+    auto& meshComp = _planeObject.AddComponent<StaticMesh>(MeshSourcePlane{ 10.0f, 10.0f });
+    auto& transform = _planeObject.AddComponent<Transform>();
     transform.position = Vector3(0.0f, 0.0f, 0.0f);
     transform.Rotate(EulerAngles(0.0_deg, 0.0_deg, -180.0_deg));
 
@@ -49,7 +47,7 @@ Waves::Waves()
     memcpy(paramData.data(), &_params, sizeof(WaveMaterialParameters));
     waveMat.parameters = paramData;
 
-    planeModel->GetMaterials()[0] = std::move(waveMat);
+    meshComp.GetModel()->GetMaterials()[0] = std::move(waveMat);
 }
 
 void
@@ -60,12 +58,12 @@ Waves::Update(float dt)
     if (_planeObject.HasComponent<StaticMesh>())
     {
         auto& mesh = _planeObject.GetComponent<StaticMesh>();
-        if (mesh.model && !mesh.model->GetMaterials().empty())
+        if (mesh.GetModel() && !mesh.GetModel()->GetMaterials().empty())
         {
             std::vector<uint8_t> paramData(sizeof(WaveMaterialParameters));
             memcpy(paramData.data(), &_params, sizeof(WaveMaterialParameters));
 
-            mesh.model->GetMaterials()[0].parameters = paramData;
+            mesh.GetModel()->GetMaterials()[0].parameters = paramData;
         }
     }
 }

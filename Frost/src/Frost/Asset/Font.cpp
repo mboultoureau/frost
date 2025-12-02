@@ -1,14 +1,13 @@
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "Frost/Asset/Font.h"
+﻿#include "Frost/Asset/Font.h"
 #include "Frost/Asset/Texture.h"
 #include "Frost/Renderer/Format.h"
 #include "Frost/Debugging/Logger.h"
+
 #include <fstream>
 #include <vector>
 
-#ifdef FT_PLATFORM_WINDOWS
-#include "Frost/Renderer/DX11/TextureDX11.h"
-#endif
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
 
 namespace
 {
@@ -22,19 +21,19 @@ namespace
 
 namespace Frost
 {
-    Font::Font(const std::string& path)
-    {
-        _LoadFont(path);
-    }
+    Font::Font() {}
 
     Font::~Font() {}
 
-    void Font::_LoadFont(const std::string& path)
+    void Font::LoadCPU(const std::string& path)
     {
+        _filePath = path;
+
         std::ifstream file(path, std::ios::binary | std::ios::ate);
         if (!file.is_open())
         {
             FT_ENGINE_ERROR("Failed to open font file: {}", path);
+            SetStatus(AssetStatus::Failed);
             return;
         }
 
@@ -45,17 +44,18 @@ namespace Frost
         if (!file.read((char*)font_data.data(), size))
         {
             FT_ENGINE_ERROR("Failed to read font file content: {}", path);
+            SetStatus(AssetStatus::Failed);
             return;
         }
 
-        std::vector<uint8_t> pixels(ATLAS_SIZE * ATLAS_SIZE);
+        _stagingPixels.resize(ATLAS_SIZE * ATLAS_SIZE);
 
         stbtt_bakedchar char_data[CHAR_COUNT];
 
         int bakeResult = stbtt_BakeFontBitmap(font_data.data(),
                                               0,
                                               FONT_SIZE_PX,
-                                              pixels.data(),
+                                              _stagingPixels.data(),
                                               ATLAS_SIZE,
                                               ATLAS_SIZE,
                                               FIRST_CHAR,
@@ -65,19 +65,7 @@ namespace Frost
         if (bakeResult <= 0)
         {
             FT_ENGINE_ERROR("stbtt_BakeFontBitmap failed for font: {}", path);
-            return;
-        }
-
-#ifdef FT_PLATFORM_WINDOWS
-
-        _atlasTexture = std::make_shared<TextureDX11>(ATLAS_SIZE, ATLAS_SIZE, Format::R8_UNORM, pixels.data(), path);
-#else
-#error "Font texture creation not implemented for this platform"
-#endif
-
-        if (!_atlasTexture)
-        {
-            FT_ENGINE_ERROR("TextureDX11 failed to initialize for font: {}", path);
+            SetStatus(AssetStatus::Failed);
             return;
         }
 
@@ -103,6 +91,44 @@ namespace Frost
         }
 
         _metrics['\0'] = DEFAULT_METRIC;
+    }
+
+    void Font::UploadGPU()
+    {
+        if (GetStatus() == AssetStatus::Failed)
+        {
+            return;
+        }
+
+        if (_stagingPixels.empty())
+        {
+            FT_ENGINE_ERROR("Attempting to upload font to GPU with no pixel data: {}", _filePath);
+            SetStatus(AssetStatus::Failed);
+            return;
+        }
+
+        TextureConfig texConfig{
+            .fileData = _stagingPixels,
+            .path = _filePath,
+            .format = Format::R8_UNORM,
+            .channels = 1,
+            .width = ATLAS_SIZE,
+            .height = ATLAS_SIZE,
+        };
+
+        _atlasTexture = Texture::Create(texConfig);
+
+        if (!_atlasTexture)
+        {
+            FT_ENGINE_ERROR("Texture creation failed for font: {}", _filePath);
+            SetStatus(AssetStatus::Failed);
+            return;
+        }
+
+        _stagingPixels.clear();
+        _stagingPixels.shrink_to_fit();
+
+        SetStatus(AssetStatus::Loaded);
     }
 
     const CharacterMetric& Font::GetCharacterMetric(char c) const

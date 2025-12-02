@@ -26,20 +26,19 @@ PortalScript::OnInitialize()
 {
     using namespace JPH;
 
-    Scene& scene = Game::GetScene();
-    if (!scene.GetComponent<StaticMesh>(GetGameObject()))
+    if (!_gameObject.HasComponent<StaticMesh>())
     {
-        scene.AddComponent<StaticMesh>(GetGameObject(), "./resources/meshes/portal4.glb");
+        _gameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal4.glb" });
     }
-    if (scene.GetComponent<RigidBody>(GetGameObject()))
+    if (_gameObject.HasComponent<RigidBody>())
     {
         return;
     }
 
-    auto transform = scene.GetComponent<Transform>(GetGameObject());
-    RVec3 position = Math::vector_cast<JPH::Vec3>(transform->position);
+    auto& transform = _gameObject.GetComponent<Transform>();
+    RVec3 position = Math::vector_cast<JPH::Vec3>(transform.position);
     JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(5.0f, 5.0f, 5.0f)).Create().Get();
-    JPH::Quat rot{ transform->rotation.x, transform->rotation.y, transform->rotation.z, transform->rotation.w };
+    JPH::Quat rot{ transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w };
     rot = rot.Normalized();
     FT_ASSERT(rot.IsNormalized(), "rot pas normalized");
     BodyCreationSettings portalBodySettings(boxShape, position, rot, EMotionType::Static, ObjectLayers::PORTAL);
@@ -47,7 +46,7 @@ PortalScript::OnInitialize()
     portalBodySettings.mGravityFactor = 0.0f;
     portalBodySettings.mIsSensor = true;
 
-    scene.AddComponent<RigidBody>(GetGameObject(), portalBodySettings, GetGameObject(), EActivation::Activate);
+    _gameObject.AddComponent<RigidBody>(portalBodySettings, GetGameObject(), EActivation::Activate);
 }
 
 void

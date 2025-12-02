@@ -16,10 +16,9 @@ Plane::Plane()
     Scene& scene = Game::GetScene();
 
     _plane = scene.CreateGameObject("Plane");
-    scene.AddComponent<Transform>(
-        _plane, Vector3{ 0.0f, 0.0f, 0.0f }, Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, Vector3{ 500.0f, 1.0f, 500.0f });
-    scene.AddComponent<WorldTransform>(_plane);
-    scene.AddComponent<Model>(_plane, "./resources/meshes/cube.fbx");
+    _plane.AddComponent<Transform>(
+        Vector3{ 0.0f, 0.0f, 0.0f }, Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, Vector3{ 500.0f, 1.0f, 500.0f });
+    _plane.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/cube.fbx" });
 
     _SetupPhysics();
 

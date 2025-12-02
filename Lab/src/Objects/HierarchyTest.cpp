@@ -27,14 +27,11 @@ HierarchyTest::HierarchyTest()
     Scene& _scene = Game::GetScene();
 
     _parent = _scene.CreateGameObject("Parent");
-    _scene.AddComponent<Transform>(_parent, Vector3{ 0.0f, 0.0f, 0.0f });
-    _scene.AddComponent<WorldTransform>(_parent);
-    _scene.AddComponent<StaticMesh>(_parent, "./resources/meshes/sphere.fbx");
-    _scene.AddScript<PivotScript>(_parent);
+    _parent.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/sphere.fbx" });
+    _parent.AddScript<PivotScript>();
 
     _child = _scene.CreateGameObject("Child", _parent);
-    _scene.AddComponent<Transform>(
-        _child, Vector3{ 0.0f, 0.0f, 5.0f }, EulerAngles{ -90.0_deg, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
-    _scene.AddComponent<WorldTransform>(_child);
-    _scene.AddComponent<StaticMesh>(_child, "./resources/meshes/cube.fbx");
+    _child.AddComponent<Transform>(
+        Vector3{ 0.0f, 0.0f, 5.0f }, EulerAngles{ -90.0_deg, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
+    _child.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/cube.fbx" });
 }

@@ -46,12 +46,9 @@ BallRain::InstantiateDroplet(float x, float z)
     Scene& scene = Game::GetScene();
 
     auto _droplet = scene.CreateGameObject("Player");
-    scene.AddComponent<Transform>(_droplet,
-                                  Vector3{ x, (x + z) / 2.0f + 2 * scale, z },
-                                  Vector4{ 0.0f, 0.0f, 1.0f, 1.0f },
-                                  Vector3{ 5.0f, 5.0f, 5.0f });
-    scene.AddComponent<WorldTransform>(_droplet);
-    scene.AddComponent<StaticMesh>(_droplet, "./resources/meshes/sphere.fbx");
+    _droplet.AddComponent<Transform>(
+        Vector3{ x, (x + z) / 2.0f + 2 * scale, z }, Vector4{ 0.0f, 0.0f, 1.0f, 1.0f }, Vector3{ 5.0f, 5.0f, 5.0f });
+    _droplet.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/sphere.fbx" });
 
     FT_ENGINE_ASSERT(_droplet != GameObject::InvalidId, "Droplet GameObject is invalid");
 

@@ -8,7 +8,7 @@ using namespace Frost::Math;
 
 namespace Frost
 {
-    bool DebugUtils::DrawComponentHeader(const char* name)
+    bool DebugUtils::DrawComponentHeader(const char* name, bool* outRemoved)
     {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
         ImGui::Separator();
@@ -16,6 +16,19 @@ namespace Frost
                                       ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth |
                                           ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_DefaultOpen);
         ImGui::PopStyleVar();
+
+        if (outRemoved)
+        {
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Remove Component"))
+                {
+                    *outRemoved = true;
+                }
+                ImGui::EndPopup();
+            }
+        }
+
         return open;
     }
 
