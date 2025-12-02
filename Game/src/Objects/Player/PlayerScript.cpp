@@ -12,6 +12,8 @@ PlayerScript::OnPreFixedUpdate(float deltaTime)
     // player->SetIsInWater(false);
     Physics::ActivateBody(player->GetBodyID());
 
+    SelectedImageManager* manager = player->GetImageManager();
+
     // Switch to previous vehicle
     if (Input::GetKeyboard().IsKeyPressed(
             K_Q)) // ||
@@ -20,6 +22,7 @@ PlayerScript::OnPreFixedUpdate(float deltaTime)
         auto prevVehicle =
             static_cast<Player::VehicleType>((type - 1 + player->GetVehicleNumber()) % player->GetVehicleNumber());
         player->SetPlayerVehicle(prevVehicle);
+        manager->ChangeImageLeft();
         return;
     }
     // Switch to next vehicle
@@ -28,6 +31,7 @@ PlayerScript::OnPreFixedUpdate(float deltaTime)
         auto nextVehicle =
             static_cast<Player::VehicleType>((type + 1 + player->GetVehicleNumber()) % player->GetVehicleNumber());
         player->SetPlayerVehicle(nextVehicle);
+        manager->ChangeImageRight();
         return;
     }
 

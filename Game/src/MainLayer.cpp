@@ -33,11 +33,6 @@ MainLayer::OnAttach()
     _portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
     _portal2->SetupPortal(PortalType::Exit);
 
-    // logo = HUD_Logo();
-    _left = HUD_Left();
-    _middle = HUD_Middle();
-    _right = HUD_Right();
-
     //_terrain = std::make_unique<Terrain>();
     _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
     _sndWater = std::make_unique<Water>(Vector3(-315, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
