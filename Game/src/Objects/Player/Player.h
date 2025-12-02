@@ -5,13 +5,13 @@
 #include <Jolt/Core/Core.h>
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
+#include "../HUD/SelectedImageManager.h"
 
 using namespace Frost::Math;
 using namespace Frost;
 using namespace Frost::Component;
 class PlayerCamera;
 class Vehicle;
-
 class Player
 {
 public:
@@ -26,6 +26,8 @@ public:
     Scene* GetScene() { return _scene; };
 
     void SetPlayerVehicle(Player::VehicleType type);
+
+    SelectedImageManager* GetImageManager() { return _imageManager; }
 
     std::pair<VehicleType, Vehicle*> GetCurrentVehicle() { return { _currentVehicleType, _currentVehicle }; };
     bool IsInWater() { return _isInWater; }
@@ -61,6 +63,8 @@ private:
 
     Math::Vector3 _lastRespawnPosition;
     Math::Vector4 _lastRespawnRotation;
+
+    SelectedImageManager* _imageManager = nullptr;
 
     Vehicle* _currentVehicle = nullptr;
     Player::VehicleType _currentVehicleType;
