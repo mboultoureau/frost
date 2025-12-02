@@ -19,7 +19,7 @@ Wall::Wall()
     _wall.AddComponent<Transform>(
         Vector3{ -365, 100.0f, -130 }, Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, Vector3{ 50.0f, 50.0f, 1.0f });
     _wall.AddComponent<WorldTransform>();
-    _wall.AddComponent<StaticMesh>("./resources/meshes/cube.fbx");
+    _wall.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/cube.fbx" });
 
     _SetupPhysics();
 }

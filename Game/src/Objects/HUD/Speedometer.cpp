@@ -16,8 +16,7 @@ SpeedometerScript::OnInitialize()
 {
     Scene& _scene = Game::GetScene();
 
-    auto font =
-        AssetManager::LoadAsset<Font>("resources/fonts/ss-engine.regular.ttf", "resources/fonts/ss-engine.regular.ttf");
+    auto font = AssetManager::LoadAsset<Font>("resources/fonts/ss-engine.regular.ttf");
 
     _speedometerComponent = _scene.CreateGameObject("Speedometer");
     Viewport viewport;

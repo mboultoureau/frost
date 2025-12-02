@@ -522,7 +522,7 @@ namespace Frost
         if (DebugUtils::DrawComponentHeader("Mesh Renderer"))
         {
             // ImGui::Text("Filepath: %s", staticMesh->modelFilepath.c_str());
-            ImGui::Text("Mesh Status: %s", (staticMesh->model ? "Loaded" : "Not Loaded (Error or null)"));
+            ImGui::Text("Mesh Status: %s", (staticMesh->GetModel() ? "Loaded" : "Not Loaded (Error or null)"));
             ImGui::TreePop();
         }
     }

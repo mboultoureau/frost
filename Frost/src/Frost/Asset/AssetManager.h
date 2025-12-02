@@ -5,12 +5,12 @@
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/Logger.h"
 
-#ifdef FT_PLATFORM_WINDOWS
-#include "Frost/Renderer/DX11/TextureDX11.h"
-#endif
-
 #include <map>
 #include <memory>
+#include <future>
+#include <deque>
+#include <mutex>
+#include <functional>
 
 namespace Frost
 {
@@ -18,6 +18,8 @@ namespace Frost
     {
     public:
         static void Shutdown();
+        static void Update();
+        static void PruneUnused();
 
         // Generic asset loading function
         template<typename T, typename... Args>
@@ -27,62 +29,59 @@ namespace Frost
             static_assert(std::is_base_of<Asset, T>::value, "T must be derived from Frost::Asset");
 
             // Check if asset is already loaded
-            auto it = _loadedAssets.find(path);
-            if (it != _loadedAssets.end())
             {
-                return std::static_pointer_cast<T>(it->second);
+                std::unique_lock lock(_mutex);
+                auto it = _loadedAssets.find(path);
+                if (it != _loadedAssets.end())
+                {
+                    return std::static_pointer_cast<T>(it->second);
+                }
+            }
+
+            std::shared_ptr<T> asset = std::make_shared<T>();
+
+            {
+                std::unique_lock lock(_mutex);
+                _loadedAssets[path] = asset;
             }
 
             // Load new asset
-            try
-            {
-                std::shared_ptr<T> asset = std::make_shared<T>(std::forward<Args>(args)...);
-                _loadedAssets[path] = asset;
-                return asset;
-            }
-            catch (const std::exception& e)
-            {
-                FT_ENGINE_ERROR("Failed to load asset '{}': {}", path, e.what());
-                FT_ENGINE_ASSERT(false, "Failed to load asset");
-                return nullptr;
-            }
-            catch (...)
-            {
-                FT_ENGINE_ERROR("Unknown error while loading asset '{}'", path);
-                FT_ENGINE_ASSERT(false, "Failed to load asset");
-                return nullptr;
-            }
+            std::thread(
+                [asset, path, args...]() mutable
+                {
+                    try
+                    {
+                        // Load asset data on CPU
+                        asset->SetStatus(AssetStatus::Loading);
+                        asset->LoadCPU(path, std::forward<Args>(args)...);
+
+                        // Queue GPU upload
+                        std::lock_guard queueLock(_queueMutex);
+                        _uploadQueue.emplace_back([asset]() { asset->UploadGPU(); });
+                    }
+                    catch (const std::exception& e)
+                    {
+                        asset->SetStatus(AssetStatus::Failed);
+                        FT_ENGINE_ERROR("Async load exception '{}': {}", path, e.what());
+                        return;
+                    }
+                })
+                .detach();
+
+            return asset;
         }
 
         // Specialized function to get already loaded asset
-        static std::shared_ptr<Texture> LoadAsset(const Asset::Path& path, TextureConfig& config)
-        {
-            auto it = _loadedAssets.find(path);
-            if (it != _loadedAssets.end())
-            {
-                return std::static_pointer_cast<Texture>(it->second);
-            }
-
-#ifdef FT_PLATFORM_WINDOWS
-            std::shared_ptr<TextureDX11> texture = std::make_shared<TextureDX11>(config);
-#else
-#error "Texture loading not implemented for this platform"
-#endif
-            _loadedAssets[path] = texture;
-            return texture;
-        }
-
-        static std::shared_ptr<Texture> CreateTexture(const TextureConfig& config)
-        {
-#ifdef FT_PLATFORM_WINDOWS
-            TextureConfig cfg = config;
-            return std::make_shared<TextureDX11>(cfg);
-#else
-#error "Texture creation not implemented for this platform"
-#endif
-        }
+        static std::shared_ptr<Texture> LoadAsset(const Asset::Path& path, TextureConfig& config);
 
     private:
+        static std::mutex _mutex;
         static std::map<Asset::Path, std::shared_ptr<Asset>> _loadedAssets;
+
+        static std::mutex _queueMutex;
+        static std::deque<std::function<void()>> _uploadQueue;
+
+        // 5ms budget per frame
+        static constexpr int _timeBudget = 5;
     };
 } // namespace Frost

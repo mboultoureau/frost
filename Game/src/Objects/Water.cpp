@@ -135,12 +135,12 @@ Water::UpdateShader(float deltaTime)
     if (_water.HasComponent<StaticMesh>())
     {
         auto& mesh = _water.GetComponent<StaticMesh>();
-        if (mesh.model && !mesh.model->GetMaterials().empty())
+        if (mesh.GetModel() && !mesh.GetModel()->GetMaterials().empty())
         {
             std::vector<uint8_t> paramData(sizeof(WaterMaterialParameters));
             memcpy(paramData.data(), &_shaderParams, sizeof(WaterMaterialParameters));
 
-            mesh.model->GetMaterials()[0].parameters = paramData;
+            mesh.GetModel()->GetMaterials()[0].parameters = paramData;
         }
     }
 }
@@ -153,8 +153,7 @@ Water::Water(Vector3 pos, EulerAngles rot, Vector3 scale, float waveAmplitude)
     // Create game object -----------------------
     _water = scene.CreateGameObject("Water");
     _water.AddComponent<Transform>(pos, rot, scale);
-    auto cubeModel = ModelFactory::CreateCubeWithPrecision(1.0f, scale * 0.5f);
-    _water.AddComponent<StaticMesh>(cubeModel);
+    auto& cubeModel = _water.AddComponent<StaticMesh>(MeshSourceCube{ 1.0f, scale * 0.5f });
 
     Vec3 offset = 4 * waveAmplitude * Vec3(0, 1, 0);
     ShapeRefC boxShape = BoxShapeSettings(Math::vector_cast<Vec3>(scale) * 0.5f + offset).Create().Get();
@@ -205,7 +204,7 @@ Water::Water(Vector3 pos, EulerAngles rot, Vector3 scale, float waveAmplitude)
     memcpy(paramData.data(), &_shaderParams, sizeof(WaterMaterialParameters));
     waveMat.parameters = paramData;
 
-    cubeModel->GetMaterials()[0] = std::move(waveMat);
+    cubeModel.GetModel()->GetMaterials()[0] = std::move(waveMat);
 
     cMinWaterHeight = pos.y + scale.y / 2 - waveAmplitude / 2.0f;
     cMaxWaterHeight = pos.y + scale.y / 2 + waveAmplitude / 2.0f;

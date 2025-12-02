@@ -38,10 +38,23 @@ namespace Frost
 
         if (root.HasComponent<Component::Relationship>())
         {
-            auto children = root.GetChildren();
-            for (auto child : children)
+            const auto& rel = root.GetComponent<Component::Relationship>();
+            auto currentChildHandle = rel.firstChild;
+
+            while (currentChildHandle != entt::null)
             {
+                GameObject child(currentChildHandle, root.GetScene());
+
                 _FlattenHierarchy(child, outList);
+
+                if (child.HasComponent<Component::Relationship>())
+                {
+                    currentChildHandle = child.GetComponent<Component::Relationship>().nextSibling;
+                }
+                else
+                {
+                    currentChildHandle = entt::null;
+                }
             }
         }
     }
@@ -62,7 +75,6 @@ namespace Frost
             out << YAML::BeginMap;
             out << YAML::Key << "LocalID" << YAML::Value << entityToIndex[entity.GetHandle()];
 
-            // Relationship is more complex due to ParentID
             if (entity.HasComponent<Component::Relationship>())
             {
                 auto& rel = entity.GetComponent<Component::Relationship>();
@@ -118,7 +130,9 @@ namespace Frost
         // Map Index
         std::map<entt::entity, uint32_t> entityToIndex;
         for (size_t i = 0; i < entities.size(); ++i)
+        {
             entityToIndex[entities[i].GetHandle()] = (uint32_t)i;
+        }
 
         for (auto& entity : entities)
         {

@@ -85,6 +85,9 @@ namespace Frost
             _commandList->BeginRecording();
             _enabled = true;
 
+            _accumulatedVertices.clear();
+            _drawCalls.clear();
+
             Texture* backBuffer = RendererAPI::GetRenderer()->GetBackBuffer();
             _commandList->SetRenderTargets(1, &backBuffer, nullptr);
 
@@ -112,37 +115,6 @@ namespace Frost
             return;
 
         _RegenerateMesh(texte);
-        if (_accumulatedVertices.empty())
-            return;
-
-        HUDShaderParameters params = {};
-
-        params.viewport[0] = texte.viewport.x;
-        params.viewport[1] = texte.viewport.y;
-
-        params.viewport[2] = (float)Application::GetWindow()->GetWidth();
-        params.viewport[3] = (float)Application::GetWindow()->GetHeight();
-
-        params.color[0] = texte.color.x;
-        params.color[1] = texte.color.y;
-        params.color[2] = texte.color.z;
-        params.color[3] = texte.color.w;
-
-        _constantBuffer->UpdateData(_commandList.get(), &params, sizeof(params));
-
-        uint32_t bufferSize = (uint32_t)_accumulatedVertices.size() * sizeof(HUD_Vertex);
-        _vertexBuffer->UpdateData(_commandList.get(), _accumulatedVertices.data(), bufferSize);
-
-        uint32_t stride = sizeof(HUD_Vertex);
-        uint32_t offset = 0;
-        _commandList->SetVertexBuffer(_vertexBuffer.get(), stride, offset);
-
-        _commandList->SetConstantBuffer(_constantBuffer.get(), 0);
-
-        SetFilter(texte.font->GetFilterMode());
-        _commandList->SetTexture(texte.font->GetAtlasTexture().get(), 0);
-
-        _commandList->Draw((uint32_t)_accumulatedVertices.size(), 0);
     }
 
     void HUDTextRenderingPipeline::EndFrame()
@@ -153,6 +125,17 @@ namespace Frost
         if (!_accumulatedVertices.empty())
         {
             uint32_t totalSize = (uint32_t)_accumulatedVertices.size() * sizeof(HUD_Vertex);
+
+            if (totalSize > _vertexBuffer->GetSize())
+            {
+                FT_ENGINE_WARN("HUDText buffer overflow detected. Resizing from {} to {}",
+                               _vertexBuffer->GetSize(),
+                               totalSize * 2);
+
+                auto* renderer = RendererAPI::GetRenderer();
+                _vertexBuffer = renderer->CreateBuffer(
+                    { .usage = BufferUsage::VERTEX_BUFFER, .size = totalSize * 2, .dynamic = true });
+            }
 
             _vertexBuffer->UpdateData(_commandList.get(), _accumulatedVertices.data(), totalSize);
 
@@ -168,9 +151,6 @@ namespace Frost
 
                 _commandList->Draw(drawCall.vertexCount, drawCall.vertexOffset);
             }
-
-            _accumulatedVertices.clear();
-            _drawCalls.clear();
         }
 
         _commandList->SetRasterizerState(RasterizerMode::Solid);
@@ -202,9 +182,6 @@ namespace Frost
 
     void HUDTextRenderingPipeline::_RegenerateMesh(const Component::HUDText& textComponent)
     {
-        _accumulatedVertices.clear();
-        _drawCalls.clear();
-
         if (textComponent.text.empty() || !textComponent.font)
             return;
 
@@ -218,7 +195,6 @@ namespace Frost
         float startY_pixels = textComponent.viewport.y * screenHeight;
 
         float currentX = startX_pixels;
-
         float currentY = startY_pixels + FONT_BAKE_SIZE * textComponent.fontSize;
 
         float z = 0.0f;
@@ -227,7 +203,7 @@ namespace Frost
         DrawCall currentDrawCall;
         currentDrawCall.texture = font->GetAtlasTexture().get();
         currentDrawCall.filter = font->GetFilterMode();
-        currentDrawCall.vertexOffset = 0;
+        currentDrawCall.vertexOffset = (uint32_t)_accumulatedVertices.size();
 
         for (char c : textComponent.text)
         {
@@ -274,7 +250,7 @@ namespace Frost
             currentX += metric.advance * scale;
         }
 
-        currentDrawCall.vertexCount = (uint32_t)_accumulatedVertices.size();
+        currentDrawCall.vertexCount = (uint32_t)_accumulatedVertices.size() - currentDrawCall.vertexOffset;
 
         if (currentDrawCall.vertexCount > 0)
         {

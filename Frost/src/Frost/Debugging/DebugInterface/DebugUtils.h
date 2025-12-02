@@ -8,7 +8,7 @@ namespace Frost
     class DebugUtils
     {
     public:
-        static bool DrawComponentHeader(const char* name);
+        static bool DrawComponentHeader(const char* name, bool* outRemoved = nullptr);
         static bool DrawVec3Control(const std::string& label,
                                     Math::Vector3& values,
                                     float resetValue = 0.0f,

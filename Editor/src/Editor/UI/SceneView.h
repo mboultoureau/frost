@@ -50,6 +50,13 @@ namespace Editor
         void _DrawEntityNode(entt::entity entityID);
         void _ReparentEntity(entt::entity entity, entt::entity newParent);
         void _FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds);
+        void _HandleMeshDrop(const std::filesystem::path& meshPath);
+
+        Frost::Math::Vector3 _GetSpawnPositionFromMouse();
+        std::pair<Frost::Math::Vector3, Frost::Math::Vector3> _GetCameraRay(float mouseX,
+                                                                            float mouseY,
+                                                                            float viewportW,
+                                                                            float viewportH);
 
     private:
         std::string _title;

@@ -1,5 +1,6 @@
 #include "Frost/Debugging/ComponentUIRegistry.h"
 
+#include "Frost/Asset/MeshConfig.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/Camera.h"
@@ -46,7 +47,7 @@ namespace Frost
             {
                 auto& meta = scene->GetRegistry().get<Meta>(e);
 
-                if (DebugUtils::DrawComponentHeader("Meta"))
+                if (DebugUtils::DrawComponentHeader("Meta", nullptr))
                 {
                     bool isEnabled = !scene->GetRegistry().all_of<Disabled>(e);
 
@@ -89,7 +90,7 @@ namespace Frost
             {
                 auto& transform = scene->GetRegistry().get<Transform>(e);
 
-                if (DebugUtils::DrawComponentHeader("Transform"))
+                if (DebugUtils::DrawComponentHeader("Transform", nullptr))
                 {
                     // Position
                     DebugUtils::DrawVec3Control("Position", transform.position);
@@ -126,9 +127,17 @@ namespace Frost
             [](Scene* scene, entt::entity e, const UIContext& ctx)
             {
                 auto& camera = scene->GetRegistry().get<Camera>(e);
+                bool removed = false;
 
-                if (DebugUtils::DrawComponentHeader("Camera"))
+                if (DebugUtils::DrawComponentHeader("Camera", &removed))
                 {
+                    if (removed)
+                    {
+                        scene->GetRegistry().remove<Camera>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
                     const char* projectionTypes[] = { "Perspective", "Orthographic" };
                     int currentType = (int)camera.projectionType;
                     if (ImGui::Combo("Projection Type", &currentType, projectionTypes, IM_ARRAYSIZE(projectionTypes)))
@@ -170,17 +179,258 @@ namespace Frost
             [](Scene* scene, entt::entity e, const UIContext& ctx)
             {
                 auto& mesh = scene->GetRegistry().get<StaticMesh>(e);
-                if (DebugUtils::DrawComponentHeader("Static Mesh"))
+                bool removed = false;
+
+                if (DebugUtils::DrawComponentHeader("Static Mesh", &removed))
                 {
-                    if (!ctx.isEditor)
+                    if (removed)
                     {
-                        ImGui::Text("Status: %s", (mesh.model ? "Loaded" : "Not Loaded"));
+                        scene->GetRegistry().remove<StaticMesh>(e);
+                        ImGui::TreePop();
+                        return;
                     }
-                    // TODO: Drag and drop mesh asset
-                    if (ctx.isEditor)
+
+                    const char* meshTypeNames[] = { "File", "Cube", "Sphere", "Plane", "Cylinder", "HeightMap" };
+                    int currentType = (int)mesh.GetMeshConfig().index();
+
+                    if (ImGui::Combo("Source Type", &currentType, meshTypeNames, IM_ARRAYSIZE(meshTypeNames)))
                     {
-                        ImGui::Button("Drag Mesh Here (TODO)");
+                        switch ((MeshType)currentType)
+                        {
+                            case MeshType::File:
+                                mesh.SetMeshConfig(MeshSourceFile{});
+                                break;
+                            case MeshType::Cube:
+                                mesh.SetMeshConfig(MeshSourceCube{});
+                                break;
+                            case MeshType::Sphere:
+                                mesh.SetMeshConfig(MeshSourceSphere{});
+                                break;
+                            case MeshType::Plane:
+                                mesh.SetMeshConfig(MeshSourcePlane{});
+                                break;
+                            case MeshType::Cylinder:
+                                mesh.SetMeshConfig(MeshSourceCylinder{});
+                                break;
+                            case MeshType::HeightMap:
+                                mesh.SetMeshConfig(MeshSourceHeightMap{});
+                                break;
+                        }
                     }
+
+                    ImGui::Separator();
+
+                    bool configChanged = false;
+
+                    if (auto* p = std::get_if<MeshSourceFile>(&mesh.GetMeshConfig()))
+                    {
+                        char buffer[256];
+                        memset(buffer, 0, sizeof(buffer));
+                        strncpy_s(buffer, p->filepath.string().c_str(), sizeof(buffer));
+
+                        if (ImGui::InputText("File Path", buffer, sizeof(buffer)))
+                        {
+                            p->filepath = std::string(buffer);
+                            configChanged = true;
+                        }
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                            {
+                                const wchar_t* path = (const wchar_t*)payload->Data;
+                                std::filesystem::path filePath(path);
+
+                                std::string ext = filePath.extension().string();
+                                if (std::find(MESH_FILE_EXTENSIONS.begin(), MESH_FILE_EXTENSIONS.end(), ext) !=
+                                    MESH_FILE_EXTENSIONS.end())
+                                {
+                                    p->filepath = filePath.string();
+                                    configChanged = true;
+                                }
+                            }
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        if (ImGui::Button("Reload Model"))
+                        {
+                            configChanged = true;
+                        }
+
+                        if (!mesh.GetModel())
+                        {
+                            ImGui::TextColored({ 1, 0, 0, 1 }, "Error: Model not loaded.");
+                        }
+                    }
+                    else if (auto* p = std::get_if<MeshSourceCube>(&mesh.GetMeshConfig()))
+                    {
+                        if (ImGui::DragFloat("Size", &p->size, 0.1f, 0.01f, 1000.0f))
+                            configChanged = true;
+
+                        float maxBevel = p->size * 0.5f;
+                        if (ImGui::DragFloat("Bevel Radius", &p->bevelRadius, 0.05f, 0.0f, maxBevel))
+                        {
+                            // Clamp pour sécurité
+                            if (p->bevelRadius > maxBevel)
+                                p->bevelRadius = maxBevel;
+                            if (p->bevelRadius < 0.0f)
+                                p->bevelRadius = 0.0f;
+                            configChanged = true;
+                        }
+
+                        ImGui::BeginDisabled(p->bevelRadius > 0.001f);
+
+                        int segs[3] = { (int)p->segments.x, (int)p->segments.y, (int)p->segments.z };
+                        if (ImGui::DragInt3("Segments", segs, 1, 1, 64))
+                        {
+                            p->segments = { (float)segs[0], (float)segs[1], (float)segs[2] };
+                            configChanged = true;
+                        }
+
+                        if (p->bevelRadius > 0.001f && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                        {
+                            ImGui::SetTooltip("Subdivision is controlled by Bevel logic when Bevel Radius > 0");
+                        }
+
+                        ImGui::EndDisabled();
+                    }
+                    else if (auto* p = std::get_if<MeshSourceSphere>(&mesh.GetMeshConfig()))
+                    {
+                        if (ImGui::DragFloat("Radius", &p->radius, 0.1f, 0.01f, 1000.0f))
+                            configChanged = true;
+
+                        int rings = (int)p->rings;
+                        int slices = (int)p->slices;
+
+                        if (ImGui::DragInt("Rings", &rings, 1, 3, 128))
+                        {
+                            p->rings = (uint32_t)rings;
+                            configChanged = true;
+                        }
+                        if (ImGui::DragInt("Slices", &slices, 1, 3, 128))
+                        {
+                            p->slices = (uint32_t)slices;
+                            configChanged = true;
+                        }
+                    }
+                    else if (auto* p = std::get_if<MeshSourcePlane>(&mesh.GetMeshConfig()))
+                    {
+                        if (ImGui::DragFloat("Width", &p->width, 0.1f, 0.01f, 10000.0f))
+                        {
+                            configChanged = true;
+                        }
+                        if (ImGui::DragFloat("Depth", &p->depth, 0.1f, 0.01f, 10000.0f))
+                        {
+                            configChanged = true;
+                        }
+                    }
+                    else if (auto* p = std::get_if<MeshSourceCylinder>(&mesh.GetMeshConfig()))
+                    {
+                        if (ImGui::DragFloat("Bottom Radius", &p->bottomRadius, 0.1f, 0.0f, 1000.0f))
+                            configChanged = true;
+
+                        if (ImGui::DragFloat("Top Radius", &p->topRadius, 0.1f, 0.0f, 1000.0f))
+                            configChanged = true;
+
+                        if (ImGui::DragFloat("Height", &p->height, 0.1f, 0.01f, 1000.0f))
+                            configChanged = true;
+
+                        int slices = (int)p->slices;
+                        int stacks = (int)p->stacks;
+
+                        if (ImGui::DragInt("Slices", &slices, 1, 3, 128))
+                        {
+                            p->slices = (uint32_t)slices;
+                            configChanged = true;
+                        }
+                        if (ImGui::DragInt("Stacks", &stacks, 1, 1, 128))
+                        {
+                            p->stacks = (uint32_t)stacks;
+                            configChanged = true;
+                        }
+                    }
+                    else if (auto* p = std::get_if<MeshSourceHeightMap>(&mesh.GetMeshConfig()))
+                    {
+                        ImGui::Text("Heightmap Configuration");
+                        ImGui::Spacing();
+                        ImGui::Text("Source Texture");
+
+                        float availableWidth = ImGui::GetContentRegionAvail().x;
+                        ImVec2 buttonSize = { availableWidth, 80.0f };
+
+                        std::string buttonLabel = "Drop Texture Here";
+                        if (!p->texturePath.empty())
+                        {
+                            std::filesystem::path path(p->texturePath);
+                            buttonLabel = path.filename().string();
+                        }
+
+                        ImGui::Button(buttonLabel.c_str(), buttonSize);
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                            {
+                                const wchar_t* path = (const wchar_t*)payload->Data;
+                                std::filesystem::path filePath(path);
+
+                                std::string ext = filePath.extension().string();
+                                if (std::find(HEIGHTMAP_EXTENSIONS.begin(), HEIGHTMAP_EXTENSIONS.end(), ext) !=
+                                    HEIGHTMAP_EXTENSIONS.end())
+                                {
+                                    p->texturePath = filePath.string();
+                                    configChanged = true;
+                                }
+                            }
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        if (!p->texturePath.empty())
+                        {
+                            if (ImGui::Button("Clear Texture"))
+                            {
+                                p->texturePath = "";
+                                configChanged = true;
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::Button("Reload Gen"))
+                            {
+                                configChanged = true;
+                            }
+                        }
+
+                        ImGui::Separator();
+
+                        ImGui::Text("Dimensions");
+                        if (ImGui::DragFloat("Width", &p->width, 0.1f, 0.1f, 10000.0f))
+                            configChanged = true;
+                        if (ImGui::DragFloat("Depth", &p->depth, 0.1f, 0.1f, 10000.0f))
+                            configChanged = true;
+
+                        ImGui::Text("Altitude");
+                        if (ImGui::DragFloat("Min Height", &p->minHeight, 0.1f))
+                            configChanged = true;
+                        if (ImGui::DragFloat("Max Height", &p->maxHeight, 0.1f))
+                            configChanged = true;
+
+                        ImGui::Text("Resolution");
+                        int seg[2] = { (int)p->segmentsWidth, (int)p->segmentsDepth };
+                        if (ImGui::DragInt2("Segments (X/Z)", seg, 1, 2, 512))
+                        {
+                            p->segmentsWidth = (uint32_t)seg[0];
+                            p->segmentsDepth = (uint32_t)seg[1];
+                            configChanged = true;
+                        }
+
+                        if (ImGui::IsItemHovered())
+                            ImGui::SetTooltip("Higher values = more vertices (slower)");
+                    }
+
+                    if (configChanged)
+                    {
+                        mesh.Reload();
+                    }
+
                     ImGui::TreePop();
                 }
             });

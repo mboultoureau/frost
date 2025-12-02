@@ -11,6 +11,9 @@
 #include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Debugging/ComponentUIRegistry.h"
+#include "Frost/Asset/MeshConfig.h"
+#include "Frost/Scene/Serializers/SerializationSystem.h"
+#include "Frost/Utils/Math/Matrix.h"
 
 #undef max
 
@@ -36,7 +39,9 @@ namespace Editor
         _sceneContext = _localScene.get();
 
         if (std::filesystem::exists(_assetPath))
+        {
             Frost::PrefabSerializer::Instantiate(_sceneContext, _assetPath);
+        }
 
         _Init();
     }
@@ -55,7 +60,7 @@ namespace Editor
         meshEntity.AddComponent<Transform>(
             Vector3{ 0.0f, 0.0f, 0.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
 
-        auto& staticMesh = meshEntity.AddComponent<Frost::Component::StaticMesh>(meshPath.string());
+        auto& staticMesh = meshEntity.AddComponent<Frost::Component::StaticMesh>(MeshSourceFile{ meshPath.string() });
         if (!staticMesh.GetModel())
         {
             FT_ENGINE_ERROR("Failed to load model for mesh preview: {}", meshPath.string());
@@ -68,17 +73,6 @@ namespace Editor
             auto& camTrans = _editorCamera.GetComponent<Transform>();
             _FocusCameraOnEntity(camTrans, bounds);
         }
-
-        auto light = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
-        auto& lightTransform = light.AddComponent<Transform>();
-        auto& lightComponent = light.AddComponent<Light>();
-
-        lightTransform.position = { 0.0f, 5.0f, -5.0f };
-        lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
-
-        lightComponent.type = LightType::Directional;
-        lightComponent.color = { 1.0f, 1.0f, 1.0f };
-        lightComponent.intensity = 1.0f;
     }
 
     void SceneView::_FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds)
@@ -128,6 +122,17 @@ namespace Editor
         cam.nearClip = 0.1f;
 
         auto& skybox = _editorCamera.AddComponent<Skybox>("./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png");
+
+        auto light = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
+        auto& lightTransform = light.AddComponent<Transform>();
+        auto& lightComponent = light.AddComponent<Light>();
+
+        lightTransform.position = { 0.0f, 5.0f, -5.0f };
+        lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
+
+        lightComponent.type = LightType::Directional;
+        lightComponent.color = { 1.0f, 1.0f, 1.0f };
+        lightComponent.intensity = 1.0f;
 
         _cameraController.Initialize(tc);
     }
@@ -188,7 +193,9 @@ namespace Editor
 
         _DrawToolbar();
 
+        ImVec2 viewportMinRegion = ImGui::GetCursorScreenPos();
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
         viewportPanelSize.x = std::max(viewportPanelSize.x, 1.0f);
         viewportPanelSize.y = std::max(viewportPanelSize.y, 1.0f);
 
@@ -205,7 +212,15 @@ namespace Editor
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
             {
-                // TODO: Instantiate logic
+                const wchar_t* path = (const wchar_t*)payload->Data;
+                std::filesystem::path assetPath = std::filesystem::path(path);
+
+                std::string ext = assetPath.extension().string();
+                if (std::find(MESH_FILE_EXTENSIONS.begin(), MESH_FILE_EXTENSIONS.end(), ext) !=
+                    MESH_FILE_EXTENSIONS.end())
+                {
+                    _HandleMeshDrop(assetPath);
+                }
             }
             ImGui::EndDragDropTarget();
         }
@@ -214,49 +229,230 @@ namespace Editor
         ImGui::PopStyleVar();
     }
 
+    void SceneView::_HandleMeshDrop(const std::filesystem::path& relativePath)
+    {
+        if (!_sceneContext)
+        {
+            return;
+        }
+
+        Frost::Math::Vector3 spawnPos = _GetSpawnPositionFromMouse();
+
+        std::string name = relativePath.stem().string();
+        auto newEntity = _sceneContext->CreateGameObject(name);
+
+        newEntity.AddComponent<Transform>(spawnPos, EulerAngles{ 0, 0, 0 }, Vector3{ 1, 1, 1 });
+        newEntity.AddComponent<Frost::Component::StaticMesh>(Frost::Component::MeshSourceFile{ relativePath.string() });
+
+        if (_isPrefabView)
+        {
+            auto view = _sceneContext->GetRegistry().view<Relationship>();
+            for (auto entity : view)
+            {
+                if (entity == (entt::entity)newEntity)
+                {
+                    continue;
+                }
+
+                const auto& rel = view.get<Relationship>(entity);
+
+                if (rel.parent == entt::null)
+                {
+                    auto* meta = _sceneContext->GetRegistry().try_get<Meta>(entity);
+                    if (meta && meta->name.find("__EDITOR__") == 0)
+                    {
+                        continue;
+                    }
+
+                    newEntity.SetParent(Frost::GameObject(entity, _sceneContext));
+                    break;
+                }
+            }
+        }
+
+        _selection = newEntity;
+    }
+
+    Frost::Math::Vector3 SceneView::_GetSpawnPositionFromMouse()
+    {
+        ImVec2 mousePos = ImGui::GetMousePos();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+
+        ImVec2 min = ImGui::GetWindowContentRegionMin();
+        ImVec2 max = ImGui::GetWindowContentRegionMax();
+
+        min.x += windowPos.x;
+        min.y += windowPos.y;
+        max.x += windowPos.x;
+        max.y += windowPos.y;
+
+        float viewportW = max.x - min.x;
+        float viewportH = max.y - min.y;
+
+        float mx = mousePos.x - min.x;
+        float my = mousePos.y - min.y;
+
+        auto [rayOrigin, rayDir] = _GetCameraRay(mx, my, viewportW, viewportH);
+
+        Frost::Math::Vector3 planeNormal = { 0.0f, 1.0f, 0.0f }; // Up vector
+        Frost::Math::Vector3 planePoint = { 0.0f, 0.0f, 0.0f };  // Center of world
+
+        float denominator = Frost::Math::Dot(rayDir, planeNormal);
+
+        if (std::abs(denominator) > 0.0001f)
+        {
+            Frost::Math::Vector3 p0_min_origin = planePoint - rayOrigin;
+            float t = Frost::Math::Dot(p0_min_origin, planeNormal) / denominator;
+
+            if (t >= 0.0f)
+            {
+                if (t < 1000.0f)
+                {
+                    return rayOrigin + (rayDir * t);
+                }
+            }
+        }
+
+        float defaultDistance = 10.0f;
+        return rayOrigin + (rayDir * defaultDistance);
+    }
+
+    std::pair<Frost::Math::Vector3, Frost::Math::Vector3> SceneView::_GetCameraRay(float mouseX,
+                                                                                   float mouseY,
+                                                                                   float viewportW,
+                                                                                   float viewportH)
+    {
+        using namespace Frost::Math;
+
+        float ndcX = (2.0f * mouseX) / viewportW - 1.0f;
+        float ndcY = 1.0f - (2.0f * mouseY) / viewportH;
+
+        auto& camTrans = _editorCamera.GetComponent<Frost::Component::Transform>();
+        auto& camComp = _editorCamera.GetComponent<Frost::Component::Camera>();
+
+        Matrix4x4 rotMat = Matrix4x4::CreateFromQuaternion(camTrans.rotation);
+        Matrix4x4 transMat = Matrix4x4::CreateTranslation(camTrans.position);
+
+        Matrix4x4 worldMat = rotMat * transMat;
+        Matrix4x4 viewMat = Matrix4x4::Invert(worldMat);
+
+        float aspectRatio = viewportW / viewportH;
+        Matrix4x4 projMat;
+
+        if (camComp.projectionType == Frost::Component::Camera::ProjectionType::Perspective)
+        {
+            projMat = Matrix4x4::CreatePerspectiveFovLH(
+                camComp.perspectiveFOV.value(), aspectRatio, camComp.nearClip, camComp.farClip);
+        }
+        else
+        {
+            float width = camComp.orthographicSize * aspectRatio;
+            float height = camComp.orthographicSize;
+            projMat = Matrix4x4::CreateOrthographicLH(width, height, camComp.nearClip, camComp.farClip);
+        }
+
+        Matrix4x4 viewProj = viewMat * projMat;
+        Matrix4x4 invViewProj = Matrix4x4::Invert(viewProj);
+
+        Vector4 nearPointNDC = { ndcX, ndcY, 0.0f, 1.0f };
+        Vector4 farPointNDC = { ndcX, ndcY, 1.0f, 1.0f };
+
+        Vector4 nearPointWorld = TransformVector4(nearPointNDC, invViewProj);
+        Vector4 farPointWorld = TransformVector4(farPointNDC, invViewProj);
+
+        if (nearPointWorld.w != 0.0f)
+        {
+            nearPointWorld = nearPointWorld * (1.0f / nearPointWorld.w);
+        }
+        if (farPointWorld.w != 0.0f)
+        {
+            farPointWorld = farPointWorld * (1.0f / farPointWorld.w);
+        }
+
+        Vector3 rayOrigin = { nearPointWorld.x, nearPointWorld.y, nearPointWorld.z };
+        Vector3 rayEnd = { farPointWorld.x, farPointWorld.y, farPointWorld.z };
+
+        Vector3 rayDir = Normalize(rayEnd - rayOrigin);
+
+        return { rayOrigin, rayDir };
+    }
+
     void SceneView::OnRenderHierarchy()
     {
+        entt::entity prefabRoot = entt::null;
+        if (_isPrefabView)
+        {
+            auto view = _sceneContext->GetRegistry().view<Relationship>();
+            int rootCount = 0;
+
+            for (auto entity : view)
+            {
+                auto* meta = _sceneContext->GetRegistry().try_get<Meta>(entity);
+                if (meta && meta->name.find("__EDITOR__") == 0)
+                    continue;
+
+                if (view.get<Relationship>(entity).parent == entt::null)
+                {
+                    prefabRoot = entity;
+                    rootCount++;
+                }
+            }
+
+            if (rootCount == 0)
+            {
+                auto newRoot = _sceneContext->CreateGameObject("Prefab Root");
+                prefabRoot = (entt::entity)newRoot.GetId();
+            }
+        }
+
         if (!_isReadOnly)
         {
             if (ImGui::BeginPopupContextWindow("HierarchyContext", 1))
             {
                 if (ImGui::MenuItem("Create Empty Entity"))
                 {
-                    _sceneContext->CreateGameObject("Entity");
+                    auto newEntity = _sceneContext->CreateGameObject("Entity");
+
+                    if (_isPrefabView && prefabRoot != entt::null)
+                    {
+                        newEntity.SetParent(Frost::GameObject(prefabRoot, _sceneContext));
+                    }
                 }
                 ImGui::EndPopup();
             }
         }
 
-        ImGuiTreeNodeFlags sceneFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow |
-                                        ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesFull;
+        auto& registry = _sceneContext->GetRegistry();
 
-        bool sceneOpen = ImGui::TreeNodeEx(_sceneContext->GetName().c_str(), sceneFlags);
+        registry.view<Relationship>().each(
+            [&](auto entityID, auto& relation)
+            {
+                if (relation.parent == entt::null)
+                {
+                    _DrawEntityNode(entityID);
+                }
+            });
 
-        if (!_isReadOnly && ImGui::BeginDragDropTarget())
+        if (!_isReadOnly &&
+            ImGui::BeginDragDropTargetCustom(ImGui::GetCurrentWindow()->Rect(), ImGui::GetID("HierarchyContent")))
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"))
             {
                 entt::entity payloadEntity = *(entt::entity*)payload->Data;
-                _ReparentEntity(payloadEntity, entt::null);
+
+                if (!_isPrefabView)
+                {
+                    _ReparentEntity(payloadEntity, entt::null);
+                }
+                else
+                {
+                    if (prefabRoot != entt::null && payloadEntity != prefabRoot)
+                    {
+                        _ReparentEntity(payloadEntity, prefabRoot);
+                    }
+                }
             }
             ImGui::EndDragDropTarget();
-        }
-
-        if (sceneOpen)
-        {
-            auto& registry = _sceneContext->GetRegistry();
-
-            registry.view<Relationship>().each(
-                [&](auto entityID, auto& relation)
-                {
-                    if (relation.parent == entt::null)
-                    {
-                        _DrawEntityNode(entityID);
-                    }
-                });
-
-            ImGui::TreePop();
         }
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
@@ -269,17 +465,19 @@ namespace Editor
     {
         auto& registry = _sceneContext->GetRegistry();
         if (!registry.valid(entityID))
-        {
             return;
-        }
 
         auto* meta = registry.try_get<Meta>(entityID);
         auto* relation = registry.try_get<Relationship>(entityID);
         bool isDisabled = registry.all_of<Disabled>(entityID);
 
         if (meta && meta->name.find("__EDITOR__") == 0)
-        {
             return;
+
+        bool isPrefabRoot = false;
+        if (_isPrefabView && relation && relation->parent == entt::null)
+        {
+            isPrefabRoot = true;
         }
 
         std::string name = meta ? meta->name : "Entity " + std::to_string((uint32_t)entityID);
@@ -288,29 +486,22 @@ namespace Editor
         flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesFull;
 
         if (relation && relation->childrenCount == 0)
-        {
             flags |= ImGuiTreeNodeFlags_Leaf;
-        }
 
-        // Grey out if disabled
         if (isDisabled)
-        {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-        }
 
         bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entityID, flags, name.c_str());
 
         if (isDisabled)
-        {
             ImGui::PopStyleColor();
-        }
 
         if (ImGui::IsItemClicked())
         {
             _selection = Frost::GameObject(entityID, _sceneContext);
         }
 
-        if (!_isReadOnly && ImGui::BeginDragDropSource())
+        if (!_isReadOnly && !isPrefabRoot && ImGui::BeginDragDropSource())
         {
             ImGui::SetDragDropPayload("HIERARCHY_NODE", &entityID, sizeof(entt::entity));
             ImGui::Text("%s", name.c_str());
@@ -322,7 +513,6 @@ namespace Editor
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"))
             {
                 entt::entity payloadEntity = *(entt::entity*)payload->Data;
-
                 if (payloadEntity != entityID)
                 {
                     _ReparentEntity(payloadEntity, entityID);
@@ -331,7 +521,6 @@ namespace Editor
             ImGui::EndDragDropTarget();
         }
 
-        // Context Menu
         bool entityDeleted = false;
         if (!_isReadOnly && ImGui::BeginPopupContextItem())
         {
@@ -339,14 +528,24 @@ namespace Editor
             {
                 Frost::GameObject parentObj(entityID, _sceneContext);
                 auto child = _sceneContext->CreateGameObject("New Entity");
-
                 _ReparentEntity((entt::entity)child, entityID);
                 ImGui::SetNextItemOpen(true);
             }
-            if (ImGui::MenuItem("Delete Entity"))
+
+            if (!isPrefabRoot)
             {
-                entityDeleted = true;
+                if (ImGui::MenuItem("Delete Entity"))
+                {
+                    entityDeleted = true;
+                }
             }
+            else
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                ImGui::MenuItem("Delete Entity (Root Locked)");
+                ImGui::PopStyleColor();
+            }
+
             ImGui::EndPopup();
         }
 
@@ -404,13 +603,10 @@ namespace Editor
         ctx.isEditor = true;
         ctx.deltaTime = ImGui::GetIO().DeltaTime;
 
-        // Appel unifié
         Frost::ComponentUIRegistry::DrawAll(_sceneContext, (entt::entity)_selection, ctx);
 
         ImGui::Separator();
 
-        // Bouton Add Component
-        // Vous pouvez garder votre logique spécifique éditeur ici (ex: pas de composants "Runtime only")
         float width = ImGui::GetContentRegionAvail().x;
         if (ImGui::Button("Add Component", ImVec2(width, 0)))
         {
@@ -419,13 +615,37 @@ namespace Editor
 
         if (ImGui::BeginPopup("AddComponentPopup"))
         {
-            if (ImGui::MenuItem("Camera"))
+            static char searchBuffer[64] = "";
+            ImGui::InputTextWithHint("##SearchComponent", "Search...", searchBuffer, sizeof(searchBuffer));
+            ImGui::Separator();
+
+            for (const auto& serializer : SerializationSystem::GetAllSerializers())
             {
-                if (!_selection.HasComponent<Camera>())
-                    _selection.AddComponent<Camera>();
-                ImGui::CloseCurrentPopup();
+                if (searchBuffer[0] != '\0' && serializer.Name.find(searchBuffer) == std::string::npos)
+                {
+                    continue;
+                }
+
+                if (serializer.HasComponent(_selection))
+                {
+                    continue;
+                }
+
+                if (serializer.Name == "Relationship" || serializer.Name == "Meta" ||
+                    serializer.Name == "WorldTransform")
+                {
+                    continue;
+                }
+
+                if (ImGui::MenuItem(serializer.Name.c_str()))
+                {
+                    serializer.AddComponent(_selection);
+                    ImGui::CloseCurrentPopup();
+
+                    searchBuffer[0] = '\0';
+                }
             }
-            // ... autres composants ...
+
             ImGui::EndPopup();
         }
     }
@@ -453,31 +673,56 @@ namespace Editor
             ImGui::SameLine();
             if (ImGui::Button("Save Prefab"))
             {
-                auto view = _sceneContext->GetRegistry().view<Meta>();
+                auto& registry = _sceneContext->GetRegistry();
+                auto view = _sceneContext->GetRegistry().view<Relationship>();
+
+                int rootCount = 0;
+                entt::entity rootEntity = entt::null;
 
                 for (auto entity : view)
                 {
-                    const auto& name = view.get<Meta>(entity).name;
-                    if (name.find("__EDITOR__") == 0)
+                    const auto& rel = view.get<Relationship>(entity);
+
+                    if (rel.parent != entt::null)
                     {
                         continue;
                     }
 
-                    bool isRoot = true;
-                    if (auto* rel = _sceneContext->GetRegistry().try_get<Relationship>(entity))
+                    if (auto* meta = registry.try_get<Meta>(entity))
                     {
-                        if (rel->parent != entt::null)
+                        if (meta->name.find("__EDITOR__") == 0)
                         {
-                            isRoot = false;
+                            continue;
                         }
                     }
 
-                    if (isRoot)
-                    {
-                        Frost::PrefabSerializer::CreatePrefab(Frost::GameObject(entity, _sceneContext), _assetPath);
-                        break;
-                    }
+                    rootCount++;
+                    rootEntity = entity;
                 }
+
+                if (rootCount == 1)
+                {
+                    Frost::PrefabSerializer::CreatePrefab(Frost::GameObject(rootEntity, _sceneContext), _assetPath);
+                    FT_ENGINE_INFO("Prefab saved successfully: {}", _assetPath.string());
+                }
+                else
+                {
+                    FT_ENGINE_ERROR("Cannot save Prefab: It must have exactly ONE root entity. Found: {}", rootCount);
+                    ImGui::OpenPopup("SaveErrorPopup");
+                }
+            }
+
+            if (ImGui::BeginPopup("SaveErrorPopup"))
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Save Failed!");
+                ImGui::Separator();
+                ImGui::Text("A Prefab must contain exactly one root object.");
+                ImGui::Text("Please parent your objects under a single container.");
+                if (ImGui::Button("Close"))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
             }
         }
         ImGui::Separator();

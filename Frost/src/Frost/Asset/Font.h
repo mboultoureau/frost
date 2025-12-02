@@ -6,7 +6,6 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
-#include <../vendor/stb/stb_truetype.h>
 
 namespace Frost
 {
@@ -23,8 +22,11 @@ namespace Frost
     class Font : public Asset
     {
     public:
-        Font(const std::string& path);
+        Font();
         ~Font();
+
+        void LoadCPU(const std::string& path);
+        void UploadGPU();
 
         const CharacterMetric& GetCharacterMetric(char c) const;
         std::shared_ptr<Texture> GetAtlasTexture() const { return _atlasTexture; }
@@ -34,6 +36,8 @@ namespace Frost
     private:
         std::shared_ptr<Texture> _atlasTexture;
         std::unordered_map<char, CharacterMetric> _metrics;
-        void _LoadFont(const std::string& path);
+
+        std::vector<uint8_t> _stagingPixels;
+        std::string _filePath;
     };
 } // namespace Frost

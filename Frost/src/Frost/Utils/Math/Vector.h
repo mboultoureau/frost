@@ -10,6 +10,8 @@
 
 namespace Frost::Math
 {
+    class Matrix4x4;
+
     using VectorValueType = float;
 
     struct Vector2
@@ -485,5 +487,35 @@ namespace Frost::Math
         }
         os << ")";
         return os;
+    }
+
+    inline float Dot(const Vector3& a, const Vector3& b)
+    {
+        DirectX::XMVECTOR vA = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&a);
+        DirectX::XMVECTOR vB = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&b);
+        return DirectX::XMVectorGetX(DirectX::XMVector3Dot(vA, vB));
+    }
+
+    inline Vector3 Cross(const Vector3& a, const Vector3& b)
+    {
+        DirectX::XMVECTOR vA = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&a);
+        DirectX::XMVECTOR vB = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&b);
+        Vector3 result;
+        DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&result, DirectX::XMVector3Cross(vA, vB));
+        return result;
+    }
+
+    inline Vector3 Normalize(const Vector3& v)
+    {
+        DirectX::XMVECTOR vec = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&v);
+        Vector3 result;
+        DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&result, DirectX::XMVector3Normalize(vec));
+        return result;
+    }
+
+    inline float Length(const Vector3& v)
+    {
+        DirectX::XMVECTOR vec = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&v);
+        return DirectX::XMVectorGetX(DirectX::XMVector3Length(vec));
     }
 } // namespace Frost::Math

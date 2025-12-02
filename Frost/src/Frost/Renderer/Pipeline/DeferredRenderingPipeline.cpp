@@ -440,9 +440,7 @@ namespace Frost
 
     void DeferredRenderingPipeline::SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix)
     {
-        if (!_albedoTexture)
-            return;
-        if (!_enabled)
+        if (!model.IsLoaded())
             return;
 
         VS_PerObjectConstants vsPerObjectData;
@@ -540,7 +538,7 @@ namespace Frost
                 _commandList->SetConstantBuffer(_customMaterialConstantBuffer.get(), 3);
             }
 
-            if (!material.albedoTextures.empty())
+            if (!material.albedoTextures.empty() && material.albedoTextures[0]->IsLoaded())
             {
                 _commandList->SetTexture(material.albedoTextures[0].get(), 0);
             }
@@ -549,7 +547,7 @@ namespace Frost
                 _commandList->SetTexture(_defaultAlbedoTexture.get(), 0);
             }
 
-            if (!material.normalTextures.empty())
+            if (!material.normalTextures.empty() && material.normalTextures[0]->IsLoaded())
             {
                 _commandList->SetTexture(material.normalTextures[0].get(), 1);
             }
@@ -558,7 +556,7 @@ namespace Frost
                 _commandList->SetTexture(_defaultNormalTexture.get(), 1);
             }
 
-            if (!material.metallicTextures.empty())
+            if (!material.metallicTextures.empty() && material.metallicTextures[0]->IsLoaded())
             {
                 _commandList->SetTexture(material.metallicTextures[0].get(), 2);
             }
@@ -567,7 +565,7 @@ namespace Frost
                 _commandList->SetTexture(_defaultMetallicTexture.get(), 2);
             }
 
-            if (!material.roughnessTextures.empty())
+            if (!material.roughnessTextures.empty() && material.roughnessTextures[0]->IsLoaded())
             {
                 _commandList->SetTexture(material.roughnessTextures[0].get(), 3);
             }
@@ -576,7 +574,7 @@ namespace Frost
                 _commandList->SetTexture(_defaultRoughnessTexture.get(), 3);
             }
 
-            if (!material.aoTextures.empty())
+            if (!material.aoTextures.empty() && material.aoTextures[0]->IsLoaded())
             {
                 _commandList->SetTexture(material.aoTextures[0].get(), 4);
             }
