@@ -518,4 +518,41 @@ namespace Frost::Math
         DirectX::XMVECTOR vec = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&v);
         return DirectX::XMVectorGetX(DirectX::XMVector3Length(vec));
     }
+
+    /**
+     * @see https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
+     */
+    inline Color3 KelvinToRGB(float kelvin)
+    {
+        float temp = kelvin / 100.0f;
+        float red, green, blue;
+
+        if (temp <= 66.0f)
+        {
+            red = 255.0f;
+            green = temp;
+            green = 99.4708025861f * std::log(green) - 161.1195681661f;
+
+            if (temp <= 19.0f)
+                blue = 0.0f;
+            else
+            {
+                blue = temp - 10.0f;
+                blue = 138.5177312231f * std::log(blue) - 305.0447927307f;
+            }
+        }
+        else
+        {
+            red = temp - 60.0f;
+            red = 329.698727446f * std::pow(red, -0.1332047592f);
+
+            green = temp - 60.0f;
+            green = 288.1221695283f * std::pow(green, -0.0755148492f);
+
+            blue = 255.0f;
+        }
+
+        auto clamp = [](float v) { return v < 0.0f ? 0.0f : (v > 255.0f ? 255.0f : v); };
+        return { clamp(red) / 255.0f, clamp(green) / 255.0f, clamp(blue) / 255.0f };
+    };
 } // namespace Frost::Math

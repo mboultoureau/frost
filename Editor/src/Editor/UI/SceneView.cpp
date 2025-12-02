@@ -125,12 +125,11 @@ namespace Editor
 
         auto light = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
         auto& lightTransform = light.AddComponent<Transform>();
-        auto& lightComponent = light.AddComponent<Light>();
+        auto& lightComponent = light.AddComponent<Light>(LightDirectional{});
 
         lightTransform.position = { 0.0f, 5.0f, -5.0f };
         lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
 
-        lightComponent.type = LightType::Directional;
         lightComponent.color = { 1.0f, 1.0f, 1.0f };
         lightComponent.intensity = 1.0f;
 
