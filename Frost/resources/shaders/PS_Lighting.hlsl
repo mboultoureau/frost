@@ -20,21 +20,23 @@ struct DirectionalLight
 
 struct PointLight
 {
-    float3  Position;
-    float   Radius;
-    float3  Color;
-    float   Intensity;
+    float3 Position;
+    float Radius;
+    float3 Color;
+    float Intensity;
+    float Falloff;
+    float3 Padding;
 };
 
 struct SpotLight
 {
     float3  Position;
-    float   Radius;
+    float   Range;
     float3  Direction;
     float   Intensity;
     float3  Color;
-    float   InnerConeAngle; // cos(angle)
-    float   OuterConeAngle; // cos(angle)
+    float   InnerConeCos;  // cos(angle)
+    float   OuterConeCos;  // cos(angle)
     float3  Padding;
 };
 
@@ -57,6 +59,11 @@ struct PS_Input
     float2 TexCoord : TEXCOORD0;
 };
 
+float CalculateAttenuation(float dist, float radius, float falloffExponent)
+{
+    float d = saturate(1.0f - (dist / radius));
+    return pow(d, falloffExponent);
+}
 
 float3 CalculateBlinnPhong(float3 lightDir, float3 viewDir, float3 normal, float3 lightColor, float metalness, float roughness)
 {
@@ -67,8 +74,13 @@ float3 CalculateBlinnPhong(float3 lightDir, float3 viewDir, float3 normal, float
     // Specular
     float3 halfwayDir = normalize(lightDir + viewDir);
     float NdotH = saturate(dot(normal, halfwayDir));
+    
+    // Roughness -> Specular power
     float specPower = exp2(10.0 * (1.0 - roughness) + 1.0);
     float3 specular = pow(NdotH, specPower) * lightColor;
+    
+    // Metalness blends
+    specular = lerp(specular, specular * diffuse, metalness);
 
     return diffuse + specular;
 }
@@ -80,15 +92,19 @@ float4 main(PS_Input input) : SV_TARGET
     float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb * 2.0f - 1.0f);
     float3 worldPos = WorldPosTexture.Sample(GBufferSampler, input.TexCoord).rgb;
     float4 material = MaterialTexture.Sample(GBufferSampler, input.TexCoord);
+    
     float metalness = material.r;
     float roughness = material.g;
     float ao = material.b;
 
+    if (length(normal) < 0.1f)
+        discard;
+
     float3 viewDir = normalize(CameraPosition - worldPos);
     float3 finalColor = float3(0.0f, 0.0f, 0.0f);
     
-    float3 ambient = float3(0.05f, 0.05f, 0.08f) * ao;
-    finalColor += albedo * ambient;
+    float3 ambient = float3(0.03f, 0.03f, 0.05f) * albedo * ao;
+    finalColor += ambient;
 
     for (int i = 0; i < NumDirectionalLights; ++i)
     {
@@ -105,10 +121,8 @@ float4 main(PS_Input input) : SV_TARGET
         if (distance < PointLights[i].Radius)
         {
             float3 lightDir = normalize(toLight);
+            float attenuation = CalculateAttenuation(distance, PointLights[i].Radius, PointLights[i].Falloff);
             
-            float attenuation = 1.0 - (distance / PointLights[i].Radius);
-            attenuation *= attenuation;
-
             float3 lightColor = PointLights[i].Color * PointLights[i].Intensity * attenuation;
             finalColor += CalculateBlinnPhong(lightDir, viewDir, normal, lightColor, metalness, roughness) * albedo;
         }
@@ -119,20 +133,18 @@ float4 main(PS_Input input) : SV_TARGET
         float3 toLight = SpotLights[i].Position - worldPos;
         float distance = length(toLight);
 
-        if (distance < SpotLights[i].Radius)
+        if (distance < SpotLights[i].Range)
         {
             float3 lightDir = normalize(toLight);
-            float spotAngle = dot(lightDir, -normalize(SpotLights[i].Direction));
+            
+            float spotCos = dot(lightDir, normalize(SpotLights[i].Direction));
 
-            if (spotAngle > SpotLights[i].OuterConeAngle)
+            if (spotCos > SpotLights[i].OuterConeCos)
             {
-                float attenuation = 1.0 - (distance / SpotLights[i].Radius);
-                attenuation *= attenuation;
-
-                float coneFalloff = smoothstep(SpotLights[i].OuterConeAngle, SpotLights[i].InnerConeAngle, spotAngle);
-                attenuation *= coneFalloff;
-
-                float3 lightColor = SpotLights[i].Color * SpotLights[i].Intensity * attenuation;
+                float distAtten = CalculateAttenuation(distance, SpotLights[i].Range, 2.0f);
+                float coneAtten = smoothstep(SpotLights[i].OuterConeCos, SpotLights[i].InnerConeCos, spotCos);
+                float3 lightColor = SpotLights[i].Color * SpotLights[i].Intensity * distAtten * coneAtten;
+                
                 finalColor += CalculateBlinnPhong(lightDir, viewDir, normal, lightColor, metalness, roughness) * albedo;
             }
         }

@@ -768,6 +768,7 @@ namespace Frost
         }
     }
 
+    /*
     void DebugScene::_DrawLightComponent(Scene* scene, entt::entity gameObjectId)
     {
         auto& registry = scene->GetRegistry();
@@ -838,6 +839,7 @@ namespace Frost
             ImGui::TreePop();
         }
     }
+    */
 
     void DebugScene::_DrawRigidBodyComponent(Scene* scene, entt::entity gameObjectId)
     {

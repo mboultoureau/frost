@@ -55,18 +55,20 @@ namespace Frost
             float Radius;
             Math::Vector3 Color;
             float Intensity;
+            float Falloff;
+            float Padding2[3];
         };
 
         struct alignas(16) SpotLightData
         {
             Math::Vector3 Position;
-            float Radius;
+            float Range;
             Math::Vector3 Direction;
             float Intensity;
             Math::Vector3 Color;
-            float InnerConeAngle; // cos(angle)
-            float OuterConeAngle; // cos(angle)
-            float Padding2[3];
+            float InnerConeCos; // cos(angle)
+            float OuterConeCos; // cos(angle)
+            float Padding3[3];
         };
 
         DirectionalLightData DirectionalLights[MAX_DIRECTIONAL_LIGHTS];
@@ -76,7 +78,7 @@ namespace Frost
         int NumDirectionalLights;
         int NumPointLights;
         int NumSpotLights;
-        float Padding3;
+        float Padding4;
     };
 
     // GBuffer shaders
@@ -602,22 +604,27 @@ namespace Frost
 
         LightConstants lightData = {};
         lightData.CameraPosition = cameraTransform.position;
+        lightData.NumDirectionalLights = 0;
+        lightData.NumPointLights = 0;
+        lightData.NumSpotLights = 0;
 
         for (const auto& lightPair : lights)
         {
             const auto& lightComponent = lightPair.first;
             const auto& lightTransform = lightPair.second;
 
-            switch (lightComponent.type)
+            switch (lightComponent.GetType())
             {
                 case Component::LightType::Directional:
                 {
                     if (lightData.NumDirectionalLights < MAX_DIRECTIONAL_LIGHTS)
                     {
-                        auto& light = lightData.DirectionalLights[lightData.NumDirectionalLights++];
-                        light.Direction = lightTransform.GetForward();
-                        light.Color = lightComponent.color;
-                        light.Intensity = lightComponent.intensity;
+                        const auto& config = std::get<Component::LightDirectional>(lightComponent.config);
+
+                        auto& data = lightData.DirectionalLights[lightData.NumDirectionalLights++];
+                        data.Direction = lightTransform.GetForward();
+                        data.Color = lightComponent.color;
+                        data.Intensity = lightComponent.intensity;
                     }
                     break;
                 }
@@ -625,11 +632,14 @@ namespace Frost
                 {
                     if (lightData.NumPointLights < MAX_POINT_LIGHTS)
                     {
-                        auto& light = lightData.PointLights[lightData.NumPointLights++];
-                        light.Position = lightTransform.position;
-                        light.Radius = lightComponent.radius;
-                        light.Color = lightComponent.color;
-                        light.Intensity = lightComponent.intensity;
+                        const auto& config = std::get<Component::LightPoint>(lightComponent.config);
+
+                        auto& data = lightData.PointLights[lightData.NumPointLights++];
+                        data.Position = lightTransform.position;
+                        data.Radius = config.radius;
+                        data.Color = lightComponent.color;
+                        data.Intensity = lightComponent.intensity;
+                        data.Falloff = config.falloff;
                     }
                     break;
                 }
@@ -637,14 +647,17 @@ namespace Frost
                 {
                     if (lightData.NumSpotLights < MAX_SPOT_LIGHTS)
                     {
-                        auto& light = lightData.SpotLights[lightData.NumSpotLights++];
-                        light.Position = lightTransform.position;
-                        light.Radius = lightComponent.radius;
-                        light.Direction = lightTransform.GetForward();
-                        light.Color = lightComponent.color;
-                        light.Intensity = lightComponent.intensity;
-                        light.InnerConeAngle = cosf(lightComponent.innerConeAngle.value());
-                        light.OuterConeAngle = cosf(lightComponent.outerConeAngle.value());
+                        const auto& config = std::get<Component::LightSpot>(lightComponent.config);
+
+                        auto& data = lightData.SpotLights[lightData.NumSpotLights++];
+                        data.Position = lightTransform.position;
+                        data.Range = config.range;
+                        data.Direction = lightTransform.GetForward();
+                        data.Color = lightComponent.color;
+                        data.Intensity = lightComponent.intensity;
+
+                        data.InnerConeCos = std::cos(config.innerConeAngle.value());
+                        data.OuterConeCos = std::cos(config.outerConeAngle.value());
                     }
                     break;
                 }

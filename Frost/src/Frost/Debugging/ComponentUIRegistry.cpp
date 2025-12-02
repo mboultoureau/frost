@@ -434,5 +434,115 @@ namespace Frost
                     ImGui::TreePop();
                 }
             });
+
+        Register<Light>(
+            [](Scene* scene, entt::entity e, const UIContext& ctx)
+            {
+                auto& light = scene->GetRegistry().get<Light>(e);
+                bool removed = false;
+
+                if (DebugUtils::DrawComponentHeader("Light", &removed))
+                {
+                    if (removed)
+                    {
+                        scene->GetRegistry().remove<Light>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
+                    const char* lightTypes[] = { "Directional (Sun)", "Point", "Spot" };
+                    int currentType = (int)light.GetType();
+
+                    if (ImGui::Combo("Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
+                    {
+                        light.SetType((LightType)currentType);
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Text("Emission Settings");
+
+                    static bool useTemperature = false;
+                    static float temperatureK = 6500.0f;
+
+                    ImGui::Checkbox("Use Color Temp (K)", &useTemperature);
+
+                    if (useTemperature)
+                    {
+                        if (ImGui::SliderFloat("Kelvin", &temperatureK, 1000.0f, 12000.0f, "%.0f K"))
+                        {
+                            light.color = Math::KelvinToRGB(temperatureK);
+                        }
+                        ImGui::SameLine();
+                        ImGui::ColorButton("##preview", { light.color.r, light.color.g, light.color.b, 1.0f });
+                    }
+                    else
+                    {
+                        ImGui::ColorEdit3("Color", light.color.values);
+                    }
+
+                    ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10000.0f, "%.2f cd");
+
+                    ImGui::Separator();
+
+                    if (auto* dir = std::get_if<LightDirectional>(&light.config))
+                    {
+                        ImGui::Text("Directional Parameters");
+                        ImGui::Checkbox("Cast Shadows", &dir->castShadows);
+                        if (dir->castShadows)
+                        {
+                            ImGui::DragFloat("Shadow Bias", &dir->shadowBias, 0.001f, 0.0f, 1.0f, "%.4f");
+                        }
+
+                        ImGui::TextDisabled("Rotation is controlled by the Transform component.");
+                    }
+                    else if (auto* point = std::get_if<LightPoint>(&light.config))
+                    {
+                        ImGui::Text("Point Parameters");
+                        ImGui::DragFloat("Range", &point->radius, 0.1f, 0.1f, 1000.0f);
+
+                        ImGui::DragFloat("Falloff", &point->falloff, 0.05f, 0.1f, 10.0f);
+                        if (ImGui::IsItemHovered())
+                        {
+                            ImGui::SetTooltip("1.0 = Linear, 2.0 = Realistic (Inverse Square)");
+                        }
+                    }
+                    else if (auto* spot = std::get_if<LightSpot>(&light.config))
+                    {
+                        ImGui::Text("Spot Parameters");
+                        ImGui::DragFloat("Range", &spot->range, 0.1f, 0.1f, 1000.0f);
+
+                        float innerDeg = Math::Angle<Math::Degree>(spot->innerConeAngle).value();
+                        float outerDeg = Math::Angle<Math::Degree>(spot->outerConeAngle).value();
+
+                        bool anglesChanged = false;
+
+                        if (ImGui::DragFloat("Inner Angle", &innerDeg, 0.5f, 1.0f, 179.0f, "%.1f deg"))
+                        {
+                            if (innerDeg >= outerDeg)
+                            {
+                                outerDeg = innerDeg + 1.0f;
+                            }
+                            anglesChanged = true;
+                        }
+
+                        if (ImGui::DragFloat("Outer Angle", &outerDeg, 0.5f, 1.0f, 179.0f, "%.1f deg"))
+                        {
+                            if (outerDeg <= innerDeg)
+                            {
+                                outerDeg = innerDeg + 1.0f;
+                            }
+                            anglesChanged = true;
+                        }
+
+                        if (anglesChanged)
+                        {
+                            spot->innerConeAngle = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(innerDeg));
+                            spot->outerConeAngle = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(outerDeg));
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+            });
     }
 } // namespace Frost
