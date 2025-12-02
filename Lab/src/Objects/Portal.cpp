@@ -32,12 +32,7 @@ Portal::Portal(Vector3 position, EulerAngles rotation)
 
     // Portal frame
     _frameObject = scene.CreateGameObject("Portal Frame", _portalObject);
-    auto& mesh = _frameObject.AddComponent<StaticMesh>("./resources/meshes/portal.fbx");
-
-    if (mesh.model)
-    {
-        mesh.model = std::make_shared<Model>(*mesh.model);
-    }
+    auto& mesh = _frameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal.fbx" });
 
     // Initial position and rotation
     auto& transform = _portalObject.GetComponent<Transform>();
@@ -51,7 +46,7 @@ Portal::LinkTo(Portal* other)
     _linkedPortal = other;
 
     auto& mesh = _frameObject.GetComponent<StaticMesh>();
-    auto& materials = mesh.model->GetMaterials();
+    auto& materials = mesh.GetModel()->GetMaterials();
 
     if (!materials.empty())
     {
@@ -79,7 +74,7 @@ Portal::Update()
             .isRenderTarget = true,
         };
 
-        _renderTarget = AssetManager::CreateTexture(textureConfig);
+        _renderTarget = Texture::Create(textureConfig);
 
         auto& camera = _cameraObject.GetComponent<VirtualCamera>();
         camera.SetRenderTarget(_renderTarget);

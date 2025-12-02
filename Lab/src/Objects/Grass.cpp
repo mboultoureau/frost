@@ -13,9 +13,7 @@ Grass::Grass()
     Scene& scene = Game::GetScene();
     _planeObject = scene.CreateGameObject("GrassPlane");
 
-    auto planeModel = ModelFactory::CreatePlane(10.0f, 10.0f);
-
-    StaticMesh& meshComp = _planeObject.AddComponent<StaticMesh>(planeModel);
+    StaticMesh& meshComp = _planeObject.AddComponent<StaticMesh>(MeshSourcePlane{ 10.0f, 10.0f });
     Transform& transform = _planeObject.AddComponent<Transform>();
     transform.position = Vector3(10.0f, 0.0f, 0.0f);
     transform.Rotate(EulerAngles(180.0_deg, 0.0_deg, 0.0_deg));
@@ -65,7 +63,7 @@ Grass::Grass()
     memcpy(paramData.data(), &_params, sizeof(GrassMaterialParameters));
     grassMat.parameters = paramData;
 
-    planeModel->GetMaterials()[0] = std::move(grassMat);
+    meshComp.GetModel()->GetMaterials()[0] = std::move(grassMat);
 }
 
 void
@@ -92,12 +90,12 @@ Grass::Update(float dt)
     if (_planeObject.HasComponent<StaticMesh>())
     {
         auto& mesh = _planeObject.GetComponent<StaticMesh>();
-        if (mesh.model && !mesh.model->GetMaterials().empty())
+        if (mesh.GetModel() && !mesh.GetModel()->GetMaterials().empty())
         {
             std::vector<uint8_t> paramData(sizeof(GrassMaterialParameters));
             memcpy(paramData.data(), &_params, sizeof(GrassMaterialParameters));
 
-            mesh.model->GetMaterials()[0].parameters = paramData;
+            mesh.GetModel()->GetMaterials()[0].parameters = paramData;
         }
     }
 }

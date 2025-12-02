@@ -7,6 +7,7 @@
 #include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Debugging/Logger.h"
+#include "Frost/Asset/MeshConfig.h"
 
 #include <imgui.h>
 #ifndef WIN32_LEAN_AND_MEAN
@@ -17,6 +18,7 @@
 #include <imgui_internal.h>
 
 using namespace Frost;
+using namespace Frost::Component;
 
 namespace Editor
 {
@@ -69,15 +71,21 @@ namespace Editor
 
         for (const auto& entry : std::filesystem::directory_iterator(_currentDirectory))
         {
-            auto ext = entry.path().extension().string();
+            auto u8ext = entry.path().extension().u8string();
+            std::string ext(u8ext.begin(), u8ext.end());
+
             if (std::find(_ignoredExtensions.begin(), _ignoredExtensions.end(), ext) != _ignoredExtensions.end())
             {
                 continue;
             }
 
             FileEntry file;
-            file.Path = entry.path();
-            file.Name = entry.path().filename().string();
+            auto u8path = entry.path().filename().u8string();
+            file.Name = std::string(u8path.begin(), u8path.end());
+
+            auto u8fullPath = entry.path().u8string();
+            file.Path = std::string(u8fullPath.begin(), u8fullPath.end());
+
             file.Extension = ext;
             file.IsDirectory = entry.is_directory();
 
@@ -94,6 +102,11 @@ namespace Editor
     // Rendering
     void ContentBrowser::Draw()
     {
+        if (_iconManager)
+        {
+            _iconManager->Update();
+        }
+
         if (_dirty)
         {
             _RefreshAssetList();
@@ -245,7 +258,9 @@ namespace Editor
             if (entry.is_directory() && entry.path().extension() != ".meta")
             {
                 const auto& path = entry.path();
-                std::string name = path.filename().string();
+
+                auto u8name = path.filename().u8string();
+                std::string name(u8name.begin(), u8name.end());
                 ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth |
                                            ImGuiTreeNodeFlags_DrawLinesFull;
                 if (path == _currentDirectory)
@@ -740,8 +755,8 @@ namespace Editor
 
     bool ContentBrowser::_IsModelFormat(const std::string& extension)
     {
-        static const std::vector<std::string> modelExts = { ".fbx", ".glb", ".gltf", ".obj", ".dae", ".blend" };
-        return std::find(modelExts.begin(), modelExts.end(), extension) != modelExts.end();
+        return std::find(MESH_FILE_EXTENSIONS.begin(), MESH_FILE_EXTENSIONS.end(), extension) !=
+               MESH_FILE_EXTENSIONS.end();
     }
 
 } // namespace Editor

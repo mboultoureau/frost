@@ -60,11 +60,10 @@ namespace Frost
         std::vector<ID3D11RenderTargetView*> rtvs(count);
         for (uint32_t i = 0; i < count; ++i)
         {
-            rtvs[i] = static_cast<TextureDX11*>(renderTargets[i])->GetRenderTargetView();
+            rtvs[i] = static_cast<TextureDX11*>(renderTargets[i])->GetRTV();
         }
 
-        ID3D11DepthStencilView* dsv =
-            depthStencil ? static_cast<TextureDX11*>(depthStencil)->GetDepthStencilView() : nullptr;
+        ID3D11DepthStencilView* dsv = depthStencil ? static_cast<TextureDX11*>(depthStencil)->GetDSV() : nullptr;
 
         _context->OMSetRenderTargets(count, rtvs.data(), dsv);
     }
@@ -72,14 +71,21 @@ namespace Frost
     void CommandListDX11::ClearRenderTarget(Texture* renderTarget, const float color[4])
     {
         FT_ENGINE_ASSERT(renderTarget, "Render target cannot be null.");
-        ID3D11RenderTargetView* rtv = static_cast<TextureDX11*>(renderTarget)->GetRenderTargetView();
+        ID3D11RenderTargetView* rtv = static_cast<TextureDX11*>(renderTarget)->GetRTV();
         _context->ClearRenderTargetView(rtv, color);
     }
 
     void CommandListDX11::ClearRenderTarget(Texture* renderTarget, const float color[4], const Viewport viewport)
     {
         FT_ENGINE_ASSERT(renderTarget, "Render target cannot be null.");
-        ID3D11RenderTargetView* rtv = static_cast<TextureDX11*>(renderTarget)->GetRenderTargetView();
+        auto* dxTexture = static_cast<TextureDX11*>(renderTarget);
+        ID3D11RenderTargetView* rtv = dxTexture->GetRTV();
+
+        if (!rtv)
+        {
+            FT_ENGINE_WARN("CommandListDX11: Tentative de Clear sur un RTV null/invalide.");
+            return;
+        }
 
         D3D11_RECT rect;
         rect.left =
@@ -101,7 +107,7 @@ namespace Frost
                                             uint8_t stencilValue)
     {
         FT_ENGINE_ASSERT(depthStencil, "Depth stencil cannot be null.");
-        ID3D11DepthStencilView* dsv = static_cast<TextureDX11*>(depthStencil)->GetDepthStencilView();
+        ID3D11DepthStencilView* dsv = static_cast<TextureDX11*>(depthStencil)->GetDSV();
 
         UINT clearFlags = 0;
         if (clearDepth)
@@ -254,7 +260,7 @@ namespace Frost
         ID3D11ShaderResourceView* srv = nullptr;
         if (texture)
         {
-            srv = static_cast<const TextureDX11*>(texture)->GetShaderResourceView();
+            srv = static_cast<const TextureDX11*>(texture)->GetSRV();
         }
         _context->VSSetShaderResources(slot, 1, &srv);
         _context->PSSetShaderResources(slot, 1, &srv);
@@ -306,8 +312,8 @@ namespace Frost
             return;
         }
 
-        ID3D11Resource* pDstResource = destDX11->GetDX11Resource();
-        ID3D11Resource* pSrcResource = srcDX11->GetDX11Resource();
+        ID3D11Resource* pDstResource = destDX11->GetDX11Texture();
+        ID3D11Resource* pSrcResource = srcDX11->GetDX11Texture();
 
         if (pDstResource && pSrcResource)
         {

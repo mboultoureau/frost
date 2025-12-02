@@ -3,8 +3,10 @@
 #include "Frost/Asset/Asset.h"
 #include "Frost/Renderer/Material.h"
 #include "Frost/Renderer/Mesh.h"
+
 #include <string>
 #include <vector>
+#include <atomic>
 
 struct aiNode;
 struct aiScene;
@@ -19,8 +21,11 @@ namespace Frost
     class Model : public Asset
     {
     public:
-        Model(const std::string& filepath);
         Model() = default;
+        Model(const std::string& filepath);
+
+        void LoadCPU(const std::string& filepath);
+        void UploadGPU();
 
         const std::string& GetFilepath() const { return _filepath; }
         const std::vector<Mesh>& GetMeshes() const { return _meshes; }
@@ -30,14 +35,15 @@ namespace Frost
 
         void AddMesh(Mesh&& mesh) { _meshes.emplace_back(std::move(mesh)); }
         void AddMaterial(Material&& mat) { _materials.emplace_back(std::move(mat)); }
+        void SetMeshes(std::vector<Mesh>&& meshes) { _meshes = std::move(meshes); }
 
-        bool HasMaterials() const { return !_materials.empty(); }
-        bool HasMeshes() const { return !_meshes.empty(); }
+        bool HasMaterials() const { return IsLoaded() && !_materials.empty(); }
+        bool HasMeshes() const { return IsLoaded() && !_meshes.empty(); }
         BoundingBox GetBoundingBox() const;
 
     private:
-        void ProcessNode(Renderer* renderer, aiNode* aNode, const aiScene* aScene);
-        void ProcessMesh(Renderer* renderer, aiMesh* aMesh, const aiScene* aScene);
+        void ProcessNode(aiNode* aNode, const aiScene* aScene);
+        void ProcessMesh(aiMesh* aMesh, const aiScene* aScene);
         void LoadMaterials(const aiScene* aScene);
         void LoadMaterialProperties(const aiMaterial* ai_material, Material& material);
         void LoadMaterialTextures(const aiScene* scene,
@@ -46,9 +52,17 @@ namespace Frost
                                   std::vector<std::shared_ptr<Texture>>& outTextures);
 
     protected:
+        struct CpuMeshData
+        {
+            std::vector<Vertex> vertices;
+            std::vector<uint32_t> indices;
+            uint32_t materialIndex;
+        };
+
         std::string _filepath;
         std::string _directory;
         std::vector<Mesh> _meshes;
         std::vector<Material> _materials;
+        std::vector<CpuMeshData> _cpuMeshes;
     };
 } // namespace Frost

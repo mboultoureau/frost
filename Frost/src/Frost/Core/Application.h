@@ -11,7 +11,12 @@
 
 #include <memory>
 #include <optional>
-#include <windows.h>
+#include <filesystem>
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
 
 using namespace std::chrono_literals;
 
@@ -57,6 +62,9 @@ namespace Frost
 
         static Window* GetWindow() { return Get()._window.get(); }
 
+        static void SetProjectDirectory(const std::filesystem::path& path) { _projectDirectory = path; }
+        static const std::filesystem::path& GetProjectDirectory() { return _projectDirectory; }
+
     private:
         std::unique_ptr<Window> _window;
         std::unique_ptr<Renderer> _renderer;
@@ -65,6 +73,9 @@ namespace Frost
 
     private:
         bool _OnWindowClose(WindowCloseEvent& e);
+
+    private:
+        static inline std::filesystem::path _projectDirectory = ".";
 
         HINSTANCE _hInstance;
 

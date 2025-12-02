@@ -17,7 +17,6 @@
 #include "Objects/Sphere.h"
 #include "Objects/SphereCustomShader.h"
 #include "Objects/TV.h"
-#include "Objects/Terrain.h"
 #include "Objects/Text.h"
 #include "Objects/TopCamera.h"
 #include "Objects/Waves.h"
@@ -49,7 +48,6 @@ private:
     std::unique_ptr<OgreNormal> _ogreNormal;
     std::unique_ptr<Text> _text;
     std::unique_ptr<Sun> _sun;
-    std::unique_ptr<Terrain> _terrain;
     std::unique_ptr<Player> _player;
     std::unique_ptr<HUD_Logo> _hudLogo;
     std::unique_ptr<HierarchyTest> _hierarchy;

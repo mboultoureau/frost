@@ -22,7 +22,6 @@ MainLayer::OnAttach()
     _ogreNormal = std::make_unique<OgreNormal>();
     //_text = std::make_unique<Text>();
     //_plane = std::make_unique<Plane>();
-    //_terrain = std::make_unique<Terrain>();
     _player = std::make_unique<Player>();
     //_hierarchy = std::make_unique<HierarchyTest>();
     // auto _rain = std::make_unique<BallRain>();

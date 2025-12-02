@@ -148,9 +148,9 @@ namespace Frost
             meshView.each(
                 [&](StaticMesh& staticMesh, const WorldTransform& /*unused*/)
                 {
-                    if (staticMesh.model)
+                    if (staticMesh.GetModel())
                     {
-                        for (auto& material : staticMesh.model->GetMaterials())
+                        for (auto& material : staticMesh.GetModel()->GetMaterials())
                         {
                             if (material.cameraRef != entt::null)
                             {
@@ -250,7 +250,7 @@ namespace Frost
         meshView.each(
             [&](const StaticMesh& staticMesh, const WorldTransform& meshTransform)
             {
-                if (staticMesh.model)
+                if (staticMesh.GetModel())
                 {
                     Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
 
@@ -261,7 +261,7 @@ namespace Frost
                         isVisible = false;
                         DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
 
-                        for (const auto& mesh : staticMesh.model->GetMeshes())
+                        for (const auto& mesh : staticMesh.GetModel()->GetMeshes())
                         {
                             BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
 
@@ -275,7 +275,7 @@ namespace Frost
 
                     if (isVisible)
                     {
-                        _deferredRendering.SubmitModel(*staticMesh.model, worldMatrix);
+                        _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
                     }
                 }
             });
@@ -320,8 +320,8 @@ namespace Frost
                                            .height = height,
                                            .isRenderTarget = true,
                                            .isShaderResource = true };
-                _source.reset(new TextureDX11(ppConfig));
-                _destination.reset(new TextureDX11(ppConfig));
+                _source = Texture::Create(ppConfig);
+                _destination = Texture::Create(ppConfig);
             }
 
             Texture* source = sceneTexture;
