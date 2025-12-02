@@ -3,6 +3,7 @@
 #include "Frost/Asset/Texture.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Scene/ECS/Component.h"
+#include "Frost/Asset/AssetManager.h"
 
 #include <memory>
 #include <string>

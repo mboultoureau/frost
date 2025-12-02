@@ -3,6 +3,7 @@
 #include "Frost/Asset/AssetManager.h"
 #include "Frost/Asset/ModelFactory.h"
 #include "Frost/Asset/Texture.h"
+#include "Frost/Asset/MeshConfig.h"
 
 #include "Frost/Core/Application.h"
 #include "Frost/Core/Layer.h"

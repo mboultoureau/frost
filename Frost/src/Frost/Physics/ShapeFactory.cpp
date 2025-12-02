@@ -1,6 +1,5 @@
 #include "Frost/Physics/ShapeFactory.h"
 #include "Frost/Debugging/Assert.h"
-#include "Frost/Utils/Math/Vector.h"
 
 #include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 
@@ -8,54 +7,76 @@ using namespace Frost::Math;
 
 namespace Frost
 {
-    JPH::ShapeRefC ShapeFactory::CreateHeightMap(const HeightMapConfig& config)
+    JPH::ShapeRefC ShapeFactory::CreateHeightField(const Component::MeshSourceHeightMap& config,
+                                                   const std::shared_ptr<Texture>& texture)
     {
-        FT_ENGINE_ASSERT(config.texture, "ShapeFactory: HeightMapConfig texture is null.");
-        const uint32_t textureWidth = config.texture->GetWidth();
-        const uint32_t textureHeight = config.texture->GetHeight();
-        const uint32_t channels = config.texture->GetChannels();
+        FT_ENGINE_ASSERT(texture, "ShapeFactory: Texture is null.");
 
-        FT_ENGINE_ASSERT(textureWidth > 0 && textureHeight > 0, "ShapeFactory: Invalid texture size.");
+        const auto& pixels = texture->GetData();
+        uint32_t imgW = texture->GetWidth();
+        uint32_t imgH = texture->GetHeight();
+        uint32_t channels = texture->GetChannels();
+        uint32_t gridResolution = std::max(config.segmentsWidth, config.segmentsDepth) + 1;
 
-        std::vector<uint8_t> pixels = config.texture->GetData();
-        FT_ENGINE_ASSERT(!pixels.empty(), "ShapeFactory: Texture data is empty.");
+        if (gridResolution < 2)
+            gridResolution = 2;
 
-        uint32_t sampleCount = textureWidth > textureHeight ? textureWidth : textureHeight;
-        if (sampleCount < 2)
-            sampleCount = 2;
+        std::vector<float> samples(gridResolution * gridResolution, 0.0f);
 
-        std::vector<float> samples(sampleCount * sampleCount, 0.0f);
-
-        for (uint32_t y = 0; y < (uint32_t)textureHeight; ++y)
+        for (uint32_t z = 0; z < gridResolution; ++z)
         {
-            for (uint32_t x = 0; x < (uint32_t)textureWidth; ++x)
+            for (uint32_t x = 0; x < gridResolution; ++x)
             {
-                size_t pixIdx = (y * textureWidth + x) * channels;
-                uint8_t value = pixels[pixIdx];
+                float u = static_cast<float>(x) / static_cast<float>(gridResolution - 1);
+                float v = static_cast<float>(z) / static_cast<float>(gridResolution - 1);
+                float hVal = _GetHeightFromPixel(pixels, imgW, imgH, channels, u, v);
 
-                // Normalise en 0..1
-                float sample = float(value) / 255.0f;
-                samples[y * sampleCount + x] = sample;
+                samples[z * gridResolution + x] = hVal;
             }
         }
 
-        Vector3 offset(-0.5f * config.scale.width, 0.0f, -0.5f * config.scale.depth);
-        Vector3 scale(1.0f / float(sampleCount) * config.scale.width,
-                      config.scale.height * 10.0f,
-                      1.0f / float(sampleCount) * config.scale.depth);
+        float heightRange = config.maxHeight - config.minHeight;
 
-        JPH::HeightFieldShapeSettings settings{
-            samples.data(), vector_cast<JPH::Vec3>(offset), vector_cast<JPH::Vec3>(scale), sampleCount
-        };
+        float scaleX = config.width / float(gridResolution - 1);
+        float scaleZ = config.depth / float(gridResolution - 1);
+
+        Vector3 offset(-config.width * 0.5f, config.minHeight, -config.depth * 0.5f);
+        Vector3 scale(scaleX, heightRange, scaleZ);
+
+        JPH::HeightFieldShapeSettings settings(
+            samples.data(), vector_cast<JPH::Vec3>(offset), vector_cast<JPH::Vec3>(scale), gridResolution);
 
         JPH::Shape::ShapeResult result = settings.Create();
+
         if (!result.IsValid())
         {
-            FT_ENGINE_ERROR("Failed to create HeightFieldShape from texture");
+            FT_ENGINE_ERROR("Failed to create HeightFieldShape: {}", result.GetError().c_str());
             return nullptr;
         }
 
-        JPH::RefConst<JPH::Shape> shape = result.Get();
-        return shape;
+        return result.Get();
+    }
+
+    float ShapeFactory::_GetHeightFromPixel(const std::vector<uint8_t>& data,
+                                            uint32_t imgW,
+                                            uint32_t imgH,
+                                            uint32_t channels,
+                                            float u,
+                                            float v)
+    {
+        if (data.empty())
+            return 0.0f;
+
+        u = std::clamp(u, 0.0f, 1.0f);
+        v = std::clamp(v, 0.0f, 1.0f);
+
+        uint32_t x = static_cast<uint32_t>(u * (imgW - 1));
+        uint32_t y = static_cast<uint32_t>(v * (imgH - 1));
+
+        size_t index = (y * imgW + x) * channels;
+        if (index >= data.size())
+            return 0.0f;
+
+        return static_cast<float>(data[index]) / 255.0f;
     }
 } // namespace Frost

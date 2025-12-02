@@ -3,6 +3,10 @@
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/StaticMesh.h"
 #include "Frost/Scene/Components/Light.h"
+#include "Frost/Asset/MeshConfig.h"
+#include "Editor/EditorApp.h"
+
+#include <thread>
 
 #undef max
 
@@ -24,6 +28,93 @@ namespace Editor
 
         _folderIcon = Frost::Texture::Create(folderConfig);
         _fileIcon = Frost::Texture::Create(fileConfig);
+
+        auto _projectFolder = EditorApp::Get().GetProjectDirectory();
+        _thumbnailCacheDir = _projectFolder / ".frost" / "thumbnails";
+        if (!std::filesystem::exists(_thumbnailCacheDir))
+        {
+            std::filesystem::create_directories(_thumbnailCacheDir);
+        }
+    }
+
+    std::filesystem::path AssetIconManager::_GetCachePath(const std::filesystem::path& assetPath)
+    {
+        std::string pathStr = std::filesystem::absolute(assetPath).string();
+        size_t hash = std::hash<std::string>{}(pathStr);
+        return _thumbnailCacheDir / (std::to_string(hash) + ".png");
+    }
+
+    void AssetIconManager::Update()
+    {
+        if (!_loadQueue.empty())
+        {
+            std::filesystem::path assetPath = _loadQueue.front();
+            _loadQueue.pop_front();
+
+            std::string pathKey = assetPath.string();
+            std::shared_ptr<Frost::Texture> newIcon = nullptr;
+            std::string ext = assetPath.extension().string();
+
+            if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".tga")
+            {
+                Frost::TextureConfig config;
+                config.path = assetPath.string();
+                config.debugName = pathKey;
+                newIcon = Frost::Texture::Create(config);
+            }
+            else if (_IsModelFormat(ext))
+            {
+                std::filesystem::path cachePath = _GetCachePath(assetPath);
+                bool cacheValid = false;
+
+                // Cache for performance
+                if (std::filesystem::exists(cachePath))
+                {
+                    auto assetTime = std::filesystem::last_write_time(assetPath);
+                    auto cacheTime = std::filesystem::last_write_time(cachePath);
+
+                    if (cacheTime >= assetTime)
+                    {
+                        Frost::TextureConfig config;
+                        config.path = cachePath.string();
+                        config.debugName = "ThumbCache_" + assetPath.stem().string();
+                        newIcon = Frost::Texture::Create(config);
+                        cacheValid = true;
+                    }
+                }
+
+                if (!cacheValid)
+                {
+                    auto renderTex = _GenerateModelThumbnail(assetPath);
+                    if (renderTex)
+                    {
+                        renderTex->SaveToFile(cachePath.string());
+
+                        Frost::TextureConfig config;
+                        config.path = cachePath.string();
+                        newIcon = Frost::Texture::Create(config);
+
+                        // Save memory by pruning unused assets
+                        Frost::AssetManager::PruneUnused();
+                    }
+                }
+            }
+
+            if (newIcon)
+            {
+                try
+                {
+                    auto time = std::filesystem::last_write_time(assetPath);
+                    _iconCache[pathKey] = { newIcon, time };
+                }
+                catch (...)
+                {
+                    _iconCache[pathKey] = { newIcon, std::filesystem::file_time_type() };
+                }
+            }
+
+            _pendingPaths.erase(pathKey);
+        }
     }
 
     std::shared_ptr<Frost::Texture> AssetIconManager::GetIcon(const std::filesystem::path& path, bool isDirectory)
@@ -34,50 +125,19 @@ namespace Editor
         }
 
         std::string pathKey = path.string();
-        std::string ext = path.extension().string();
 
-        // Check last write to see if needs update
-        std::filesystem::file_time_type currentWriteTime;
-        try
+        if (_iconCache.contains(pathKey))
         {
-            currentWriteTime = std::filesystem::last_write_time(path);
+            return _iconCache.at(pathKey).texture;
         }
-        catch (...)
+
+        if (_pendingPaths.contains(pathKey))
         {
             return _fileIcon;
         }
 
-        // Check cache
-        if (_iconCache.contains(pathKey))
-        {
-            const auto& entry = _iconCache.at(pathKey);
-            if (entry.lastWriteTime == currentWriteTime)
-            {
-                return entry.texture;
-            }
-        }
-
-        std::shared_ptr<Frost::Texture> newIcon = nullptr;
-
-        // If the file is an image, load and cache its thumbnail
-        if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".tga")
-        {
-            Frost::TextureConfig config;
-            config.path = path.string();
-            config.debugName = pathKey;
-            newIcon = Frost::Texture::Create(config);
-        }
-        // Model formats
-        else if (_IsModelFormat(ext))
-        {
-            newIcon = _GenerateModelThumbnail(path);
-        }
-
-        if (newIcon)
-        {
-            _iconCache[pathKey] = { newIcon, currentWriteTime };
-            return newIcon;
-        }
+        _pendingPaths.insert(pathKey);
+        _loadQueue.push_back(path);
 
         return _fileIcon;
     }
@@ -99,12 +159,43 @@ namespace Editor
         Frost::Scene tempScene("ThumbnailGen");
 
         auto meshEntity = tempScene.CreateGameObject("Mesh");
-        auto& sm = meshEntity.AddComponent<StaticMesh>(path.string());
+        auto& sm = meshEntity.AddComponent<StaticMesh>(MeshSourceFile{ path.string() });
         meshEntity.AddComponent<Transform>();
 
         if (!sm.GetModel() || !sm.GetModel()->HasMeshes())
         {
             return nullptr;
+        }
+
+        auto model = sm.GetModel();
+        int maxWaitFrames = 200;
+        bool allTexturesReady = false;
+
+        while (!allTexturesReady && maxWaitFrames > 0)
+        {
+            allTexturesReady = true;
+            for (const auto& mat : model->GetMaterials())
+            {
+                for (const auto& tex : mat.albedoTextures)
+                {
+                    if (tex)
+                    {
+                        if (tex->GetStatus() != Frost::AssetStatus::Loaded)
+                        {
+                            allTexturesReady = false;
+                            tex->UploadGPU();
+                        }
+                    }
+                }
+                if (!allTexturesReady)
+                    break;
+            }
+
+            if (!allTexturesReady)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                maxWaitFrames--;
+            }
         }
 
         auto cameraEntity = tempScene.CreateGameObject("Camera");
@@ -166,8 +257,8 @@ namespace Editor
 
     bool AssetIconManager::_IsModelFormat(const std::string& extension)
     {
-        static const std::vector<std::string> modelExts = { ".fbx", ".glb", ".gltf", ".obj", ".dae", ".blend" };
-        return std::find(modelExts.begin(), modelExts.end(), extension) != modelExts.end();
+        return std::find(MESH_FILE_EXTENSIONS.begin(), MESH_FILE_EXTENSIONS.end(), extension) !=
+               MESH_FILE_EXTENSIONS.end();
     }
 
     void AssetIconManager::ClearCache()

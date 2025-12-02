@@ -13,59 +13,59 @@ Terrain::Terrain()
     using namespace JPH;
     Scene& _scene = Game::GetScene();
 
-    // Road
-    _terrain = _scene.CreateGameObject("Terrain");
-    _terrain.AddComponent<Transform>(
-        Vector3{ 0.0f, -10.0f, -150.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1000.0f, 10.0f, 1000.0f });
-    auto& transform = _terrain.GetComponent<Transform>();
+    const std::string filepathHeightmap = "./resources/textures/image.png";
 
-    const std::string filepathHeightmap{ "./resources/textures/Map_RainbowRoad.png" };
-    _terrain.AddComponent<WorldTransform>(Vector3{ 0.0f, 0.0f, 0.0f });
+    MeshSourceHeightMap terrainConfig;
+    terrainConfig.texturePath = filepathHeightmap;
+    terrainConfig.width = 500.0f;
+    terrainConfig.depth = 500.0f;
+    terrainConfig.minHeight = 0.0f;
+    terrainConfig.maxHeight = 125.0f;
+    terrainConfig.segmentsWidth = 512;
+    terrainConfig.segmentsDepth = 512;
 
-    TextureConfig heightmapConfig;
-    heightmapConfig.textureType = TextureType::HEIGHTMAP;
-    heightmapConfig.path = filepathHeightmap;
+    TextureConfig heightmapTexConfig;
+    heightmapTexConfig.textureType = TextureType::HEIGHTMAP;
+    heightmapTexConfig.path = filepathHeightmap;
 
     TextureConfig rainbowConfig;
     rainbowConfig.textureType = TextureType::DIFFUSE;
     rainbowConfig.path = "./resources/textures/rainbow.jpg";
 
-    std::shared_ptr<Texture> heightmapTexture = AssetManager::LoadAsset(filepathHeightmap, heightmapConfig);
-    std::shared_ptr<Texture> rainbowTexture = AssetManager::LoadAsset(rainbowConfig.path, rainbowConfig);
+    std::shared_ptr<Texture> heightmapTexture = Texture::Create(heightmapTexConfig);
+    std::shared_ptr<Texture> rainbowTexture = Texture::Create(rainbowConfig);
+
+    _terrain = _scene.CreateGameObject("Terrain");
+
+    auto& transform = _terrain.AddComponent<Transform>(
+        Vector3{ -180.0f, 0.0f, 0.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
+    _terrain.AddComponent<WorldTransform>(Vector3{ 0.0f, 0.0f, 0.0f });
 
     Material material;
     material.albedoTextures.push_back(rainbowTexture);
     material.albedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-    material.roughness = 0;
     material.uvTiling = { 100, 100 };
-    material.filter = Material::FilterMode::LINEAR;
 
-    HeightMapConfig heightMapConfig{ material, heightmapTexture, 50, transform.scale };
+    auto& staticMesh = _terrain.AddComponent<StaticMesh>(terrainConfig);
+    staticMesh.GetModel()->GetMaterials()[0] = std::move(material);
 
-    std::shared_ptr<Model> terrainMesh = ModelFactory::CreateFromHeightMap(heightMapConfig);
-    _terrain.AddComponent<StaticMesh>(terrainMesh);
+    ShapeRefC heightFieldShape = ShapeFactory::CreateHeightField(terrainConfig, heightmapTexture);
 
-    /*
-    auto material = Material();
-    material.diffuseColor = DirectX::XMFLOAT3{ 1, 1, 1 };
-    material.roughnessValue = 0;
-  //	material.emissiveColor = DirectX::XMFLOAT3{ 0.5, 0.5, 0.5 };
-    material.uvTiling = { 100,100 };
-    material.filterMode = Material::FilterMode::LINEAR;
-    material.diffuseTextures.push_back(TextureLibrary::Get().GetTexture("./resources/textures/rainbow.jpg",
-  TextureType::DIFFUSE)); _scene.AddComponent<Frost::ModelRenderer>(_terrain,
-  IsHeightMapRenderer(), filepath, material, TextureChannel::R, 50,
-  heightScale);
-    */
-    ShapeRefC heightFieldShape = ShapeFactory::CreateHeightMap(heightMapConfig);
-    // ShapeRefC heightFieldShape = BoxShapeSettings(Vec3(1000.0f, 20.0f,
-    // 1000.0f)).Create().Get();
-    BodyCreationSettings bodySettings(
-        heightFieldShape, RVec3(0, -10, -150), Quat::sIdentity(), EMotionType::Static, ObjectLayers::NON_MOVING);
-    bodySettings.mRestitution = 0.0f;
+    if (heightFieldShape)
+    {
+        BodyCreationSettings bodySettings(heightFieldShape,
+                                          vector_cast<JPH::RVec3>(transform.position),
+                                          vector_cast<JPH::Quat>(transform.rotation),
+                                          EMotionType::Static,
+                                          ObjectLayers::NON_MOVING);
+        bodySettings.mRestitution = 0.0f;
 
-    _terrain.AddComponent<RigidBody>(bodySettings, _terrain, JPH::EActivation::Activate);
-    auto bodyId = _terrain.GetComponent<RigidBody>().physicBody->bodyId;
+        _terrain.AddComponent<RigidBody>(bodySettings, _terrain, JPH::EActivation::Activate);
+    }
+    else
+    {
+        FT_ENGINE_ERROR("Terrain RigidBody creation failed due to null shape.");
+    }
 
     // Ground
     auto ground = _scene.CreateGameObject("Ground");

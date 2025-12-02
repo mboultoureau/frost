@@ -1,26 +1,56 @@
 #pragma once
 
-#include "Frost/Asset/AssetManager.h"
-#include "Frost/Asset/HeightMapModel.h"
 #include "Frost/Asset/Model.h"
-#include "Frost/Core/Application.h"
 #include "Frost/Scene/ECS/Component.h"
+#include "Frost/Asset/MeshConfig.h"
 
 #include <memory>
 #include <string>
+#include <variant>
+#include <filesystem>
 
 namespace Frost::Component
 {
-    struct StaticMesh : public Component
+    using MeshConfig = std::variant<MeshSourceFile,
+                                    MeshSourceCube,
+                                    MeshSourceSphere,
+                                    MeshSourcePlane,
+                                    MeshSourceCylinder,
+                                    MeshSourceHeightMap>;
+
+    enum class MeshType : int
     {
-        std::shared_ptr<Model> model;
+        File = 0,
+        Cube = 1,
+        Sphere = 2,
+        Plane = 3,
+        Cylinder = 4,
+        HeightMap = 5
+    };
 
-        StaticMesh(std::shared_ptr<Model> model) : model{ model } {}
+    class StaticMesh : public Component
+    {
+    public:
+        StaticMesh();
+        StaticMesh(const MeshConfig& newConfig);
 
-        StaticMesh(std::string modelFilepath) : model{ AssetManager::LoadAsset<Model>(modelFilepath, modelFilepath) } {}
+        std::shared_ptr<Model>& GetModel() { return _model; }
+        const std::shared_ptr<Model>& GetModel() const { return _model; }
 
-        std::shared_ptr<Model>& GetModel() { return model; }
-        const std::shared_ptr<Model>& GetModel() const { return model; }
+        MeshConfig& GetMeshConfig() { return _config; }
+        const MeshConfig& GetMeshConfig() const { return _config; }
+        void SetMeshConfig(const MeshConfig& newConfig);
+
+        MeshType GetType() const { return static_cast<MeshType>(_config.index()); }
+
+        void Reload();
+
+    private:
+        void _Generate();
+
+    private:
+        MeshConfig _config;
+        std::shared_ptr<Model> _model;
     };
 
 } // namespace Frost::Component

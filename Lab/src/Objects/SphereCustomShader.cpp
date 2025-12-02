@@ -5,12 +5,11 @@ SphereCustomShader::SphereCustomShader()
 {
     Scene& _scene = Game::GetScene();
     _sphere = _scene.CreateGameObject("SphereCustomShader");
-    StaticMesh& mesh = _sphere.AddComponent<StaticMesh>("./resources/meshes/plane.fbx");
+    StaticMesh& mesh = _sphere.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/plane.fbx" });
     Transform& transform = _sphere.AddComponent<Transform>();
 
     transform.position = Math::Vector3(0.0f, -1.0f, 0.0f);
     transform.scale = Math::Vector3(50.0f, 50.0f, 1.0f);
-    transform.Rotate(EulerAngles{ 0.0f, 0.0f, -90.0_deg });
 
     // Custom Shader Material
     struct alignas(16) GridMaterialParameters
@@ -45,6 +44,6 @@ SphereCustomShader::SphereCustomShader()
     gridMat.customPixelShader = gridPS;
     gridMat.parameters = paramData;
 
-    auto& materials = mesh.model->GetMaterials();
-    materials[0] = gridMat;
+    //    auto& materials = mesh.GetModel()->GetMaterials();
+    //    materials[0] = gridMat;
 }

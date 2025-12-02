@@ -49,7 +49,9 @@ namespace Frost
             serializer.AddComponent = [](GameObject go)
             {
                 if (!go.HasComponent<T>())
+                {
                     go.AddComponent<T>();
+                }
             };
 
             serializer.SerializeYaml = yamlSer;

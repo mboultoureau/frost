@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Vector.h"
+
 #include <array>
 
 namespace Frost::Math
@@ -37,4 +38,34 @@ namespace Frost::Math
     }
 
     Matrix4x4 operator*(const Matrix4x4& a, const Matrix4x4& b);
+
+    inline Vector3 TransformCoord(const Vector3& v, const Matrix4x4& m)
+    {
+        DirectX::XMVECTOR vec = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&v);
+        DirectX::XMMATRIX mat = LoadMatrix(m);
+
+        Vector3 result;
+        DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&result, DirectX::XMVector3TransformCoord(vec, mat));
+        return result;
+    }
+
+    inline Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m)
+    {
+        DirectX::XMVECTOR vec = DirectX::XMLoadFloat3((const DirectX::XMFLOAT3*)&v);
+        DirectX::XMMATRIX mat = LoadMatrix(m);
+
+        Vector3 result;
+        DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&result, DirectX::XMVector3TransformNormal(vec, mat));
+        return result;
+    }
+
+    inline Vector4 TransformVector4(const Vector4& v, const Matrix4x4& m)
+    {
+        DirectX::XMVECTOR vec = DirectX::XMLoadFloat4(reinterpret_cast<const DirectX::XMFLOAT4*>(&v));
+        DirectX::XMMATRIX mat = LoadMatrix(m);
+
+        Vector4 result;
+        DirectX::XMStoreFloat4(reinterpret_cast<DirectX::XMFLOAT4*>(&result), DirectX::XMVector4Transform(vec, mat));
+        return result;
+    }
 } // namespace Frost::Math

@@ -39,7 +39,7 @@ public:
         _gameObjectRenderer.AddComponent<Transform>(
             rendererParams.localPosition, rendererParams.localRotation, rendererParams.localScale);
         _gameObjectRenderer.AddComponent<WorldTransform>();
-        _gameObjectRenderer.AddComponent<StaticMesh>(rendererParams.modelPath);
+        _gameObjectRenderer.AddComponent<StaticMesh>(MeshSourceFile{ rendererParams.modelPath });
     }
 
     /*======= Virtual event functions ========= */
