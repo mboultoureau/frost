@@ -178,7 +178,7 @@ namespace Editor
                 ImGui::DockBuilderSplitNode(dock_right_id, ImGuiDir_Down, 0.60f, nullptr, &dock_right_id);
 
             ImGuiID dock_bottom_id =
-                ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.30f, nullptr, &dock_main_id);
+                ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.40f, nullptr, &dock_main_id);
 
             _dockMainID = dock_main_id;
 

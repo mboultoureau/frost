@@ -3,30 +3,75 @@
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Math/Vector.h"
 
+#include <variant>
+
 namespace Frost::Component
 {
-    enum class LightType : uint8_t
+    struct LightDirectional
     {
-        Directional,
-        Point,
-        Spot
+        bool castShadows = true;
+        float shadowBias = 0.005f;
+    };
+
+    struct LightPoint
+    {
+        float radius = 10.0f;
+        float falloff = 1.0f;
+    };
+
+    struct LightSpot
+    {
+        float range = 20.0f;
+        Math::Angle<Math::Radian> innerConeAngle = Math::Angle<Math::Degree>(20.0f);
+        Math::Angle<Math::Radian> outerConeAngle = Math::Angle<Math::Degree>(30.0f);
+    };
+
+    using LightConfig = std::variant<LightDirectional, LightPoint, LightSpot>;
+
+    enum class LightType
+    {
+        Directional = 0,
+        Point = 1,
+        Spot = 2
     };
 
     struct Light
     {
-        LightType type = LightType::Point;
         Math::Color3 color = { 1.0f, 1.0f, 1.0f };
-
         float intensity = 1.0f;
-        float radius = 10.0f;
-        Math::Angle<Math::Radian> innerConeAngle = Math::Angle<Math::Degree>(15.0f);
-        Math::Angle<Math::Radian> outerConeAngle = Math::Angle<Math::Degree>(25.0f);
+
+        LightConfig config = LightPoint{};
 
         Light() = default;
+        Light(const LightConfig& cfg) : config(cfg) {}
 
-        Light(LightType type, const Math::Color3& color, float intensity, float radius) :
-            type(type), color(color), intensity(intensity), radius(radius)
+        LightType GetType() const { return (LightType)config.index(); }
+
+        void SetType(LightType type)
         {
+            if (GetType() == type)
+            {
+                return;
+            }
+
+            switch (type)
+            {
+                case LightType::Directional:
+                {
+                    config = LightDirectional{};
+                    break;
+                }
+                case LightType::Point:
+                {
+                    config = LightPoint{};
+                    break;
+                }
+                case LightType::Spot:
+                {
+                    config = LightSpot{};
+                    break;
+                }
+            }
         }
     };
 } // namespace Frost::Component
