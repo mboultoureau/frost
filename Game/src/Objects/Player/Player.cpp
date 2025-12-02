@@ -20,6 +20,7 @@
 
 #include "../CheckPoint.h"
 #include "PlayerScript.h"
+#include "../HUD/Speedometer.h"
 #include "Vehicles/Bike.h"
 #include "Vehicles/Boat.h"
 #include "Vehicles/Plane.h"
@@ -51,6 +52,9 @@ Player::Player()
     _InitializeVehicles();
     SetPlayerVehicle(VehicleType::BIKE);
     _playerId.AddScript<PlayerScript>(this);
+
+    // Create Player Speedometer HUD
+    _playerId.AddScript<SpeedometerScript>(*this);
 
     // Create playerCameras Game Objects -------------
     _playerCamera = new PlayerCamera(this);

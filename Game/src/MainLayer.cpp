@@ -33,7 +33,10 @@ MainLayer::OnAttach()
     _portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
     _portal2->SetupPortal(PortalType::Exit);
 
-    logo = HUD_Logo();
+    // logo = HUD_Logo();
+    _left = HUD_Left();
+    _middle = HUD_Middle();
+    _right = HUD_Right();
 
     //_terrain = std::make_unique<Terrain>();
     _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
@@ -78,8 +81,6 @@ MainLayer::OnAttach()
 
     _checkPoint1->ActivatePhysics();
 
-    logo = HUD_Logo();
-
     // LevelCamera levelCamera;
     auto _sky = std::make_unique<Sky>();
 
@@ -114,27 +115,41 @@ void
 MainLayer::OnFixedUpdate(float deltaTime)
 {
     Frost::Scene& _scene = Game::GetScene();
+
+    static bool winScreenCreated = false;
+
     if (_gamestate.Finished())
     {
 
-        auto winScreen = _scene.CreateGameObject("victoryScreen");
+        if (!winScreenCreated)
+        {
+            auto winScreen = _scene.CreateGameObject("victoryScreen");
 
-        Viewport viewport;
-        viewport.height = 0.2;
-        viewport.width = 0.4f;
-        const std::string WIN_PATH = "resources/textures/victoryScreen.png";
+            Viewport viewport;
+            viewport.height = 0.2;
+            viewport.width = 0.4f;
+            const std::string WIN_PATH = "resources/textures/victoryScreen.png";
 
-        viewport.x = 0.25f;
-        viewport.y = 0.4;
-        _gamestate.ResetLap();
-        _scene.AddComponent<HUDImage>(winScreen, viewport, WIN_PATH, Material::FilterMode::POINT);
+            viewport.x = 0.25f;
+            viewport.y = 0.4;
+
+            _scene.AddComponent<HUDImage>(winScreen, viewport, WIN_PATH, Material::FilterMode::POINT);
+            winScreenCreated = true;
+        }
     }
     else
     {
+
+        if (winScreenCreated)
+        {
+            winScreenCreated = false;
+        }
+
         _checkPoint1->FixedUpdate(deltaTime);
         _checkPoint2->FixedUpdate(deltaTime);
         _checkPoint3->FixedUpdate(deltaTime);
         _checkPoint4->FixedUpdate(deltaTime);
+        _checkPoint5->FixedUpdate(deltaTime);
     }
     _scene.FixedUpdate(deltaTime);
 }

@@ -36,6 +36,7 @@ namespace Frost
 
     void UISystem::LateUpdate(Scene& scene, float deltaTime)
     {
+        // Buttons and images
         auto buttonView = scene.ViewActive<Component::UIButton>();
         auto hudImageView = scene.ViewActive<Component::HUDImage>();
 
@@ -54,5 +55,18 @@ namespace Frost
         }
 
         _pipeline.EndFrame();
+
+        // Texts
+        auto textView = scene.ViewActive<Component::HUDText>();
+
+        _pipelineText.BeginFrame();
+
+        for (auto entity : textView)
+        {
+            auto [text] = textView.get(entity);
+            _pipelineText.Submit(text);
+        }
+
+        _pipelineText.EndFrame();
     }
 } // namespace Frost
