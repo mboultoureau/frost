@@ -2,6 +2,7 @@
 #include "Frost/Scene/Serializers/SerializationSystem.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Transform.h"
+#include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Scene/Components/StaticMesh.h"
@@ -324,6 +325,164 @@ namespace Frost
                         in.read((char*)&hm.segmentsWidth, sizeof(uint32_t));
                         in.read((char*)&hm.segmentsDepth, sizeof(uint32_t));
                         mesh.SetMeshConfig(hm);
+                        break;
+                    }
+                }
+            });
+
+        SerializationSystem::RegisterComponent<Light>(
+            "Light",
+            // Write YAML
+            [](YAML::Emitter& out, GameObject go)
+            {
+                auto& light = go.GetComponent<Light>();
+
+                out << YAML::Key << "Type" << YAML::Value << (int)light.config.index();
+                out << YAML::Key << "Color" << YAML::Value << light.color;
+                out << YAML::Key << "Intensity" << YAML::Value << light.intensity;
+
+                out << YAML::Key << "Params" << YAML::BeginMap;
+
+                if (auto* d = std::get_if<LightDirectional>(&light.config))
+                {
+                    out << YAML::Key << "CastShadows" << YAML::Value << d->castShadows;
+                    out << YAML::Key << "ShadowBias" << YAML::Value << d->shadowBias;
+                }
+                else if (auto* p = std::get_if<LightPoint>(&light.config))
+                {
+                    out << YAML::Key << "Radius" << YAML::Value << p->radius;
+                    out << YAML::Key << "Falloff" << YAML::Value << p->falloff;
+                }
+                else if (auto* s = std::get_if<LightSpot>(&light.config))
+                {
+                    out << YAML::Key << "Range" << YAML::Value << s->range;
+                    out << YAML::Key << "InnerAngle" << YAML::Value
+                        << Math::Angle<Math::Degree>(s->innerConeAngle).value();
+                    out << YAML::Key << "OuterAngle" << YAML::Value
+                        << Math::Angle<Math::Degree>(s->outerConeAngle).value();
+                }
+
+                out << YAML::EndMap;
+            },
+            // Read YAML
+            [](const YAML::Node& node, GameObject& go)
+            {
+                auto& light = go.GetComponent<Light>();
+
+                int typeIndex = node["Type"].as<int>();
+                light.color = node["Color"].as<Math::Color3>();
+                light.intensity = node["Intensity"].as<float>();
+
+                auto params = node["Params"];
+
+                switch ((LightType)typeIndex)
+                {
+                    case LightType::Directional:
+                    {
+                        LightDirectional d;
+                        if (params["CastShadows"])
+                            d.castShadows = params["CastShadows"].as<bool>();
+                        if (params["ShadowBias"])
+                            d.shadowBias = params["ShadowBias"].as<float>();
+                        light.config = d;
+                        break;
+                    }
+                    case LightType::Point:
+                    {
+                        LightPoint p;
+                        if (params["Radius"])
+                            p.radius = params["Radius"].as<float>();
+                        if (params["Falloff"])
+                            p.falloff = params["Falloff"].as<float>();
+                        light.config = p;
+                        break;
+                    }
+                    case LightType::Spot:
+                    {
+                        LightSpot s;
+                        if (params["Range"])
+                            s.range = params["Range"].as<float>();
+
+                        if (params["InnerAngle"])
+                            s.innerConeAngle =
+                                Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(params["InnerAngle"].as<float>()));
+
+                        if (params["OuterAngle"])
+                            s.outerConeAngle =
+                                Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(params["OuterAngle"].as<float>()));
+
+                        light.config = s;
+                        break;
+                    }
+                }
+            },
+            // Write Binary
+            [](std::ostream& out, GameObject go)
+            {
+                auto& light = go.GetComponent<Light>();
+                int typeIndex = (int)light.config.index();
+
+                out.write((char*)&typeIndex, sizeof(int));
+                WriteBinary(out, light.color);
+                out.write((char*)&light.intensity, sizeof(float));
+
+                if (auto* d = std::get_if<LightDirectional>(&light.config))
+                {
+                    out.write((char*)&d->castShadows, sizeof(bool));
+                    out.write((char*)&d->shadowBias, sizeof(float));
+                }
+                else if (auto* p = std::get_if<LightPoint>(&light.config))
+                {
+                    out.write((char*)&p->radius, sizeof(float));
+                    out.write((char*)&p->falloff, sizeof(float));
+                }
+                else if (auto* s = std::get_if<LightSpot>(&light.config))
+                {
+                    out.write((char*)&s->range, sizeof(float));
+                    float inner = s->innerConeAngle.value();
+                    float outer = s->outerConeAngle.value();
+                    out.write((char*)&inner, sizeof(float));
+                    out.write((char*)&outer, sizeof(float));
+                }
+            },
+            // Read Binary
+            [](std::istream& in, GameObject& go)
+            {
+                auto& light = go.GetComponent<Light>();
+                int typeIndex;
+
+                in.read((char*)&typeIndex, sizeof(int));
+                ReadBinary(in, light.color);
+                in.read((char*)&light.intensity, sizeof(float));
+
+                switch ((LightType)typeIndex)
+                {
+                    case LightType::Directional:
+                    {
+                        LightDirectional d;
+                        in.read((char*)&d.castShadows, sizeof(bool));
+                        in.read((char*)&d.shadowBias, sizeof(float));
+                        light.config = d;
+                        break;
+                    }
+                    case LightType::Point:
+                    {
+                        LightPoint p;
+                        in.read((char*)&p.radius, sizeof(float));
+                        in.read((char*)&p.falloff, sizeof(float));
+                        light.config = p;
+                        break;
+                    }
+                    case LightType::Spot:
+                    {
+                        LightSpot s;
+                        float inner, outer;
+                        in.read((char*)&s.range, sizeof(float));
+                        in.read((char*)&inner, sizeof(float));
+                        in.read((char*)&outer, sizeof(float));
+                        s.innerConeAngle = Math::Angle<Math::Radian>(inner);
+                        s.outerConeAngle = Math::Angle<Math::Radian>(outer);
+                        light.config = s;
                         break;
                     }
                 }
