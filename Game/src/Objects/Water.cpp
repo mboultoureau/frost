@@ -191,6 +191,7 @@ Water::Water(Vector3 pos, EulerAngles rot, Vector3 scale, float waveAmplitude)
     waveMat.hullShader = hs;
     waveMat.domainShader = ds;
     waveMat.customPixelShader = ps;
+    waveMat.backFaceCulling = false;
 
     _shaderParams.Time = 0.0f;
     _shaderParams.TopAmplitude = waveAmplitude * 2;
