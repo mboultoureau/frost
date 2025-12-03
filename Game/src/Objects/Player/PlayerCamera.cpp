@@ -22,6 +22,7 @@
 #include <DirectXMath.h>
 #include <algorithm>
 #include <cmath>
+#include <Frost/Renderer/PostEffect/ToonEffect.h>
 
 using namespace Frost;
 using namespace Frost::Math;
@@ -267,9 +268,10 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
     _camera = scene.CreateGameObject("Camera");
     _camera.AddComponent<Transform>(Vector3{ 0.0f, 10, -20.0f });
     auto& camComponent = _camera.AddComponent<Camera>();
+    camComponent.postEffects.push_back(std::make_shared<ToonEffect>());
     camComponent.postEffects.push_back(std::make_shared<FogEffect>());
     camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
-    camComponent.postEffects.push_back(std::make_shared<ChromaticAberrationEffect>());
+    // camComponent.postEffects.push_back(std::make_shared<ChromaticAberrationEffect>());
 
     camComponent.backgroundColor.r = 47.0f / 255.0f;
     camComponent.backgroundColor.g = 116.0f / 255.0f;

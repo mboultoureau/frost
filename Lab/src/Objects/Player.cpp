@@ -16,6 +16,7 @@
 #include <cmath>
 #include <memory>
 #include <Frost/Renderer/PostEffect/FogEffect.h>
+#include <Frost/Renderer/PostEffect/ToonEffect.h>
 
 using namespace Frost;
 using namespace Frost::Math;
@@ -205,9 +206,10 @@ Player::Player()
     cameraComponent->backgroundColor.g = 116.0f / 255.0f;
     cameraComponent->backgroundColor.b = 228.0f / 255.0f;
     cameraComponent->backgroundColor.a = 1.0f;
-    // cameraComponent->postEffects.push_back(std::make_shared<Frost::ScreenShakeEffect>());
+    cameraComponent->postEffects.push_back(std::make_shared<Frost::ScreenShakeEffect>());
     // cameraComponent->postEffects.push_back(std::make_shared<Frost::RadialBlurEffect>());
     // cameraComponent->postEffects.push_back(std::make_shared<Frost::ChromaticAberrationEffect>());
+    cameraComponent->postEffects.push_back(std::make_shared<Frost::ToonEffect>());
 
     InitializePhysics();
 }

@@ -18,6 +18,7 @@
 #include "Objects/Terrain.h"
 #include "Objects/Wall.h"
 #include "Objects/Water.h"
+#include "Objects/Grass.h"
 #include <memory>
 
 class MainLayer : public Frost::Layer
@@ -55,4 +56,5 @@ private:
     std::shared_ptr<CheckPoint> _checkPoint4;
     std::shared_ptr<CheckPoint> _checkPoint5;
     std::shared_ptr<Wall> _wall;
+    std::unique_ptr<Grass> _grass;
 };
