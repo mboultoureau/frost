@@ -210,8 +210,7 @@ namespace Editor
         _FocusCameraOnBounds(camTrans, bounds);
 
         auto lightEntity = tempScene.CreateGameObject("Light");
-        auto& lightComp = lightEntity.AddComponent<Frost::Component::Light>();
-        lightComp.type = Frost::Component::LightType::Directional;
+        auto& lightComp = lightEntity.AddComponent<Frost::Component::Light>(LightDirectional{});
         lightComp.intensity = 1.2f;
         lightComp.color = { 1.0f, 0.95f, 0.9f };
 

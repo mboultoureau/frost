@@ -11,7 +11,7 @@ namespace Editor
         MainMenuBar(const ProjectInfo& projectInfo);
         ~MainMenuBar() = default;
 
-        void Draw() override;
+        void Draw(float deltaTime) override;
 
     private:
         void _RenderFileMenu();

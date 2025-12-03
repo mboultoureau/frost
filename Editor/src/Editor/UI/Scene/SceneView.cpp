@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/SceneView.h"
+﻿#include "Editor/UI/Scene/SceneView.h"
 
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/Camera.h"
@@ -19,6 +19,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <Frost/Utils/Math/Transform.h>
 
 namespace Editor
 {
@@ -44,6 +45,44 @@ namespace Editor
         }
 
         _Init();
+
+        if (std::filesystem::exists(_assetPath))
+        {
+            Frost::PrefabSerializer::Instantiate(_sceneContext, _assetPath);
+
+            Frost::BoundingBox totalBounds;
+            bool hasBounds = false;
+
+            auto meshView = _sceneContext->ViewActive<Transform, StaticMesh>();
+
+            meshView.each(
+                [&](const auto& transform, const auto& mesh)
+                {
+                    if (mesh.GetModel() && mesh.GetModel()->HasMeshes())
+                    {
+                        Frost::BoundingBox localBounds = mesh.GetModel()->GetBoundingBox();
+
+                        Frost::BoundingBox worldBounds =
+                            Frost::Math::TransformBoundingBox(localBounds, transform.GetTransformMatrix());
+
+                        if (!hasBounds)
+                        {
+                            totalBounds = worldBounds;
+                            hasBounds = true;
+                        }
+                        else
+                        {
+                            totalBounds.Merge(worldBounds);
+                        }
+                    }
+                });
+
+            if (hasBounds)
+            {
+                auto& camTrans = _editorCamera.GetComponent<Transform>();
+                _FocusCameraOnEntity(camTrans, totalBounds);
+            }
+        }
     }
 
     SceneView::SceneView(const std::filesystem::path& meshPath, MeshPreviewTag)
@@ -77,33 +116,36 @@ namespace Editor
 
     void SceneView::_FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds)
     {
-        using namespace DirectX;
+        using namespace Frost::Math;
 
-        if (bounds.min.x >= bounds.max.x)
-        {
-            return;
-        }
-
-        XMFLOAT3 center = { (bounds.min.x + bounds.max.x) * 0.5f,
-                            (bounds.min.y + bounds.max.y) * 0.5f,
-                            (bounds.min.z + bounds.max.z) * 0.5f };
+        Vector3 center = { (bounds.min.x + bounds.max.x) * 0.5f,
+                           (bounds.min.y + bounds.max.y) * 0.5f,
+                           (bounds.min.z + bounds.max.z) * 0.5f };
 
         float sizeX = bounds.max.x - bounds.min.x;
         float sizeY = bounds.max.y - bounds.min.y;
         float sizeZ = bounds.max.z - bounds.min.z;
-        float maxDim = std::max({ sizeX, sizeY, sizeZ });
 
-        if (maxDim < 0.1f)
+        float radius = std::max({ sizeX, sizeY, sizeZ }) * 0.5f;
+        if (radius < 0.1f)
+            radius = 0.1f;
+
+        auto& cameraComp = _editorCamera.GetComponent<Camera>();
+
+        float fovRad = Angle<Radian>(45.0_deg).value();
+        if (cameraComp.projectionType == Camera::ProjectionType::Perspective)
         {
-            maxDim = 0.1f;
+            fovRad = cameraComp.perspectiveFOV.value();
         }
 
-        float distance = maxDim * 1.5f;
+        float distance = (radius / std::sin(fovRad * 0.5f)) * 1.1f;
 
-        cameraTransform.position =
-            Frost::Math::Vector3{ center.x + distance * 0.5f, center.y + distance * 0.5f, center.z - distance };
+        Vector3 viewDir = { 0.5f, 0.5f, -1.0f };
+        viewDir = Normalize(viewDir);
 
-        cameraTransform.LookAt(Frost::Math::Vector3{ center.x, center.y, center.z });
+        cameraTransform.position = center - (viewDir * distance);
+
+        cameraTransform.LookAt(center);
     }
 
     void SceneView::_Init()
@@ -121,11 +163,12 @@ namespace Editor
         cam.farClip = 1000.0f;
         cam.nearClip = 0.1f;
 
-        auto& skybox = _editorCamera.AddComponent<Skybox>("./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png");
+        _editorSkybox = _sceneContext->CreateGameObject("__EDITOR__Skybox");
+        _editorSkybox.AddComponent<Skybox>("./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png");
 
-        auto light = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
-        auto& lightTransform = light.AddComponent<Transform>();
-        auto& lightComponent = light.AddComponent<Light>(LightDirectional{});
+        _editorLight = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
+        auto& lightTransform = _editorLight.AddComponent<Transform>();
+        auto& lightComponent = _editorLight.AddComponent<Light>();
 
         lightTransform.position = { 0.0f, 5.0f, -5.0f };
         lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
@@ -134,29 +177,18 @@ namespace Editor
         lightComponent.intensity = 1.0f;
 
         _cameraController.Initialize(tc);
+
+        _toolbar.Init();
     }
 
     void SceneView::OnUpdate(float deltaTime)
     {
-        if (_editorCamera && _editorCamera.HasComponent<Transform>())
-        {
-            auto& tc = _editorCamera.GetComponent<Transform>();
-            bool canControl = _isHovered;
-
-            _cameraController.OnUpdate(deltaTime, tc, canControl);
-        }
-
         if (_sceneContext && _viewportTexture)
         {
             _sceneContext->SetEditorRenderTarget(_viewportTexture);
             _sceneContext->Update(deltaTime);
             _sceneContext->LateUpdate(deltaTime);
         }
-    }
-
-    void SceneView::Draw()
-    {
-        DrawViewport();
     }
 
     void SceneView::_ResizeViewportFramebuffer(uint32_t width, uint32_t height)
@@ -179,7 +211,7 @@ namespace Editor
         _viewportTexture = Frost::Texture::Create(config);
     }
 
-    void SceneView::DrawViewport()
+    void SceneView::Draw(float deltaTime)
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
@@ -191,6 +223,15 @@ namespace Editor
         _isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
 
         _DrawToolbar();
+
+        if (ImGui::BeginPopup("SaveErrorPopup"))
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Save Failed!");
+            ImGui::Separator();
+            ImGui::Text("A Prefab must contain exactly one root object.");
+            ImGui::Button("Close");
+            ImGui::EndPopup();
+        }
 
         ImVec2 viewportMinRegion = ImGui::GetCursorScreenPos();
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -204,6 +245,43 @@ namespace Editor
         {
             ImTextureID textureID = (ImTextureID)_viewportTexture->GetRendererID();
             ImGui::Image(textureID, viewportPanelSize);
+        }
+
+        if (_selection && _currentGizmoOp != GizmoOperation::None)
+        {
+            auto* transform = _sceneContext->GetRegistry().try_get<Transform>((entt::entity)_selection);
+            auto& cameraComponent = _editorCamera.GetComponent<Camera>();
+            auto& cameraTransform = _editorCamera.GetComponent<Transform>();
+
+            if (transform)
+            {
+                float aspectRatio = viewportPanelSize.x / viewportPanelSize.y;
+                Matrix4x4 viewMatrix = GetViewMatrix(cameraTransform);
+                Matrix4x4 projectionMatrix = GetProjectionMatrix(cameraComponent, aspectRatio);
+
+                ImVec2 mousePos = ImGui::GetMousePos();
+                float mx = mousePos.x - viewportMinRegion.x;
+                float my = mousePos.y - viewportMinRegion.y;
+                auto [rayOrigin, rayDir] = _GetCameraRay(mx, my, viewportPanelSize.x, viewportPanelSize.y);
+
+                _gizmo.Update(_currentGizmoOp,
+                              *transform,
+                              viewMatrix,
+                              projectionMatrix,
+                              rayOrigin,
+                              rayDir,
+                              cameraTransform.position,
+                              cameraTransform.GetForward(),
+                              viewportMinRegion,
+                              viewportPanelSize);
+            }
+        }
+
+        if (_editorCamera && _editorCamera.HasComponent<Transform>())
+        {
+            auto& tc = _editorCamera.GetComponent<Transform>();
+            bool canControl = _isHovered && !_gizmo.IsManipulating();
+            _cameraController.OnUpdate(deltaTime, tc, canControl);
         }
 
         // Drop Target
@@ -454,7 +532,7 @@ namespace Editor
             ImGui::EndDragDropTarget();
         }
 
-        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered())
         {
             _selection = {};
         }
@@ -651,80 +729,55 @@ namespace Editor
 
     void SceneView::_DrawToolbar()
     {
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
+        auto saveCallback = [this]() { this->_SavePrefab(); };
 
-        if (ImGui::Button("Translate"))
-        {
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Rotate"))
-        {
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Scale"))
-        {
-        }
+        _toolbar.Draw(_cameraController, _currentGizmoOp, _viewSettings, _isPrefabView, saveCallback);
+        _editorSkybox.SetActive(_viewSettings.showEditorSkybox);
+        _editorLight.SetActive(_viewSettings.showEditorLight);
+    }
 
-        if (_isPrefabView && !_isReadOnly)
+    void SceneView::_SavePrefab()
+    {
+        if (!_isPrefabView || _isReadOnly)
+            return;
+
+        auto& registry = _sceneContext->GetRegistry();
+        auto view = _sceneContext->GetRegistry().view<Relationship>();
+
+        int rootCount = 0;
+        entt::entity rootEntity = entt::null;
+
+        for (auto entity : view)
         {
-            ImGui::SameLine();
-            ImGui::Separator();
-            ImGui::SameLine();
-            if (ImGui::Button("Save Prefab"))
+            const auto& rel = view.get<Relationship>(entity);
+
+            if (rel.parent != entt::null)
             {
-                auto& registry = _sceneContext->GetRegistry();
-                auto view = _sceneContext->GetRegistry().view<Relationship>();
+                continue;
+            }
 
-                int rootCount = 0;
-                entt::entity rootEntity = entt::null;
-
-                for (auto entity : view)
+            if (auto* meta = registry.try_get<Meta>(entity))
+            {
+                if (meta->name.find("__EDITOR__") == 0)
                 {
-                    const auto& rel = view.get<Relationship>(entity);
-
-                    if (rel.parent != entt::null)
-                    {
-                        continue;
-                    }
-
-                    if (auto* meta = registry.try_get<Meta>(entity))
-                    {
-                        if (meta->name.find("__EDITOR__") == 0)
-                        {
-                            continue;
-                        }
-                    }
-
-                    rootCount++;
-                    rootEntity = entity;
-                }
-
-                if (rootCount == 1)
-                {
-                    Frost::PrefabSerializer::CreatePrefab(Frost::GameObject(rootEntity, _sceneContext), _assetPath);
-                    FT_ENGINE_INFO("Prefab saved successfully: {}", _assetPath.string());
-                }
-                else
-                {
-                    FT_ENGINE_ERROR("Cannot save Prefab: It must have exactly ONE root entity. Found: {}", rootCount);
-                    ImGui::OpenPopup("SaveErrorPopup");
+                    continue;
                 }
             }
 
-            if (ImGui::BeginPopup("SaveErrorPopup"))
-            {
-                ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Save Failed!");
-                ImGui::Separator();
-                ImGui::Text("A Prefab must contain exactly one root object.");
-                ImGui::Text("Please parent your objects under a single container.");
-                if (ImGui::Button("Close"))
-                {
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
+            rootCount++;
+            rootEntity = entity;
         }
-        ImGui::Separator();
+
+        if (rootCount == 1)
+        {
+            Frost::PrefabSerializer::CreatePrefab(Frost::GameObject(rootEntity, _sceneContext), _assetPath);
+            FT_ENGINE_INFO("Prefab saved successfully: {}", _assetPath.string());
+        }
+        else
+        {
+            FT_ENGINE_ERROR("Cannot save Prefab: It must have exactly ONE root entity. Found: {}", rootCount);
+            ImGui::OpenPopup("SaveErrorPopup");
+        }
     }
 
     bool SceneView::_DrawVec3Control(const std::string& label, float* values, float resetValue, float columnWidth)

@@ -92,7 +92,7 @@ namespace Editor
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        _RenderUI();
+        _RenderUI(deltaTime);
 
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -151,12 +151,12 @@ namespace Editor
         _activeSceneView = newView.get();
     }
 
-    void EditorLayer::_RenderUI()
+    void EditorLayer::_RenderUI(float deltaTime)
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGuiID dockspaceID = ImGui::GetID("DockSpace");
 
-        _statusBar->Draw();
+        _statusBar->Draw(deltaTime);
 
         ImGui::DockSpaceOverViewport(dockspaceID, viewport);
 
@@ -194,12 +194,12 @@ namespace Editor
             ImGui::DockBuilderFinish(dockspaceID);
         }
 
-        _mainMenuBar->Draw();
-        _contentBrowser->Draw();
+        _mainMenuBar->Draw(deltaTime);
+        _contentBrowser->Draw(deltaTime);
 
         for (auto& view : _views)
         {
-            view->DrawViewport();
+            view->Draw(deltaTime);
         }
 
         if (!_activeSceneView && !_views.empty())

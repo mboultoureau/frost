@@ -7,6 +7,6 @@ namespace Editor
     class StatusBar : public EditorPanel
     {
     public:
-        void Draw() override;
+        void Draw(float deltaTime) override;
     };
 } // namespace Editor
