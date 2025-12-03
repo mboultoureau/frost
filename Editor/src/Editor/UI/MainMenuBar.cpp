@@ -11,7 +11,7 @@ namespace Editor
 {
     MainMenuBar::MainMenuBar(const ProjectInfo& projectInfo) : _projectInfo(projectInfo) {}
 
-    void MainMenuBar::Draw()
+    void MainMenuBar::Draw(float deltaTime)
     {
         if (ImGui::BeginMainMenuBar())
         {

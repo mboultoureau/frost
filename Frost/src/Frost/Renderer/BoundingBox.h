@@ -3,6 +3,9 @@
 #include <DirectXMath.h>
 #include <algorithm>
 
+#undef min
+#undef max
+
 namespace Frost
 {
     struct BoundingBox
@@ -37,6 +40,17 @@ namespace Frost
             }
 
             return { newMin, newMax };
+        }
+
+        void Merge(const BoundingBox& other)
+        {
+            min.x = std::min(min.x, other.min.x);
+            min.y = std::min(min.y, other.min.y);
+            min.z = std::min(min.z, other.min.z);
+
+            max.x = std::max(max.x, other.max.x);
+            max.y = std::max(max.y, other.max.y);
+            max.z = std::max(max.z, other.max.z);
         }
     };
 } // namespace Frost

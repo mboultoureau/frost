@@ -26,7 +26,7 @@ namespace Editor
         ContentBrowser(const ProjectInfo& projectInfo);
         ~ContentBrowser();
 
-        void Draw();
+        void Draw(float deltaTime);
 
     private:
         void _RefreshAssetList();

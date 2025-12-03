@@ -33,7 +33,7 @@ namespace Editor
             mouse.UnlockCursor();
         }
 
-        if (!_isActive)
+        if (!_isActive || !isViewportFocused)
             return;
 
         // Rotation and Movement

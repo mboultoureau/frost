@@ -53,6 +53,7 @@ namespace Frost::Component
         }
 
         Math::EulerAngles GetEulerAngles() const { return Math::QuaternionToEulerAngles(rotation); }
+        Math::Matrix4x4 GetTransformMatrix() const;
 
         Math::Vector3 GetForward() const
         {

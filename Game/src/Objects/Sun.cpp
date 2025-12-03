@@ -20,9 +20,7 @@ Sun::Sun()
     sun.AddComponent<WorldTransform>();
 
     // Light component
-    sun.AddComponent<Light>(LightType::Directional,
-                            Math::Color3{ 1.0f, 1.0f, 1.0f },
-                            2.0f,
-                            100.0f // radius parameter
-    );
+    auto& light = sun.AddComponent<Light>(LightDirectional{});
+    light.color = Math::Color3{ 1.0f, 1.0f, 1.0f };
+    light.intensity = 2.0f;
 }
