@@ -3,20 +3,23 @@
 #include "../MainLayer.h"
 #include "Frost/Asset/ModelFactory.h"
 #include "Frost/Renderer/Shader.h"
+#include "Player/PlayerCamera.h"
 
 using namespace Frost;
 using namespace Frost::Math;
 using namespace Frost::Component;
 
-Grass::Grass()
+Grass::Grass(Vector3 pos, EulerAngles rot, Vector3 scale)
 {
     Scene& scene = Game::GetScene();
-    _planeObject = scene.CreateGameObject("GrassPlane");
+    _grassPlane = scene.CreateGameObject("GrassPlane");
+    _grassPlane.AddScript<GrassScript>(this);
 
-    StaticMesh& meshComp = _planeObject.AddComponent<StaticMesh>(MeshSourcePlane{ 10.0f, 10.0f });
-    Transform& transform = _planeObject.AddComponent<Transform>();
-    transform.position = Vector3(10.0f, 0.0f, 0.0f);
-    transform.Rotate(EulerAngles(180.0_deg, 0.0_deg, 0.0_deg));
+    StaticMesh& meshComp = _grassPlane.AddComponent<StaticMesh>(MeshSourcePlane{ 10.0f, 10.0f });
+    Transform& transform = _grassPlane.AddComponent<Transform>();
+    transform.position = pos;
+    transform.Rotate(rot);
+    transform.scale = scale;
 
     ShaderDesc vsDesc = { .type = ShaderType::Vertex,
                           .filePath = "../Frost/resources/shaders/Material/Grass/VS_Grass.hlsl" };
@@ -72,8 +75,12 @@ Grass::_SetClosestPlayerPosToShader()
     auto player = Game::GetMainLayer()->GetPlayer();
     if (player)
     {
-        auto camPos = player->GetPlayerID().GetComponent<WorldTransform>().position;
-        _params.CameraPosition = { camPos.x, camPos.y, camPos.z };
+        auto& scene = Game::GetScene();
+        auto mainLayer = Game::GetMainLayer();
+        auto player = mainLayer->GetPlayer();
+        auto& playerCamera = player->GetCamera()->GetCameraId();
+        auto camPos = scene.GetComponent<WorldTransform>(playerCamera);
+        _params.CameraPosition = { camPos->position.x, camPos->position.y, camPos->position.z };
     }
     else
     {
@@ -82,14 +89,14 @@ Grass::_SetClosestPlayerPosToShader()
 }
 
 void
-Grass::Update(float dt)
+Grass::UpdateShader(float dt)
 {
     _params.Time += dt;
     _SetClosestPlayerPosToShader();
 
-    if (_planeObject.HasComponent<StaticMesh>())
+    if (_grassPlane.HasComponent<StaticMesh>())
     {
-        auto& mesh = _planeObject.GetComponent<StaticMesh>();
+        auto& mesh = _grassPlane.GetComponent<StaticMesh>();
         if (mesh.GetModel() && !mesh.GetModel()->GetMaterials().empty())
         {
             std::vector<uint8_t> paramData(sizeof(GrassMaterialParameters));
@@ -98,4 +105,10 @@ Grass::Update(float dt)
             mesh.GetModel()->GetMaterials()[0].parameters = paramData;
         }
     }
+}
+
+void
+GrassScript::OnUpdate(float deltaTime)
+{
+    _grass->UpdateShader(deltaTime);
 }
