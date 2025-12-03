@@ -4,7 +4,7 @@
 
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/MainMenuBar.h"
-#include "Editor/UI/SceneView.h"
+#include "Editor/UI/Scene/SceneView.h"
 #include "Editor/UI/StatusBar.h"
 #include "Editor/Project/ProjectInfo.h"
 #include "Frost/Scene/Scene.h"
@@ -33,7 +33,7 @@ namespace Editor
         static EditorLayer& Get();
 
     private:
-        void _RenderUI();
+        void _RenderUI(float deltaTime);
 
     private:
         static EditorLayer* _instance;

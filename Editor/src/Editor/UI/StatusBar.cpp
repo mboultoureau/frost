@@ -5,7 +5,7 @@
 
 namespace Editor
 {
-    void StatusBar::Draw()
+    void StatusBar::Draw(float deltaTime)
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
 

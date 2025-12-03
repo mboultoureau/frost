@@ -5,7 +5,7 @@ namespace Editor
     class EditorPanel
     {
     public:
-        virtual void Draw() = 0;
+        virtual void Draw(float deltaTime) = 0;
         bool IsOpen() const { return _isOpen; }
 
     protected:
