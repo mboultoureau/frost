@@ -100,7 +100,7 @@ namespace Editor
     }
 
     // Rendering
-    void ContentBrowser::Draw()
+    void ContentBrowser::Draw(float deltaTime)
     {
         if (_iconManager)
         {

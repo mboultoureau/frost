@@ -5,6 +5,8 @@
 #include "Frost/Scene/Scene.h"
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Renderer/BoundingBox.h"
+#include "Editor/UI/Scene/SceneViewToolbar.h"
+#include "Editor/UI/Scene/Gizmo.h"
 
 #include <imgui.h>
 #include <string>
@@ -27,8 +29,7 @@ namespace Editor
 
         void OnUpdate(float deltaTime);
 
-        void Draw() override;
-        void DrawViewport();
+        void Draw(float deltaTime) override;
 
         void OnRenderHierarchy();
         void OnRenderInspector();
@@ -37,10 +38,13 @@ namespace Editor
         bool IsFocused() const { return _isFocused; }
         bool IsOpen() const { return _isOpen; }
 
+        const SceneViewSettings& GetSettings() const { return _viewSettings; }
+
     private:
         void _Init();
         void _ResizeViewportFramebuffer(uint32_t width, uint32_t height);
         void _DrawToolbar();
+        void _SavePrefab();
 
         bool _DrawVec3Control(const std::string& label,
                               float* values,
@@ -73,11 +77,20 @@ namespace Editor
         uint32_t _viewportWidth = 0, _viewportHeight = 0;
 
         Frost::GameObject _editorCamera;
+        Frost::GameObject _editorSkybox;
+        Frost::GameObject _editorLight;
+
         std::filesystem::path _assetPath;
         bool _isPrefabView = false;
 
         char _nameBuffer[256] = { 0 };
 
         EditorCameraController _cameraController;
+
+        SceneViewToolbar _toolbar;
+        SceneViewSettings _viewSettings;
+        GizmoOperation _currentGizmoOp = GizmoOperation::Translate;
+
+        Gizmo _gizmo;
     };
 } // namespace Editor
