@@ -23,15 +23,9 @@ MainLayer::OnAttach()
 
     _gamestate.SetLap(4);
 
-    _player = std::make_unique<Player>();
+    // player
 
-    _portal1 = std::make_shared<Portal>(
-        Vector3{ -365, 68, -32 }, EulerAngles{ 0_deg, 0_deg, 0_deg }, Vector3{ 3.0f, 3.0f, 3.0f }, _player.get());
-    _portal2 = std::make_shared<Portal>(
-        Vector3{ -130, 68, 180 }, EulerAngles{ 0_deg, 90_deg, 0_deg }, Vector3{ 3.0f, 3.0f, 3.0f }, _player.get());
-
-    _portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
-    _portal2->SetupPortal(PortalType::Exit);
+    // portal
 
     //_terrain = std::make_unique<Terrain>();
     _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
@@ -81,6 +75,9 @@ MainLayer::OnAttach()
     // LevelCamera levelCamera;
     auto _sky = std::make_unique<Sky>();
 
+    _startMenu = std::make_unique<Frost::StartMenu>();
+    _startMenu->OnAttach();
+
     _pauseHandlerUUID = EventManager::Subscribe<Frost::PauseEvent>(FROST_BIND_EVENT_FN(MainLayer::OnGamePaused));
 
     _unpauseHandlerUUID = EventManager::Subscribe<Frost::UnPauseEvent>(FROST_BIND_EVENT_FN(MainLayer::OnGameUnpaused));
@@ -115,6 +112,30 @@ MainLayer::OnFixedUpdate(float deltaTime)
 
     static bool winScreenCreated = false;
 
+    if (!_gamestate.IsGameStarted())
+    {
+        _startMenu->OnUpdate(deltaTime);
+        if (!_paused)
+        {
+            _gamestate.StartGame();
+            std::vector<Player> players = _gamestate.GetPlayers();
+            _player = std::make_unique<Player>();
+            _portal1 = std::make_shared<Portal>(Vector3{ -365, 68, -32 },
+                                                EulerAngles{ 0_deg, 0_deg, 0_deg },
+                                                Vector3{ 3.0f, 3.0f, 3.0f },
+                                                _player.get());
+            _portal2 = std::make_shared<Portal>(Vector3{ -130, 68, 180 },
+                                                EulerAngles{ 0_deg, 90_deg, 0_deg },
+                                                Vector3{ 3.0f, 3.0f, 3.0f },
+                                                _player.get());
+
+            _portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
+            _portal2->SetupPortal(PortalType::Exit);
+
+            _startMenu->OnDetach();
+            _startMenu.reset();
+        }
+    }
     if (_gamestate.Finished())
     {
 
@@ -122,16 +143,27 @@ MainLayer::OnFixedUpdate(float deltaTime)
         {
             auto winScreen = _scene.CreateGameObject("victoryScreen");
 
-            Viewport viewport;
-            viewport.height = 0.2;
-            viewport.width = 0.4f;
-            const std::string WIN_PATH = "resources/textures/victoryScreen.png";
+            Viewport viewportImage;
+            viewportImage.height = 0.7f;
+            viewportImage.width = 0.6f;
+            viewportImage.x = 0.2f;
+            viewportImage.y = 0.1f;
+            const std::string WIN_PATH = "resources/textures/victoryScreen2.png";
+            Viewport viewportButton;
+            viewportButton.height = 0.2f;
+            viewportButton.width = 0.2f;
+            viewportButton.x = 0.4f;
+            viewportButton.y = 0.8f;
+            const std::string hover = "resources/textures/reset-hover.png";
+            const std::string idle = "resources/textures/reset-idle.png";
+            const std::string press = "resources/textures/reset-press.png";
 
-            viewport.x = 0.25f;
-            viewport.y = 0.4;
+            Scene& _scene = Game::GetScene();
 
-            _scene.AddComponent<HUDImage>(winScreen, viewport, WIN_PATH, Material::FilterMode::POINT);
+            auto VictoryScreen = _scene.CreateGameObject("Victory Screen");
+            _scene.AddComponent<HUDImage>(winScreen, viewportImage, WIN_PATH, Material::FilterMode::POINT);
             winScreenCreated = true;
+            VictoryScreen.AddComponent<UIButton>(viewportButton, hover, idle, press, [this]() { OnPressedButton(); });
         }
     }
     else
@@ -149,6 +181,11 @@ MainLayer::OnFixedUpdate(float deltaTime)
         _checkPoint5->FixedUpdate(deltaTime);
     }
     _scene.FixedUpdate(deltaTime);
+}
+void
+MainLayer::OnPressedButton()
+{
+    EventManager::Emit<Frost::ResetEvent>();
 }
 
 void
