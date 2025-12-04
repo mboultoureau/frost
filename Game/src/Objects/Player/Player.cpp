@@ -8,7 +8,6 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
-#include "../HUD/SelectedImageManager.h"
 
 // TODO: remove windows header from polluting all the code
 #undef max
@@ -22,6 +21,7 @@
 #include "../CheckPoint.h"
 #include "PlayerScript.h"
 #include "../HUD/Speedometer.h"
+#include "../HUD/SelectedImageManager.h"
 #include "Vehicles/Bike.h"
 #include "Vehicles/Boat.h"
 #include "Vehicles/Plane.h"
