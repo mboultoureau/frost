@@ -38,7 +38,7 @@ namespace Frost
         pauseTextId.AddComponent<Component::HUDImage>(textViewport, pausePath, Material::FilterMode::POINT);
 
         resumeButtonId.AddComponent<Component::UIButton>(
-            resumeViewport, idleResumePath, hoverResumePath, hoverResumePath, [this]() { OnUnpauseButtonPress(); });
+            resumeViewport, idleResumePath, hoverResumePath, pressedResumePath, [this]() { OnUnpauseButtonPress(); });
         auto& resumeButton = resumeButtonId.GetComponent<Component::UIButton>();
         resumeButton.buttonHitbox = resumeViewport;
         resetButtonId.AddComponent<Component::UIButton>(

@@ -19,6 +19,7 @@
 #include "Objects/Wall.h"
 #include "Objects/Water.h"
 #include "Objects/Grass.h"
+#include "StartMenu/StartMenu.h"
 #include <memory>
 
 class MainLayer : public Frost::Layer
@@ -32,6 +33,7 @@ public:
     void OnPreFixedUpdate(float deltaTime) override;
     void OnFixedUpdate(float deltaTime) override;
     void OnDetach() override;
+    void OnPressedButton();
     Player* GetPlayer() const { return _player.get(); };
 
 private:
@@ -57,4 +59,6 @@ private:
     std::shared_ptr<CheckPoint> _checkPoint5;
     std::shared_ptr<Wall> _wall;
     std::unique_ptr<Grass> _grass;
+
+    std::unique_ptr<Frost::StartMenu> _startMenu;
 };
