@@ -98,19 +98,50 @@ namespace Frost::Component
         }
         else if (auto* p = std::get_if<MeshSourceHeightMap>(&_config))
         {
-            if (p->texturePath.empty())
-                return;
+            auto& params = std::get<MeshSourceHeightMap>(_config);
 
-            if (!std::filesystem::exists(p->texturePath))
+            if (params.texturePath.empty())
             {
-                std::filesystem::path projectPath = Application::GetProjectDirectory() / p->texturePath;
-                if (std::filesystem::exists(projectPath))
-                    p->texturePath = projectPath.string();
-                else
-                    return;
+                return;
             }
 
-            _model = ModelFactory::CreateFromHeightMap(*p);
+            std::filesystem::path loadPath = params.texturePath;
+            bool found = false;
+
+            if (std::filesystem::exists(loadPath))
+            {
+                found = true;
+            }
+            else
+            {
+                std::filesystem::path projectPath = Application::GetProjectDirectory() / params.texturePath;
+                if (std::filesystem::exists(projectPath))
+                {
+                    loadPath = projectPath;
+                    found = true;
+                }
+            }
+
+            if (found)
+            {
+                try
+                {
+                    MeshSourceHeightMap config = *p;
+                    config.texturePath = loadPath;
+
+                    _model = ModelFactory::CreateFromHeightMap(config);
+                }
+                catch (const std::exception& e)
+                {
+                    FT_ENGINE_ERROR("StaticMesh: Failed to load '{0}': {1}", loadPath.string(), e.what());
+                }
+            }
+            else
+            {
+                FT_ENGINE_WARN("StaticMesh: File not found: {0}. (Project Dir: {1})",
+                               params.texturePath.string(),
+                               Application::GetProjectDirectory().string());
+            }
         }
     }
 } // namespace Frost::Component

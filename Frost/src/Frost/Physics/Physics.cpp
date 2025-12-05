@@ -31,7 +31,6 @@ namespace Frost
         cMaxBodyPairs(1024),
         cNumBodyMutexes(0),
         cMaxContactConstraints(1024),
-        cDeltaTime(1.0f / 60.0f),
         body_activation_listener{},
         contact_listener{},
         broad_phase_layer_interface{ _physicsConfig.broadPhaseLayerInterface },
@@ -178,9 +177,9 @@ namespace Frost
         return static_cast<entt::entity>(GetBodyInterface().GetUserData(inBodyID));
     }
 
-    void Physics::UpdatePhysics()
+    void Physics::UpdatePhysics(float fixedDeltaTime)
     {
-        physics_system.Update(cDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
+        physics_system.Update(fixedDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
     }
 
     void Physics::TraceImpl(const char* inFMT, ...)

@@ -76,9 +76,14 @@ Boat::Appear()
 void
 Boat::Disappear()
 {
+    if (!_player->GetPlayerID().IsValid())
+        return;
+
     RenderMesh(false);
 
-    Physics::RemoveAndDestroyBody(_bodyId);
+    if (_player->GetPlayerID().HasComponent<RigidBody>())
+        _player->GetPlayerID().RemoveComponent<RigidBody>();
+
     Boat::UnregisterBoat(_bodyId);
     _isBodyValid = false;
 }

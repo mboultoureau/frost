@@ -25,9 +25,7 @@ public:
     void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override
     {
         auto& rb = GetGameObject().GetComponent<RigidBody>();
-
-        Physics::Get().body_interface->SetGravityFactor(rb.physicBody->bodyId, 0.0f);
-        Physics::Get().body_interface->DeactivateBody(rb.physicBody->bodyId);
+        Physics::Get().body_interface->DeactivateBody(rb.runtimeBodyID);
     }
 };
 
@@ -53,12 +51,8 @@ BallRain::InstantiateDroplet(float x, float z)
     FT_ENGINE_ASSERT(_droplet != GameObject::InvalidId, "Droplet GameObject is invalid");
 
     // Create vehicle body
-    RVec3 position(x, (x + z) / 2.0f, z);
-    JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(0.5f).Create().Get();
-    BodyCreationSettings droplet_body_settings(
-        sphereShape, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
-    droplet_body_settings.mGravityFactor = 2.0f;
-    scene.AddComponent<RigidBody>(_droplet, droplet_body_settings, _droplet, EActivation::Activate);
+    auto& rb = _droplet.AddComponent<RigidBody>(ShapeSphere{ 0.5f }, ObjectLayers::NON_MOVING);
+    rb.gravityFactor = 2.0f;
 
     scene.AddScript<DropletScript>(_droplet);
 }

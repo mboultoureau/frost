@@ -16,7 +16,7 @@ namespace Frost::Component
 
     struct MeshSourceHeightMap
     {
-        std::string texturePath;
+        std::filesystem::path texturePath;
         float width = 10.0f;
         float depth = 10.0f;
         float minHeight = 0.0f;

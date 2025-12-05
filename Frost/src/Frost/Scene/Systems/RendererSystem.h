@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Asset/Texture.h"
+#include "Frost/Renderer/CommandList.h"
 #include "Frost/Renderer/Pipeline/DeferredRenderingPipeline.h"
 #include "Frost/Renderer/Pipeline/SkyboxPipeline.h"
 #include "Frost/Scene/Components/Camera.h"
@@ -31,13 +32,20 @@ namespace Frost
         void SetRenderTargetOverride(std::shared_ptr<Texture> target) { _externalRenderTarget = target; }
 
     private:
-        void _RenderSceneForCamera(Scene& scene,
+        void _RenderSceneToTexture(Scene& scene,
                                    const RenderCameraData& camData,
                                    float deltaTime,
                                    const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
-                                   const std::shared_ptr<Texture>& skyboxTexture,
-                                   Texture* overrideRenderTarget = nullptr,
-                                   float overrideAspectRatio = 0.0f);
+                                   const std::shared_ptr<Texture>& skybox,
+                                   float overrideAspectRatio);
+
+        void _ApplyPostProcessing(CommandList* commandList,
+                                  Texture* sourceTexture,
+                                  Texture* destinationTarget,
+                                  const Component::Camera& camera,
+                                  float deltaTime);
+
+        bool _IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix);
 
     private:
         DeferredRenderingPipeline _deferredRendering;

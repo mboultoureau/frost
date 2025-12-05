@@ -35,18 +35,10 @@ PortalScript::OnInitialize()
         return;
     }
 
-    auto& transform = _gameObject.GetComponent<Transform>();
-    RVec3 position = Math::vector_cast<JPH::Vec3>(transform.position);
-    JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(5.0f, 5.0f, 5.0f)).Create().Get();
-    JPH::Quat rot{ transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w };
-    rot = rot.Normalized();
-    FT_ASSERT(rot.IsNormalized(), "rot pas normalized");
-    BodyCreationSettings portalBodySettings(boxShape, position, rot, EMotionType::Static, ObjectLayers::PORTAL);
+    RigidBody rbComp{ ShapeBox{ Vector3{ 5.0f, 5.0f, 5.0f } }, ObjectLayers::PORTAL, RigidBody::MotionType::Static };
+    rbComp.isSensor = true;
 
-    portalBodySettings.mGravityFactor = 0.0f;
-    portalBodySettings.mIsSensor = true;
-
-    _gameObject.AddComponent<RigidBody>(portalBodySettings, GetGameObject(), EActivation::Activate);
+    auto& rb = _gameObject.AddComponent<RigidBody>(rbComp);
 }
 
 void
@@ -69,7 +61,7 @@ PortalScript::WarpPlayer()
 
     auto playerTransform = scene.GetComponent<WorldTransform>(playerId);
     auto playerRb = scene.GetComponent<RigidBody>(playerId);
-    auto playerBodyId = playerRb->physicBody->bodyId;
+    auto playerBodyId = playerRb->runtimeBodyID;
     auto bodyInter = Physics::Get().body_interface;
 
     auto& playerCamera = player->GetCamera()->GetCameraId();
@@ -82,7 +74,7 @@ PortalScript::WarpPlayer()
 
     auto cameraRb = scene.GetComponent<RigidBody>(playerCamera);
 
-    Vector3 cameraSpeed = Math::vector_cast<Vector3>(bodyInter->GetLinearVelocity(cameraRb->physicBody->bodyId));
+    Vector3 cameraSpeed = Math::vector_cast<Vector3>(bodyInter->GetLinearVelocity(cameraRb->runtimeBodyID));
 
     JPH::Quat portal1Rotation{ portal1Transform->rotation.x,
                                portal1Transform->rotation.y,

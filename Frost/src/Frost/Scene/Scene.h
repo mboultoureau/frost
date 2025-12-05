@@ -26,6 +26,7 @@ namespace Frost
         GameObject CreateGameObject(std::string name = "Entity");
         GameObject CreateGameObject(std::string name, GameObject parent);
         void DestroyGameObject(GameObject gameObject);
+        GameObject DuplicateGameObject(GameObject source);
 
         void Update(float deltaTime);
         void PreFixedUpdate(float deltaTime);
@@ -79,6 +80,22 @@ namespace Frost
             return GameObject(id, this);
         }
 
+        template<typename T>
+        T* GetSystem()
+        {
+            static_assert(std::is_base_of<System, T>::value, "T must derive from System");
+
+            for (const auto& system : _systems)
+            {
+                if (T* castedSystem = dynamic_cast<T*>(system.get()))
+                {
+                    return castedSystem;
+                }
+            }
+
+            return nullptr;
+        }
+
     private:
         entt::registry _registry;
         std::string _name;
@@ -86,6 +103,7 @@ namespace Frost
 
         void _InitializeSystems();
 
-        void OnRelationshipDestroyed(entt::registry& registry, entt::entity entity);
+        void _DuplicateRecursively(GameObject source, GameObject newParent);
+        void _OnRelationshipDestroyed(entt::registry& registry, entt::entity entity);
     };
 } // namespace Frost

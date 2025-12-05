@@ -1,7 +1,9 @@
 #include "MainMenuBar.h"
 #include "Frost/Event/EventManager.h"
 #include "Frost/Event/Events/Window/WindowCloseEvent.h"
+#include "Editor/UI/ProjectSettingsWindow.h"
 #include "Editor/Project/ProjectCloseEvent.h"
+#include "Editor/Project/OpenProjectSettingsEvent.h"
 
 #include <imgui.h>
 
@@ -46,13 +48,14 @@ namespace Editor
 
     void MainMenuBar::_RenderEditMenu()
     {
-        /*
         if (ImGui::BeginMenu("Edit"))
         {
-                //ImGui::MenuItem("Undo", "Ctrl+Z");
-                ImGui::EndMenu();
+            if (ImGui::MenuItem("Project Settings..."))
+            {
+                EventManager::Emit<OpenProjectSettingsEvent>();
+            }
+            ImGui::EndMenu();
         }
-        */
     }
 
     void MainMenuBar::_RenderProjectName()
