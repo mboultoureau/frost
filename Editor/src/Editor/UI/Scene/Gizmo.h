@@ -5,18 +5,22 @@
 #include "Frost/Utils/Math/Matrix.h"
 #include "Frost/Utils/Math/Vector.h"
 #include "Editor/UI/Scene/SceneViewToolbar.h"
+#include "Frost/Scene/Scene.h"
 
 #include <imgui.h>
+#include <functional>
+#include <optional>
 
 namespace Editor
 {
     class Gizmo
     {
     public:
-        Gizmo();
+        Gizmo(Frost::Scene* scene);
 
         void Update(GizmoOperation operation,
                     Frost::Component::Transform& targetTransform,
+                    Frost::GameObject& targetGameObject,
                     const Frost::Math::Matrix4x4& viewMatrix,
                     const Frost::Math::Matrix4x4& projectionMatrix,
                     const Frost::Math::Vector3& rayOrigin,
@@ -72,11 +76,19 @@ namespace Editor
 
         // Transforms
         Frost::Component::Transform* _targetTransform = nullptr;
+        Frost::GameObject* _targetGameObject = nullptr;
         Frost::Math::Vector3 _gizmoPosition;
         float _gizmoScreenScale = 1.0f;
 
         // Manipulation
         Frost::Math::Vector3 _manipulationStartPos;
         Frost::Component::Transform _originalTransform;
+
+        // Duplicate
+        std::optional<Frost::GameObject> _ownedDuplicatedObject;
+        std::function<void(Frost::GameObject)> _onTargetDuplicated;
+
+        // Context
+        Frost::Scene* _scene = nullptr;
     };
 } // namespace Editor

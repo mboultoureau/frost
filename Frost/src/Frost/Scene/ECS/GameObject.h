@@ -17,6 +17,7 @@ namespace Frost
         using Id = entt::entity;
 
         GameObject() = default;
+        GameObject(entt::entity handle);
         GameObject(entt::entity handle, Scene* scene);
 
         template<typename T, typename... Args>
@@ -69,6 +70,7 @@ namespace Frost
         GameObject::Id GetId() const { return _entityHandle; }
         entt::entity GetHandle() const { return _entityHandle; }
         Scene* GetScene() const { return _scene; }
+        const bool IsValid() const;
 
         static const GameObject InvalidId;
 

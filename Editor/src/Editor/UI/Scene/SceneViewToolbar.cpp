@@ -1,5 +1,6 @@
 #include "Editor/UI/Scene/SceneViewToolbar.h"
 #include "Frost/Asset/AssetManager.h"
+#include "Frost/Debugging/DebugInterface/DebugPhysics.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -11,6 +12,7 @@ namespace Editor
     void SceneViewToolbar::Init()
     {
         _GetIcon("save");
+        _GetIcon("mouse");
         _GetIcon("translate");
         _GetIcon("rotate");
         _GetIcon("scale");
@@ -76,6 +78,35 @@ namespace Editor
                                 bool isPrefabView,
                                 const std::function<void()>& onSaveCallback)
     {
+        // Handle inputs
+        if (ImGui::IsKeyPressed(ImGuiKey_Q))
+            currentGizmo = GizmoOperation::None;
+        if (ImGui::IsKeyPressed(ImGuiKey_T))
+            currentGizmo = GizmoOperation::Translate;
+        if (ImGui::IsKeyPressed(ImGuiKey_E))
+            currentGizmo = GizmoOperation::Rotate;
+        if (ImGui::IsKeyPressed(ImGuiKey_R))
+            currentGizmo = GizmoOperation::Scale;
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Space))
+        {
+            switch (currentGizmo)
+            {
+                case GizmoOperation::None:
+                    currentGizmo = GizmoOperation::Translate;
+                    break;
+                case GizmoOperation::Translate:
+                    currentGizmo = GizmoOperation::Rotate;
+                    break;
+                case GizmoOperation::Rotate:
+                    currentGizmo = GizmoOperation::Scale;
+                    break;
+                case GizmoOperation::Scale:
+                    currentGizmo = GizmoOperation::Translate;
+                    break;
+            }
+        }
+
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4, 4));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
 
@@ -102,12 +133,20 @@ namespace Editor
         }
 
         // Gizmos
+        if (_DrawToggleButton("##Mouse", _GetIcon("mouse"), currentGizmo == GizmoOperation::None))
+        {
+            currentGizmo = GizmoOperation::None;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Mouse (Q)");
+        ImGui::SameLine();
+
         if (_DrawToggleButton("##Trans", _GetIcon("translate"), currentGizmo == GizmoOperation::Translate))
         {
             currentGizmo = GizmoOperation::Translate;
         }
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Translate (W)");
+            ImGui::SetTooltip("Translate (T)");
         ImGui::SameLine();
 
         if (_DrawToggleButton("##Rot", _GetIcon("rotate"), currentGizmo == GizmoOperation::Rotate))
@@ -178,7 +217,9 @@ namespace Editor
             ImGui::Checkbox("Show Editor Skybox", &settings.showEditorSkybox);
             ImGui::Checkbox("Show Editor Light", &settings.showEditorLight);
 
-            // ImGui::Separator();
+            ImGui::Separator();
+
+            ImGui::Checkbox("Show Physics Debug", &Frost::Debug::PhysicsConfig::display);
             // ImGui::Checkbox("Show Grid", &settings.showGrid);
             // ImGui::Checkbox("Wireframe Mode", &settings.showWireframe);
             // ImGui::Checkbox("Enable Lighting", &settings.enableLighting);

@@ -11,7 +11,6 @@
  * @see
  * https://h-deb.ca/Sujets/Divers--cplusplus/Implementer-changement-referentiel.html
  */
-
 namespace Frost::Math
 {
     using namespace std::string_view_literals;

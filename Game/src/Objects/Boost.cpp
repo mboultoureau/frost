@@ -32,16 +32,9 @@ Boost::Boost(Vector3 pos, EulerAngles rot, Vector3 scale, Frost::Math::Vector3 d
     boost.AddComponent<Transform>(pos, rot, scale);
     boost.AddComponent<StaticMesh>(MeshSourceCube{ 1.0f });
 
-    ShapeRefC boxShape = BoxShapeSettings(Math::vector_cast<Vec3>(scale)).Create().Get();
-    BodyCreationSettings bodySett(boxShape,
-                                  Math::vector_cast<Vec3>(pos),
-                                  Math::vector_cast<Quat>(EulerToQuaternion(rot)),
-                                  EMotionType::Static,
-                                  ObjectLayers::BOOST);
-    bodySett.mIsSensor = true;
-
     // Create water sensor. We use this to detect which bodies entered the water
     // (in this sample we could have assumed everything is in the water)
-    boost.AddComponent<RigidBody>(bodySett, boost, EActivation::DontActivate);
+    auto& rb = boost.AddComponent<RigidBody>(ShapeBox{}, ObjectLayers::BOOST);
+    rb.isSensor = true;
     boost.AddScript<BoostScript>(dir, power);
 }

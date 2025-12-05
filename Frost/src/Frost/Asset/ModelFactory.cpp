@@ -70,7 +70,7 @@ namespace Frost
 
         TextureConfig texConfig;
         texConfig.loadImmediately = true;
-        texConfig.path = config.texturePath;
+        texConfig.path = config.texturePath.generic_string();
         texConfig.textureType = TextureType::HEIGHTMAP;
         texConfig.debugName = "HeightmapTexture";
         auto texture = Texture::Create(texConfig);
@@ -85,7 +85,8 @@ namespace Frost
         bool hasData = !pixels.empty() && imgW > 0 && imgH > 0;
         if (!hasData && !config.texturePath.empty())
         {
-            FT_ENGINE_WARN("ModelFactory: Heightmap texture data is empty or invalid: {}", config.texturePath);
+            FT_ENGINE_WARN("ModelFactory: Heightmap texture data is empty or invalid: {}",
+                           config.texturePath.generic_string());
         }
 
         uint32_t vCountX = config.segmentsWidth + 1;

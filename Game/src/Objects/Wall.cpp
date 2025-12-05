@@ -31,10 +31,6 @@ Wall::_SetupPhysics()
 
     Scene& scene = Game::GetScene();
 
-    ShapeRefC boxShape = BoxShapeSettings(Vec3(50.0f, 50.f, 1.0f)).Create().Get();
-    BodyCreationSettings planeBodySettings(
-        boxShape, RVec3(-365, 100.0f, -130), Quat::sIdentity(), EMotionType::Static, ObjectLayers::NON_MOVING);
-    planeBodySettings.mUserData = static_cast<JPH::uint64>(reinterpret_cast<uintptr_t>(&_wall));
-    _wall.AddComponent<RigidBody>(planeBodySettings, _wall, EActivation::DontActivate);
-    auto bodyId = _wall.GetComponent<RigidBody>().physicBody->bodyId;
+    _wall.AddComponent<RigidBody>(ShapeBox{ { 50.0f, 50.f, 1.0f } }, ObjectLayers::NON_MOVING);
+    auto bodyId = _wall.GetComponent<RigidBody>().runtimeBodyID;
 }

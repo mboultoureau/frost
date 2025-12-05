@@ -39,7 +39,7 @@ namespace Frost
         static Physics& Get();
         Physics();
         ~Physics();
-        void UpdatePhysics();
+        void UpdatePhysics(float fixedDeltaTime);
         static void InitPhysics(PhysicsConfig& config, bool useConfig);
         static void Shutdown();
 
@@ -54,7 +54,6 @@ namespace Frost
         const JPH::uint cNumBodyMutexes;
         const JPH::uint cMaxBodyPairs;
         const JPH::uint cMaxContactConstraints;
-        const float cDeltaTime;
         inline static bool _physicsInitialized = false;
         inline static PhysicsConfig _physicsConfig;
 

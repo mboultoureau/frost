@@ -87,6 +87,7 @@ set(IMGUI_SOURCES
     "${IMGUI_DIR}/imgui_demo.cpp"
     "${IMGUI_DIR}/backends/imgui_impl_win32.cpp"
     "${IMGUI_DIR}/backends/imgui_impl_dx11.cpp"
+    "${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp"
 )
 
 add_library(ImGui STATIC

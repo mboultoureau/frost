@@ -11,6 +11,7 @@
 #include "Frost/Scene/Components/HUDImage.h"
 #include "Frost/Scene/Components/UIButton.h"
 #include "Frost/Scene/Components/Disabled.h"
+#include "Frost/Scene/Systems/PhysicSystem.h"
 
 #include "Frost/Debugging/DebugInterface/DebugUtils.h"
 #include "Frost/Utils/Math/Angle.h"
@@ -92,8 +93,10 @@ namespace Frost
 
                 if (DebugUtils::DrawComponentHeader("Transform", nullptr))
                 {
+                    bool modified = false;
+
                     // Position
-                    DebugUtils::DrawVec3Control("Position", transform.position);
+                    modified |= DebugUtils::DrawVec3Control("Position", transform.position);
 
                     // Rotation
                     if (e != s_TransformLastEntity)
@@ -105,7 +108,7 @@ namespace Frost
                         s_TransformLastEntity = e;
                     }
 
-                    if (DebugUtils::DrawVec3Control("Rotation", s_TransformEulerCache))
+                    if (modified |= DebugUtils::DrawVec3Control("Rotation", s_TransformEulerCache))
                     {
                         Math::EulerAngles newAnglesRad = {
                             .Roll = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(s_TransformEulerCache.z)),
@@ -116,7 +119,16 @@ namespace Frost
                     }
 
                     // Scale
-                    DebugUtils::DrawVec3Control("Scale", transform.scale, 1.0f);
+                    modified |= DebugUtils::DrawVec3Control("Scale", transform.scale, 1.0f);
+
+                    if (modified)
+                    {
+                        if (auto* physicSystem = scene->GetSystem<PhysicSystem>())
+                        {
+                            physicSystem->NotifyRigidBodyUpdate(*scene, GameObject{ e });
+                            FT_ENGINE_TRACE("RigidBody component on entity {} updated in UI.", (uint64_t)e);
+                        }
+                    }
 
                     ImGui::TreePop();
                 }
@@ -435,6 +447,7 @@ namespace Frost
                 }
             });
 
+        // Light
         Register<Light>(
             [](Scene* scene, entt::entity e, const UIContext& ctx)
             {
@@ -538,6 +551,155 @@ namespace Frost
                         {
                             spot->innerConeAngle = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(innerDeg));
                             spot->outerConeAngle = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(outerDeg));
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+            });
+
+        // RigidBody
+        Register<RigidBody>(
+            [](Scene* scene, entt::entity e, const UIContext& ctx)
+            {
+                auto& rb = scene->GetRegistry().get<RigidBody>(e);
+                bool removed = false;
+
+                if (DebugUtils::DrawComponentHeader("Rigid Body", &removed))
+                {
+                    if (removed)
+                    {
+                        scene->GetRegistry().remove<RigidBody>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
+                    bool modified = false;
+
+                    const char* motionTypes[] = { "Static", "Kinematic", "Dynamic" };
+                    int currentMotionType = static_cast<int>(rb.motionType);
+                    if (ImGui::Combo("Motion Type", &currentMotionType, motionTypes, IM_ARRAYSIZE(motionTypes)))
+                    {
+                        rb.motionType = static_cast<RigidBody::MotionType>(currentMotionType);
+                        modified = true;
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Text("Collision Shape");
+
+                    const char* shapeTypes[] = { "Box", "Sphere", "Capsule", "Cylinder" };
+                    int currentShapeType = static_cast<int>(rb.shape.index());
+                    if (ImGui::Combo("Shape", &currentShapeType, shapeTypes, IM_ARRAYSIZE(shapeTypes)))
+                    {
+                        switch (static_cast<CollisionShapeType>(currentShapeType))
+                        {
+                            case CollisionShapeType::Box:
+                                rb.shape = ShapeBox{};
+                                break;
+                            case CollisionShapeType::Sphere:
+                                rb.shape = ShapeSphere{};
+                                break;
+                            case CollisionShapeType::Capsule:
+                                rb.shape = ShapeCapsule{};
+                                break;
+                            case CollisionShapeType::Cylinder:
+                                rb.shape = ShapeCylinder{};
+                                break;
+                        }
+
+                        modified = true;
+                    }
+
+                    modified |= std::visit(
+                        [](auto&& arg)
+                        {
+                            bool shapeModified = false;
+                            using T = std::decay_t<decltype(arg)>;
+                            if constexpr (std::is_same_v<T, ShapeBox>)
+                            {
+                                shapeModified |= DebugUtils::DrawVec3Control("Half Extent", arg.halfExtent, 0.0f, 0.1f);
+                                shapeModified |=
+                                    ImGui::DragFloat("Convex Radius", &arg.convexRadius, 0.005f, 0.0f, 1.0f);
+                            }
+                            else if constexpr (std::is_same_v<T, ShapeSphere>)
+                            {
+                                shapeModified |= ImGui::DragFloat("Radius", &arg.radius, 0.05f, 0.01f, 1000.0f);
+                            }
+                            else if constexpr (std::is_same_v<T, ShapeCapsule>)
+                            {
+                                shapeModified |= ImGui::DragFloat("Half Height", &arg.halfHeight, 0.05f, 0.0f, 1000.0f);
+                                shapeModified |= ImGui::DragFloat("Radius", &arg.radius, 0.05f, 0.01f, 1000.0f);
+                            }
+                            else if constexpr (std::is_same_v<T, ShapeCylinder>)
+                            {
+                                shapeModified |= ImGui::DragFloat("Half Height", &arg.halfHeight, 0.05f, 0.0f, 1000.0f);
+                                shapeModified |= ImGui::DragFloat("Radius", &arg.radius, 0.05f, 0.01f, 1000.0f);
+                                shapeModified |=
+                                    ImGui::DragFloat("Convex Radius", &arg.convexRadius, 0.005f, 0.0f, 1.0f);
+                            }
+
+                            return shapeModified;
+                        },
+                        rb.shape);
+
+                    ImGui::Separator();
+                    ImGui::Text("Material Properties");
+                    modified |= ImGui::DragFloat("Friction", &rb.friction, 0.01f, 0.0f, 10.0f);
+                    modified |= ImGui::DragFloat("Restitution", &rb.restitution, 0.01f, 0.0f, 1.0f);
+
+                    if (rb.motionType == RigidBody::MotionType::Dynamic)
+                    {
+                        ImGui::Separator();
+                        ImGui::Text("Mass Properties");
+
+                        modified |= ImGui::DragFloat("Mass", &rb.mass, 0.1f, 0.01f, 10000.0f);
+                        ImGui::SameLine();
+                        if (ImGui::IsItemHovered())
+                            ImGui::SetTooltip("Only used if 'Override Mass' is not 'Calculate All'");
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Text("Simulation Settings");
+                    modified |= ImGui::DragFloat("Linear Damping", &rb.linearDamping, 0.01f, 0.0f, 100.0f);
+                    modified |= ImGui::DragFloat("Angular Damping", &rb.angularDamping, 0.01f, 0.0f, 100.0f);
+                    modified |= ImGui::DragFloat("Gravity Factor", &rb.gravityFactor, 0.05f, -10.0f, 10.0f);
+
+                    modified |= ImGui::Checkbox("Is Sensor (Trigger)", &rb.isSensor);
+                    modified |= ImGui::Checkbox("Allow Sleeping", &rb.allowSleeping);
+
+                    ImGui::Separator();
+                    ImGui::Text("Axis Locks (Degrees of Freedom)");
+
+                    ImGui::Columns(2, "dof_columns", false);
+                    ImGui::Text("Translation");
+                    ImGui::NextColumn();
+                    ImGui::Text("Rotation");
+                    ImGui::NextColumn();
+                    ImGui::Separator();
+
+                    modified |= ImGui::Checkbox("Lock X##Trans", &rb.lockPositionX);
+                    ImGui::NextColumn();
+                    modified |= ImGui::Checkbox("Lock X##Rot", &rb.lockRotationX);
+                    ImGui::NextColumn();
+
+                    modified |= ImGui::Checkbox("Lock Y##Trans", &rb.lockPositionY);
+                    ImGui::NextColumn();
+                    modified |= ImGui::Checkbox("Lock Y##Rot", &rb.lockRotationY);
+                    ImGui::NextColumn();
+
+                    modified |= ImGui::Checkbox("Lock Z##Trans", &rb.lockPositionZ);
+                    ImGui::NextColumn();
+                    modified |= ImGui::Checkbox("Lock Z##Rot", &rb.lockRotationZ);
+                    ImGui::NextColumn();
+
+                    ImGui::Columns(1);
+
+                    if (modified)
+                    {
+                        if (auto* physicSystem = scene->GetSystem<PhysicSystem>())
+                        {
+                            physicSystem->NotifyRigidBodyUpdate(*scene, GameObject{ e });
+                            FT_ENGINE_TRACE("RigidBody component on entity {} updated in UI.", (uint64_t)e);
                         }
                     }
 

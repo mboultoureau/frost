@@ -28,6 +28,7 @@ namespace Editor
         SceneView(const std::filesystem::path& meshPath, MeshPreviewTag);
 
         void OnUpdate(float deltaTime);
+        void OnFixedUpdate(float deltaTime);
 
         void Draw(float deltaTime) override;
 
@@ -43,19 +44,22 @@ namespace Editor
     private:
         void _Init();
         void _ResizeViewportFramebuffer(uint32_t width, uint32_t height);
-        void _DrawToolbar();
-        void _SavePrefab();
 
+        // UI
+        void _DrawToolbar();
+        void _DrawEntityNode(entt::entity entityID);
         bool _DrawVec3Control(const std::string& label,
                               float* values,
                               float resetValue = 0.0f,
                               float columnWidth = 100.0f);
 
-        void _DrawEntityNode(entt::entity entityID);
+        // Actions
+        void _SavePrefab();
         void _ReparentEntity(entt::entity entity, entt::entity newParent);
         void _FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds);
-        void _HandleMeshDrop(const std::filesystem::path& meshPath);
 
+        // Input
+        void _HandleMeshDrop(const std::filesystem::path& meshPath);
         Frost::Math::Vector3 _GetSpawnPositionFromMouse();
         std::pair<Frost::Math::Vector3, Frost::Math::Vector3> _GetCameraRay(float mouseX,
                                                                             float mouseY,
@@ -91,6 +95,6 @@ namespace Editor
         SceneViewSettings _viewSettings;
         GizmoOperation _currentGizmoOp = GizmoOperation::Translate;
 
-        Gizmo _gizmo;
+        std::unique_ptr<Gizmo> _gizmo;
     };
 } // namespace Editor

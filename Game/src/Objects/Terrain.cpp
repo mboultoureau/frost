@@ -60,7 +60,9 @@ Terrain::Terrain()
                                           ObjectLayers::NON_MOVING);
         bodySettings.mRestitution = 0.0f;
 
-        _terrain.AddComponent<RigidBody>(bodySettings, _terrain, JPH::EActivation::Activate);
+        auto bodyId = Physics::CreateAndAddBody(bodySettings, _terrain.GetHandle(), JPH::EActivation::DontActivate);
+
+        _terrain.AddComponent<RigidBody>(bodyId);
     }
     else
     {

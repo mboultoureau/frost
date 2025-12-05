@@ -155,19 +155,15 @@ Water::Water(Vector3 pos, EulerAngles rot, Vector3 scale, float waveAmplitude)
     _water.AddComponent<Transform>(pos, rot, scale);
     auto& cubeModel = _water.AddComponent<StaticMesh>(MeshSourceCube{ 1.0f, scale * 0.5f });
 
-    Vec3 offset = 4 * waveAmplitude * Vec3(0, 1, 0);
-    ShapeRefC boxShape = BoxShapeSettings(Math::vector_cast<Vec3>(scale) * 0.5f + offset).Create().Get();
-    BodyCreationSettings water_sensor(boxShape,
-                                      Math::vector_cast<Vec3>(pos) - offset,
-                                      Math::vector_cast<Quat>(EulerToQuaternion(rot)),
-                                      EMotionType::Static,
-                                      ObjectLayers::WATER);
-    water_sensor.mIsSensor = true;
-
     // Create water sensor. We use this to detect which bodies entered the water (in this sample we could have assumed
     // everything is in the water)
-    _water.AddComponent<RigidBody>(water_sensor, _water, EActivation::DontActivate);
-    _bodyId = _water.GetComponent<RigidBody>().physicBody->bodyId;
+    auto offset = Frost::Math::vector_cast<Frost::Math::Vector3>(4 * waveAmplitude * Vec3(0, 1, 0));
+    RigidBody rbComp{ ShapeBox{ Vector3{ scale * 0.5f + offset } },
+                      ObjectLayers::WATER,
+                      RigidBody::MotionType::Static };
+    rbComp.isSensor = true;
+    auto& rb = _water.AddComponent<RigidBody>(rbComp);
+    _bodyId = _water.GetComponent<RigidBody>().runtimeBodyID;
     _water.AddScript<WaterScript>(this);
 
     cMinWaterHeight = pos.y + scale.y - waveAmplitude / 2.0f;

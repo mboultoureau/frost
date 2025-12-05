@@ -45,7 +45,7 @@ namespace Frost
         void _DrawCameraComponent(Scene* scene, entt::entity gameObjectId);
         void _DrawScriptableComponent(Scene* scene, entt::entity gameObjectId);
         // void _DrawLightComponent(Scene* scene, entt::entity gameObjectId);
-        void _DrawRigidBodyComponent(Scene* scene, entt::entity gameObjectId);
+        // void _DrawRigidBodyComponent(Scene* scene, entt::entity gameObjectId);
         void _DrawHUDImageComponent(Scene* scene, entt::entity gameObjectId);
         void _DrawUIButtonComponent(Scene* scene, entt::entity gameObjectId);
         void _DrawVirtualCameraComponent(Scene* scene, entt::entity gameObjectId);
