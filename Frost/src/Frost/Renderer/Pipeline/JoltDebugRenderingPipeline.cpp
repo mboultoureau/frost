@@ -44,12 +44,6 @@ namespace Frost
 
     void JoltRenderingPipeline::Initialize()
     {
-#ifdef FT_PLATFORM_WINDOWS
-        _commandList = std::make_unique<CommandListDX11>();
-#else
-#error "JoltDebugRendering only supports Windows platform in this implementation."
-#endif
-
         // Shaders for lines
         ShaderDesc lineVSDesc = { .type = ShaderType::Vertex,
                                   .debugName = "VS_DebugLine",
@@ -153,8 +147,6 @@ namespace Frost
         _triangleVertexBuffer.reset();
 
         _geometryBatches.clear();
-
-        _commandList.reset();
 
         _ClearFrameData();
     }
@@ -319,35 +311,33 @@ namespace Frost
         _frameTexts.push_back({ inPosition, std::string(inString), inColor, inHeight });
     }
 
-    void JoltRenderingPipeline::Render(const Component::Camera& camera,
-                                       const Component::WorldTransform& cameraTransform)
+    void JoltRenderingPipeline::Render(CommandList* commandList,
+                                       const Viewport& viewport,
+                                       const Math::Matrix4x4& viewProjectionMatrix,
+                                       const Component::Camera& camera,
+                                       Texture* renderTarget,
+                                       Texture* depthBuffer)
     {
-        _commandList->BeginRecording();
-        _commandList->SetRasterizerState(RasterizerMode::Wireframe);
+        if (viewport.width == 0 || viewport.height == 0)
+        {
+            FT_ENGINE_ERROR("Viewport width and height should be > 0");
+            return;
+        }
 
-        float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
-        float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
-
-        float viewportX = camera.viewport.x * windowWidth;
-        float viewportY = camera.viewport.y * windowHeight;
-        float viewportW = camera.viewport.width * windowWidth;
-        float viewportH = camera.viewport.height * windowHeight;
-
-        _commandList->SetViewport(viewportX, viewportY, viewportW, viewportH, 0.0f, 1.0f);
-
-        float aspectRatio = (viewportH > 0) ? (viewportW / viewportH) : 1.0f;
-        Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
-        Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, aspectRatio);
+        commandList->SetRasterizerState(RasterizerMode::Wireframe);
+        commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
+        commandList->SetScissorRect(static_cast<int>(viewport.x),
+                                    static_cast<int>(viewport.y),
+                                    static_cast<int>(viewport.x + viewport.width),
+                                    static_cast<int>(viewport.y + viewport.height));
 
         VS_DebugPerFrameConstants vsPerFrameData;
-        vsPerFrameData.ViewProjectionMatrix = Math::Matrix4x4::CreateTranspose(viewMatrix * projectionMatrix);
+        vsPerFrameData.ViewProjectionMatrix = Math::Matrix4x4::CreateTranspose(viewProjectionMatrix);
 
-        _vsPerFrameConstants->UpdateData(_commandList.get(), &vsPerFrameData, sizeof(VS_DebugPerFrameConstants));
-        _commandList->SetConstantBuffer(_vsPerFrameConstants.get(), 0);
+        _vsPerFrameConstants->UpdateData(commandList, &vsPerFrameData, sizeof(VS_DebugPerFrameConstants));
+        commandList->SetConstantBuffer(_vsPerFrameConstants.get(), 0);
 
-        Texture* backBuffer = RendererAPI::GetRenderer()->GetBackBuffer();
-        Texture* depthBuffer = RendererAPI::GetRenderer()->GetDepthBuffer();
-        _commandList->SetRenderTargets(1, &backBuffer, depthBuffer);
+        commandList->SetRenderTargets(1, &renderTarget, depthBuffer);
 
         // Draw accumulated lines
         if (!_frameLines.empty())
@@ -361,14 +351,14 @@ namespace Frost
                                   .debugName = "JOLT_LineVertexBuffer" });
             }
             _lineVertexBuffer->UpdateData(
-                _commandList.get(), _frameLines.data(), (uint32_t)(_frameLines.size() * sizeof(DebugLineVertex)));
+                commandList, _frameLines.data(), (uint32_t)(_frameLines.size() * sizeof(DebugLineVertex)));
 
-            _commandList->SetShader(_debugLineVertexShader.get());
-            _commandList->SetShader(_debugLinePixelShader.get());
-            _commandList->SetInputLayout(_debugLineInputLayout.get());
-            _commandList->SetPrimitiveTopology(PrimitiveTopology::LINELIST);
-            _commandList->SetVertexBuffer(_lineVertexBuffer.get(), sizeof(DebugLineVertex), 0);
-            _commandList->Draw((uint32_t)_frameLines.size(), 0);
+            commandList->SetShader(_debugLineVertexShader.get());
+            commandList->SetShader(_debugLinePixelShader.get());
+            commandList->SetInputLayout(_debugLineInputLayout.get());
+            commandList->SetPrimitiveTopology(PrimitiveTopology::LINELIST);
+            commandList->SetVertexBuffer(_lineVertexBuffer.get(), sizeof(DebugLineVertex), 0);
+            commandList->Draw((uint32_t)_frameLines.size(), 0);
         }
 
         // Draw accumulated triangles
@@ -383,39 +373,38 @@ namespace Frost
                                   .dynamic = true,
                                   .debugName = "JOLT_TriangleVertexBuffer" });
             }
-            _triangleVertexBuffer->UpdateData(_commandList.get(),
-                                              _frameTriangles.data(),
-                                              (uint32_t)(_frameTriangles.size() * sizeof(DebugTriangleVertex)));
+            _triangleVertexBuffer->UpdateData(
+                commandList, _frameTriangles.data(), (uint32_t)(_frameTriangles.size() * sizeof(DebugTriangleVertex)));
 
-            _commandList->SetShader(_debugTriangleVertexShader.get());
-            _commandList->SetShader(_debugTrianglePixelShader.get());
-            _commandList->SetInputLayout(_debugTriangleInputLayout.get());
-            _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-            _commandList->SetVertexBuffer(_triangleVertexBuffer.get(), sizeof(DebugTriangleVertex), 0);
-            _commandList->Draw((uint32_t)_frameTriangles.size(), 0);
+            commandList->SetShader(_debugTriangleVertexShader.get());
+            commandList->SetShader(_debugTrianglePixelShader.get());
+            commandList->SetInputLayout(_debugTriangleInputLayout.get());
+            commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+            commandList->SetVertexBuffer(_triangleVertexBuffer.get(), sizeof(DebugTriangleVertex), 0);
+            commandList->Draw((uint32_t)_frameTriangles.size(), 0);
         }
 
         for (const auto& cmd : _geometryDrawCommands)
         {
             VS_DebugPerObjectConstants perObjectData;
             perObjectData.WorldMatrix = cmd.WorldMatrix;
-            _vsPerObjectConstants->UpdateData(_commandList.get(), &perObjectData, sizeof(VS_DebugPerObjectConstants));
-            _commandList->SetConstantBuffer(_vsPerObjectConstants.get(), 1);
+            _vsPerObjectConstants->UpdateData(commandList, &perObjectData, sizeof(VS_DebugPerObjectConstants));
+            commandList->SetConstantBuffer(_vsPerObjectConstants.get(), 1);
 
-            _commandList->SetShader(_debugTriangleVertexShader.get());
-            _commandList->SetShader(_debugTrianglePixelShader.get());
-            _commandList->SetInputLayout(_debugTriangleInputLayout.get());
-            _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+            commandList->SetShader(_debugTriangleVertexShader.get());
+            commandList->SetShader(_debugTrianglePixelShader.get());
+            commandList->SetInputLayout(_debugTriangleInputLayout.get());
+            commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
 
-            _commandList->SetVertexBuffer(cmd.Batch->vertexBuffer.get(), sizeof(DebugTriangleVertex), 0);
+            commandList->SetVertexBuffer(cmd.Batch->vertexBuffer.get(), sizeof(DebugTriangleVertex), 0);
             if (cmd.Batch->indexBuffer)
             {
-                _commandList->SetIndexBuffer(cmd.Batch->indexBuffer.get(), 0);
-                _commandList->DrawIndexed(cmd.Batch->indexCount, 0, 0);
+                commandList->SetIndexBuffer(cmd.Batch->indexBuffer.get(), 0);
+                commandList->DrawIndexed(cmd.Batch->indexCount, 0, 0);
             }
             else
             {
-                _commandList->Draw(cmd.Batch->vertexCount, 0);
+                commandList->Draw(cmd.Batch->vertexCount, 0);
             }
         }
 
@@ -423,18 +412,7 @@ namespace Frost
         {
         }
 
-        _commandList->SetRasterizerState(RasterizerMode::Solid);
-
-        _commandList->EndRecording();
-
-#ifdef FT_DEBUG
-        if (Debug::PhysicsConfig::display)
-        {
-            _commandList->Execute();
-        }
-#endif
-
-        RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
+        commandList->SetRasterizerState(RasterizerMode::Solid);
     }
 
     void JoltRenderingPipeline::Clear()

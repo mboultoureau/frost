@@ -85,4 +85,19 @@ namespace Frost::Math
 
         return BoundingBox(newMin, newMax);
     }
+
+    inline void DecomposeTransform(const Matrix4x4& matrix,
+                                   Vector3& outPosition,
+                                   Vector4& outRotation,
+                                   Vector3& outScale)
+    {
+        DirectX::XMMATRIX mat = LoadMatrix(matrix);
+        DirectX::XMVECTOR scale, rot, pos;
+
+        DirectX::XMMatrixDecompose(&scale, &rot, &pos, mat);
+
+        outPosition = vector_cast<Vector3>(pos);
+        outRotation = vector_cast<Vector4>(rot);
+        outScale = vector_cast<Vector3>(scale);
+    }
 } // namespace Frost::Math

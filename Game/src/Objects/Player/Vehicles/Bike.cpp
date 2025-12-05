@@ -200,6 +200,9 @@ Bike::Appear()
 void
 Bike::Disappear()
 {
+    if (!_player->GetPlayerID().IsValid())
+        return;
+
     RenderMesh(false);
     if (mConstraint)
     {
@@ -207,7 +210,10 @@ Bike::Disappear()
         Physics::Get().physics_system.RemoveStepListener(mConstraint);
     }
 
-    Physics::RemoveAndDestroyBody(_bodyId);
+    if (_player->GetPlayerID().HasComponent<RigidBody>())
+    {
+        _player->GetPlayerID().RemoveComponent<RigidBody>();
+    }
 
     mConstraint = nullptr;
     mController = nullptr;

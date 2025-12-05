@@ -27,7 +27,7 @@ public:
     BoostScript(Frost::Math::Vector3 dir, float power) : _dir{ vector_cast<JPH::Vec3>(dir).Normalized() * power } {}
     void OnInitialize() override
     {
-        _bodyId = GetGameObject().GetComponent<Frost::Component::RigidBody>().physicBody->bodyId;
+        _bodyId = GetGameObject().GetComponent<Frost::Component::RigidBody>().runtimeBodyID;
     }
     void OnCollisionStay(Frost::BodyOnContactParameters params, float deltaTime) override;
 };

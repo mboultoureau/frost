@@ -841,6 +841,7 @@ namespace Frost
     }
     */
 
+    /*
     void DebugScene::_DrawRigidBodyComponent(Scene* scene, entt::entity gameObjectId)
     {
         auto& registry = scene->GetRegistry();
@@ -903,6 +904,7 @@ namespace Frost
         }
     }
 
+    */
     void DebugScene::_DrawHUDImageComponent(Scene* scene, entt::entity gameObjectId)
     {
         auto& registry = scene->GetRegistry();

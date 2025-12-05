@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <unordered_map>
 
 namespace Frost
 {
@@ -23,6 +24,7 @@ namespace Frost
 
         std::function<bool(GameObject)> HasComponent;
         std::function<void(GameObject)> AddComponent;
+        std::function<void(GameObject, GameObject)> CopyComponent;
 
         SerializeYamlFn SerializeYaml;
         DeserializeYamlFn DeserializeYaml;
@@ -54,21 +56,46 @@ namespace Frost
                 }
             };
 
+            serializer.CopyComponent = [yamlSer, yamlDeser](GameObject source, GameObject destination)
+            {
+                if (!source || !destination)
+                    return;
+
+                YAML::Emitter out;
+                out << YAML::BeginMap;
+                yamlSer(out, source);
+                out << YAML::EndMap;
+
+                if (!destination.HasComponent<T>())
+                {
+                    destination.AddComponent<T>();
+                }
+
+                YAML::Node data = YAML::Load(out.c_str());
+                if (data)
+                {
+                    yamlDeser(data, destination);
+                }
+            };
+
             serializer.SerializeYaml = yamlSer;
             serializer.DeserializeYaml = yamlDeser;
             serializer.SerializeBinary = binSer;
             serializer.DeserializeBinary = binDeser;
 
             GetSerializers().push_back(serializer);
-            GetIdMap()[serializer.ID] = serializer;
+            GetIdMap()[serializer.ID] = &GetSerializers().back();
         }
 
         static const std::vector<ComponentSerializer>& GetAllSerializers() { return GetSerializers(); }
 
         static ComponentSerializer* GetSerializerByID(uint32_t id)
         {
-            if (GetIdMap().find(id) != GetIdMap().end())
-                return &GetIdMap()[id];
+            auto it = GetIdMap().find(id);
+            if (it != GetIdMap().end())
+            {
+                return it->second;
+            }
             return nullptr;
         }
 
@@ -79,9 +106,9 @@ namespace Frost
             return serializers;
         }
 
-        static std::unordered_map<uint32_t, ComponentSerializer>& GetIdMap()
+        static std::unordered_map<uint32_t, ComponentSerializer*>& GetIdMap()
         {
-            static std::unordered_map<uint32_t, ComponentSerializer> map;
+            static std::unordered_map<uint32_t, ComponentSerializer*> map;
             return map;
         }
     };

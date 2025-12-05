@@ -595,7 +595,8 @@ namespace Frost
         const Component::Camera& camera,
         const Component::WorldTransform& cameraTransform,
         const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
-        const Viewport& viewport)
+        const Viewport& viewport,
+        Texture* overrideFinalLitTarget)
     {
         if (!_albedoTexture)
             return;
@@ -666,8 +667,8 @@ namespace Frost
 
         _lightConstantsBuffer->UpdateData(_commandList.get(), &lightData, sizeof(LightConstants));
 
-        Texture* finalLitTexturePtr = _finalLitTexture.get();
-        _commandList->SetRenderTargets(1, &finalLitTexturePtr, nullptr);
+        Texture* finalTarget = overrideFinalLitTarget ? overrideFinalLitTarget : _finalLitTexture.get();
+        _commandList->SetRenderTargets(1, &finalTarget, nullptr);
 
         _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
 

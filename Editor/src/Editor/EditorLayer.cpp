@@ -44,6 +44,10 @@ namespace Editor
 #error "Platform not supported!"
 #endif
 
+        // Initialize events
+        _openProjectSettingsHandlerId =
+            EventManager::Subscribe<OpenProjectSettingsEvent>(FROST_BIND_EVENT_FN(EditorLayer::_OnOpenProjectSettings));
+
         // Register engine component serializers
         EngineComponentSerializer::RegisterEngineComponents();
 
@@ -51,6 +55,7 @@ namespace Editor
         _projectInfo = app.GetProjectInfo();
 
         // Initialize Editor UI components
+        _projectSettingsWindow = std::make_unique<ProjectSettingsWindow>(_projectInfo);
         _mainMenuBar = std::make_unique<MainMenuBar>(_projectInfo);
         _contentBrowser = std::make_unique<ContentBrowser>(_projectInfo);
         _statusBar = std::make_unique<StatusBar>();
@@ -58,6 +63,8 @@ namespace Editor
 
     void EditorLayer::OnDetach()
     {
+        EventManager::Unsubscribe<OpenProjectSettingsEvent>(_openProjectSettingsHandlerId);
+
         ImGui_ImplDX11_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
@@ -98,7 +105,29 @@ namespace Editor
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
 
-    void EditorLayer::OnFixedUpdate(float fixedDeltaTime) {}
+    void EditorLayer::OnFixedUpdate(float fixedDeltaTime)
+    {
+        for (auto it = _views.begin(); it != _views.end();)
+        {
+            if (!(*it)->IsOpen())
+            {
+                if (_activeSceneView == it->get())
+                    _activeSceneView = nullptr;
+
+                it = _views.erase(it);
+            }
+            else
+            {
+                (*it)->OnFixedUpdate(fixedDeltaTime);
+
+                if ((*it)->IsFocused())
+                {
+                    _activeSceneView = it->get();
+                }
+                ++it;
+            }
+        }
+    }
 
     EditorLayer& EditorLayer::Get()
     {
@@ -194,6 +223,13 @@ namespace Editor
             ImGui::DockBuilderFinish(dockspaceID);
         }
 
+        if (_projectSettingsNeedsDocking)
+        {
+            ImGui::DockBuilderDockWindow(ProjectSettingsWindow::GetStaticTitle(), _dockMainID);
+            _projectSettingsNeedsDocking = false;
+        }
+
+        _projectSettingsWindow->Draw(deltaTime);
         _mainMenuBar->Draw(deltaTime);
         _contentBrowser->Draw(deltaTime);
 
@@ -226,5 +262,16 @@ namespace Editor
             ImGui::TextDisabled("No active scene.");
         }
         ImGui::End();
+    }
+
+    bool EditorLayer::_OnOpenProjectSettings(const OpenProjectSettingsEvent& e)
+    {
+        if (!_projectSettingsWindow->IsOpen())
+        {
+            _projectSettingsNeedsDocking = true;
+        }
+
+        _projectSettingsWindow->Open();
+        return true;
     }
 } // namespace Editor

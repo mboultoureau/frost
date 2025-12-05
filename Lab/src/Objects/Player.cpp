@@ -41,7 +41,6 @@ class PlayerScript : public Frost::Script
 public:
     void OnInitialize() override
     {
-        _playerBodyID = Game::GetScene().GetComponent<RigidBody>(GetGameObject())->physicBody->bodyId;
         _bodyInter = Physics::Get().body_interface;
 
         // Hide cursor for mouse look
@@ -143,6 +142,7 @@ private:
         auto& scene = Game::GetScene();
 
         JPH::Quat rotation = JPH::Quat::sRotation(Vec3::sAxisY(), _yaw);
+        _playerBodyID = Game::GetScene().GetComponent<RigidBody>(GetGameObject())->runtimeBodyID;
         _bodyInter->SetRotation(_playerBodyID, rotation, EActivation::DontActivate);
 
         // Apply pitch to camera child
@@ -223,15 +223,9 @@ Player::InitializePhysics()
     Scene& scene = Game::GetScene();
 
     // Create vehicle body
-    RVec3 position(0, 0.0f, -10);
-    JPH::ShapeRefC sphereShape = JPH::SphereShapeSettings(1.0f).Create().Get();
-    BodyCreationSettings player_body_settings(
-        sphereShape, position, Quat::sIdentity(), EMotionType::Dynamic, ObjectLayers::PLAYER);
-    player_body_settings.mGravityFactor = 0.0f;
-    scene.AddComponent<RigidBody>(_player, player_body_settings, _player, EActivation::Activate);
-
-    auto _playerBodyID = scene.GetComponent<RigidBody>(_player)->physicBody->bodyId;
-    auto _bodyInter = Physics::Get().body_interface;
+    auto& rb =
+        _player.AddComponent<RigidBody>(ShapeSphere{ 1.0f }, ObjectLayers::PLAYER, RigidBody::MotionType::Dynamic);
+    rb.gravityFactor = 0.0f;
 
     scene.AddScript<PlayerScript>(_player);
 }

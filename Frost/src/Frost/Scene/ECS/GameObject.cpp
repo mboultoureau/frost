@@ -7,6 +7,8 @@
 
 namespace Frost
 {
+    GameObject::GameObject(entt::entity handle) : _entityHandle(handle), _scene(nullptr) {}
+
     GameObject::GameObject(entt::entity handle, Scene* scene) : _entityHandle(handle), _scene(scene)
     {
         if (scene)
@@ -168,5 +170,10 @@ namespace Frost
         }
 
         return children;
+    }
+
+    const bool GameObject::IsValid() const
+    {
+        return _scene->GetRegistry().valid(_entityHandle);
     }
 } // namespace Frost

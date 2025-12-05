@@ -186,7 +186,12 @@ Plane::Appear()
 void
 Plane::Disappear()
 {
+    if (!_player->GetPlayerID().IsValid())
+        return;
+
     using namespace JPH;
     RenderMesh(false);
-    Physics::RemoveAndDestroyBody(_bodyId);
+
+    if (_player->GetPlayerID().HasComponent<RigidBody>())
+        _player->GetPlayerID().RemoveComponent<RigidBody>();
 }

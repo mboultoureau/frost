@@ -6,6 +6,8 @@
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Scene/Components/StaticMesh.h"
+#include "Frost/Scene/Components/RigidBody.h"
+#include "Frost/Scene/Systems/PhysicSystem.h"
 #include "Frost/Utils/SerializerUtils.h"
 
 using namespace Frost;
@@ -129,7 +131,7 @@ namespace Frost
                 }
                 else if (auto* p = std::get_if<MeshSourceHeightMap>(&mesh.GetMeshConfig()))
                 {
-                    out << YAML::Key << "TexturePath" << YAML::Value << p->texturePath;
+                    out << YAML::Key << "TexturePath" << YAML::Value << p->texturePath.generic_string();
                     out << YAML::Key << "Width" << YAML::Value << p->width;
                     out << YAML::Key << "Depth" << YAML::Value << p->depth;
                     out << YAML::Key << "MinHeight" << YAML::Value << p->minHeight;
@@ -248,7 +250,7 @@ namespace Frost
                 }
                 else if (auto* p = std::get_if<MeshSourceHeightMap>(&mesh.GetMeshConfig()))
                 {
-                    WriteBinaryString(out, p->texturePath);
+                    WriteBinaryString(out, p->texturePath.generic_string());
                     out.write((char*)&p->width, sizeof(float));
                     out.write((char*)&p->depth, sizeof(float));
                     out.write((char*)&p->minHeight, sizeof(float));
@@ -485,6 +487,261 @@ namespace Frost
                         light.config = s;
                         break;
                     }
+                }
+            });
+
+        // RigidBody
+        SerializationSystem::RegisterComponent<RigidBody>(
+            "RigidBody",
+            // Write YAML
+            [](YAML::Emitter& out, GameObject go)
+            {
+                auto& rb = go.GetComponent<RigidBody>();
+
+                out << YAML::Key << "MotionType" << YAML::Value << static_cast<int>(rb.motionType);
+                out << YAML::Key << "IsSensor" << YAML::Value << rb.isSensor;
+                out << YAML::Key << "AllowSleeping" << YAML::Value << rb.allowSleeping;
+                out << YAML::Key << "Friction" << YAML::Value << rb.friction;
+                out << YAML::Key << "Restitution" << YAML::Value << rb.restitution;
+                out << YAML::Key << "LinearDamping" << YAML::Value << rb.linearDamping;
+                out << YAML::Key << "AngularDamping" << YAML::Value << rb.angularDamping;
+                out << YAML::Key << "GravityFactor" << YAML::Value << rb.gravityFactor;
+                out << YAML::Key << "OverrideMassProperties" << YAML::Value
+                    << static_cast<int>(rb.overrideMassProperties);
+                out << YAML::Key << "Mass" << YAML::Value << rb.mass;
+
+                out << YAML::Key << "LockPositionX" << YAML::Value << rb.lockPositionX;
+                out << YAML::Key << "LockPositionY" << YAML::Value << rb.lockPositionY;
+                out << YAML::Key << "LockPositionZ" << YAML::Value << rb.lockPositionZ;
+                out << YAML::Key << "LockRotationX" << YAML::Value << rb.lockRotationX;
+                out << YAML::Key << "LockRotationY" << YAML::Value << rb.lockRotationY;
+                out << YAML::Key << "LockRotationZ" << YAML::Value << rb.lockRotationZ;
+
+                out << YAML::Key << "ShapeType" << YAML::Value << static_cast<int>(rb.shape.index());
+                out << YAML::Key << "ShapeParams" << YAML::BeginMap;
+                std::visit(
+                    [&out](auto&& arg)
+                    {
+                        using T = std::decay_t<decltype(arg)>;
+                        if constexpr (std::is_same_v<T, ShapeBox>)
+                        {
+                            out << YAML::Key << "HalfExtent" << YAML::Value << arg.halfExtent;
+                            out << YAML::Key << "ConvexRadius" << YAML::Value << arg.convexRadius;
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeSphere>)
+                        {
+                            out << YAML::Key << "Radius" << YAML::Value << arg.radius;
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeCapsule>)
+                        {
+                            out << YAML::Key << "HalfHeight" << YAML::Value << arg.halfHeight;
+                            out << YAML::Key << "Radius" << YAML::Value << arg.radius;
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeCylinder>)
+                        {
+                            out << YAML::Key << "HalfHeight" << YAML::Value << arg.halfHeight;
+                            out << YAML::Key << "Radius" << YAML::Value << arg.radius;
+                            out << YAML::Key << "ConvexRadius" << YAML::Value << arg.convexRadius;
+                        }
+                    },
+                    rb.shape);
+                out << YAML::EndMap;
+            },
+            // Read YAML
+            [](const YAML::Node& node, GameObject& go)
+            {
+                auto& rb = go.GetComponent<RigidBody>();
+
+                rb.motionType = static_cast<RigidBody::MotionType>(node["MotionType"].as<int>());
+                rb.isSensor = node["IsSensor"].as<bool>();
+                rb.allowSleeping = node["AllowSleeping"].as<bool>();
+                rb.friction = node["Friction"].as<float>();
+                rb.restitution = node["Restitution"].as<float>();
+                rb.linearDamping = node["LinearDamping"].as<float>();
+                rb.angularDamping = node["AngularDamping"].as<float>();
+                rb.gravityFactor = node["GravityFactor"].as<float>();
+                rb.overrideMassProperties =
+                    static_cast<RigidBody::OverrideMassProperties>(node["OverrideMassProperties"].as<int>());
+                rb.mass = node["Mass"].as<float>();
+
+                rb.lockPositionX = node["LockPositionX"].as<bool>();
+                rb.lockPositionY = node["LockPositionY"].as<bool>();
+                rb.lockPositionZ = node["LockPositionZ"].as<bool>();
+                rb.lockRotationX = node["LockRotationX"].as<bool>();
+                rb.lockRotationY = node["LockRotationY"].as<bool>();
+                rb.lockRotationZ = node["LockRotationZ"].as<bool>();
+
+                int shapeType = node["ShapeType"].as<int>();
+                auto params = node["ShapeParams"];
+                switch (static_cast<CollisionShapeType>(shapeType))
+                {
+                    case CollisionShapeType::Box:
+                    {
+                        ShapeBox s;
+                        s.halfExtent = params["HalfExtent"].as<Math::Vector3>();
+                        s.convexRadius = params["ConvexRadius"].as<float>();
+                        rb.shape = s;
+                        break;
+                    }
+                    case CollisionShapeType::Sphere:
+                    {
+                        ShapeSphere s;
+                        s.radius = params["Radius"].as<float>();
+                        rb.shape = s;
+                        break;
+                    }
+                    case CollisionShapeType::Capsule:
+                    {
+                        ShapeCapsule s;
+                        s.halfHeight = params["HalfHeight"].as<float>();
+                        s.radius = params["Radius"].as<float>();
+                        rb.shape = s;
+                        break;
+                    }
+                    case CollisionShapeType::Cylinder:
+                    {
+                        ShapeCylinder s;
+                        s.halfHeight = params["HalfHeight"].as<float>();
+                        s.radius = params["Radius"].as<float>();
+                        s.convexRadius = params["ConvexRadius"].as<float>();
+                        rb.shape = s;
+                        break;
+                    }
+                }
+
+                if (auto* physicSystem = go.GetScene()->GetSystem<PhysicSystem>())
+                {
+                    physicSystem->NotifyRigidBodyUpdate(*go.GetScene(), go);
+                }
+            },
+            // Write Binary
+            [](std::ostream& out, GameObject go)
+            {
+                auto& rb = go.GetComponent<RigidBody>();
+
+                int motionType = static_cast<int>(rb.motionType);
+                out.write(reinterpret_cast<const char*>(&motionType), sizeof(int));
+
+                out.write(reinterpret_cast<const char*>(&rb.isSensor), sizeof(bool));
+                out.write(reinterpret_cast<const char*>(&rb.allowSleeping), sizeof(bool));
+                out.write(reinterpret_cast<const char*>(&rb.friction), sizeof(float));
+                out.write(reinterpret_cast<const char*>(&rb.restitution), sizeof(float));
+                out.write(reinterpret_cast<const char*>(&rb.linearDamping), sizeof(float));
+                out.write(reinterpret_cast<const char*>(&rb.angularDamping), sizeof(float));
+                out.write(reinterpret_cast<const char*>(&rb.gravityFactor), sizeof(float));
+
+                int overrideMass = static_cast<int>(rb.overrideMassProperties);
+                out.write(reinterpret_cast<const char*>(&overrideMass), sizeof(int));
+                out.write(reinterpret_cast<const char*>(&rb.mass), sizeof(float));
+
+                out.write(reinterpret_cast<const char*>(&rb.lockPositionX), sizeof(bool));
+                out.write(reinterpret_cast<const char*>(&rb.lockPositionY), sizeof(bool));
+                out.write(reinterpret_cast<const char*>(&rb.lockPositionZ), sizeof(bool));
+                out.write(reinterpret_cast<const char*>(&rb.lockRotationX), sizeof(bool));
+                out.write(reinterpret_cast<const char*>(&rb.lockRotationY), sizeof(bool));
+                out.write(reinterpret_cast<const char*>(&rb.lockRotationZ), sizeof(bool));
+
+                int shapeType = static_cast<int>(rb.shape.index());
+                out.write(reinterpret_cast<const char*>(&shapeType), sizeof(int));
+
+                std::visit(
+                    [&out](auto&& arg)
+                    {
+                        using T = std::decay_t<decltype(arg)>;
+                        if constexpr (std::is_same_v<T, ShapeBox>)
+                        {
+                            WriteBinary(out, arg.halfExtent);
+                            out.write(reinterpret_cast<const char*>(&arg.convexRadius), sizeof(float));
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeSphere>)
+                        {
+                            out.write(reinterpret_cast<const char*>(&arg.radius), sizeof(float));
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeCapsule>)
+                        {
+                            out.write(reinterpret_cast<const char*>(&arg.halfHeight), sizeof(float));
+                            out.write(reinterpret_cast<const char*>(&arg.radius), sizeof(float));
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeCylinder>)
+                        {
+                            out.write(reinterpret_cast<const char*>(&arg.halfHeight), sizeof(float));
+                            out.write(reinterpret_cast<const char*>(&arg.radius), sizeof(float));
+                            out.write(reinterpret_cast<const char*>(&arg.convexRadius), sizeof(float));
+                        }
+                    },
+                    rb.shape);
+            },
+            // Read Binary
+            [](std::istream& in, GameObject& go)
+            {
+                auto& rb = go.GetComponent<RigidBody>();
+
+                int motionType;
+                in.read(reinterpret_cast<char*>(&motionType), sizeof(int));
+                rb.motionType = static_cast<RigidBody::MotionType>(motionType);
+
+                in.read(reinterpret_cast<char*>(&rb.isSensor), sizeof(bool));
+                in.read(reinterpret_cast<char*>(&rb.allowSleeping), sizeof(bool));
+                in.read(reinterpret_cast<char*>(&rb.friction), sizeof(float));
+                in.read(reinterpret_cast<char*>(&rb.restitution), sizeof(float));
+                in.read(reinterpret_cast<char*>(&rb.linearDamping), sizeof(float));
+                in.read(reinterpret_cast<char*>(&rb.angularDamping), sizeof(float));
+                in.read(reinterpret_cast<char*>(&rb.gravityFactor), sizeof(float));
+
+                int overrideMass;
+                in.read(reinterpret_cast<char*>(&overrideMass), sizeof(int));
+                rb.overrideMassProperties = static_cast<RigidBody::OverrideMassProperties>(overrideMass);
+                in.read(reinterpret_cast<char*>(&rb.mass), sizeof(float));
+
+                in.read(reinterpret_cast<char*>(&rb.lockPositionX), sizeof(bool));
+                in.read(reinterpret_cast<char*>(&rb.lockPositionY), sizeof(bool));
+                in.read(reinterpret_cast<char*>(&rb.lockPositionZ), sizeof(bool));
+                in.read(reinterpret_cast<char*>(&rb.lockRotationX), sizeof(bool));
+                in.read(reinterpret_cast<char*>(&rb.lockRotationY), sizeof(bool));
+                in.read(reinterpret_cast<char*>(&rb.lockRotationZ), sizeof(bool));
+
+                int shapeType;
+                in.read(reinterpret_cast<char*>(&shapeType), sizeof(int));
+
+                switch (static_cast<CollisionShapeType>(shapeType))
+                {
+                    case CollisionShapeType::Box:
+                    {
+                        ShapeBox s;
+                        ReadBinary(in, s.halfExtent);
+                        in.read(reinterpret_cast<char*>(&s.convexRadius), sizeof(float));
+                        rb.shape = s;
+                        break;
+                    }
+                    case CollisionShapeType::Sphere:
+                    {
+                        ShapeSphere s;
+                        in.read(reinterpret_cast<char*>(&s.radius), sizeof(float));
+                        rb.shape = s;
+                        break;
+                    }
+                    case CollisionShapeType::Capsule:
+                    {
+                        ShapeCapsule s;
+                        in.read(reinterpret_cast<char*>(&s.halfHeight), sizeof(float));
+                        in.read(reinterpret_cast<char*>(&s.radius), sizeof(float));
+                        rb.shape = s;
+                        break;
+                    }
+                    case CollisionShapeType::Cylinder:
+                    {
+                        ShapeCylinder s;
+                        in.read(reinterpret_cast<char*>(&s.halfHeight), sizeof(float));
+                        in.read(reinterpret_cast<char*>(&s.radius), sizeof(float));
+                        in.read(reinterpret_cast<char*>(&s.convexRadius), sizeof(float));
+                        rb.shape = s;
+                        break;
+                    }
+                }
+
+                if (auto* physicSystem = go.GetScene()->GetSystem<PhysicSystem>())
+                {
+                    physicSystem->NotifyRigidBodyUpdate(*go.GetScene(), go);
                 }
             });
     }

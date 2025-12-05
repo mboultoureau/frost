@@ -12,7 +12,4 @@ public:
 private:
     Frost::GameObject _plane;
     JPH::Body* _body;
-
-private:
-    void _SetupPhysics();
 };

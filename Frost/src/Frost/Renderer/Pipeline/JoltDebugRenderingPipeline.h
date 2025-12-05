@@ -77,15 +77,18 @@ namespace Frost
                         JPH::ColorArg inColor,
                         float inHeight) override;
 
-        void Render(const Component::Camera& camera, const Component::WorldTransform& cameraTransform);
+        void Render(CommandList* commandList,
+                    const Viewport& viewport,
+                    const Math::Matrix4x4& viewProjectionMatrix,
+                    const Component::Camera& camera,
+                    Texture* renderTarget,
+                    Texture* depthBuffer);
         void Clear();
 
     private:
         void _ClearFrameData();
 
     private:
-        std::unique_ptr<CommandList> _commandList;
-
         std::shared_ptr<Shader> _debugLineVertexShader;
         std::shared_ptr<Shader> _debugLinePixelShader;
         std::unique_ptr<InputLayout> _debugLineInputLayout;

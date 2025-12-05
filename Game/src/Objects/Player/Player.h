@@ -35,7 +35,7 @@ public:
 
     int GetVehicleNumber() { return _vehicles.size(); };
     GameObject GetPlayerID() { return _playerId; };
-    JPH::BodyID GetBodyID() { return _playerId.GetComponent<RigidBody>().physicBody->bodyId; };
+    JPH::BodyID GetBodyID() { return _playerId.GetComponent<RigidBody>().runtimeBodyID; };
 
     Timer transitionTimer;
     GameObject transitionRenderer;
@@ -72,12 +72,7 @@ private:
 
     void _InitializeVehicles();
     void _SummonVehicleTransition();
-    void _SetBodyID(JPH::BodyID bodyId)
-    {
-        _playerId.GetComponent<RigidBody>().physicBody->bodyId = bodyId;
-        auto a = _playerId.GetComponent<RigidBody>().physicBody->bodyId;
-        FT_ASSERT(a == bodyId);
-    }
+    void _SetBodyID(JPH::BodyID bodyId) { _playerId.AddComponent<RigidBody>(bodyId); }
     bool _isInWater = false;
 
     // void InitializePhysics();

@@ -82,16 +82,12 @@ CheckPoint::InitializePhysics()
     FT_ENGINE_ASSERT(_checkpoint != GameObject::InvalidId, "CheckPoint GameObject is invalid");
     Scene& scene = Game::GetScene();
 
-    auto& transform = _checkpoint.GetComponent<Transform>();
-    RVec3 position = Math::vector_cast<Vec3>(transform.position);
-    JPH::ShapeRefC boxShape = JPH::BoxShapeSettings(Vec3(5.0f, 5.0f, 5.0f)).Create().Get();
-    BodyCreationSettings checkpoint_body_settings(
-        boxShape, position, Quat::sIdentity(), EMotionType::Static, ObjectLayers::CHECKPOINT);
+    constexpr float CHECKPOINT_SIZE = 5.0f;
 
-    checkpoint_body_settings.mGravityFactor = 0.0f;
-    checkpoint_body_settings.mIsSensor = true;
+    auto& rb = _checkpoint.AddComponent<RigidBody>(ShapeSphere{ CHECKPOINT_SIZE }, ObjectLayers::CHECKPOINT);
 
-    _checkpoint.AddComponent<RigidBody>(checkpoint_body_settings, _checkpoint, EActivation::Activate);
+    rb.gravityFactor = 0.0f;
+    rb.isSensor = true;
 }
 
 void
@@ -136,7 +132,7 @@ CheckPoint::DeleteChildrenPhysics()
         if (childId.HasComponent<RigidBody>())
         {
             RigidBody& bodyComponent = childId.GetComponent<RigidBody>();
-            JPH::BodyID bodyId = bodyComponent.physicBody->bodyId;
+            JPH::BodyID bodyId = bodyComponent.runtimeBodyID;
 
             childId.RemoveComponent<RigidBody>();
 
@@ -153,22 +149,6 @@ CheckPoint::DestroyGameObject()
     using namespace JPH;
     Scene& scene = Game::GetScene();
     GameObject id = _checkpoint;
-
-    if (id.HasComponent<RigidBody>())
-    {
-        RigidBody& bodyComponent = id.GetComponent<RigidBody>();
-        JPH::BodyInterface* bodyInter = Physics::Get().body_interface;
-        JPH::BodyID bodyId = bodyComponent.physicBody->bodyId;
-
-        if (bodyId.IsInvalid() == false)
-        {
-            if (bodyInter->IsAdded(bodyId))
-            {
-                bodyInter->RemoveBody(bodyId);
-            }
-            bodyInter->DestroyBody(bodyId);
-        }
-    }
 
     scene.DestroyGameObject(id);
 }
