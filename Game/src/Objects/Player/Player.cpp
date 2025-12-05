@@ -39,7 +39,7 @@ Player::Player()
     // Create Player Game Object -------------
     _playerId = _scene->CreateGameObject("Player");
     _playerId.AddComponent<Transform>(
-        Vector3{ -365.0f, 68.5f, -100.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
+        Vector3{ -365.0f, 80.0f, -100.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
     _playerId.AddComponent<WorldTransform>();
 
     // Create TransitionModelRenderer -----------
@@ -106,7 +106,7 @@ Player::SetPlayerVehicle(Player::VehicleType type)
     if (_currentVehicle)
     {
         Physics::Get().body_interface->GetLinearAndAngularVelocity(
-            _playerId.GetComponent<RigidBody>().physicBody->bodyId, linearSpeed, angularSpeed);
+            _playerId.GetComponent<RigidBody>().runtimeBodyID, linearSpeed, angularSpeed);
         _currentVehicle->Disappear();
     }
     _currentVehicle = _vehicles[type];
@@ -117,11 +117,11 @@ Player::SetPlayerVehicle(Player::VehicleType type)
     {
         _SetBodyID(bodyId);
         Physics::Get().body_interface->SetLinearAndAngularVelocity(
-            _playerId.GetComponent<RigidBody>().physicBody->bodyId, linearSpeed, angularSpeed);
+            _playerId.GetComponent<RigidBody>().runtimeBodyID, linearSpeed, angularSpeed);
     }
     else
     {
-        _playerId.AddComponent<RigidBody>(_currentVehicle->GetBodyID(), _playerId);
+        _playerId.AddComponent<RigidBody>(_currentVehicle->GetBodyID());
     }
 }
 void
@@ -152,7 +152,7 @@ Player::Warp(Vector3 position,
     auto playerTransform = scene.GetComponent<WorldTransform>(_playerId);
 
     playerTransform->position = position;
-    auto playerBodyId = _scene->GetComponent<RigidBody>(_playerId)->physicBody->bodyId;
+    auto playerBodyId = _scene->GetComponent<RigidBody>(_playerId)->runtimeBodyID;
     bodyInter.SetPosition(playerBodyId, Math::vector_cast<JPH::Vec3>(position), JPH::EActivation::Activate);
     bodyInter.SetLinearVelocity(playerBodyId, Math::vector_cast<JPH::Vec3>(speed));
     bodyInter.SetRotation(playerBodyId, { rotation.x, rotation.y, rotation.z, rotation.w }, JPH::EActivation::Activate);
@@ -167,7 +167,7 @@ Player::WarpCamera(Vector3 offset, Vector4 rotation, Vector3 speed)
 
     Vector3 forcedNewCameraPos = playerTransform->position + offset;
 
-    auto camBodyId = _scene->GetComponent<RigidBody>(_playerCamera->_camera)->physicBody->bodyId;
+    auto camBodyId = _scene->GetComponent<RigidBody>(_playerCamera->_camera)->runtimeBodyID;
 
     bodyInter.SetPosition(
         camBodyId, { forcedNewCameraPos.x, forcedNewCameraPos.y, forcedNewCameraPos.z }, JPH::EActivation::Activate);
@@ -208,6 +208,8 @@ void
 Player::ResetPlayers()
 {
     for (auto p : _players)
+    {
         p->GetCurrentVehicle().second->Disappear();
+    }
     _players.clear();
 }

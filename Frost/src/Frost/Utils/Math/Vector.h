@@ -31,6 +31,7 @@ namespace Frost::Math
 
         constexpr Vector2() noexcept : x(0.0f), y(0.0f) {}
         constexpr Vector2(float x, float y) noexcept : x(x), y(y) {}
+        constexpr Vector2(const DirectX::XMFLOAT2& v) noexcept : x(v.x), y(v.y) {}
         operator DirectX::XMFLOAT2() const { return DirectX::XMFLOAT2(x, y); }
     };
 
@@ -55,6 +56,7 @@ namespace Frost::Math
 
         constexpr Vector3() noexcept : x(0.0f), y(0.0f), z(0.0f) {}
         constexpr Vector3(float x, float y, float z) noexcept : x(x), y(y), z(z) {}
+        constexpr Vector3(const DirectX::XMFLOAT3& v) noexcept : x(v.x), y(v.y), z(v.z) {}
         operator DirectX::XMFLOAT3() const { return DirectX::XMFLOAT3(x, y, z); }
     };
 
@@ -75,6 +77,7 @@ namespace Frost::Math
 
         constexpr Vector4() noexcept : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
         constexpr Vector4(float x, float y, float z, float w) noexcept : x(x), y(y), z(z), w(w) {}
+        constexpr Vector4(const DirectX::XMFLOAT4& v) noexcept : x(v.x), y(v.y), z(v.z), w(v.w) {}
         operator DirectX::XMFLOAT4() const { return DirectX::XMFLOAT4(x, y, z, w); }
     };
 

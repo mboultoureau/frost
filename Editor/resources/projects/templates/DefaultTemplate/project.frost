@@ -1,6 +1,95 @@
 project:
-Name: DefaultProjectName
-Version: 1.0.0
-StartScene: assets/scenes/DefaultScene.frostscene
-AssetDirectory: assets
-SourceDirectory: src
+    name: DefaultProjectName
+    version: 1.0.0
+    start_scene: DefaultScene
+    asset_directory: assets
+    source_directory: src
+    physics:
+        broadphase_layers:
+        - name: NON_MOVING
+            id: 0
+        - name: MOVING
+            id: 1
+        - name: DEBRIS
+            id: 2
+        - name: SENSOR
+            id: 3
+        - name: UNUSED
+            id: 4
+        object_layers:
+        - name: NON_MOVING
+            id: 0
+            broadphase_id: 0
+        - name: MOVING
+            id: 1
+            broadphase_id: 1
+        - name: DEBRIS
+            id: 2
+            broadphase_id: 2
+        - name: SENSOR
+            id: 3
+            broadphase_id: 3
+        broadphase_matrix:
+        - false
+        - true
+        - true
+        - false
+        - false
+        - true
+        - true
+        - true
+        - false
+        - false
+        - true
+        - true
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        object_matrix:
+        - false
+        - true
+        - true
+        - false
+        - true
+        - true
+        - true
+        - false
+        - true
+        - true
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        object_broadphase_matrix:
+        - false
+        - true
+        - true
+        - false
+        - false
+        - true
+        - true
+        - true
+        - false
+        - false
+        - true
+        - true
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false

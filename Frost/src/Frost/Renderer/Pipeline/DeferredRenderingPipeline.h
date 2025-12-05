@@ -42,7 +42,8 @@ namespace Frost
         void EndFrame(const Component::Camera& camera,
                       const Component::WorldTransform& cameraTransform,
                       const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
-                      const Viewport& viewport);
+                      const Viewport& viewport,
+                      Texture* overrideFinalLitTarget = nullptr);
 
         Texture* GetNormalTexture() const { return _normalTexture.get(); }
         Texture* GetMaterialTexture() const { return _depthStencilTexture.get(); }

@@ -103,7 +103,7 @@ PlayerScript::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, 
     auto go1 = scene->GetGameObjectFromId(params.first);
     if (go1.HasComponent<RigidBody>())
     {
-        auto bodyId1 = go1.GetComponent<RigidBody>().physicBody->bodyId;
+        auto bodyId1 = go1.GetComponent<RigidBody>().runtimeBodyID;
         auto layer1 = Physics::GetBodyInterface().GetObjectLayer(bodyId1);
         if (layer1 == ObjectLayers::WATER)
         {
@@ -114,7 +114,7 @@ PlayerScript::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, 
     auto go2 = scene->GetGameObjectFromId(params.second);
     if (go2.HasComponent<RigidBody>())
     {
-        auto bodyId2 = go2.GetComponent<RigidBody>().physicBody->bodyId;
+        auto bodyId2 = go2.GetComponent<RigidBody>().runtimeBodyID;
         auto layer2 = Physics::GetBodyInterface().GetObjectLayer(bodyId2);
         if (layer2 == ObjectLayers::WATER)
         {

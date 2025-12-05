@@ -2,12 +2,12 @@
 
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Relationship.h"
-#include "Frost/Scene/Systems/JoltRendererSystem.h"
 #include "Frost/Scene/Systems/PhysicSystem.h"
 #include "Frost/Scene/Systems/RendererSystem.h"
 #include "Frost/Scene/Systems/ScriptableSystem.h"
 #include "Frost/Scene/Systems/UISystem.h"
 #include "Frost/Scene/Systems/WorldTransformSystem.h"
+#include "Frost/Scene/Serializers/SerializationSystem.h"
 
 using namespace Frost::Component;
 
@@ -15,7 +15,7 @@ namespace Frost
 {
     Scene::Scene(std::string&& name) : _name{ std::move(name) }
     {
-        _registry.on_destroy<Component::Relationship>().connect<&Scene::OnRelationshipDestroyed>(this);
+        _registry.on_destroy<Component::Relationship>().connect<&Scene::_OnRelationshipDestroyed>(this);
         _InitializeSystems();
     }
 
@@ -30,7 +30,7 @@ namespace Frost
         }
         _systems.clear();
 
-        _registry.on_destroy<Component::Relationship>().disconnect<&Scene::OnRelationshipDestroyed>(this);
+        _registry.on_destroy<Component::Relationship>().disconnect<&Scene::_OnRelationshipDestroyed>(this);
         _registry.clear();
     }
 
@@ -60,19 +60,49 @@ namespace Frost
         _registry.destroy(gameObject.GetHandle());
     }
 
+    GameObject Scene::DuplicateGameObject(GameObject source)
+    {
+        if (!source)
+            return {};
+
+        GameObject newRoot = CreateGameObject(source.GetComponent<Meta>().name);
+
+        for (const auto& serializer : SerializationSystem::GetAllSerializers())
+        {
+            if (serializer.Name == "Relationship" || serializer.Name == "Meta" || serializer.Name == "WorldTransform")
+                continue;
+
+            if (serializer.HasComponent(source))
+            {
+                serializer.CopyComponent(source, newRoot);
+            }
+        }
+
+        if (source.GetParent())
+        {
+            newRoot.SetParent(source.GetParent());
+        }
+
+        _DuplicateRecursively(source, newRoot);
+
+        return newRoot;
+    }
+
     void Scene::_InitializeSystems()
     {
         _systems.push_back(std::make_unique<ScriptableSystem>());
         _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<WorldTransformSystem>());
         _systems.push_back(std::make_unique<RendererSystem>());
-#ifdef FT_DEBUG
-        _systems.push_back(std::make_unique<JoltRendererSystem>());
-#endif
         _systems.push_back(std::make_unique<UISystem>());
+
+        for (const auto& system : _systems)
+        {
+            system->OnAttach(*this);
+        }
     }
 
-    void Scene::OnRelationshipDestroyed(entt::registry& registry, entt::entity entity)
+    void Scene::_OnRelationshipDestroyed(entt::registry& registry, entt::entity entity)
     {
         auto& relationship = registry.get<Component::Relationship>(entity);
 
@@ -171,6 +201,40 @@ namespace Frost
             {
                 ren->SetRenderTargetOverride(target);
             }
+        }
+    }
+
+    void Scene::_DuplicateRecursively(GameObject source, GameObject newParent)
+    {
+        auto& registry = GetRegistry();
+        auto* relation = registry.try_get<Relationship>(source.GetHandle());
+        if (!relation)
+            return;
+
+        entt::entity currentChildHandle = relation->firstChild;
+        while (registry.valid(currentChildHandle))
+        {
+            GameObject sourceChild(currentChildHandle, this);
+
+            GameObject newChild = CreateGameObject(sourceChild.GetComponent<Meta>().name);
+            newChild.SetParent(newParent);
+
+            for (const auto& serializer : SerializationSystem::GetAllSerializers())
+            {
+                if (serializer.Name == "Relationship" || serializer.Name == "Meta" ||
+                    serializer.Name == "WorldTransform")
+                    continue;
+
+                if (serializer.HasComponent(sourceChild))
+                {
+                    serializer.CopyComponent(sourceChild, newChild);
+                }
+            }
+
+            _DuplicateRecursively(sourceChild, newChild);
+
+            auto* childRel = registry.try_get<Relationship>(currentChildHandle);
+            currentChildHandle = childRel ? childRel->nextSibling : entt::null;
         }
     }
 } // namespace Frost

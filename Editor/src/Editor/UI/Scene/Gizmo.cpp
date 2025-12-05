@@ -3,6 +3,8 @@
 #include "Frost/Utils/Math/Intersection.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Scene/ECS/GameObject.h"
+#include "Frost/Scene/Systems/PhysicSystem.h"
+#include "Frost/Debugging/Logger.h"
 
 #undef max
 #undef min
@@ -30,10 +32,11 @@ namespace Editor
     constexpr float GIZMO_ROTATION_THICKNESS = 0.1f;
     constexpr int GIZMO_ROTATION_SEGMENTS = 64;
 
-    Gizmo::Gizmo() {}
+    Gizmo::Gizmo(Scene* scene) : _scene{ scene } {}
 
     void Gizmo::Update(GizmoOperation operation,
                        Frost::Component::Transform& targetTransform,
+                       Frost::GameObject& targetGameObject,
                        const Frost::Math::Matrix4x4& viewMatrix,
                        const Frost::Math::Matrix4x4& projectionMatrix,
                        const Frost::Math::Vector3& rayOrigin,
@@ -45,8 +48,10 @@ namespace Editor
     {
         _currentOperation = operation;
         _targetTransform = &targetTransform;
+        _targetGameObject = &targetGameObject;
         _gizmoPosition = _targetTransform->position;
         _gizmoScreenScale = _GetGizmoScale(cameraPosition, cameraForward);
+        _ownedDuplicatedObject.reset();
 
         Matrix4x4 viewProjection = viewMatrix * projectionMatrix;
 
@@ -359,6 +364,21 @@ namespace Editor
 
         if (_hoveredAxis != Axis::None && mouse.IsButtonDown(Mouse::MouseBoutton::Left) && !_isManipulating)
         {
+            if (ImGui::IsKeyDown(ImGuiKey_LeftAlt))
+            {
+                GameObject newGameObject = _scene->DuplicateGameObject(*_targetGameObject);
+                if (newGameObject)
+                {
+                    _ownedDuplicatedObject = newGameObject;
+
+                    if (_onTargetDuplicated)
+                        _onTargetDuplicated(newGameObject);
+
+                    _targetGameObject = &(*_ownedDuplicatedObject);
+                    _targetTransform = &_targetGameObject->GetComponent<Frost::Component::Transform>();
+                }
+            }
+
             _isManipulating = true;
             _activeAxis = _hoveredAxis;
             _originalTransform = *_targetTransform;
@@ -454,6 +474,7 @@ namespace Editor
                 }
             }
 
+            bool modified = false;
             Ray ray = { rayOrigin, rayDir };
             float t;
             if (IntersectRayPlane(ray, _manipulationStartPos, planeNormal, t))
@@ -480,6 +501,7 @@ namespace Editor
                     XMVECTOR newQuat = XMQuaternionMultiply(deltaQuat, originalQuat);
 
                     XMStoreFloat4(reinterpret_cast<XMFLOAT4*>(&_targetTransform->rotation), newQuat);
+                    modified = true;
                 }
                 else // Translate or Scale
                 {
@@ -490,6 +512,8 @@ namespace Editor
                             _targetTransform->position = _originalTransform.position + (axisDir * Dot(delta, axisDir));
                         else
                             _targetTransform->position = _originalTransform.position + delta;
+
+                        modified = true;
                     }
                     else if (_currentOperation == GizmoOperation::Scale)
                     {
@@ -506,6 +530,18 @@ namespace Editor
                         _targetTransform->scale.x = std::max(_targetTransform->scale.x, 0.001f);
                         _targetTransform->scale.y = std::max(_targetTransform->scale.y, 0.001f);
                         _targetTransform->scale.z = std::max(_targetTransform->scale.z, 0.001f);
+
+                        modified = true;
+                    }
+                }
+
+                if (modified && _targetGameObject)
+                {
+                    if (auto* physicSystem = _scene->GetSystem<PhysicSystem>())
+                    {
+                        physicSystem->NotifyRigidBodyUpdate(*_scene, *_targetGameObject);
+                        FT_ENGINE_TRACE("RigidBody component on entity {} updated in Gizmo.",
+                                        (uint64_t)_targetGameObject->GetHandle());
                     }
                 }
             }
