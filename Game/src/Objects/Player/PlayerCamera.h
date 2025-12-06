@@ -10,6 +10,7 @@
 #include "Player.h"
 #include <Frost/Scene/Components/Meta.h>
 #include <Frost/Renderer/PostEffect/FogEffect.h>
+#include <Frost/Renderer/PostEffect/ScreenShakeEffect.h>
 
 using namespace Frost;
 
@@ -64,11 +65,16 @@ public:
     void UpdateTPCam(float deltaTime);
     JPH::Quat LookAtQuaternion(const JPH::Vec3& cameraPos, const JPH::Vec3& targetPos);
     void UpdateSpringCam(float deltaTime);
+    void UpdateSpringCamRotation(const JPH::Vec3& pos, float deltaTime);
     void ProcessInput(float deltaTime);
 
 private:
     float _cameraPivotRotationX = 0.0f;
     float _cameraPivotRotationY = 0.0f;
+    float _yaw = 0.0f;
+    float _pitch = 0.0f;
+    bool _freeCam = false;
+    const float _mouseSensitivity = 0.003f;
 };
 
 class PlayerCamera
@@ -79,11 +85,17 @@ public:
     GameObject& GetCameraId() { return _camera; }
     PlayerCamera(Player* _player);
 
+    // PostEffect calls
+    void Shake(float duration, float amplitude, ScreenShakeEffect::AttenuationType type);
+    void SetRadialBlurStrength(float strength);
+
 private:
     Player* _player;
     GameObject _cameraPivot;
     GameObject _3rdPersVirtCamera;
     GameObject _camera;
+    RadialBlurEffect* radialBlur;
+    ScreenShakeEffect* screenShake;
 
     JPH::BodyID _cameraBodyID;
     JPH::BodyInterface* _bodyInter;

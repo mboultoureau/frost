@@ -28,8 +28,8 @@ MainLayer::OnAttach()
     // portal
 
     //_terrain = std::make_unique<Terrain>();
-    _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
-    _sndWater = std::make_unique<Water>(Vector3(-315, 69, -32), EulerAngles(), Vector3(10, 15, 40), 0.2f);
+    _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 150, 40), 0.2f);
+    //_sndWater = std::make_unique<Water>(Vector3(-315, 69, -32), EulerAngles(), Vector3(20, 15, 20), 0.2f);
 
     _sun = std::make_unique<Sun>();
 

@@ -67,7 +67,6 @@ private:
     float _forward = 0;
     float _right = 0;
     float _previousForward = 0;
-    float _brake = 0;
 
     float _leftRightInput;
     float _upDownInput;
@@ -84,4 +83,9 @@ private:
 
     static constexpr float cForwardAcceleration = 30.0f;
     static constexpr float cSteerAcceleration = 3.0f;
+    static constexpr float cBoatBrakeStrength = 0.5f;
+
+    static constexpr float cScreenShakeDuration = 0.4f;
+    static constexpr float cScreenShakeSpeedMultiplier = 0.1f;
+    static constexpr float cRadialBlurSpeedFactor = 0.001f;
 };
