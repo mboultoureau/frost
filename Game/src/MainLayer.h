@@ -59,6 +59,7 @@ private:
     std::shared_ptr<CheckPoint> _checkPoint5;
     std::shared_ptr<Wall> _wall;
     std::unique_ptr<Grass> _grass;
+    std::unique_ptr<CheckPoint> _debugCheckPoint;
 
     std::unique_ptr<Frost::StartMenu> _startMenu;
 };

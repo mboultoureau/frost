@@ -33,6 +33,7 @@
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/VirtualCamera.h"
 #include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Scene/Components/Billboard.h"
 #include "Frost/Scene/Scene.h"
 
 #include "Frost/Renderer/DX11/RendererDX11.h"

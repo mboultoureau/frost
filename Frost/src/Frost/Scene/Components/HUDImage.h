@@ -41,5 +41,6 @@ namespace Frost::Component
         std::shared_ptr<Texture> texture;
         Material::FilterMode textureFilter;
         Viewport viewport;
+        float rotation = 0.0f;
     };
 } // namespace Frost::Component
