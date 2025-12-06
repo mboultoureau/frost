@@ -1,5 +1,7 @@
 #include "Boat.h"
 #include "../../../Game.h"
+#include "../../../MainLayer.h"
+#include "../PlayerCamera.h"
 #include "../../../Physics/PhysicsLayer.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
@@ -101,6 +103,14 @@ Boat::OnPreFixedUpdate(float deltaTime)
 void
 Boat::OnFixedUpdate(float deltaTime)
 {
+    auto& scene = Game::GetScene();
+    auto mainLayer = Game::GetMainLayer();
+    Player* player = mainLayer->GetPlayer();
+
+    auto playerCamera = player->GetCamera();
+
+    playerCamera->SetRadialBlurStrength(Physics::GetBodyInterface().GetLinearVelocity(_bodyId).Length() *
+                                        cRadialBlurSpeedFactor);
 }
 
 void
@@ -111,6 +121,21 @@ Boat::OnLateUpdate(float deltaTime)
 void
 Boat::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 {
+    if (params.inBody1.IsSensor() || params.inBody2.IsSensor())
+        return;
+
+    auto& scene = Game::GetScene();
+    auto mainLayer = Game::GetMainLayer();
+    Player* player = mainLayer->GetPlayer();
+
+    auto playerCamera = player->GetCamera();
+
+    playerCamera->Shake(cScreenShakeDuration,
+                        Physics::GetBodyInterface()
+                                .GetLinearVelocity(_player->GetPlayerID().GetComponent<RigidBody>().runtimeBodyID)
+                                .Length() *
+                            cScreenShakeSpeedMultiplier,
+                        ScreenShakeEffect::AttenuationType::EaseOut);
 }
 
 void
@@ -141,6 +166,17 @@ Boat::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
                                            bow_position); // _body->GetCenterOfMassPosition());
     Physics::GetBodyInterface().AddImpulse(
         _bodyId, (right * Sign(_forward) * _right * cSteerAcceleration) * cBoatMass * deltaTime, propeller_position);
+
+    if (_handBrakeInput != 0)
+    {
+        auto currentVelocity = Physics::GetBodyInterface().GetLinearVelocity(_bodyId);
+
+        JPH::Vec3 horizontalVelocity = { currentVelocity.GetX(), 0, currentVelocity.GetZ() };
+
+        JPH::Vec3 brakeDiff = horizontalVelocity * cBoatBrakeStrength * deltaTime;
+
+        Physics::GetBodyInterface().SetLinearVelocity(_bodyId, currentVelocity - brakeDiff);
+    }
 }
 
 void

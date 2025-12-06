@@ -70,6 +70,12 @@ PlayerScript::OnUpdate(float deltaTime)
 };
 
 void
+PlayerScript::OnFixedUpdate(float deltaTime)
+{
+    player->GetCurrentVehicle().second->OnFixedUpdate(deltaTime);
+};
+
+void
 PlayerScript::OnLateUpdate(float deltaTime)
 {
     player->GetCurrentVehicle().second->OnLateUpdate(deltaTime);

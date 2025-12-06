@@ -144,7 +144,6 @@ public:
 void
 PlayerSpringCameraScript::UpdateSpringCam(float deltaTime)
 {
-
     auto& playerWTransform = player.GetComponent<WorldTransform>();
     auto& thirdPersonCameraWTransform = thirdPersonCamera.GetComponent<WorldTransform>();
     auto& springCamRigidBody = springCam.GetComponent<RigidBody>();
@@ -155,31 +154,10 @@ PlayerSpringCameraScript::UpdateSpringCam(float deltaTime)
                                     : Math::vector_cast<JPH::Vec3>(playerWTransform.position);
 
     auto playerPosition = Math::vector_cast<JPH::Vec3>(playerWTransform.position);
-    JPH::RRayCast ray;
-    ray.mOrigin = playerPosition;
-    auto _thirdPCamPos = Math::vector_cast<JPH::Vec3>(thirdPersonCameraWTransform.position);
-    ray.mDirection = (_thirdPCamPos - playerPosition);
-    float desiredDistance = ray.mDirection.Length();
 
     // Make a getter inside player
     auto renderer = playerManager->GetCurrentVehicle().second->GetModelRendererObject();
     renderer.SetActive((playerPosition - cameraPos).Length() > playerCullingDistance);
-
-    if (isThirdPerson)
-    {
-        RayCastBroadPhaseFilter bpFilter;
-        IgnoreCameraLayerFilter objectFilter;
-
-        JPH::RayCastResult result;
-        if (desiredDistance > 0.01 &&
-            Physics::Get().physics_system.GetNarrowPhaseQuery().CastRay(ray, result, bpFilter, objectFilter))
-        {
-            cameraPos = ray.GetPointOnRay(result.mFraction);
-            Physics::Get().body_interface->SetPosition(
-                springCamRigidBody.runtimeBodyID, cameraPos, JPH::EActivation::Activate);
-            return;
-        }
-    }
 
     JPH::Vec3 displacement = desiredPos - cameraPos;
     JPH::Vec3 springForce = displacement * stiffness;
@@ -192,11 +170,37 @@ PlayerSpringCameraScript::UpdateSpringCam(float deltaTime)
         Physics::Get().body_interface->SetPosition(
             springCamRigidBody.runtimeBodyID, newPos, JPH::EActivation::Activate);
 
-    // Rotation ------------
+    if (isThirdPerson)
+    {
+        JPH::RRayCast ray;
+        ray.mOrigin = playerPosition;
+        ray.mDirection = (newPos - playerPosition) * 1.1f;
+        float desiredDistance = ray.mDirection.Length();
 
+        RayCastBroadPhaseFilter bpFilter;
+        IgnoreCameraLayerFilter objectFilter;
+
+        JPH::RayCastResult result;
+        if (desiredDistance > 0.01 &&
+            Physics::Get().physics_system.GetNarrowPhaseQuery().CastRay(ray, result, bpFilter, objectFilter))
+        {
+            cameraPos = ray.GetPointOnRay(result.mFraction * 0.9f);
+            Physics::Get().body_interface->SetPosition(
+                springCamRigidBody.runtimeBodyID, cameraPos, JPH::EActivation::Activate);
+        }
+    }
+
+    UpdateSpringCamRotation(newPos, deltaTime);
+}
+
+void
+PlayerSpringCameraScript::UpdateSpringCamRotation(const JPH::Vec3& pos, float deltaTime)
+{
+    auto& playerWTransform = player.GetComponent<WorldTransform>();
+    auto& springCamRigidBody = springCam.GetComponent<RigidBody>();
     auto springCamRot = Physics::Get().body_interface->GetRotation(springCamRigidBody.runtimeBodyID);
     auto newRot =
-        LookAtQuaternion(newPos,
+        LookAtQuaternion(pos,
                          Math::vector_cast<JPH::Vec3>(
                              playerWTransform.position) // +Physics::GetBodyInterface().GetLinearVelocity(playerBodyId)
         );
@@ -215,26 +219,49 @@ PlayerSpringCameraScript::ProcessInput(float deltaTime)
 {
     EulerAngles pivotRot = Math::QuaternionToEulerAngles(cameraPivot.GetComponent<Transform>().rotation);
 
-    // Rotate Y
-    if (Input::GetKeyboard().IsKeyDown(K_1) || Input::GetKeyboard().IsKeyDown(K_NUMPAD6))
+    auto* window = Application::GetWindow();
+    uint32_t centerX = window->GetWidth() / 2;
+    uint32_t centerY = window->GetHeight() / 2;
+
+    isThirdPerson = !(Input::GetMouse().IsButtonHold(Mouse::MouseBoutton::Middle));
+
+    if (Input::GetKeyboard().IsKeyPressed(K_C))
     {
-        _cameraPivotRotationY += 1.0f * deltaTime;
-    }
-    else if (Input::GetKeyboard().IsKeyDown(K_2) || Input::GetKeyboard().IsKeyDown(K_NUMPAD4))
-    {
-        _cameraPivotRotationY -= 1.0f * deltaTime;
+        _freeCam = !_freeCam;
+
+        if (_freeCam)
+        {
+            Input::GetMouse().HideCursor();
+            Input::GetMouse().SetPosition({ centerX, centerY });
+        }
+        else
+        {
+            Input::GetMouse().ShowCursor();
+        }
+
+        return;
     }
 
-    // Rotate X
-    if (Input::GetKeyboard().IsKeyDown(K_3) || Input::GetKeyboard().IsKeyDown(K_NUMPAD8))
+    if (!_freeCam)
+        return;
+
+    auto currentMousePos = Input::GetMouse().GetPosition();
+
+    int deltaX = static_cast<int>(currentMousePos.x) - static_cast<int>(centerX);
+    int deltaY = static_cast<int>(currentMousePos.y) - static_cast<int>(centerY);
+
+    if (deltaX != 0 || deltaY != 0)
     {
-        if (pivotRot.Roll < 0.5f)
-            _cameraPivotRotationX += 1.0f * deltaTime;
-    }
-    else if (Input::GetKeyboard().IsKeyDown(K_4) || Input::GetKeyboard().IsKeyDown(K_NUMPAD2))
-    {
-        if (pivotRot.Roll > -0.5f)
-            _cameraPivotRotationX -= 1.0f * deltaTime;
+        _yaw += static_cast<float>(deltaX) * _mouseSensitivity;
+        _pitch += static_cast<float>(deltaY) * _mouseSensitivity;
+
+        Angle<Radian> limit = 89.0_deg;
+        _pitch = std::clamp(_pitch, -limit.value(), limit.value());
+
+        _cameraPivotRotationX = _pitch;
+        _cameraPivotRotationY = _yaw;
+
+        Input::GetMouse().SetPosition({ centerX, centerY });
     }
 
     // Switch cam to 3rd person or 1st person
@@ -242,7 +269,6 @@ PlayerSpringCameraScript::ProcessInput(float deltaTime)
     {
             isThirdPerson = !isThirdPerson;
     }*/
-    isThirdPerson = !(Input::GetMouse().IsButtonHold(Mouse::MouseBoutton::Middle));
 }
 
 PlayerCamera::PlayerCamera(Player* player) : _player{ player }
@@ -270,6 +296,7 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
     auto& camComponent = _camera.AddComponent<Camera>();
     camComponent.postEffects.push_back(std::make_shared<ToonEffect>());
     camComponent.postEffects.push_back(std::make_shared<FogEffect>());
+    camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
     camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
     // camComponent.postEffects.push_back(std::make_shared<ChromaticAberrationEffect>());
 
@@ -286,4 +313,21 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
 
     _cameraBodyID = _camera.GetComponent<RigidBody>().runtimeBodyID;
     _bodyInter = Physics::Get().body_interface;
+
+    screenShake = camComponent.GetEffect<ScreenShakeEffect>().get();
+    radialBlur = camComponent.GetEffect<RadialBlurEffect>().get();
+}
+
+void
+PlayerCamera::Shake(float duration, float amplitude, ScreenShakeEffect::AttenuationType type)
+{
+    if (screenShake != nullptr)
+        screenShake->Shake(duration, amplitude, type);
+}
+
+void
+PlayerCamera::SetRadialBlurStrength(float strength)
+{
+    if (radialBlur != nullptr)
+        radialBlur->SetStrength(strength);
 }

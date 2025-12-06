@@ -16,6 +16,7 @@ class Plane : public Vehicle
 public:
     Plane(Player* player, RendererParameters params);
     void OnPreFixedUpdate(float fixedDeltaTime) override;
+    void OnFixedUpdate(float fixedDeltaTime) override;
     void OnLateUpdate(float deltaTime) override;
 
     void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
@@ -32,36 +33,44 @@ public:
     void Disappear() override;
 
 private:
-    float currentPitch = 0.0f;
-    float currentRoll = 0.0f;
-    float currentYaw = 0.0f;
-    float currentSpeed = 0.0f;
+    float _currentPitch = 0.0f;
+    float _currentRoll = 0.0f;
+    float _currentYaw = 0.0f;
+    float _currentSpeed = 0.0f;
 
-    float leftRightInput = 0;
-    float upDownInput = 0;
+    float _leftRightInput = 0;
+    float _upDownInput = 0;
 
-    bool inContinuousCollision = false;
+    bool _inContinuousCollision = false;
+    bool _justAppeared = false;
 
-    float noInputDeceleration = 0.5f;
+    float _noInputDeceleration = 0.4f;
 
-    float baseForwardSpeed = 25.0f;
-    float maxForwardSpeed = 55.0f;
-    float minForwardSpeed = 2.0f;
-    float speedSmoothing = 1.0f;
+    float _baseForwardSpeed = 25.0f;
+    float _maxForwardSpeed = 50.0f;
+    float _minForwardSpeed = 2.0f;
+    float _upwardSpeedSmoothing = 0.5f;
+    float _downwardSpeedSmoothing = 1.0f;
 
-    float baseSinkRate = 2.0f;
-    float diveSinkRate = 8.0f;
-    float climbLiftRate = 1.5f;
+    float _baseSinkRate = 2.0f;
+    float _diveSinkRate = 11.0f;
+    float _climbLiftRateOffset = 20.0f;
 
-    float pitchSpeed = 2.5f;
-    float rollSpeed = 3.0f;
-    float yawFromRoll = 1.2f;
+    float _pitchSpeed = 2.5f;
+    float _rollSpeed = 3.0f;
+    float _yawFromRoll = 1.2f;
 
-    float maxPitchAngle = 0.5f; // ~30 degres
-    float maxRollAngle = 0.7f;  // ~40 degres
+    float _maxPitchAngle = 0.5f; // ~30 degres
+    float _maxRollAngle = 0.7f;  // ~40 degres
+    float _speedAcknowledgementThreshold = 1.0f;
 
-    std::chrono::milliseconds collisionCoolDown = 750ms;
-    Timer collisionCoolDownTimer;
+    float _screenShakeDuration = 0.4f;
+    float _screenShakeSpeedMultiplier = 0.1f;
+
+    float _radialBlurSpeedFactor = 0.001f;
+
+    std::chrono::milliseconds _collisionCoolDown = 750ms;
+    Timer _collisionCoolDownTimer;
 
     float MoveTowards(float current, float target, float maxDelta)
     {
@@ -73,19 +82,30 @@ private:
         return current + std::copysign(maxDelta, diff);
     }
 
-    void UpdateInternalStateFromBody()
+    void UpdateInternalStateFromBody(bool accountForVelocity)
     {
         auto& bodyInterface = Physics::GetBodyInterface();
 
         JPH::Quat rot = bodyInterface.GetRotation(_bodyId);
+        JPH::Vec3 speed = bodyInterface.GetLinearVelocity(_bodyId);
 
-        JPH::Vec3 fwd = rot.RotateAxisZ();
-        currentYaw = std::atan2(fwd.GetX(), fwd.GetZ());
+        JPH::Vec3 fwd;
+
+        if (accountForVelocity && speed.Length() > _speedAcknowledgementThreshold)
+        {
+            fwd = speed.NormalizedOr(rot.RotateAxisZ());
+        }
+        else
+        {
+            fwd = rot.RotateAxisZ();
+        }
+
+        _currentYaw = std::atan2(fwd.GetX(), fwd.GetZ());
 
         JPH::Vec3 up = rot.RotateAxisY();
-        currentPitch = std::asin(-fwd.GetY());
+        _currentPitch = std::asin(-fwd.GetY());
 
         JPH::Vec3 right = rot.RotateAxisX();
-        currentRoll = std::atan2(right.GetY(), up.GetY());
+        _currentRoll = std::atan2(right.GetY(), up.GetY());
     }
 };
