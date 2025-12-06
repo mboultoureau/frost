@@ -100,8 +100,8 @@ void
 Player::SetPlayerVehicle(Player::VehicleType type)
 {
     using namespace JPH;
-    Vec3 linearSpeed;
-    Vec3 angularSpeed;
+    Vec3 linearSpeed = Vec3();
+    Vec3 angularSpeed = Vec3();
 
     if (_currentVehicle)
     {
@@ -122,6 +122,8 @@ Player::SetPlayerVehicle(Player::VehicleType type)
     else
     {
         _playerId.AddComponent<RigidBody>(_currentVehicle->GetBodyID());
+        Physics::Get().body_interface->SetLinearAndAngularVelocity(
+            _playerId.GetComponent<RigidBody>().runtimeBodyID, linearSpeed, angularSpeed);
     }
 }
 void

@@ -54,6 +54,8 @@ private:
     JPH::VehicleConstraint* mConstraint = nullptr;
     JPH::MotorcycleController* mController = nullptr;
     JPH::Body* _body;
+    JPH::Vec3 _previousLinearSpeed;
+    JPH::Vec3 _previousAngularSpeed;
     Vehicle* _vehicle;
 
     Timer _specialDriftTimer;
@@ -75,4 +77,12 @@ private:
     float _upDownInput = 0;
     bool _handBrakeInput = false;
     bool _specialInput = false;
+
+    float _screenShakeDuration = 0.2f;
+    float _screenShakeSpeedMultiplier = 0.025f;
+    float _shakeLinearSpeedDiffThreshold = 0.5f;
+    float _shakeAngularSpeedDiffThreshold = 0.6f;
+    float _shakeSpeedAngleDiffThreshold = 0.6f;
+
+    float _radialBlurSpeedFactor = 0.001f;
 };

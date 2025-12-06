@@ -1,5 +1,7 @@
 #include "Bike.h"
 #include "../../../Game.h"
+#include "../../../MainLayer.h"
+#include "../PlayerCamera.h"
 #include "../../../Physics/PhysicsLayer.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
@@ -19,6 +21,7 @@
 #include <DirectXMath.h>
 #include <algorithm>
 #include <cmath>
+
 using namespace Frost;
 using namespace Frost::Component;
 using namespace Frost::Math;
@@ -194,6 +197,9 @@ Bike::Appear()
     Physics::Get().physics_system.AddStepListener(mConstraint);
     mController = static_cast<MotorcycleController*>(mConstraint->GetController());
     _specialDriftCoolDown.Start();
+
+    _previousLinearSpeed = _body->GetLinearVelocity();
+    _previousAngularSpeed = _body->GetAngularVelocity();
     return _bodyId;
 }
 
@@ -266,6 +272,9 @@ Bike::ProcessBikeInput(float deltaTime)
         _right = std::min(_right + steer_speed * deltaTime, _leftRightInput);
     else if (_leftRightInput < _right)
         _right = std::max(_right - steer_speed * deltaTime, _leftRightInput);
+
+    if (_upDownInput == 0)
+        _brake = 1.0f;
 
     // When leaned, we don't want to use the brakes fully as we'll spin out
     if (_brake > 0.0f)
@@ -371,6 +380,36 @@ Bike::OnPreFixedUpdate(float deltaTime)
 void
 Bike::OnFixedUpdate(float deltaTime)
 {
+    float linearSpeedMagnitude = _body->GetLinearVelocity().Length();
+    float prevlinearSpeedMagnitude = _previousLinearSpeed.Length();
+    float angularSpeedMagnitude = _body->GetAngularVelocity().Length();
+    float prevAngularSpeedMagnitude = _previousAngularSpeed.Length();
+    float speedDot = 1;
+
+    auto& scene = Game::GetScene();
+    auto mainLayer = Game::GetMainLayer();
+    Player* player = mainLayer->GetPlayer();
+
+    auto playerCamera = player->GetCamera();
+
+    if (linearSpeedMagnitude > 0 && prevlinearSpeedMagnitude > 0)
+    {
+        speedDot = _body->GetLinearVelocity().Normalized().Dot(_previousLinearSpeed.Normalized());
+    }
+
+    if (std::abs(linearSpeedMagnitude - prevlinearSpeedMagnitude) > _shakeLinearSpeedDiffThreshold ||
+        speedDot < _shakeSpeedAngleDiffThreshold ||
+        std::abs(angularSpeedMagnitude - prevAngularSpeedMagnitude) > _shakeAngularSpeedDiffThreshold)
+    {
+        playerCamera->Shake(_screenShakeDuration,
+                            prevlinearSpeedMagnitude * _screenShakeSpeedMultiplier,
+                            ScreenShakeEffect::AttenuationType::EaseOut);
+    }
+
+    _previousLinearSpeed = _body->GetLinearVelocity();
+    _previousAngularSpeed = _body->GetAngularVelocity();
+
+    playerCamera->SetRadialBlurStrength(linearSpeedMagnitude * _radialBlurSpeedFactor);
 }
 
 void
@@ -435,6 +474,8 @@ Bike::GiveBoost()
     // Physics::GetBodyInterface().AddTorque(_bodyId, Vec3{ 0, _leftRightInput *
     // _specialDriftRotationPower, 0 });
     _specialDriftCoolDown.Start();
+    _specialDriftTimer.Start();
+    _specialDriftTimer.Pause();
 };
 
 void
