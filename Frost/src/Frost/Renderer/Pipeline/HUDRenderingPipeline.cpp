@@ -135,6 +135,12 @@ namespace Frost
         params.viewport[2] = image.viewport.width;
         params.viewport[3] = image.viewport.height;
 
+        params.rotation = image.rotation;
+
+        params.padding[0] = 0.0f;
+        params.padding[1] = 0.0f;
+        params.padding[2] = 0.0f;
+
         _constantBuffer->UpdateData(_commandList.get(), &params, sizeof(params));
 
         SetFilter(image.textureFilter);

@@ -158,7 +158,7 @@ CheckPoint::ActivatePhysics()
     Scene& scene = Game::GetScene();
     if (!_checkpoint.HasComponent<StaticMesh>())
     {
-        _checkpoint.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/sphere.fbx" });
+        _checkpoint.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/moto.glb" });
     }
     if (_checkpoint.HasComponent<RigidBody>())
     {
