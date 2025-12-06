@@ -21,21 +21,22 @@ namespace Frost
     {
         auto& scene = Game::GetScene();
 
-        pauseTextId = scene.CreateGameObject("pause text");
+        pauseLogoId = scene.CreateGameObject("pause logo");
         resumeButtonId = scene.CreateGameObject("resume button");
         resetButtonId = scene.CreateGameObject("reset button");
 
-        float buttonWidth = 0.25f;
-        float buttonHeight = 0.08f;
-        float textHeight = 0.1f;
-        float centerX = 0.5f - (buttonWidth / 2.0f);
-        float gap = 0.02f;
+        float buttonHeight = 0.25f;
+        float buttonWidth = 0.2f;
+        float logoHeight = 0.3f;
+        float logoWidth = 0.2f;
+        float centerbuttonX = 0.5f - (buttonWidth / 2.0f);
+        float centerlogoX = 0.5f - (logoWidth / 2.0f);
 
-        Viewport textViewport = { centerX, 0.3f, buttonWidth, textHeight };
-        Viewport resumeViewport = { centerX, textViewport.y + textHeight + gap, buttonWidth, buttonHeight };
-        Viewport resetViewport = { centerX, resumeViewport.y + buttonHeight + gap, buttonWidth, buttonHeight };
+        Viewport textViewport = { centerlogoX, 0.0f, buttonWidth, logoHeight };
+        Viewport resumeViewport = { centerbuttonX, textViewport.y + logoHeight, buttonWidth, buttonHeight };
+        Viewport resetViewport = { centerbuttonX, resumeViewport.y + buttonHeight, buttonWidth, buttonHeight };
 
-        pauseTextId.AddComponent<Component::HUDImage>(textViewport, pausePath, Material::FilterMode::POINT);
+        pauseLogoId.AddComponent<Component::HUDImage>(textViewport, pausePath, Material::FilterMode::POINT);
 
         resumeButtonId.AddComponent<Component::UIButton>(
             resumeViewport, idleResumePath, hoverResumePath, pressedResumePath, [this]() { OnUnpauseButtonPress(); });
@@ -93,14 +94,14 @@ namespace Frost
 
     void PauseMenu::ShowMenu()
     {
-        pauseTextId.SetActive(true);
+        pauseLogoId.SetActive(true);
         resumeButtonId.SetActive(true);
         resetButtonId.SetActive(true);
     }
 
     void PauseMenu::HideMenu()
     {
-        pauseTextId.SetActive(false);
+        pauseLogoId.SetActive(false);
         resumeButtonId.SetActive(false);
         resetButtonId.SetActive(false);
     }

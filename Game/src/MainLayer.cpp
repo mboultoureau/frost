@@ -27,6 +27,16 @@ MainLayer::OnAttach()
 
     // portal
 
+    /* Frost::Math::Vector3 billboardPosition = { -365.0f, 68.0f, -64.0f };
+    const float billboardWidth = 50.0f;
+    const float billboardHeight = 50.0f;
+    const std::string texturePath = "resources/textures/victoryScreen.png";
+    auto MyNewBillboard = _scene.CreateGameObject("My Test Billboard");
+    MyNewBillboard.AddComponent<Frost::Component::Transform>(billboardPosition);
+    MyNewBillboard.AddComponent<Frost::Component::WorldTransform>();
+    MyNewBillboard.AddComponent<Frost::Component::Billboard>(
+        billboardWidth, billboardHeight, texturePath, Frost::Material::FilterMode::LINEAR);
+        */
     //_terrain = std::make_unique<Terrain>();
     _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 150, 40), 0.2f);
     //_sndWater = std::make_unique<Water>(Vector3(-315, 69, -32), EulerAngles(), Vector3(20, 15, 20), 0.2f);
@@ -118,7 +128,6 @@ MainLayer::OnFixedUpdate(float deltaTime)
         if (!_paused)
         {
             _gamestate.StartGame();
-            std::vector<Player> players = _gamestate.GetPlayers();
             _player = std::make_unique<Player>();
             _portal1 = std::make_shared<Portal>(Vector3{ -365, 68, -32 },
                                                 EulerAngles{ 0_deg, 0_deg, 0_deg },
@@ -141,6 +150,8 @@ MainLayer::OnFixedUpdate(float deltaTime)
 
         if (!winScreenCreated)
         {
+            EventManager::Emit<Frost::PauseEvent>();
+
             auto winScreen = _scene.CreateGameObject("victoryScreen");
 
             Viewport viewportImage;
@@ -148,22 +159,25 @@ MainLayer::OnFixedUpdate(float deltaTime)
             viewportImage.width = 0.6f;
             viewportImage.x = 0.2f;
             viewportImage.y = 0.1f;
-            const std::string WIN_PATH = "resources/textures/victoryScreen2.png";
+            const std::string WIN_PATH = "resources/textures/victoryScreen.png";
             Viewport viewportButton;
             viewportButton.height = 0.2f;
             viewportButton.width = 0.2f;
             viewportButton.x = 0.4f;
             viewportButton.y = 0.8f;
-            const std::string hover = "resources/textures/reset-hover.png";
-            const std::string idle = "resources/textures/reset-idle.png";
-            const std::string press = "resources/textures/reset-press.png";
+            const std::string hover = "resources/textures/reload-hover.png";
+            const std::string idle = "resources/textures/reload-idle.png";
+            const std::string press = "resources/textures/reload-press.png";
 
             Scene& _scene = Game::GetScene();
 
             auto VictoryScreen = _scene.CreateGameObject("Victory Screen");
             _scene.AddComponent<HUDImage>(winScreen, viewportImage, WIN_PATH, Material::FilterMode::POINT);
-            winScreenCreated = true;
+
             VictoryScreen.AddComponent<UIButton>(viewportButton, hover, idle, press, [this]() { OnPressedButton(); });
+            auto& victoryButton = VictoryScreen.GetComponent<Frost::Component::UIButton>();
+            victoryButton.buttonHitbox = viewportButton;
+            winScreenCreated = true;
         }
     }
     else

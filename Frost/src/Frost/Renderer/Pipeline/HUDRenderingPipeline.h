@@ -26,6 +26,8 @@ namespace Frost
         struct alignas(16) HUDShaderParameters
         {
             float viewport[4];
+            float rotation;
+            float padding[3];
         };
 
         void SetFilter(Material::FilterMode filterMode);

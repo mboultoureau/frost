@@ -47,7 +47,8 @@ namespace Frost
         // DirectX specific
         SHADOW = 100,
         HUD = 101,
-        HEIGHTMAP = 102
+        HEIGHTMAP = 102,
+        BILLBOARD = 103
     };
 
     enum TextureChannel

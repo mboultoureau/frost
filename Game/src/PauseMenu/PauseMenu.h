@@ -23,19 +23,19 @@ namespace Frost
         void AddScene(Scene* scene) { _scenes.push_back(scene); }
 
     private:
-        const std::string pausePath = "resources/textures/pause-text.png";
-        GameObject pauseTextId;
+        const std::string pausePath = "resources/textures/pause.png";
+        GameObject pauseLogoId;
         NormalizedRect pauseNRect;
 
-        const std::string idleResumePath = "resources/textures/unpause-idle.png";
-        const std::string hoverResumePath = "resources/textures/unpause-hover.png";
-        const std::string pressedResumePath = "resources/textures/unpause-press.png";
+        const std::string idleResumePath = "resources/textures/resume-idle.png";
+        const std::string hoverResumePath = "resources/textures/resume-hover.png";
+        const std::string pressedResumePath = "resources/textures/resume-press.png";
         GameObject resumeButtonId;
         NormalizedRect resumeNRect;
 
-        const std::string idleResetPath = "resources/textures/reset-idle.png";
-        const std::string hoverResetPath = "resources/textures/reset-hover.png";
-        const std::string pressedResetPath = "resources/textures/reset-press.png";
+        const std::string idleResetPath = "resources/textures/reload-idle.png";
+        const std::string hoverResetPath = "resources/textures/reload-hover.png";
+        const std::string pressedResetPath = "resources/textures/reload-press.png";
         GameObject resetButtonId;
         NormalizedRect resetNRect;
 

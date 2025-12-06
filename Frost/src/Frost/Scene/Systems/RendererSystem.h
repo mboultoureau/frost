@@ -30,6 +30,7 @@ namespace Frost
         RendererSystem();
         void LateUpdate(Scene& scene, float deltaTime) override;
         void SetRenderTargetOverride(std::shared_ptr<Texture> target) { _externalRenderTarget = target; }
+        DeferredRenderingPipeline& GetPipeline() { return _deferredRendering; }
 
     private:
         void _RenderSceneToTexture(Scene& scene,
