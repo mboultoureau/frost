@@ -19,6 +19,8 @@ public:
 
     void OnUpdate(float deltaTime) override;
 
+    void OnFixedUpdate(float deltaTime) override;
+
     void OnPreFixedUpdate(float fixedDeltaTime) override;
 
     void OnLateUpdate(float deltaTime) override;
