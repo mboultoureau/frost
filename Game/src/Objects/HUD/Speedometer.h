@@ -23,6 +23,7 @@ namespace Frost
         Player& _player;
 
         GameObject _speedometerComponent;
+        GameObject _speedometerNeedleComponent;
 
         const float METERS_PER_SECOND_TO_KMH = 3.6f;
     };

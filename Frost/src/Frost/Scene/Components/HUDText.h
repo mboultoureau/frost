@@ -21,7 +21,7 @@ namespace Frost::Component
             viewport{ viewport }, text{ text }, font{ std::move(font) }, color{ color }
         {
         }
-        float fontSize = 1.0f;
+        float fontSize = 0.8f;
         std::shared_ptr<Font> font;
         std::string text;
         Viewport viewport;
