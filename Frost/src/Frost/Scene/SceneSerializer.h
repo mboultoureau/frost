@@ -14,11 +14,13 @@ namespace Frost
         bool Deserialize(const std::filesystem::path& filepath);
 
     private:
-        bool SerializeToYaml(const std::filesystem::path& filepath);
-        bool DeserializeFromYaml(const std::filesystem::path& filepath);
+        bool _SerializeToYaml(const std::filesystem::path& filepath);
+        bool _DeserializeFromYaml(const std::filesystem::path& filepath);
 
-        bool SerializeToBinary(const std::filesystem::path& filepath);
-        bool DeserializeFromBinary(const std::filesystem::path& filepath);
+        bool _SerializeToBinary(const std::filesystem::path& filepath);
+        bool _DeserializeFromBinary(const std::filesystem::path& filepath);
+
+        bool _IsDescendantOfPrefab(GameObject go);
 
         Scene* m_Scene;
     };

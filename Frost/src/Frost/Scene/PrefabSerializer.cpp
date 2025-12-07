@@ -32,17 +32,22 @@ namespace Frost
         std::filesystem::path binPath = destinationPath;
         binPath.replace_extension(".bin");
 
-        _SerializeToYaml(entitiesToSerialize, yamlPath);
-        _SerializeToBinary(entitiesToSerialize, binPath);
+        _SerializeToYaml(rootEntity, entitiesToSerialize, yamlPath);
+        _SerializeToBinary(rootEntity, entitiesToSerialize, binPath);
     }
 
     void PrefabSerializer::_FlattenHierarchy(GameObject root, std::vector<GameObject>& outList)
     {
         outList.push_back(root);
 
-        if (root.HasComponent<Component::Prefab>())
+        // N'aplatit pas les enfants d'une instance de prefab, car ils seront chargés à partir de leur propre asset
+        if (!root.GetComponent<Meta>().name.empty() && root.HasComponent<Component::Prefab>())
         {
-            return;
+            auto& prefabComp = root.GetComponent<Component::Prefab>();
+            if (!prefabComp.assetPath.empty())
+            {
+                return;
+            }
         }
 
         if (root.HasComponent<Component::Relationship>())
@@ -67,7 +72,9 @@ namespace Frost
         }
     }
 
-    void PrefabSerializer::_SerializeToYaml(const std::vector<GameObject>& entities, const std::filesystem::path& path)
+    void PrefabSerializer::_SerializeToYaml(GameObject rootEntity,
+                                            const std::vector<GameObject>& entities,
+                                            const std::filesystem::path& path)
     {
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -93,25 +100,28 @@ namespace Frost
                     out << YAML::Value << -1;
             }
 
-            if (entity.HasComponent<Component::Prefab>() && !entity.GetComponent<Component::Prefab>().assetPath.empty())
+            bool isRoot = (entity == rootEntity);
+
+            // Pour les prefabs imbriqués, ne sérialiser que les composants essentiels
+            if (!isRoot && entity.HasComponent<Component::Prefab>() &&
+                !entity.GetComponent<Component::Prefab>().assetPath.empty())
             {
                 const char* componentsToSerialize[] = { "Meta", "Transform", "Prefab" };
                 for (const auto& name : componentsToSerialize)
                 {
-                    for (const auto& serializer : SerializationSystem::GetAllSerializers())
+                    if (auto* serializer = SerializationSystem::GetSerializerByName(name))
                     {
-                        if (serializer.Name == name && serializer.HasComponent(entity))
+                        if (serializer->HasComponent(entity))
                         {
-                            out << YAML::Key << serializer.Name;
+                            out << YAML::Key << serializer->Name;
                             out << YAML::BeginMap;
-                            serializer.SerializeYaml(out, entity);
+                            serializer->SerializeYaml(out, entity);
                             out << YAML::EndMap;
-                            break;
                         }
                     }
                 }
             }
-            else // Sinon, sérialisation normale
+            else // Pour les entités normales, tout sérialiser
             {
                 for (const auto& serializer : SerializationSystem::GetAllSerializers())
                 {
@@ -136,7 +146,8 @@ namespace Frost
         fout << out.c_str();
     }
 
-    void PrefabSerializer::_SerializeToBinary(const std::vector<GameObject>& entities,
+    void PrefabSerializer::_SerializeToBinary(GameObject rootEntity,
+                                              const std::vector<GameObject>& entities,
                                               const std::filesystem::path& path)
     {
         std::ofstream out(path, std::ios::binary);
@@ -168,34 +179,69 @@ namespace Frost
             }
             out.write((char*)&parentID, sizeof(int32_t));
 
-            if (entity.HasComponent<Component::Prefab>() && !entity.GetComponent<Component::Prefab>().assetPath.empty())
+            auto serializeComponents = [&](const std::list<ComponentSerializer>& serializers)
             {
-                const char* componentsToSerialize[] = { "Meta", "Transform", "Prefab" };
-                for (const auto& name : componentsToSerialize)
-                {
-                    for (const auto& serializer : SerializationSystem::GetAllSerializers())
-                    {
-                        if (serializer.Name == name && serializer.HasComponent(entity))
-                        {
-                            out.write((char*)&serializer.ID, sizeof(uint32_t));
-                            serializer.SerializeBinary(out, entity);
-                            break;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                for (const auto& serializer : SerializationSystem::GetAllSerializers())
+                for (const auto& serializer : serializers)
                 {
                     if (serializer.Name == "Relationship")
                         continue;
+
                     if (serializer.HasComponent(entity))
                     {
+                        std::stringstream componentStream(std::ios::binary | std::ios::in | std::ios::out);
+                        serializer.SerializeBinary(componentStream, entity);
+
                         out.write((char*)&serializer.ID, sizeof(uint32_t));
-                        serializer.SerializeBinary(out, entity);
+
+                        uint32_t dataSize = static_cast<uint32_t>(componentStream.tellp());
+                        out.write((char*)&dataSize, sizeof(uint32_t));
+
+                        out.write(componentStream.str().c_str(), dataSize);
                     }
                 }
+            };
+
+            auto serializeComponentsByPtr = [&](const std::vector<ComponentSerializer*>& serializers)
+            {
+                for (const auto* serializer : serializers)
+                {
+                    if (serializer->Name == "Relationship")
+                        continue;
+
+                    if (serializer->HasComponent(entity))
+                    {
+                        std::stringstream componentStream(std::ios::binary | std::ios::in | std::ios::out);
+                        serializer->SerializeBinary(componentStream, entity);
+
+                        out.write((char*)&serializer->ID, sizeof(uint32_t));
+
+                        uint32_t dataSize = static_cast<uint32_t>(componentStream.tellp());
+                        out.write((char*)&dataSize, sizeof(uint32_t));
+
+                        out.write(componentStream.str().c_str(), dataSize);
+                    }
+                }
+            };
+
+            bool isRoot = (entity == rootEntity);
+
+            if (!isRoot && entity.HasComponent<Component::Prefab>() &&
+                !entity.GetComponent<Component::Prefab>().assetPath.empty())
+            {
+                std::vector<ComponentSerializer*> filteredSerializers;
+                const char* componentsToSerialize[] = { "Meta", "Transform", "Prefab" };
+                for (const auto& name : componentsToSerialize)
+                {
+                    if (auto* s = SerializationSystem::GetSerializerByName(name))
+                    {
+                        filteredSerializers.push_back(s);
+                    }
+                }
+                serializeComponentsByPtr(filteredSerializers);
+            }
+            else
+            {
+                serializeComponents(SerializationSystem::GetAllSerializers());
             }
 
             uint32_t endMarker = 0;
@@ -229,7 +275,7 @@ namespace Frost
         GameObject root;
         std::string extension = absolutePath.extension().string();
 
-        if (extension == ".prefab")
+        if (extension == ".prefab") // Logique YAML (inchangée et fonctionnelle)
         {
             std::ifstream stream(absolutePath);
             if (!stream.is_open())
@@ -262,29 +308,11 @@ namespace Frost
                 if (entityNode["Prefab"])
                 {
                     std::filesystem::path nestedPath = entityNode["Prefab"]["AssetPath"].as<std::string>();
-                    std::filesystem::path absoluteNestedPath = nestedPath;
-
-                    if (nestedPath.is_relative())
-                    {
-                        absoluteNestedPath = Application::GetProjectDirectory() / nestedPath;
-                    }
-
-                    if (nestedPath.empty() || !std::filesystem::exists(absoluteNestedPath))
-                    {
-                        FT_ENGINE_WARN("Nested prefab path '{0}' (resolved to '{1}') is invalid or file does not "
-                                       "exist. Creating empty entity instead.",
-                                       nestedPath.string(),
-                                       absoluteNestedPath.string());
-                        go = GameObject(scene->GetRegistry().create(), scene);
-                    }
-                    else
-                    {
-                        go = Instantiate(scene, absoluteNestedPath, instantiationStack);
-                    }
+                    go = Instantiate(scene, nestedPath, instantiationStack);
                 }
                 else
                 {
-                    go = GameObject(scene->GetRegistry().create(), scene);
+                    go = scene->CreateGameObject("Prefab Entity");
                 }
 
                 if (!go)
@@ -295,7 +323,8 @@ namespace Frost
                 {
                     if (entityNode[serializer.Name])
                     {
-                        serializer.AddComponent(go);
+                        if (!serializer.HasComponent(go))
+                            serializer.AddComponent(go);
                         serializer.DeserializeYaml(entityNode[serializer.Name], go);
                     }
                 }
@@ -320,7 +349,7 @@ namespace Frost
             if (!root && !localIdToEntity.empty())
                 root = localIdToEntity.begin()->second;
         }
-        else if (extension == ".bin")
+        else if (extension == ".bin") // Logique binaire corrigée
         {
             std::ifstream in(absolutePath, std::ios::binary);
             if (!in.is_open())
@@ -335,7 +364,7 @@ namespace Frost
             if (std::string(header) != "FROST_BIN")
             {
                 FT_ENGINE_ERROR("Invalid binary prefab header: {0}", path.string());
-                instantiationStack->erase(path);
+                instantiationStack->erase(absolutePath);
                 return GameObject();
             }
 
@@ -355,76 +384,78 @@ namespace Frost
                 in.read((char*)&parentID, sizeof(int32_t));
 
                 std::map<uint32_t, std::vector<char>> componentDataMap;
-                std::string prefabPath;
+                std::string nestedPrefabPath;
 
+                // 1. Lire toutes les données des composants dans des buffers
                 while (true)
                 {
                     uint32_t componentID;
                     in.read((char*)&componentID, sizeof(uint32_t));
-                    if (componentID == 0)
+                    if (componentID == 0) // Marqueur de fin
                         break;
 
-                    auto* serializer = SerializationSystem::GetSerializerByID(componentID);
-                    if (!serializer)
+                    uint32_t dataSize;
+                    in.read((char*)&dataSize, sizeof(uint32_t));
+
+                    if (dataSize > 0)
                     {
-                        FT_ENGINE_ERROR("Unknown Component ID {0} in Prefab: {1}. Stream may be corrupted.",
-                                        componentID,
-                                        path.string());
-                        while (componentID != 0 && !in.eof())
-                            in.read((char*)&componentID, sizeof(uint32_t));
-                        break;
-                    }
+                        std::vector<char> buffer(dataSize);
+                        in.read(buffer.data(), dataSize);
+                        componentDataMap[componentID] = buffer;
 
-                    std::streampos start = in.tellg();
-                    GameObject tempGo;
-                    serializer->DeserializeBinary(in, tempGo);
-                    std::streampos end = in.tellg();
-
-                    in.seekg(start);
-                    std::vector<char> buffer(end - start);
-                    in.read(buffer.data(), buffer.size());
-                    componentDataMap[componentID] = buffer;
-
-                    if (serializer->Name == "Prefab")
-                    {
-                        std::stringstream ss(std::string(buffer.begin(), buffer.end()));
-                        GameObject pathExtractorGo;
-                        pathExtractorGo.AddComponent<Component::Prefab>();
-                        serializer->DeserializeBinary(ss, pathExtractorGo);
-                        prefabPath = pathExtractorGo.GetComponent<Component::Prefab>().assetPath.string();
+                        // Extraire le chemin si c'est un composant Prefab
+                        auto* serializer = SerializationSystem::GetSerializerByID(componentID);
+                        if (serializer && serializer->Name == "Prefab")
+                        {
+                            std::stringstream ss(std::string(buffer.begin(), buffer.end()));
+                            GameObject pathExtractorGo;
+                            pathExtractorGo.AddComponent<Prefab>();
+                            serializer->DeserializeBinary(ss, pathExtractorGo);
+                            nestedPrefabPath = pathExtractorGo.GetComponent<Prefab>().assetPath.string();
+                        }
                     }
                 }
 
+                // 2. Créer l'entité de base
                 GameObject go;
-                if (!prefabPath.empty() && std::filesystem::exists(prefabPath))
+                if (!nestedPrefabPath.empty())
                 {
-                    go = Instantiate(scene, prefabPath, instantiationStack);
+                    go = Instantiate(scene, nestedPrefabPath, instantiationStack);
                 }
                 else
                 {
-                    go = GameObject(scene->GetRegistry().create(), scene);
+                    go = scene->CreateGameObject("Prefab Entity");
                 }
 
                 if (!go)
+                {
+                    FT_ENGINE_WARN("Failed to create entity (potentially nested) for prefab '{0}'", path.string());
                     continue;
+                }
+
                 localIdToEntity[localID] = go;
 
+                // 3. Appliquer les données des composants à l'entité maintenant valide
                 for (auto const& [id, data] : componentDataMap)
                 {
                     auto* serializer = SerializationSystem::GetSerializerByID(id);
                     if (serializer)
                     {
-                        serializer->AddComponent(go);
+                        if (!serializer->HasComponent(go))
+                            serializer->AddComponent(go);
+
                         std::stringstream ss(std::string(data.begin(), data.end()));
                         serializer->DeserializeBinary(ss, go);
                     }
                 }
 
-                if (hasRelationship)
+                if (hasRelationship && !go.HasComponent<Component::Relationship>())
                     go.AddComponent<Component::Relationship>();
+
                 pendingParents.push_back({ go, parentID });
             }
 
+            // 4. Établir la hiérarchie
             for (auto& [go, parentID] : pendingParents)
             {
                 if (parentID != -1 && localIdToEntity.count(parentID))
@@ -437,7 +468,7 @@ namespace Frost
                 root = localIdToEntity.begin()->second;
         }
 
-        instantiationStack->erase(path);
+        instantiationStack->erase(absolutePath);
         return root;
     }
 
