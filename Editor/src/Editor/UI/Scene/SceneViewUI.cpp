@@ -5,13 +5,18 @@
 #include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Disabled.h"
+#include "Frost/Scene/Components/Prefab.h"
+#include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Debugging/ComponentUIRegistry.h"
 #include "Frost/Scene/Serializers/SerializationSystem.h"
 #include "Frost/Utils/Math/Matrix.h"
 #include "Frost/Utils/Math/Transform.h"
 
+#include "Editor/Utils/FileDialogs.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <Frost/Scene/PrefabSerializer.h>
 
 namespace Editor
 {
@@ -51,6 +56,25 @@ namespace Editor
         if (_viewportTexture)
         {
             ImGui::Image((ImTextureID)_viewportTexture->GetRendererID(), viewportPanelSize);
+        }
+
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+                std::filesystem::path assetPath = std::filesystem::path((const wchar_t*)payload->Data);
+                if (assetPath.extension() == ".prefab")
+                {
+                    Frost::PrefabSerializer::Instantiate(_sceneContext, assetPath);
+                }
+                else if (std::find(MESH_FILE_EXTENSIONS.begin(),
+                                   MESH_FILE_EXTENSIONS.end(),
+                                   assetPath.extension().string()) != MESH_FILE_EXTENSIONS.end())
+                {
+                    _HandleMeshDrop(assetPath);
+                }
+            }
+            ImGui::EndDragDropTarget();
         }
 
         if (_selection && _currentGizmoOp != GizmoOperation::None)
@@ -160,6 +184,14 @@ namespace Editor
                                 _isPrefabView && prefabRoot != entt::null && payloadEntity != prefabRoot ? prefabRoot
                                                                                                          : entt::null);
             }
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+                std::filesystem::path assetPath = std::filesystem::path((const wchar_t*)payload->Data);
+                if (assetPath.extension() == ".prefab")
+                {
+                    Frost::PrefabSerializer::Instantiate(_sceneContext, assetPath);
+                }
+            }
             ImGui::EndDragDropTarget();
         }
 
@@ -182,16 +214,25 @@ namespace Editor
         auto* relation = registry.try_get<Relationship>(entityID);
         bool isDisabled = registry.all_of<Disabled>(entityID);
         bool isPrefabRoot = _isPrefabView && relation && relation->parent == entt::null;
+        bool isPrefabInstance = registry.all_of<Prefab>(entityID);
 
         std::string name = meta ? meta->name : "Entity " + std::to_string((uint32_t)entityID);
         ImGuiTreeNodeFlags flags = ((_selection.GetHandle() == entityID) ? ImGuiTreeNodeFlags_Selected : 0) |
                                    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if (relation && relation->childrenCount == 0)
+        if ((relation && relation->childrenCount == 0) || isPrefabInstance)
             flags |= ImGuiTreeNodeFlags_Leaf;
 
         if (isDisabled)
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (isPrefabInstance)
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));
+
         bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entityID, flags, name.c_str());
+
+        if (isPrefabInstance)
+            ImGui::PopStyleColor();
+
         if (isDisabled)
             ImGui::PopStyleColor();
 
@@ -275,6 +316,34 @@ namespace Editor
             ImGui::OpenPopup("AddComponentPopup");
         }
 
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+                std::filesystem::path assetPath = std::filesystem::path((const wchar_t*)payload->Data);
+                if (assetPath.extension() == ".prefab")
+                {
+                    if (_selection && !_selection.HasComponent<Frost::Component::Prefab>())
+                    {
+                        auto parent = _selection.GetParent();
+                        auto transform = _selection.GetComponent<Transform>();
+
+                        std::string originalName = _selection.GetComponent<Meta>().name;
+                        _sceneContext->DestroyGameObject(_selection);
+
+                        _selection = Frost::PrefabSerializer::Instantiate(_sceneContext, assetPath);
+                        if (_selection)
+                        {
+                            _selection.SetParent(parent);
+                            _selection.GetComponent<Transform>() = transform;
+                            _selection.GetComponent<Meta>().name = originalName;
+                        }
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
         if (ImGui::BeginPopup("AddComponentPopup"))
         {
             static char searchBuffer[64] = "";
@@ -303,8 +372,24 @@ namespace Editor
     void SceneView::_DrawToolbar()
     {
         _toolbar.Draw(
-            _cameraController, _currentGizmoOp, _viewSettings, _isPrefabView, [this]() { this->_SavePrefab(); });
-        _editorSkybox.SetActive(_viewSettings.showEditorSkybox);
+            _cameraController,
+            _currentGizmoOp,
+            _viewSettings,
+            _isPrefabView,
+            [this]() { this->_SavePrefab(); },
+            [this]() { this->_SaveScene(); },
+            [this]() { this->_LoadScene(); });
+
+        if (_viewSettings.showEditorSkybox && !_editorCamera.HasComponent<Skybox>())
+        {
+            _editorCamera.AddComponent<Skybox>(
+                SkyboxSourceCubemap{ "./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png" });
+        }
+        else if (!_viewSettings.showEditorSkybox && _editorCamera.HasComponent<Skybox>())
+        {
+            _editorCamera.RemoveComponent<Skybox>();
+        }
+
         _editorLight.SetActive(_viewSettings.showEditorLight);
     }
 

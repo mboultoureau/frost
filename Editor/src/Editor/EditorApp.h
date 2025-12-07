@@ -2,8 +2,8 @@
 
 #include "Editor/EditorLayer.h"
 #include "Editor/Project/ProjectInfo.h"
-#include "Editor/Project/ProjectOpenEvent.h"
-#include "Editor/Project/ProjectCloseEvent.h"
+#include "Editor/Events/ProjectOpenEvent.h"
+#include "Editor/Events/ProjectCloseEvent.h"
 #include "Editor/ProjectHubLayer.h"
 
 #include "Frost.h"
@@ -16,7 +16,7 @@ namespace Editor
         static EditorApp& Get() { return *_singleton; }
 
     public:
-        EditorApp(Frost::ApplicationEntryPoint entryPoint);
+        EditorApp(Frost::ApplicationSpecification entryPoint);
         ~EditorApp();
 
         void OnApplicationReady() override;

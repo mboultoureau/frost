@@ -8,7 +8,10 @@
 #include "Editor/UI/Scene/SceneView.h"
 #include "Editor/UI/StatusBar.h"
 #include "Editor/Project/ProjectInfo.h"
-#include "Editor/Project/OpenProjectSettingsEvent.h"
+#include "Editor/Scripting/ScriptingWatcher.h"
+#include "Editor/Events/NewSceneEvent.h"
+#include "Editor/Events/OpenProjectSettingsEvent.h"
+
 #include "Frost/Event/EventManager.h"
 #include "Frost/Scene/Scene.h"
 
@@ -30,17 +33,23 @@ namespace Editor
         static LayerName GetStaticName() { return "EditorLayer"; }
 
         void OpenPrefab(const std::filesystem::path& path);
+        void OpenScene(const std::filesystem::path& path);
         void OpenMeshPreview(const std::filesystem::path& path);
         static EditorLayer& Get();
+
+        void TriggerHotReload();
 
     private:
         void _RenderUI(float deltaTime);
         bool _OnOpenProjectSettings(const OpenProjectSettingsEvent& e);
+        bool _OnNewScene(const NewSceneEvent& e);
+        void _SetupScriptingWatcher();
 
     private:
         static EditorLayer* _instance;
 
         Frost::EventHandlerId _openProjectSettingsHandlerId;
+        Frost::EventHandlerId _newSceneHandlerId;
 
         std::unique_ptr<ProjectSettingsWindow> _projectSettingsWindow;
         std::unique_ptr<MainMenuBar> _mainMenuBar;
@@ -56,5 +65,7 @@ namespace Editor
 
         ImGuiID _dockMainID = 0;
         ImGuiID _dockRightID = 0;
+
+        ScriptingWatcher _scriptingWatcher;
     };
 } // namespace Editor

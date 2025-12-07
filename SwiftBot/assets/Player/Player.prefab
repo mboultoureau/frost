@@ -1,0 +1,26 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: Player
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    WorldTransform:
+      {}
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: Moto
+    Transform:
+      Position: [0, 0, 0.07711053]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    WorldTransform:
+      {}
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/motorcycle.glb

@@ -91,6 +91,7 @@ namespace Editor
                 _config.startScene = projectNode["start_scene"].as<std::string>();
                 _config.assetDirectory = projectNode["asset_directory"].as<std::string>();
                 _config.sourceDirectory = projectNode["source_directory"].as<std::string>();
+                _config.scriptingModule = projectNode["scripting_module"].as<std::string>();
 
                 // Physics
                 auto physicsNode = projectNode["physics"];
@@ -150,6 +151,7 @@ namespace Editor
                 out << YAML::Key << "start_scene" << YAML::Value << _config.startScene;
                 out << YAML::Key << "asset_directory" << YAML::Value << _config.assetDirectory;
                 out << YAML::Key << "source_directory" << YAML::Value << _config.sourceDirectory;
+                out << YAML::Key << "scripting_module" << YAML::Value << _config.scriptingModule;
 
                 // Physics
                 out << YAML::Key << "physics" << YAML::Value << YAML::BeginMap;
@@ -237,6 +239,7 @@ namespace Editor
             config.startScene = "DefaultScene";
             config.assetDirectory = "assets";
             config.sourceDirectory = "src";
+            config.scriptingModule = "bin/Debug-Windows-x64/" + name + "Logic.dll";
 
             // BroadPhase Layers: NON_MOVING, MOVING, DEBRIS, SENSOR, UNUSED
             config.broadPhaseLayers = {

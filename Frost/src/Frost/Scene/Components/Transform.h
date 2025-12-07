@@ -48,7 +48,7 @@ namespace Frost::Component
             XMVECTOR deltaRotation = XMQuaternionRotationRollPitchYaw(
                 eulerAngles.Pitch.value(), eulerAngles.Yaw.value(), eulerAngles.Roll.value());
 
-            XMVECTOR newRotation = XMQuaternionMultiply(currentRotation, deltaRotation);
+            XMVECTOR newRotation = XMQuaternionMultiply(deltaRotation, currentRotation);
             rotation = Math::vector_cast<Math::Vector4>(newRotation);
         }
 

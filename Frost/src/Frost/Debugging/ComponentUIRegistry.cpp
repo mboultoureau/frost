@@ -1,5 +1,6 @@
 #include "Frost/Debugging/ComponentUIRegistry.h"
 
+#include "Frost/Asset/AssetManager.h"
 #include "Frost/Asset/MeshConfig.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Transform.h"
@@ -8,10 +9,13 @@
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/RigidBody.h"
 #include "Frost/Scene/Components/Scriptable.h"
-#include "Frost/Scene/Components/HUDImage.h"
-#include "Frost/Scene/Components/UIButton.h"
+#include "Frost/Scene/Components/Prefab.h"
+#include "Frost/Scene/Components/Skybox.h"
+#include "Frost/Scene/Components/UIElement.h"
+#include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Scene/Components/Disabled.h"
 #include "Frost/Scene/Systems/PhysicSystem.h"
+#include "Frost/Scripting/ScriptingEngine.h"
 
 #include "Frost/Debugging/DebugInterface/DebugUtils.h"
 #include "Frost/Utils/Math/Angle.h"
@@ -26,6 +30,9 @@ namespace Frost
 
     static entt::entity s_TransformLastEntity = entt::null;
     static Math::Vector3 s_TransformEulerCache = { 0.0f, 0.0f, 0.0f };
+
+    const std::vector<std::string> IMAGE_FILE_EXTENSIONS = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".hdr", ".dds" };
+    const std::vector<std::string> FONT_FILE_EXTENSIONS = { ".ttf", ".otf" };
 
     void ComponentUIRegistry::DrawAll(Scene* scene, entt::entity e, const UIContext& ctx)
     {
@@ -128,58 +135,6 @@ namespace Frost
                             physicSystem->NotifyRigidBodyUpdate(*scene, GameObject{ e });
                             FT_ENGINE_TRACE("RigidBody component on entity {} updated in UI.", (uint64_t)e);
                         }
-                    }
-
-                    ImGui::TreePop();
-                }
-            });
-
-        // Camera
-        Register<Camera>(
-            [](Scene* scene, entt::entity e, const UIContext& ctx)
-            {
-                auto& camera = scene->GetRegistry().get<Camera>(e);
-                bool removed = false;
-
-                if (DebugUtils::DrawComponentHeader("Camera", &removed))
-                {
-                    if (removed)
-                    {
-                        scene->GetRegistry().remove<Camera>(e);
-                        ImGui::TreePop();
-                        return;
-                    }
-
-                    const char* projectionTypes[] = { "Perspective", "Orthographic" };
-                    int currentType = (int)camera.projectionType;
-                    if (ImGui::Combo("Projection Type", &currentType, projectionTypes, IM_ARRAYSIZE(projectionTypes)))
-                    {
-                        camera.projectionType = (Camera::ProjectionType)currentType;
-                    }
-
-                    if (camera.projectionType == Camera::ProjectionType::Perspective)
-                    {
-                        float currentFOVDegrees = Math::Angle<Math::Degree>(camera.perspectiveFOV).value();
-                        if (ImGui::DragFloat("FOV", &currentFOVDegrees, 0.5f, 30.0f, 120.0f))
-                            camera.perspectiveFOV = Math::Angle<Math::Radian>{
-                                Math::angle_cast<Math::Radian, Math::Degree>(currentFOVDegrees)
-                            };
-                    }
-                    else
-                    {
-                        ImGui::DragFloat("Size", &camera.orthographicSize, 0.1f, 1.0f, 1000.0f);
-                    }
-
-                    ImGui::DragFloat("Near Clip", &camera.nearClip, 0.01f);
-                    ImGui::DragFloat("Far Clip", &camera.farClip, 1.0f);
-
-                    ImGui::Checkbox("Clear On Render", &camera.clearOnRender);
-                    ImGui::ColorEdit4("Background Color", camera.backgroundColor.values);
-                    ImGui::DragInt("Priority", &camera.priority);
-
-                    if (!ctx.isEditor)
-                    {
-                        ImGui::TextDisabled("Viewport: %.2f, %.2f", camera.viewport.width, camera.viewport.height);
                     }
 
                     ImGui::TreePop();
@@ -702,6 +657,496 @@ namespace Frost
                             FT_ENGINE_TRACE("RigidBody component on entity {} updated in UI.", (uint64_t)e);
                         }
                     }
+
+                    ImGui::TreePop();
+                }
+            });
+
+        // Scriptable
+        Register<Scriptable>(
+            [](Scene* scene, entt::entity e, const UIContext& ctx)
+            {
+                if (!scene->GetRegistry().all_of<Scriptable>(e))
+                    return;
+
+                auto& scriptable = scene->GetRegistry().get<Scriptable>(e);
+                bool removed = false;
+
+                if (DebugUtils::DrawComponentHeader("Scriptable", &removed))
+                {
+                    if (removed)
+                    {
+                        scene->GetRegistry().remove<Scriptable>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
+                    int scriptToRemove = -1;
+                    for (int i = 0; i < scriptable.scriptNames.size(); ++i)
+                    {
+                        ImGui::PushID(i);
+
+                        if (ImGui::Button("[X]"))
+                        {
+                            scriptToRemove = i;
+                        }
+                        ImGui::SameLine();
+                        ImGui::TextDisabled(scriptable.scriptNames[i].c_str());
+
+                        ImGui::PopID();
+                    }
+
+                    if (scriptToRemove != -1)
+                    {
+                        scriptable.scriptNames.erase(scriptable.scriptNames.begin() + scriptToRemove);
+                    }
+
+                    ImGui::Separator();
+
+                    auto availableScripts = Scripting::ScriptingEngine::GetAvailableScripts();
+                    std::vector<std::string> scriptsToAdd;
+                    for (const auto& available : availableScripts)
+                    {
+                        if (std::find(scriptable.scriptNames.begin(), scriptable.scriptNames.end(), available) ==
+                            scriptable.scriptNames.end())
+                        {
+                            scriptsToAdd.push_back(available);
+                        }
+                    }
+
+                    ImGui::PushID((void*)&scriptable);
+                    static int currentItem = 0;
+
+                    ImGui::BeginDisabled(scriptsToAdd.empty());
+                    {
+                        auto items_getter = [](void* data, int idx, const char** out_text)
+                        {
+                            auto* items = static_cast<std::vector<std::string>*>(data);
+                            *out_text = (*items)[idx].c_str();
+                            return true;
+                        };
+                        ImGui::Combo("##ScriptToAdd", &currentItem, items_getter, &scriptsToAdd, scriptsToAdd.size());
+
+                        ImGui::SameLine();
+
+                        if (ImGui::Button("Add Script"))
+                        {
+                            if (currentItem >= 0 && currentItem < scriptsToAdd.size())
+                            {
+                                scriptable.scriptNames.push_back(scriptsToAdd[currentItem]);
+                                currentItem = 0;
+                            }
+                        }
+                    }
+                    ImGui::EndDisabled();
+
+                    if (scriptsToAdd.empty())
+                    {
+                        ImGui::TextDisabled("No more scripts to add.");
+                    }
+                    ImGui::PopID();
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetItemRectSize().y -
+                                         ImGui::GetStyle().ItemSpacing.y * 2);
+                    ImGui::InvisibleButton("##script_drop_target", ImGui::GetItemRectSize());
+
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                        {
+                            const wchar_t* pathW = (const wchar_t*)payload->Data;
+                            std::filesystem::path filePath(pathW);
+
+                            std::string scriptName = filePath.stem().string();
+
+                            if (std::find(availableScripts.begin(), availableScripts.end(), scriptName) !=
+                                    availableScripts.end() &&
+                                std::find(scriptable.scriptNames.begin(), scriptable.scriptNames.end(), scriptName) ==
+                                    scriptable.scriptNames.end())
+                            {
+                                scriptable.scriptNames.push_back(scriptName);
+                                FT_ENGINE_INFO("Added script '{}' via Drag and Drop.", scriptName);
+                            }
+                            else
+                            {
+                                FT_ENGINE_WARN("Could not add script '{}' via Drag and Drop. It might not exist or is "
+                                               "already attached.",
+                                               scriptName);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+
+                    ImGui::TreePop();
+                }
+            });
+
+        // Prefab
+        Register<Prefab>(
+            [](Scene* scene, entt::entity e, const UIContext& ctx)
+            {
+                if (!scene->GetRegistry().all_of<Prefab>(e))
+                    return;
+
+                auto& prefab = scene->GetRegistry().get<Prefab>(e);
+                bool unpackRequested = false;
+
+                if (DebugUtils::DrawComponentHeader("Prefab", &unpackRequested))
+                {
+                    if (unpackRequested)
+                    {
+                        FT_ENGINE_INFO("Unpacking Prefab instance for entity {}. It is now unlinked from its asset.",
+                                       (uint32_t)e);
+                        scene->GetRegistry().remove<Prefab>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
+                    bool pathChanged = false;
+                    std::filesystem::path newPath;
+
+                    char pathBuffer[512];
+                    memset(pathBuffer, 0, sizeof(pathBuffer));
+                    strncpy_s(pathBuffer, sizeof(pathBuffer), prefab.assetPath.string().c_str(), _TRUNCATE);
+
+                    ImGui::Text("Asset");
+                    ImGui::SameLine();
+                    ImGui::InputText("##PrefabPath", pathBuffer, sizeof(pathBuffer), ImGuiInputTextFlags_ReadOnly);
+
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                        {
+                            const wchar_t* pathW = (const wchar_t*)payload->Data;
+                            std::filesystem::path droppedPath(pathW);
+
+                            if (droppedPath.extension() == ".prefab")
+                            {
+                                if (prefab.assetPath != droppedPath)
+                                {
+                                    newPath = droppedPath;
+                                    pathChanged = true;
+                                }
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+
+                    if (pathChanged)
+                    {
+                        prefab.assetPath = newPath;
+                        GameObject currentInstance(e, scene);
+                        currentInstance.DestroyAllChildren();
+
+                        if (!prefab.assetPath.empty() && std::filesystem::exists(prefab.assetPath))
+                        {
+                            GameObject tempRoot = PrefabSerializer::Instantiate(scene, prefab.assetPath);
+                            if (tempRoot)
+                            {
+                                auto childrenToMove = tempRoot.GetChildren();
+                                for (auto& child : childrenToMove)
+                                {
+                                    child.SetParent(currentInstance);
+                                }
+
+                                scene->DestroyGameObject(tempRoot);
+                            }
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+            });
+
+        // Skybox
+        Register<Skybox>(
+            [](Scene* scene, entt::entity e, const UIContext& ctx)
+            {
+                if (!scene->GetRegistry().all_of<Skybox>(e))
+                    return;
+
+                auto& skybox = scene->GetRegistry().get<Skybox>(e);
+                bool removed = false;
+
+                if (DebugUtils::DrawComponentHeader("Skybox", &removed))
+                {
+                    if (removed)
+                    {
+                        scene->GetRegistry().remove<Skybox>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
+                    const char* skyboxTypes[] = { "Cubemap", "6 Files" };
+                    int currentType = (int)skybox.GetType();
+
+                    if (ImGui::Combo("Source Type", &currentType, skyboxTypes, IM_ARRAYSIZE(skyboxTypes)))
+                    {
+                        skybox.SetType(static_cast<SkyboxType>(currentType));
+                    }
+
+                    ImGui::DragFloat("Intensity", &skybox.intensity, 0.05f, 0.0f, 100.0f);
+
+                    ImGui::Separator();
+
+                    auto DrawPathInput = [&](const char* label, std::filesystem::path& path) -> bool
+                    {
+                        bool changed = false;
+                        char buffer[256];
+                        memset(buffer, 0, sizeof(buffer));
+                        strncpy_s(buffer, path.string().c_str(), sizeof(buffer));
+
+                        ImGui::InputText(label, buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                            {
+                                const wchar_t* payload_path = (const wchar_t*)payload->Data;
+                                std::filesystem::path filePath(payload_path);
+                                std::string ext = filePath.extension().string();
+
+                                if (std::find(IMAGE_FILE_EXTENSIONS.begin(), IMAGE_FILE_EXTENSIONS.end(), ext) !=
+                                    IMAGE_FILE_EXTENSIONS.end())
+                                {
+                                    path = filePath;
+                                    changed = true;
+                                }
+                            }
+                            ImGui::EndDragDropTarget();
+                        }
+                        return changed;
+                    };
+
+                    if (auto* p = std::get_if<SkyboxSourceCubemap>(&skybox.config))
+                    {
+                        DrawPathInput("Cubemap Path", p->filepath);
+                    }
+                    else if (auto* p = std::get_if<SkyboxSource6Files>(&skybox.config))
+                    {
+                        const char* faceLabels[] = { "Right (+X)",  "Left (-X)",  "Top (+Y)",
+                                                     "Bottom (-Y)", "Front (+Z)", "Back (-Z)" };
+                        for (int i = 0; i < 6; ++i)
+                        {
+                            DrawPathInput(faceLabels[i], p->faceFilepaths[i]);
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+            });
+
+        // Camera
+        Register<Camera>(
+            [](Scene* scene, entt::entity e, const UIContext& ctx)
+            {
+                auto& camera = scene->GetRegistry().get<Camera>(e);
+                bool removed = false;
+
+                if (DebugUtils::DrawComponentHeader("Camera", &removed))
+                {
+                    if (removed)
+                    {
+                        scene->GetRegistry().remove<Camera>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
+                    const char* projectionTypes[] = { "Perspective", "Orthographic" };
+                    int currentType = (int)camera.projectionType;
+                    if (ImGui::Combo("Projection Type", &currentType, projectionTypes, IM_ARRAYSIZE(projectionTypes)))
+                    {
+                        camera.projectionType = (Camera::ProjectionType)currentType;
+                    }
+
+                    if (camera.projectionType == Camera::ProjectionType::Perspective)
+                    {
+                        float fovDegrees = Math::Angle<Math::Degree>(camera.perspectiveFOV).value();
+                        if (ImGui::DragFloat("FOV", &fovDegrees, 0.5f, 30.0f, 120.0f))
+                            camera.perspectiveFOV = Math::Angle<Math::Radian>(Math::Angle<Math::Degree>(fovDegrees));
+                    }
+                    else
+                    {
+                        ImGui::DragFloat("Size", &camera.orthographicSize, 0.1f, 1.0f, 1000.0f);
+                    }
+
+                    ImGui::DragFloat("Near Clip", &camera.nearClip, 0.01f);
+                    ImGui::DragFloat("Far Clip", &camera.farClip, 1.0f);
+                    ImGui::DragInt("Priority", &camera.priority);
+
+                    ImGui::Separator();
+
+                    ImGui::Checkbox("Clear On Render", &camera.clearOnRender);
+                    ImGui::ColorEdit4("Background Color", camera.backgroundColor.values);
+
+                    ImGui::Separator();
+
+                    bool isRenderTarget = camera.renderTargetConfig.has_value();
+                    if (ImGui::Checkbox("Render To Texture", &isRenderTarget))
+                    {
+                        if (isRenderTarget)
+                        {
+                            camera.renderTargetConfig.emplace();
+                        }
+                        else
+                        {
+                            camera.renderTargetConfig.reset();
+                        }
+                    }
+
+                    if (camera.renderTargetConfig)
+                    {
+                        ImGui::Indent();
+                        int size[2] = { (int)camera.renderTargetConfig->width, (int)camera.renderTargetConfig->height };
+                        if (ImGui::DragInt2("Resolution", size, 1, 16, 4096))
+                        {
+                            camera.renderTargetConfig->width = size[0];
+                            camera.renderTargetConfig->height = size[1];
+                        }
+                        ImGui::Checkbox("Use Screen Space Aspect Ratio",
+                                        &camera.renderTargetConfig->useScreenSpaceAspectRatio);
+                        ImGui::Unindent();
+                    }
+
+                    ImGui::TreePop();
+                }
+            });
+
+        // UIElement
+        Register<UIElement>(
+            [](Scene* scene, entt::entity e, const UIContext& ctx)
+            {
+                auto& element = scene->GetRegistry().get<UIElement>(e);
+                bool removed = false;
+
+                if (DebugUtils::DrawComponentHeader("UI Element", &removed))
+                {
+                    if (removed)
+                    {
+                        scene->GetRegistry().remove<UIElement>(e);
+                        ImGui::TreePop();
+                        return;
+                    }
+
+                    ImGui::Checkbox("Enabled", &element.isEnabled);
+                    ImGui::DragInt("Priority", &element.priority, 1, 0, 1000);
+                    ImGui::DragFloat4("Viewport", &element.viewport.x, 0.01f, 0.0f, 1.0f);
+                    ImGui::DragFloat("Rotation", &element.rotation, 0.1f, -360.0f, 360.0f);
+                    ImGui::ColorEdit4("Color", element.color.values);
+                    ImGui::Separator();
+
+                    const char* contentTypes[] = { "Image", "Text", "Button" };
+                    int currentType = static_cast<int>(element.content.index());
+
+                    if (ImGui::Combo("Content Type", &currentType, contentTypes, IM_ARRAYSIZE(contentTypes)))
+                    {
+                        if (currentType != element.content.index())
+                        {
+                            switch (currentType)
+                            {
+                                case 0:
+                                    element.content.emplace<UIImage>();
+                                    break;
+                                case 1:
+                                    element.content.emplace<UIText>();
+                                    break;
+                                case 2:
+                                    element.content.emplace<UIButton>();
+                                    break;
+                            }
+                        }
+                    }
+                    ImGui::Separator();
+
+                    auto DrawAssetPathControl = [](const char* label,
+                                                   std::string& filepath,
+                                                   const std::vector<std::string>& validExtensions) -> bool
+                    {
+                        bool changed = false;
+                        char buffer[256];
+                        strncpy_s(buffer, sizeof(buffer), filepath.c_str(), _TRUNCATE);
+
+                        if (ImGui::InputText(label, buffer, sizeof(buffer)))
+                        {
+                            filepath = buffer;
+                            changed = true;
+                        }
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                            {
+                                const wchar_t* pathW = (const wchar_t*)payload->Data;
+                                std::filesystem::path droppedPath(pathW);
+
+                                std::string ext = droppedPath.extension().string();
+                                if (std::find(validExtensions.begin(), validExtensions.end(), ext) !=
+                                    validExtensions.end())
+                                {
+                                    filepath = droppedPath.string();
+                                    changed = true;
+                                }
+                            }
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        return changed;
+                    };
+
+                    std::visit(
+                        [&](auto& arg)
+                        {
+                            using T = std::decay_t<decltype(arg)>;
+                            if constexpr (std::is_same_v<T, UIImage>)
+                            {
+                                if (DrawAssetPathControl("Texture", arg.textureFilepath, IMAGE_FILE_EXTENSIONS))
+                                {
+                                    arg.SetTexturePath(arg.textureFilepath);
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, UIText>)
+                            {
+                                char textBuffer[256];
+                                strncpy_s(textBuffer, sizeof(textBuffer), arg.text.c_str(), _TRUNCATE);
+                                if (ImGui::InputTextMultiline("Text", textBuffer, sizeof(textBuffer)))
+                                {
+                                    arg.text = textBuffer;
+                                }
+                                ImGui::DragFloat("Font Size", &arg.fontSize, 0.01f, 0.1f, 10.0f);
+
+                                if (DrawAssetPathControl("Font", arg.fontFilepath, FONT_FILE_EXTENSIONS))
+                                {
+                                    arg.font = AssetManager::LoadAsset<Font>(arg.fontFilepath);
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, UIButton>)
+                            {
+                                if (DrawAssetPathControl(
+                                        "Idle Texture", arg.idleTextureFilepath, IMAGE_FILE_EXTENSIONS))
+                                {
+                                    TextureConfig config = { .textureType = TextureType::HUD,
+                                                             .path = arg.idleTextureFilepath };
+                                    arg.idleTexture = AssetManager::LoadAsset(arg.idleTextureFilepath, config);
+                                }
+
+                                if (DrawAssetPathControl(
+                                        "Hover Texture", arg.hoverTextureFilepath, IMAGE_FILE_EXTENSIONS))
+                                {
+                                    TextureConfig config = { .textureType = TextureType::HUD,
+                                                             .path = arg.hoverTextureFilepath };
+                                    arg.hoverTexture = AssetManager::LoadAsset(arg.hoverTextureFilepath, config);
+                                }
+
+                                if (DrawAssetPathControl(
+                                        "Pressed Texture", arg.pressedTextureFilepath, IMAGE_FILE_EXTENSIONS))
+                                {
+                                    TextureConfig config = { .textureType = TextureType::HUD,
+                                                             .path = arg.pressedTextureFilepath };
+                                    arg.pressedTexture = AssetManager::LoadAsset(arg.pressedTextureFilepath, config);
+                                }
+                            }
+                        },
+                        element.content);
 
                     ImGui::TreePop();
                 }

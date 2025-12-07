@@ -1,8 +1,8 @@
 #include "Frost/Scene/Systems/PhysicSystem.h"
-#include "Frost/Scene/Components/Script.h"
 #include "Frost/Scene/Components/RigidBody.h"
 #include "Frost/Scene/Components/RelationShip.h"
 #include "Frost/Physics/Physics.h"
+#include "Frost/Scripting/Script.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Utils/Math/Matrix.h"
@@ -224,7 +224,7 @@ namespace Frost
         for (const auto& params : physics.bodiesOnAwake)
         {
             entt::entity entity = Physics::GetEntityID(params.inBodyID);
-            _ExecuteOnScripts(scene, entity, [&](Script* script) { script->OnAwake(deltaTime); });
+            _ExecuteOnScripts(scene, entity, [&](Scripting::Script* script) { script->OnAwake(deltaTime); });
         }
         physics.bodiesOnAwake.clear();
     }
@@ -235,7 +235,7 @@ namespace Frost
         for (const auto& params : physics.bodiesOnSleep)
         {
             entt::entity entity = Physics::GetEntityID(params.inBodyID);
-            _ExecuteOnScripts(scene, entity, [&](Script* script) { script->OnSleep(deltaTime); });
+            _ExecuteOnScripts(scene, entity, [&](Scripting::Script* script) { script->OnSleep(deltaTime); });
         }
         physics.bodiesOnSleep.clear();
     }
@@ -249,9 +249,11 @@ namespace Frost
             entt::entity entity1 = Physics::GetEntityID(params.inBody1.GetID());
             entt::entity entity2 = Physics::GetEntityID(params.inBody2.GetID());
 
-            _ExecuteOnScripts(scene, entity1, [&](Script* script) { script->OnCollisionEnter(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity1, [&](Scripting::Script* script) { script->OnCollisionEnter(params, deltaTime); });
 
-            _ExecuteOnScripts(scene, entity2, [&](Script* script) { script->OnCollisionEnter(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity2, [&](Scripting::Script* script) { script->OnCollisionEnter(params, deltaTime); });
         }
         physics.bodiesOnCollisionEnter.clear();
     }
@@ -264,9 +266,11 @@ namespace Frost
             entt::entity entity1 = Physics::GetEntityID(params.inBody1.GetID());
             entt::entity entity2 = Physics::GetEntityID(params.inBody2.GetID());
 
-            _ExecuteOnScripts(scene, entity1, [&](Script* script) { script->OnCollisionStay(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity1, [&](Scripting::Script* script) { script->OnCollisionStay(params, deltaTime); });
 
-            _ExecuteOnScripts(scene, entity2, [&](Script* script) { script->OnCollisionStay(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity2, [&](Scripting::Script* script) { script->OnCollisionStay(params, deltaTime); });
 
             physics.currentFrameBodyIDsOnCollisionStay.emplace(entity1, entity2);
         }
@@ -288,10 +292,10 @@ namespace Frost
                 std::pair<entt::entity, entt::entity> exitParams = { entity1, entity2 };
 
                 _ExecuteOnScripts(
-                    scene, entity1, [&](Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
+                    scene, entity1, [&](Scripting::Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
 
                 _ExecuteOnScripts(
-                    scene, entity2, [&](Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
+                    scene, entity2, [&](Scripting::Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
             }
         }
 

@@ -5,7 +5,8 @@
 #include "Frost/Core/Windows/WindowWin.h"
 #include "Frost/Renderer/DX11/RendererDX11.h"
 #include "Frost/Renderer/RendererAPI.h"
-#include "Frost/Scene/Serializers/EngineComponentSerializer.h"
+#include "Frost/Scripting/ScriptingEngine.h"
+#include "Frost/Scene/Systems/ScriptableSystem.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -13,6 +14,7 @@
 #include <imgui_internal.h>
 
 using namespace Frost;
+using namespace Frost::Scripting;
 
 namespace Editor
 {
@@ -47,9 +49,7 @@ namespace Editor
         // Initialize events
         _openProjectSettingsHandlerId =
             EventManager::Subscribe<OpenProjectSettingsEvent>(FROST_BIND_EVENT_FN(EditorLayer::_OnOpenProjectSettings));
-
-        // Register engine component serializers
-        EngineComponentSerializer::RegisterEngineComponents();
+        _newSceneHandlerId = EventManager::Subscribe<NewSceneEvent>(FROST_BIND_EVENT_FN(EditorLayer::_OnNewScene));
 
         auto& app = EditorApp::Get();
         _projectInfo = app.GetProjectInfo();
@@ -59,10 +59,14 @@ namespace Editor
         _mainMenuBar = std::make_unique<MainMenuBar>(_projectInfo);
         _contentBrowser = std::make_unique<ContentBrowser>(_projectInfo);
         _statusBar = std::make_unique<StatusBar>();
+
+        _SetupScriptingWatcher();
     }
 
     void EditorLayer::OnDetach()
     {
+        _scriptingWatcher.Stop();
+
         EventManager::Unsubscribe<OpenProjectSettingsEvent>(_openProjectSettingsHandlerId);
 
         ImGui_ImplDX11_Shutdown();
@@ -70,7 +74,13 @@ namespace Editor
         ImGui::DestroyContext();
     }
 
-    void EditorLayer::OnUpdate(float deltaTime) {}
+    void EditorLayer::OnUpdate(float deltaTime)
+    {
+        if (_scriptingWatcher.ReloadRequested())
+        {
+            TriggerHotReload();
+        }
+    }
 
     void EditorLayer::OnLateUpdate(float deltaTime)
     {
@@ -135,6 +145,37 @@ namespace Editor
         return *_instance;
     }
 
+    void EditorLayer::TriggerHotReload()
+    {
+        for (auto& view : _views)
+        {
+            auto& scene = view->GetScene();
+            ScriptableSystem* scriptSystem = scene.GetSystem<ScriptableSystem>();
+
+            if (scriptSystem)
+            {
+                scriptSystem->OnScriptsWillReload();
+            }
+        }
+
+        std::filesystem::path projectDir = _projectInfo.GetProjectDir();
+        std::filesystem::path dllPath = projectDir / _projectInfo.GetConfig().scriptingModule;
+
+        ScriptingEngine::GetInstance().UnloadScriptingDLL();
+        ScriptingEngine::GetInstance().LoadScriptingDLL(dllPath.string());
+
+        for (auto& view : _views)
+        {
+            auto& scene = view->GetScene();
+            ScriptableSystem* scriptSystem = scene.GetSystem<ScriptableSystem>();
+
+            if (scriptSystem)
+            {
+                scriptSystem->OnScriptsReloaded();
+            }
+        }
+    }
+
     void EditorLayer::OpenPrefab(const std::filesystem::path& path)
     {
         std::string titleToCheck = path.stem().string();
@@ -156,6 +197,34 @@ namespace Editor
         }
 
         _activeSceneView = newView.get();
+    }
+
+    void EditorLayer::OpenScene(const std::filesystem::path& path)
+    {
+        if (!std::filesystem::exists(path))
+        {
+            FT_ENGINE_ERROR("Cannot open scene: File does not exist at '{0}'", path.string());
+            return;
+        }
+
+        std::string titleToCheck = path.stem().string();
+        for (const auto& view : _views)
+        {
+            if (view->GetTitle() == titleToCheck)
+            {
+                ImGui::SetWindowFocus(view->GetTitle().c_str());
+                return;
+            }
+        }
+
+        auto newView = std::make_unique<SceneView>(path, SceneView::SceneTag{});
+
+        if (_dockMainID != 0)
+        {
+            ImGui::DockBuilderDockWindow(newView->GetTitle().c_str(), _dockMainID);
+        }
+
+        _views.push_back(std::move(newView));
     }
 
     void EditorLayer::OpenMeshPreview(const std::filesystem::path& path)
@@ -272,6 +341,28 @@ namespace Editor
         }
 
         _projectSettingsWindow->Open();
+        return true;
+    }
+
+    void EditorLayer::_SetupScriptingWatcher()
+    {
+        const auto& config = _projectInfo.GetConfig();
+        if (config.scriptingModule.empty())
+        {
+            FT_INFO("No scripting module defined in project. Hot-reload watcher disabled.");
+            _scriptingWatcher.Stop();
+            return;
+        }
+
+        std::filesystem::path projectDir = _projectInfo.GetProjectDir();
+        std::filesystem::path dllPath = projectDir / config.scriptingModule;
+
+        _scriptingWatcher.SetPathToWatch(dllPath);
+        _scriptingWatcher.Start();
+    }
+
+    bool EditorLayer::_OnNewScene(const NewSceneEvent& e)
+    {
         return true;
     }
 } // namespace Editor

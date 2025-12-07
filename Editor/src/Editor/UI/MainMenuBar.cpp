@@ -1,9 +1,10 @@
-#include "MainMenuBar.h"
+#include "Editor/UI/MainMenuBar.h"
 #include "Frost/Event/EventManager.h"
 #include "Frost/Event/Events/Window/WindowCloseEvent.h"
 #include "Editor/UI/ProjectSettingsWindow.h"
-#include "Editor/Project/ProjectCloseEvent.h"
-#include "Editor/Project/OpenProjectSettingsEvent.h"
+#include "Editor/Events/ProjectCloseEvent.h"
+#include "Editor/Events/OpenProjectSettingsEvent.h"
+#include "Editor/Events/NewSceneEvent.h"
 
 #include <imgui.h>
 
@@ -28,8 +29,12 @@ namespace Editor
     {
         if (ImGui::BeginMenu("File"))
         {
-            // if (ImGui::MenuItem("New Scene")) {}
-            // if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+            if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+            {
+                EventManager::Emit<NewSceneEvent>();
+            }
+
+            ImGui::Separator();
 
             if (ImGui::MenuItem("Close Project"))
             {

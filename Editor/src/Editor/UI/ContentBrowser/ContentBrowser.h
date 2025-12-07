@@ -40,6 +40,7 @@ namespace Editor
         void _RenderModals();
 
         // Actions
+        void _CreateScene(const std::string& name);
         void _CreatePrefab(const std::string& name);
         void _CreateFolder(const std::string& name);
         void _RenameItem(const std::filesystem::path& oldPath, const std::string& newName);
@@ -84,5 +85,8 @@ namespace Editor
 
         bool _showCreateFolderModal = false;
         char _createFolderBuffer[256] = "NewFolder";
+
+        bool _showCreateScenePopup = false;
+        char _newSceneNameBuffer[256];
     };
 } // namespace Editor
