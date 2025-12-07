@@ -172,6 +172,15 @@ namespace Frost
                     _frustum.Extract(viewProj, camera.frustumPadding);
                 }
 
+                // Apply post-processing effects pre-render
+                for (auto& effect : camera.postEffects)
+                {
+                    if (!effect->IsEnabled())
+                        continue;
+                    FT_ENGINE_ASSERT(effect != nullptr, "PostEffect is null");
+                    effect->OnPreRender(deltaTime, viewMatrix, projectionMatrix);
+                }
+
                 _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, mainRenderViewport);
 
                 meshView.each(
@@ -234,16 +243,21 @@ namespace Frost
 
     bool RendererSystem::_IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix)
     {
+        bool renderModel = false;
         DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
-        for (const auto& mesh : staticMesh.GetModel()->GetMeshes())
+
+        for (auto& mesh : staticMesh.GetModel()->GetMeshes())
         {
             BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
-            if (_frustum.IsInside(worldBox))
+            bool renderMesh = _frustum.IsInside(worldBox);
+            if (renderMesh)
             {
-                return true;
+                renderModel = true;
             }
+
+            mesh.enabled = renderMesh;
         }
-        return false;
+        return renderModel;
     }
 
     void RendererSystem::_ApplyPostProcessing(CommandList* commandList,

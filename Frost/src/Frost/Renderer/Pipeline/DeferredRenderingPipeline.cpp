@@ -456,6 +456,11 @@ namespace Frost
 
         for (const auto& mesh : model.GetMeshes())
         {
+            if (!mesh.enabled)
+            {
+                continue;
+            }
+
             auto& material = model.GetMaterials()[mesh.GetMaterialIndex()];
 
 #ifdef FT_DEBUG
@@ -672,6 +677,9 @@ namespace Frost
 
         _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
 
+        _commandList->UnbindShader(ShaderType::Geometry);
+        _commandList->UnbindShader(ShaderType::Hull);
+        _commandList->UnbindShader(ShaderType::Domain);
         _commandList->SetShader(_lightingVertexShader.get());
         _commandList->SetShader(_lightingPixelShader.get());
         _commandList->SetInputLayout(nullptr);

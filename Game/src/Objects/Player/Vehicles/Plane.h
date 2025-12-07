@@ -65,7 +65,7 @@ private:
     float _speedAcknowledgementThreshold = 1.0f;
 
     float _screenShakeDuration = 0.4f;
-    float _screenShakeSpeedMultiplier = 0.1f;
+    float _screenShakeSpeedMultiplier = 0.08f;
 
     float _radialBlurSpeedFactor = 0.001f;
 

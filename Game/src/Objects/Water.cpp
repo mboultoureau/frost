@@ -29,6 +29,14 @@ WaterScript::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
 
     auto id = (_water->GetBodyId() == params.inBody1.GetID()) ? params.inBody2.GetID() : params.inBody1.GetID();
 
+    auto layer1 = Physics::GetBodyInterface().GetObjectLayer(params.inBody1.GetID());
+    auto layer2 = Physics::GetBodyInterface().GetObjectLayer(params.inBody2.GetID());
+
+    if (layer1 != ObjectLayers::PLAYER && layer2 != ObjectLayers::PLAYER)
+    {
+        return;
+    }
+
     BodyLockWrite body_lock(Physics::Get().physics_system.GetBodyLockInterface(), id);
     Body& body = body_lock.GetBody();
     if (body.IsActive())
