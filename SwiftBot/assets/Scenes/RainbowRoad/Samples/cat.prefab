@@ -1,0 +1,25 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: CatPrefab
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: CatModel
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Scenes/RainbowRoad/Samples/cat.glb
+    Scriptable:
+      Scripts:
+        - Rotate

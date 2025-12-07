@@ -1,9 +1,11 @@
 ﻿#include "Frost/Scene/SceneSerializer.h"
 #include "Frost/Scene/Serializers/SerializationSystem.h"
+#include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Utils/SerializerUtils.h"
 #include "Frost/Debugging/Logger.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Relationship.h"
+#include "Frost/Scene/Components/Prefab.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Systems/ScriptableSystem.h"
 
@@ -15,16 +17,50 @@ namespace Frost
 {
     SceneSerializer::SceneSerializer(Scene* scene) : m_Scene(scene) {}
 
+    bool SceneSerializer::_IsDescendantOfPrefab(GameObject go)
+    {
+        if (!go || !go.HasComponent<Component::Relationship>())
+        {
+            return false;
+        }
+
+        auto parentHandle = go.GetComponent<Component::Relationship>().parent;
+        while (parentHandle != entt::null)
+        {
+            GameObject parentGo(parentHandle, go.GetScene());
+            if (!parentGo)
+            {
+                break;
+            }
+
+            if (parentGo.HasComponent<Component::Prefab>())
+            {
+                return true;
+            }
+
+            if (parentGo.HasComponent<Component::Relationship>())
+            {
+                parentHandle = parentGo.GetComponent<Component::Relationship>().parent;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return false;
+    }
+
     bool SceneSerializer::Serialize(const std::filesystem::path& filepath)
     {
         std::string extension = filepath.extension().string();
         if (extension == ".yaml" || extension == ".scene")
         {
-            return SerializeToYaml(filepath);
+            return _SerializeToYaml(filepath);
         }
         else if (extension == ".bin")
         {
-            return SerializeToBinary(filepath);
+            return _SerializeToBinary(filepath);
         }
         else
         {
@@ -38,18 +74,18 @@ namespace Frost
         std::string extension = filepath.extension().string();
         if (extension == ".yaml" || extension == ".scene")
         {
-            return DeserializeFromYaml(filepath);
+            return _DeserializeFromYaml(filepath);
         }
         else if (extension == ".bin")
         {
-            return DeserializeFromBinary(filepath);
+            return _DeserializeFromBinary(filepath);
         }
 
         FT_ENGINE_ERROR("Unsupported scene file format for deserialization: {0}", extension);
         return false;
     }
 
-    bool SceneSerializer::SerializeToYaml(const std::filesystem::path& filepath)
+    bool SceneSerializer::_SerializeToYaml(const std::filesystem::path& filepath)
     {
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -69,6 +105,11 @@ namespace Frost
                     continue;
             }
 
+            if (_IsDescendantOfPrefab(go))
+            {
+                continue;
+            }
+
             out << YAML::BeginMap;
             out << YAML::Key << "Entity" << YAML::Value << static_cast<uint32_t>(entityID);
 
@@ -86,11 +127,19 @@ namespace Frost
                 }
             }
 
-            uint32_t parentID = static_cast<uint32_t>(go.HasComponent<Component::Relationship>()
-                                                          ? go.GetComponent<Component::Relationship>().parent
-                                                          : entt::null);
+            int32_t parentID = -1;
+            if (go.HasComponent<Component::Relationship>())
+            {
+                entt::entity parentHandle = go.GetComponent<Component::Relationship>().parent;
+                if (parentHandle != entt::null)
+                {
+                    if (!_IsDescendantOfPrefab(GameObject(parentHandle, m_Scene)))
+                    {
+                        parentID = static_cast<int32_t>(parentHandle);
+                    }
+                }
+            }
             out << YAML::Key << "Parent" << YAML::Value << parentID;
-
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -109,7 +158,7 @@ namespace Frost
         return true;
     }
 
-    bool SceneSerializer::DeserializeFromYaml(const std::filesystem::path& filepath)
+    bool SceneSerializer::_DeserializeFromYaml(const std::filesystem::path& filepath)
     {
         std::ifstream stream(filepath);
         if (!stream.is_open())
@@ -164,13 +213,50 @@ namespace Frost
             for (auto entityNode : entities)
             {
                 uint32_t oldID = entityNode["Entity"].as<uint32_t>();
-                uint32_t parentID = entityNode["Parent"].as<uint32_t>(0);
+                int32_t parentID = entityNode["Parent"].as<int32_t>(-1);
 
-                if (parentID != static_cast<uint32_t>(entt::null))
+                if (parentID != -1)
                 {
                     GameObject childGo(entityMap.at(oldID), m_Scene);
-                    GameObject parentGo(entityMap.at(parentID), m_Scene);
-                    childGo.SetParent(parentGo);
+                    if (entityMap.count(static_cast<uint32_t>(parentID)))
+                    {
+                        GameObject parentGo(entityMap.at(static_cast<uint32_t>(parentID)), m_Scene);
+                        childGo.SetParent(parentGo);
+                    }
+                }
+            }
+        }
+
+        std::vector<entt::entity> prefabInstances;
+        auto prefabView = m_Scene->GetRegistry().view<Component::Prefab>();
+        for (auto entity : prefabView)
+        {
+            prefabInstances.push_back(entity);
+        }
+
+        for (auto entityID : prefabInstances)
+        {
+            GameObject placeholder(entityID, m_Scene);
+            if (!placeholder)
+                continue;
+
+            placeholder.DestroyAllChildren();
+
+            const auto& prefabComponent = placeholder.GetComponent<Component::Prefab>();
+            const auto& assetPath = prefabComponent.assetPath;
+
+            if (!assetPath.empty())
+            {
+                GameObject prefabRoot = PrefabSerializer::Instantiate(m_Scene, assetPath);
+
+                if (prefabRoot)
+                {
+                    prefabRoot.SetParent(placeholder);
+                }
+                else
+                {
+                    FT_ENGINE_WARN("Impossible d'instancier le prefab '{0}' pour l'entité placeholder.",
+                                   assetPath.string());
                 }
             }
         }
@@ -178,7 +264,7 @@ namespace Frost
         return true;
     }
 
-    bool SceneSerializer::SerializeToBinary(const std::filesystem::path& filepath)
+    bool SceneSerializer::_SerializeToBinary(const std::filesystem::path& filepath)
     {
         std::ofstream out(filepath, std::ios::binary);
         if (!out.is_open())
@@ -201,6 +287,12 @@ namespace Frost
                 if (meta->name.rfind("__EDITOR__", 0) == 0)
                     continue;
             }
+
+            if (_IsDescendantOfPrefab(go))
+            {
+                continue;
+            }
+
             entitiesToSerialize.push_back(entity);
         }
 
@@ -213,10 +305,16 @@ namespace Frost
             uint32_t entityId = static_cast<uint32_t>(entity);
             out.write(reinterpret_cast<const char*>(&entityId), sizeof(uint32_t));
 
-            uint32_t parentId = static_cast<uint32_t>(go.HasComponent<Component::Relationship>()
-                                                          ? go.GetComponent<Component::Relationship>().parent
-                                                          : entt::null);
-            out.write(reinterpret_cast<const char*>(&parentId), sizeof(uint32_t));
+            int32_t parentId = -1;
+            if (go.HasComponent<Component::Relationship>())
+            {
+                auto parentHandle = go.GetComponent<Component::Relationship>().parent;
+                if (parentHandle != entt::null)
+                {
+                    parentId = static_cast<int32_t>(parentHandle);
+                }
+            }
+            out.write(reinterpret_cast<const char*>(&parentId), sizeof(int32_t));
 
             for (const auto& serializer : SerializationSystem::GetAllSerializers())
             {
@@ -237,7 +335,7 @@ namespace Frost
         return true;
     }
 
-    bool SceneSerializer::DeserializeFromBinary(const std::filesystem::path& filepath)
+    bool SceneSerializer::_DeserializeFromBinary(const std::filesystem::path& filepath)
     {
         // Print absolute path for debugging
         auto absPath = std::filesystem::absolute(filepath);
@@ -259,7 +357,7 @@ namespace Frost
         m_Scene->Clear();
 
         std::unordered_map<uint32_t, entt::entity> entityMap;
-        std::vector<std::pair<uint32_t, uint32_t>> parentChildMap; // {child_old_id, parent_old_id}
+        std::vector<std::pair<uint32_t, int32_t>> parentChildMap; // {child_old_id, parent_old_id}
 
         uint32_t entityCount;
         in.read(reinterpret_cast<char*>(&entityCount), sizeof(uint32_t));
@@ -271,9 +369,9 @@ namespace Frost
             GameObject newGo = m_Scene->CreateGameObject("TempName");
             entityMap[oldID] = newGo.GetHandle();
 
-            uint32_t parentID;
-            in.read(reinterpret_cast<char*>(&parentID), sizeof(uint32_t));
-            if (parentID != static_cast<uint32_t>(entt::null))
+            int32_t parentID;
+            in.read(reinterpret_cast<char*>(&parentID), sizeof(int32_t));
+            if (parentID != -1)
                 parentChildMap.push_back({ oldID, parentID });
 
             while (true)
@@ -301,8 +399,52 @@ namespace Frost
         for (const auto& pair : parentChildMap)
         {
             GameObject childGo(entityMap.at(pair.first), m_Scene);
-            GameObject parentGo(entityMap.at(pair.second), m_Scene);
-            childGo.SetParent(parentGo);
+            uint32_t parentOldId = static_cast<uint32_t>(pair.second);
+            if (entityMap.count(parentOldId))
+            {
+                GameObject parentGo(entityMap.at(parentOldId), m_Scene);
+                childGo.SetParent(parentGo);
+            }
+            else
+            {
+                FT_ENGINE_WARN("Parent entity with old ID {0} not found for child {1}.", parentOldId, pair.first);
+            }
+        }
+
+        std::vector<entt::entity> prefabInstances;
+        auto prefabView = m_Scene->GetRegistry().view<Component::Prefab>();
+        for (auto entity : prefabView)
+        {
+            prefabInstances.push_back(entity);
+        }
+
+        for (auto entityID : prefabInstances)
+        {
+            GameObject placeholder(entityID, m_Scene);
+            if (!placeholder)
+                continue;
+
+            const auto& prefabComponent = placeholder.GetComponent<Component::Prefab>();
+            const auto& assetPath = prefabComponent.assetPath;
+
+            if (!assetPath.empty())
+            {
+                std::filesystem::path binPath = assetPath;
+                binPath.replace_extension(".bin");
+
+                GameObject prefabRoot =
+                    PrefabSerializer::Instantiate(m_Scene, std::filesystem::exists(binPath) ? binPath : assetPath);
+
+                if (prefabRoot)
+                {
+                    prefabRoot.SetParent(placeholder);
+                }
+                else
+                {
+                    FT_ENGINE_WARN("Impossible d'instancier le prefab '{0}' pour l'entité placeholder.",
+                                   assetPath.string());
+                }
+            }
         }
 
         if (auto* scriptSystem = m_Scene->GetSystem<ScriptableSystem>())

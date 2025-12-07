@@ -177,7 +177,7 @@ namespace Frost
             // Read YAML
             [](const YAML::Node& node, GameObject& go)
             {
-                auto& mesh = go.GetComponent<StaticMesh>();
+                auto& mesh = go.AddComponent<StaticMesh>();
                 int typeIndex = node["Type"].as<int>();
                 auto paramsNode = node["Params"];
 
@@ -294,7 +294,7 @@ namespace Frost
             // Read Binary
             [](std::istream& in, GameObject& go)
             {
-                auto& mesh = go.GetComponent<StaticMesh>();
+                auto& mesh = go.AddComponent<StaticMesh>();
                 int typeIndex;
                 in.read((char*)&typeIndex, sizeof(int));
 
