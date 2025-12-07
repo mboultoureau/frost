@@ -4,18 +4,15 @@
 #include "Frost/Renderer/DX11/RendererDX11.h"
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Scene/Components/Camera.h"
-#include "Frost/Scene/Components/HUDImage.h"
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Scene/Components/RigidBody.h"
-#include "Frost/Scene/Components/Script.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Components/StaticMesh.h"
 #include "Frost/Scene/Components/Transform.h"
-#include "Frost/Scene/Components/UIButton.h"
-#include "Frost/Scene/Components/VirtualCamera.h"
 #include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Scripting/Script.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Math/Vector.h"
 #include "Frost/Debugging/ComponentUIRegistry.h"
@@ -26,6 +23,7 @@
 
 using namespace Frost::Component;
 using namespace Frost::Math;
+using namespace Frost::Scripting;
 
 namespace Frost
 {
@@ -618,6 +616,7 @@ namespace Frost
         }
     }
 
+    /*
     void DebugScene::_DrawVirtualCameraComponent(Scene* scene, entt::entity gameObjectId)
     {
         auto& registry = scene->GetRegistry();
@@ -726,6 +725,7 @@ namespace Frost
             ImGui::TreePop();
         }
     }
+    */
 
     void DebugScene::_DrawScriptableComponent(Scene* scene, entt::entity gameObjectId)
     {
@@ -905,95 +905,98 @@ namespace Frost
     }
 
     */
-    void DebugScene::_DrawHUDImageComponent(Scene* scene, entt::entity gameObjectId)
-    {
-        auto& registry = scene->GetRegistry();
-        HUDImage* image = registry.try_get<HUDImage>(gameObjectId);
-        if (!image)
-            return;
 
-        if (DebugUtils::DrawComponentHeader("HUD Image"))
+    /*
+        void DebugScene::_DrawHUDImageComponent(Scene* scene, entt::entity gameObjectId)
         {
-            ImGui::Text("Texture: %s", image->textureFilepath.c_str());
-            ImGui::Text("Status: %s", (image->texture ? "Loaded" : "Not Loaded"));
+            auto& registry = scene->GetRegistry();
+            HUDImage* image = registry.try_get<HUDImage>(gameObjectId);
+            if (!image)
+                return;
 
-            const char* filterModes[] = { "Point", "Linear", "Anisotropic" };
-            int currentFilter = static_cast<int>(image->textureFilter);
-            if (ImGui::Combo("Filter Mode", &currentFilter, filterModes, IM_ARRAYSIZE(filterModes)))
+            if (DebugUtils::DrawComponentHeader("HUD Image"))
             {
-                image->textureFilter = static_cast<Material::FilterMode>(currentFilter);
+                ImGui::Text("Texture: %s", image->textureFilepath.c_str());
+                ImGui::Text("Status: %s", (image->texture ? "Loaded" : "Not Loaded"));
+
+                const char* filterModes[] = { "Point", "Linear", "Anisotropic" };
+                int currentFilter = static_cast<int>(image->textureFilter);
+                if (ImGui::Combo("Filter Mode", &currentFilter, filterModes, IM_ARRAYSIZE(filterModes)))
+                {
+                    image->textureFilter = static_cast<Material::FilterMode>(currentFilter);
+                }
+
+                ImGui::Separator();
+                ImGui::Text("Viewport");
+                ImGui::SameLine();
+
+                float totalAvailableWidth = ImGui::GetContentRegionAvail().x;
+                float itemWidth = (totalAvailableWidth - ImGui::GetStyle().ItemSpacing.x * 3) / 4;
+
+                ImGui::PushItemWidth(itemWidth);
+                ImGui::DragFloat("##X", &image->viewport.x, 0.01f, 0.0f, 1.0f, "X:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##Y", &image->viewport.y, 0.01f, 0.0f, 1.0f, "Y:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##W", &image->viewport.width, 0.01f, 0.001f, 1.0f, "W:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##H", &image->viewport.height, 0.01f, 0.001f, 1.0f, "H:%.2f");
+                ImGui::PopItemWidth();
+
+                ImGui::TreePop();
             }
-
-            ImGui::Separator();
-            ImGui::Text("Viewport");
-            ImGui::SameLine();
-
-            float totalAvailableWidth = ImGui::GetContentRegionAvail().x;
-            float itemWidth = (totalAvailableWidth - ImGui::GetStyle().ItemSpacing.x * 3) / 4;
-
-            ImGui::PushItemWidth(itemWidth);
-            ImGui::DragFloat("##X", &image->viewport.x, 0.01f, 0.0f, 1.0f, "X:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##Y", &image->viewport.y, 0.01f, 0.0f, 1.0f, "Y:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##W", &image->viewport.width, 0.01f, 0.001f, 1.0f, "W:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##H", &image->viewport.height, 0.01f, 0.001f, 1.0f, "H:%.2f");
-            ImGui::PopItemWidth();
-
-            ImGui::TreePop();
         }
-    }
 
-    void DebugScene::_DrawUIButtonComponent(Scene* scene, entt::entity gameObjectId)
-    {
-        auto& registry = scene->GetRegistry();
-        UIButton* button = registry.try_get<UIButton>(gameObjectId);
-        if (!button)
-            return;
-
-        if (DebugUtils::DrawComponentHeader("UI Button"))
+        void DebugScene::_DrawUIButtonComponent(Scene* scene, entt::entity gameObjectId)
         {
-            ImGui::Text("Idle Texture: %s", button->textureFilepath.c_str());
-            ImGui::Text("  Status: %s", (button->idleTexture ? "Loaded" : "Not Loaded"));
+            auto& registry = scene->GetRegistry();
+            UIButton* button = registry.try_get<UIButton>(gameObjectId);
+            if (!button)
+                return;
 
-            ImGui::Text("Hover Texture: %s", button->hoverTextureFilepath.c_str());
-            ImGui::Text("  Status: %s", (button->hoverTexture ? "Loaded" : "Not Loaded"));
+            if (DebugUtils::DrawComponentHeader("UI Button"))
+            {
+                ImGui::Text("Idle Texture: %s", button->textureFilepath.c_str());
+                ImGui::Text("  Status: %s", (button->idleTexture ? "Loaded" : "Not Loaded"));
 
-            ImGui::Text("Pressed Texture: %s", button->pressedTextureFilepath.c_str());
-            ImGui::Text("  Status: %s", (button->pressedTexture ? "Loaded" : "Not Loaded"));
+                ImGui::Text("Hover Texture: %s", button->hoverTextureFilepath.c_str());
+                ImGui::Text("  Status: %s", (button->hoverTexture ? "Loaded" : "Not Loaded"));
 
-            ImGui::Separator();
+                ImGui::Text("Pressed Texture: %s", button->pressedTextureFilepath.c_str());
+                ImGui::Text("  Status: %s", (button->pressedTexture ? "Loaded" : "Not Loaded"));
 
-            ImGui::Text("Render Viewport");
-            float totalAvailableWidth = ImGui::GetContentRegionAvail().x;
-            float itemWidth = (totalAvailableWidth - ImGui::GetStyle().ItemSpacing.x * 3) / 4;
+                ImGui::Separator();
 
-            ImGui::PushItemWidth(itemWidth);
-            ImGui::DragFloat("##VX", &button->viewport.x, 0.01f, 0.0f, 1.0f, "X:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##VY", &button->viewport.y, 0.01f, 0.0f, 1.0f, "Y:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##VW", &button->viewport.width, 0.01f, 0.001f, 1.0f, "W:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##VH", &button->viewport.height, 0.01f, 0.001f, 1.0f, "H:%.2f");
-            ImGui::PopItemWidth();
+                ImGui::Text("Render Viewport");
+                float totalAvailableWidth = ImGui::GetContentRegionAvail().x;
+                float itemWidth = (totalAvailableWidth - ImGui::GetStyle().ItemSpacing.x * 3) / 4;
 
-            ImGui::Text("Button Hitbox");
-            ImGui::PushItemWidth(itemWidth);
-            ImGui::DragFloat("##HX", &button->buttonHitbox.x, 0.01f, 0.0f, 1.0f, "X:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##HY", &button->buttonHitbox.y, 0.01f, 0.0f, 1.0f, "Y:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##HW", &button->buttonHitbox.width, 0.01f, 0.001f, 1.0f, "W:%.2f");
-            ImGui::SameLine();
-            ImGui::DragFloat("##HH", &button->buttonHitbox.height, 0.01f, 0.001f, 1.0f, "H:%.2f");
-            ImGui::PopItemWidth();
+                ImGui::PushItemWidth(itemWidth);
+                ImGui::DragFloat("##VX", &button->viewport.x, 0.01f, 0.0f, 1.0f, "X:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##VY", &button->viewport.y, 0.01f, 0.0f, 1.0f, "Y:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##VW", &button->viewport.width, 0.01f, 0.001f, 1.0f, "W:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##VH", &button->viewport.height, 0.01f, 0.001f, 1.0f, "H:%.2f");
+                ImGui::PopItemWidth();
 
-            ImGui::Separator();
-            ImGui::Text("onClick Callback: %s", (button->onClick ? "Attached" : "Not Attached"));
+                ImGui::Text("Button Hitbox");
+                ImGui::PushItemWidth(itemWidth);
+                ImGui::DragFloat("##HX", &button->buttonHitbox.x, 0.01f, 0.0f, 1.0f, "X:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##HY", &button->buttonHitbox.y, 0.01f, 0.0f, 1.0f, "Y:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##HW", &button->buttonHitbox.width, 0.01f, 0.001f, 1.0f, "W:%.2f");
+                ImGui::SameLine();
+                ImGui::DragFloat("##HH", &button->buttonHitbox.height, 0.01f, 0.001f, 1.0f, "H:%.2f");
+                ImGui::PopItemWidth();
 
-            ImGui::TreePop();
+                ImGui::Separator();
+                ImGui::Text("onClick Callback: %s", (button->onClick ? "Attached" : "Not Attached"));
+
+                ImGui::TreePop();
+            }
         }
-    }
+            */
 } // namespace Frost

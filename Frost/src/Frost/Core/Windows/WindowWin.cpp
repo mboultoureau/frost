@@ -17,7 +17,7 @@ ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 namespace Frost
 {
-    void _CreateConsoleWindow()
+    void _CreateConsoleWindow(const ApplicationSpecification& spec)
     {
         FT_ENGINE_ASSERT(AllocConsole(), "Can't allocate new console");
         FILE* consoleStdout = nullptr;
@@ -30,12 +30,31 @@ namespace Frost
         std::cerr.clear();
 
         SetConsoleTitle(L"Frost Engine Console");
+
+        if (!spec.consoleIconPath.empty())
+        {
+            HWND consoleHwnd = GetConsoleWindow();
+            if (consoleHwnd)
+            {
+                HICON hIcon = (HICON)LoadImageW(
+                    NULL, spec.consoleIconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+
+                if (hIcon)
+                {
+                    SendMessage(consoleHwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+                    SendMessage(consoleHwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+                }
+            }
+        }
     }
 
-    WindowWin::WindowWin(const WindowTitle title) : Window(title)
+    WindowWin::WindowWin(const ApplicationSpecification& spec) : Window(spec)
     {
+        _width = spec.windowWidth;
+        _height = spec.windowHeight;
+
 #ifdef FT_DEBUG
-        _CreateConsoleWindow();
+        _CreateConsoleWindow(spec);
 #endif
 
         Logger::Init();
@@ -54,12 +73,35 @@ namespace Frost
         wcx.cbClsExtra = 0;
         wcx.cbWndExtra = 0;
         wcx.hInstance = GetModuleHandle(NULL);
-        wcx.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+
+        // Load icon
+        HICON hIcon = NULL;
+        if (!spec.iconPath.empty())
+        {
+            hIcon = (HICON)LoadImageW(
+                NULL, spec.iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+        }
+
+        // For test check if file exists
+        if (!std::filesystem::exists(spec.iconPath))
+        {
+            FT_ENGINE_WARN("Icon file not found: {}", spec.iconPath.string());
+        }
+
+        // Print current working directory
+        FT_ENGINE_INFO("Current working directory: {}", std::filesystem::current_path().string());
+
+        if (hIcon == NULL)
+        {
+            hIcon = LoadIcon(NULL, IDI_APPLICATION);
+        }
+
+        wcx.hIcon = hIcon;
+        wcx.hIconSm = hIcon;
         wcx.hCursor = LoadCursor(NULL, IDC_ARROW);
         wcx.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
         wcx.lpszMenuName = NULL;
         wcx.lpszClassName = L"FrostWClass";
-        wcx.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 
         FT_ENGINE_ASSERT(RegisterClassEx(&wcx), "Window Registration Failed!");
 
@@ -75,7 +117,7 @@ namespace Frost
 
         _hwnd = CreateWindowEx(0,
                                L"FrostWClass",
-                               title,
+                               spec.title.c_str(),
                                WS_OVERLAPPEDWINDOW,
                                CW_USEDEFAULT,
                                CW_USEDEFAULT,

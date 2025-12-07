@@ -14,7 +14,7 @@ using namespace Frost::Component;
 
 namespace Frost
 {
-    Scene::Scene(std::string&& name) : _name{ std::move(name) }
+    Scene::Scene(std::string name) : _name{ name }
     {
         _registry.on_destroy<Component::Relationship>().connect<&Scene::_OnRelationshipDestroyed>(this);
         _InitializeSystems();
@@ -58,6 +58,16 @@ namespace Frost
 
     void Scene::DestroyGameObject(GameObject gameObject)
     {
+        if (!gameObject.IsValid())
+            return;
+
+        gameObject.DestroyAllChildren();
+
+        if (gameObject.GetParent())
+        {
+            gameObject.SetParent({});
+        }
+
         _registry.destroy(gameObject.GetHandle());
     }
 

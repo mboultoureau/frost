@@ -1,4 +1,5 @@
 #include "Editor/UI/StatusBar.h"
+#include "Editor/EditorLayer.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -27,8 +28,9 @@ namespace Editor
 
         if (ImGui::Begin("StatusBar", nullptr, flags))
         {
-            if (ImGui::Button("RECOMPILE SCRIPTS"))
+            if (ImGui::Button("Reload Scripts"))
             {
+                EditorLayer::Get().TriggerHotReload();
             }
 
             ImGui::SameLine();

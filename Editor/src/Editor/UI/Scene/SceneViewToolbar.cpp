@@ -76,7 +76,9 @@ namespace Editor
                                 GizmoOperation& currentGizmo,
                                 SceneViewSettings& settings,
                                 bool isPrefabView,
-                                const std::function<void()>& onSaveCallback)
+                                const std::function<void()>& onSavePrefabCallback,
+                                const std::function<void()>& onSaveSceneCallback,
+                                const std::function<void()>& onLoadSceneCallback)
     {
         // Handle inputs
         if (ImGui::IsKeyPressed(ImGuiKey_Q))
@@ -110,27 +112,58 @@ namespace Editor
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4, 4));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
 
-        // Save prefab
+        // Save
+        auto saveIcon = _GetIcon("save");
         if (isPrefabView)
         {
-            auto saveIcon = _GetIcon("save");
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-            if (ImGui::ImageButton("##Save",
+            if (ImGui::ImageButton("##SavePrefab",
                                    (ImTextureID)(saveIcon ? saveIcon->GetRendererID() : 0),
                                    ImVec2(_buttonSize, _buttonSize)))
             {
-                if (onSaveCallback)
-                    onSaveCallback();
+                if (onSavePrefabCallback)
+                    onSavePrefabCallback();
             }
             ImGui::PopStyleColor();
 
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Save Prefab");
+                ImGui::SetTooltip("Save Prefab (Ctrl+S)");
+        }
+        else
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            if (ImGui::ImageButton("##SaveScene",
+                                   (ImTextureID)(saveIcon ? saveIcon->GetRendererID() : 0),
+                                   ImVec2(_buttonSize, _buttonSize)))
+            {
+                if (onSaveSceneCallback)
+                    onSaveSceneCallback();
+            }
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Save Scene (Ctrl+S)");
 
             ImGui::SameLine();
-            ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-            ImGui::SameLine();
+
+            /*
+            auto openIcon = _GetIcon("open");
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            if (ImGui::ImageButton("##LoadScene",
+                                   (ImTextureID)(openIcon ? openIcon->GetRendererID() : 0),
+                                   ImVec2(_buttonSize, _buttonSize)))
+            {
+                if (onLoadSceneCallback)
+                    onLoadSceneCallback();
+            }
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Load Scene (Ctrl+O)");
+                */
         }
+
+        ImGui::SameLine();
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine();
 
         // Gizmos
         if (_DrawToggleButton("##Mouse", _GetIcon("mouse"), currentGizmo == GizmoOperation::None))

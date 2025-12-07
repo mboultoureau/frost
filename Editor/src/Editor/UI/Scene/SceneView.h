@@ -22,10 +22,15 @@ namespace Editor
         {
         };
 
+        struct SceneTag
+        {
+        };
+
     public:
         SceneView(const std::string& title, Frost::Scene* existingScene);
         SceneView(const std::filesystem::path& prefabPath);
         SceneView(const std::filesystem::path& meshPath, MeshPreviewTag);
+        SceneView(const std::filesystem::path& scenePath, SceneTag);
 
         void OnUpdate(float deltaTime);
         void OnFixedUpdate(float deltaTime);
@@ -39,6 +44,7 @@ namespace Editor
         bool IsFocused() const { return _isFocused; }
         bool IsOpen() const { return _isOpen; }
 
+        Frost::Scene& GetScene() { return *_sceneContext; }
         const SceneViewSettings& GetSettings() const { return _viewSettings; }
 
     private:
@@ -55,6 +61,8 @@ namespace Editor
 
         // Actions
         void _SavePrefab();
+        void _SaveScene();
+        void _LoadScene();
         void _ReparentEntity(entt::entity entity, entt::entity newParent);
         void _FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds);
 
@@ -81,7 +89,6 @@ namespace Editor
         uint32_t _viewportWidth = 0, _viewportHeight = 0;
 
         Frost::GameObject _editorCamera;
-        Frost::GameObject _editorSkybox;
         Frost::GameObject _editorLight;
 
         std::filesystem::path _assetPath;

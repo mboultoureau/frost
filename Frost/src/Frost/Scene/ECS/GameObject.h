@@ -39,6 +39,18 @@ namespace Frost
         }
 
         template<typename T>
+        T* TryGetComponent()
+        {
+            return _registry->try_get<T>(_entityHandle);
+        }
+
+        template<typename T>
+        const T* TryGetComponent() const
+        {
+            return _registry->try_get<T>(_entityHandle);
+        }
+
+        template<typename T>
         const bool HasComponent() const
         {
             return _registry->all_of<T>(_entityHandle);
@@ -58,6 +70,7 @@ namespace Frost
         void SetParent(GameObject parent);
         GameObject GetParent();
         std::vector<GameObject> GetChildren();
+        void DestroyAllChildren();
 
         operator bool() const { return _entityHandle != entt::null; }
         operator entt::entity() const { return _entityHandle; }

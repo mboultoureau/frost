@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Frost/Scene/ECS/System.h"
-#include "Frost/Scene/Components/Script.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Scene.h"
 

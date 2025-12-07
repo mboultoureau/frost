@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Frost/Renderer/Pipeline.h"
-#include "Frost/Scene/Components/HUDImage.h"
-#include "Frost/Scene/Components/UIButton.h"
 #include "Frost/Utils/Math/Matrix.h"
 #include "Frost/Utils/Math/Vector.h"
+#include "Frost/Scene/Components/UIElement.h"
 
 namespace Frost
 {
@@ -18,14 +17,14 @@ namespace Frost
         void Shutdown();
 
         void BeginFrame();
-        void Submit(const Component::HUDImage& image);
-        void Submit(const Component::UIButton& button);
+        void Submit(const Component::UIElement& element, const Component::UIImage& image);
         void EndFrame();
 
     private:
         struct alignas(16) HUDShaderParameters
         {
             float viewport[4];
+            float color[4];
             float rotation;
             float padding[3];
         };

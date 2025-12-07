@@ -1,0 +1,64 @@
+Scene: RainbowRoad
+Entities:
+  - Entity: 2
+    Meta:
+      Name: LevelCamera
+    Transform:
+      Position: [0, 0, -5.7066693]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Skybox:
+      Type: 1
+      Intensity: 1
+      Params:
+        Faces:
+          - assets/Scenes/RainbowRoad/Skybox/right.png
+          - assets/Scenes/RainbowRoad/Skybox/left.png
+          - assets/Scenes/RainbowRoad/Skybox/top.png
+          - assets/Scenes/RainbowRoad/Skybox/bottom.png
+          - assets/Scenes/RainbowRoad/Skybox/front.png
+          - assets/Scenes/RainbowRoad/Skybox/back.png
+    Camera:
+      ProjectionType: 0
+      PerspectiveFOV: 60
+      OrthographicSize: 10
+      NearClip: 0.1
+      FarClip: 1000
+      Priority: 0
+      FrustumCulling: true
+      FrustumPadding: 1
+      ClearOnRender: true
+      BackgroundColor: [0.1, 0.1, 0.1, 1]
+      Viewport: [0, 0, 1, 1]
+      RenderToTexture: false
+    Parent: 4294967295
+  - Entity: 1
+    Meta:
+      Name: Sun
+    Transform:
+      Position: [4.35642, 4.9775634, 0]
+      Rotation: [0.1464466, 0.35355338, 0.35355338, 0.85355335]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 0
+      Color: [1, 1, 1]
+      Intensity: 1
+      Params:
+        CastShadows: true
+        ShadowBias: 0.005
+    Parent: 4294967295
+  - Entity: 0
+    Meta:
+      Name: oiiaioooooiai_cat
+    Transform:
+      Position: [0.11428586, 1.1920929e-07, -1.3100538]
+      Rotation: [0, 0, 0, 1]
+      Scale: [5, 5, 5]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Scenes/RainbowRoad/Samples/oiiaioooooiai_cat.glb
+    Scriptable:
+      Scripts:
+        - Rotate
+    Parent: 4294967295

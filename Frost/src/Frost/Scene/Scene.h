@@ -20,7 +20,7 @@ namespace Frost
     class Scene : NoCopy
     {
     public:
-        Scene(std::string&& name = "Scene");
+        Scene(std::string name = "Scene");
         ~Scene();
 
         GameObject CreateGameObject(std::string name = "Entity");
@@ -35,7 +35,10 @@ namespace Frost
         void SetEditorRenderTarget(std::shared_ptr<Texture> target);
 
         entt::registry& GetRegistry() { return _registry; }
+
         const std::string& GetName() const { return _name; }
+        void SetName(const std::string& name) { _name = name; }
+        void Clear() { _registry.clear(); }
 
         template<typename... Components>
         auto View()

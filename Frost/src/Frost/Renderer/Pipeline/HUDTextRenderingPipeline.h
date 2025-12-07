@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Frost/Renderer/Pipeline.h"
-#include "Frost/Scene/Components/HUDText.h"
 #include "Frost/Renderer/Material.h"
 #include "Frost/Renderer/Viewport.h"
+#include "Frost/Scene/Components/UIElement.h"
+
 #include <vector>
 #include <memory>
 
@@ -26,7 +27,7 @@ namespace Frost
         void Shutdown();
 
         void BeginFrame();
-        void Submit(const Component::HUDText& texte);
+        void Submit(const Component::UIElement& element, const Component::UIText& text);
         void EndFrame();
 
         struct alignas(16) HUDShaderParameters
@@ -52,7 +53,7 @@ namespace Frost
 
     private:
         void SetFilter(Material::FilterMode filterMode);
-        void _RegenerateMesh(const Component::HUDText& textComponent);
+        void _RegenerateMesh(const Component::UIElement& element, const Component::UIText& text);
         std::unique_ptr<CommandList> _commandList;
 
         std::shared_ptr<Shader> _vertexShader;
