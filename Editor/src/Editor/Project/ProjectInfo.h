@@ -30,6 +30,7 @@ namespace Editor
         std::string startScene;
         std::string assetDirectory;
         std::string sourceDirectory;
+        std::string scriptingModule;
 
         // Physics
         std::vector<BroadPhaseLayerSetting> broadPhaseLayers;

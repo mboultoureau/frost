@@ -4,10 +4,11 @@
 #include <yaml-cpp/yaml.h>
 #include <functional>
 #include <string>
-#include <vector>
+#include <list>
 #include <map>
 #include <iostream>
 #include <unordered_map>
+#include <typeindex>
 
 namespace Frost
 {
@@ -85,9 +86,11 @@ namespace Frost
 
             GetSerializers().push_back(serializer);
             GetIdMap()[serializer.ID] = &GetSerializers().back();
+
+            GetTypeIdMap()[std::type_index(typeid(T))] = serializer.ID;
         }
 
-        static const std::vector<ComponentSerializer>& GetAllSerializers() { return GetSerializers(); }
+        static const std::list<ComponentSerializer>& GetAllSerializers() { return GetSerializers(); }
 
         static ComponentSerializer* GetSerializerByID(uint32_t id)
         {
@@ -99,16 +102,33 @@ namespace Frost
             return nullptr;
         }
 
-    private:
-        static std::vector<ComponentSerializer>& GetSerializers()
+        template<typename T>
+        static ComponentSerializer* GetSerializer()
         {
-            static std::vector<ComponentSerializer> serializers;
+            auto it = GetTypeIdMap().find(std::type_index(typeid(T)));
+            if (it != GetTypeIdMap().end())
+            {
+                return GetSerializerByID(it->second);
+            }
+            return nullptr;
+        }
+
+    private:
+        static std::list<ComponentSerializer>& GetSerializers()
+        {
+            static std::list<ComponentSerializer> serializers;
             return serializers;
         }
 
         static std::unordered_map<uint32_t, ComponentSerializer*>& GetIdMap()
         {
             static std::unordered_map<uint32_t, ComponentSerializer*> map;
+            return map;
+        }
+
+        static std::unordered_map<std::type_index, uint32_t>& GetTypeIdMap()
+        {
+            static std::unordered_map<std::type_index, uint32_t> map;
             return map;
         }
     };

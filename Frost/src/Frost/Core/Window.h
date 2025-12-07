@@ -2,13 +2,15 @@
 
 namespace Frost
 {
+    struct ApplicationSpecification;
+
     class Window
     {
     public:
         using WindowSizeUnit = unsigned int;
         using WindowTitle = const wchar_t*;
 
-        Window(const WindowTitle title) {}
+        Window(const ApplicationSpecification& spec) {}
         virtual ~Window() = default;
 
         WindowSizeUnit GetWidth() const { return _width; }

@@ -3,21 +3,16 @@
 #include "Frost/Physics/PhysicListener.h"
 #include "Frost/Scene/ECS/GameObject.h"
 
-namespace Frost
+namespace Frost::Scripting
 {
     class ECS;
 
     class Script
     {
     public:
-        void Initialize(GameObject gameObject)
-        {
-            _gameObject = gameObject;
-            OnInitialize();
-        }
-
         // Lifecycle
-        virtual void OnInitialize() {}
+        virtual void OnCreate() {}
+        virtual void OnDestroy() {}
         virtual void OnUpdate(float deltaTime) {}
         virtual void OnPreFixedUpdate(float fixedDeltaTime) {}
         virtual void OnFixedUpdate(float fixedDeltaTime) {}
@@ -32,10 +27,10 @@ namespace Frost
 
         // Accessors
         GameObject GetGameObject() const { return _gameObject; }
-        entt::entity GetEntity() const { return _gameObject.GetHandle(); }
+        void SetGameObject(GameObject gameObject) { _gameObject = gameObject; }
         Scene* GetScene() const { return _gameObject.GetScene(); }
 
     protected:
         GameObject _gameObject;
     };
-} // namespace Frost
+} // namespace Frost::Scripting
