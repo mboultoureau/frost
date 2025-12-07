@@ -255,8 +255,9 @@ PlayerSpringCameraScript::ProcessInput(float deltaTime)
         _yaw += static_cast<float>(deltaX) * _mouseSensitivity;
         _pitch += static_cast<float>(deltaY) * _mouseSensitivity;
 
-        Angle<Radian> limit = 89.0_deg;
-        _pitch = std::clamp(_pitch, -limit.value(), limit.value());
+        Angle<Radian> upperLimit = 74.0_deg;
+        Angle<Radian> lowerLimit = -99.0_deg;
+        _pitch = std::clamp(_pitch, lowerLimit.value(), upperLimit.value());
 
         _cameraPivotRotationX = _pitch;
         _cameraPivotRotationY = _yaw;
@@ -306,7 +307,8 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
     camComponent.backgroundColor.a = 1.0f;
 
     // Create the Camera Sensor
-    auto& rb = _camera.AddComponent<RigidBody>(ShapeSphere{ 0.01f }, ObjectLayers::CAMERA);
+    auto& rb =
+        _camera.AddComponent<RigidBody>(ShapeSphere{ 0.01f }, ObjectLayers::CAMERA, RigidBody::MotionType::Kinematic);
     rb.isSensor = true;
 
     _camera.AddScript<PlayerSpringCameraScript>(_cameraPivot, _3rdPersVirtCamera, _camera, _player);
@@ -321,13 +323,13 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
 void
 PlayerCamera::Shake(float duration, float amplitude, ScreenShakeEffect::AttenuationType type)
 {
-    if (screenShake != nullptr)
+    if (screenShake != nullptr && std::abs(duration) < _maxShakeDuration && std::abs(amplitude) < _maxShakeAmplitude)
         screenShake->Shake(duration, amplitude, type);
 }
 
 void
 PlayerCamera::SetRadialBlurStrength(float strength)
 {
-    if (radialBlur != nullptr)
+    if (radialBlur != nullptr && std::abs(strength) < _maxRadialBlurStrength)
         radialBlur->SetStrength(strength);
 }
