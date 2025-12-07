@@ -17,8 +17,12 @@ namespace Frost
                                       std::set<std::filesystem::path>* instantiationStack = nullptr);
 
     private:
-        static void _SerializeToYaml(const std::vector<GameObject>& entities, const std::filesystem::path& path);
-        static void _SerializeToBinary(const std::vector<GameObject>& entities, const std::filesystem::path& path);
+        static void _SerializeToYaml(GameObject rootEntity,
+                                     const std::vector<GameObject>& entities,
+                                     const std::filesystem::path& path);
+        static void _SerializeToBinary(GameObject rootEntity,
+                                       const std::vector<GameObject>& entities,
+                                       const std::filesystem::path& path);
         static void _FlattenHierarchy(GameObject root, std::vector<GameObject>& outList);
     };
 } // namespace Frost

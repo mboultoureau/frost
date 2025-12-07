@@ -85,8 +85,10 @@ namespace Frost
             serializer.DeserializeBinary = binDeser;
 
             GetSerializers().push_back(serializer);
-            GetIdMap()[serializer.ID] = &GetSerializers().back();
+            ComponentSerializer* ptr = &GetSerializers().back();
 
+            GetIdMap()[serializer.ID] = ptr;
+            GetNameMap()[name] = ptr;
             GetTypeIdMap()[std::type_index(typeid(T))] = serializer.ID;
         }
 
@@ -96,6 +98,16 @@ namespace Frost
         {
             auto it = GetIdMap().find(id);
             if (it != GetIdMap().end())
+            {
+                return it->second;
+            }
+            return nullptr;
+        }
+
+        static ComponentSerializer* GetSerializerByName(const std::string& name)
+        {
+            auto it = GetNameMap().find(name);
+            if (it != GetNameMap().end())
             {
                 return it->second;
             }
@@ -123,6 +135,12 @@ namespace Frost
         static std::unordered_map<uint32_t, ComponentSerializer*>& GetIdMap()
         {
             static std::unordered_map<uint32_t, ComponentSerializer*> map;
+            return map;
+        }
+
+        static std::unordered_map<std::string, ComponentSerializer*>& GetNameMap()
+        {
+            static std::unordered_map<std::string, ComponentSerializer*> map;
             return map;
         }
 

@@ -32,6 +32,17 @@ namespace Frost
             };
         }
 
+        template<typename T>
+        static void Draw(Scene* scene, entt::entity e, const UIContext& ctx)
+        {
+            auto it = _drawers.find(std::type_index(typeid(T)));
+
+            if (it != _drawers.end())
+            {
+                it->second(scene, e, ctx);
+            }
+        }
+
         static void DrawAll(Scene* scene, entt::entity e, const UIContext& ctx);
 
         static void InitEngineComponents();

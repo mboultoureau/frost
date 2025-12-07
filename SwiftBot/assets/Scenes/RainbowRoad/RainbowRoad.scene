@@ -1,10 +1,30 @@
 Scene: RainbowRoad
 Entities:
+  - Entity: 3
+    Meta:
+      Name: Terrain
+    Transform:
+      Position: [2, -2, 8]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Scenes\RainbowRoad\Terrain\Terrain.prefab
+    Parent: -1
   - Entity: 2
+    Meta:
+      Name: cat
+    Transform:
+      Position: [0, 0, 2]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Scenes\RainbowRoad\Samples\cat.prefab
+    Parent: -1
+  - Entity: 1
     Meta:
       Name: LevelCamera
     Transform:
-      Position: [0, 0, -5.7066693]
+      Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     Skybox:
@@ -31,13 +51,13 @@ Entities:
       BackgroundColor: [0.1, 0.1, 0.1, 1]
       Viewport: [0, 0, 1, 1]
       RenderToTexture: false
-    Parent: 4294967295
-  - Entity: 1
+    Parent: -1
+  - Entity: 0
     Meta:
       Name: Sun
     Transform:
-      Position: [4.35642, 4.9775634, 0]
-      Rotation: [0.1464466, 0.35355338, 0.35355338, 0.85355335]
+      Position: [0, 0, 8.1]
+      Rotation: [0.037049647, 0.15198377, 0.23392227, 0.95958775]
       Scale: [1, 1, 1]
     Light:
       Type: 0
@@ -46,19 +66,4 @@ Entities:
       Params:
         CastShadows: true
         ShadowBias: 0.005
-    Parent: 4294967295
-  - Entity: 0
-    Meta:
-      Name: oiiaioooooiai_cat
-    Transform:
-      Position: [0.11428586, 1.1920929e-07, -1.3100538]
-      Rotation: [0, 0, 0, 1]
-      Scale: [5, 5, 5]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Scenes/RainbowRoad/Samples/oiiaioooooiai_cat.glb
-    Scriptable:
-      Scripts:
-        - Rotate
-    Parent: 4294967295
+    Parent: -1
