@@ -27,6 +27,7 @@ add_subdirectory(Frost)
 add_subdirectory(Editor)
 add_subdirectory(Lab)
 add_subdirectory(Game)
+add_subdirectory(SwiftBot)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "Editor")
@@ -50,6 +51,12 @@ if(CLANG_FORMAT_EXE)
         
         "${CMAKE_CURRENT_SOURCE_DIR}/Lab/src/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/Lab/src/*.h"
+		
+		"${CMAKE_CURRENT_SOURCE_DIR}/SwiftBot/src/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/SwiftBot/src/*.h"
+		
+		"${CMAKE_CURRENT_SOURCE_DIR}/SwiftBot/scripts/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/SwiftBot/scripts/*.h"
     )
 
     add_custom_target(format

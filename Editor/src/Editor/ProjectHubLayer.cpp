@@ -1,6 +1,6 @@
 ﻿#include "Editor/ProjectHubLayer.h"
 #include "Editor/EditorApp.h"
-#include "Editor/Project/ProjectOpenEvent.h"
+#include "Editor/Events/ProjectOpenEvent.h"
 #include "Editor/UI/EditorTheme.h"
 #include "Editor/Utils/PlatformUtils.h"
 #include "Frost.h"

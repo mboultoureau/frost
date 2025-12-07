@@ -8,10 +8,12 @@
 
 namespace Frost
 {
+    struct ApplicationSpecification;
+
     class WindowWin : public Window
     {
     public:
-        WindowWin(const WindowTitle title);
+        WindowWin(const ApplicationSpecification& spec);
         ~WindowWin() override;
         virtual void SetFullscreen(const bool isFullscreen) override;
 

@@ -7,6 +7,8 @@
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Utils/Math/Transform.h"
+#include "Frost/Scene/SceneSerializer.h"
+#include "Frost/Debugging/Logger.h"
 
 namespace Editor
 {
@@ -95,6 +97,25 @@ namespace Editor
         _FocusCameraOnEntity(camTrans, bounds);
     }
 
+    SceneView::SceneView(const std::filesystem::path& scenePath, SceneTag) : _assetPath(scenePath), _isPrefabView(false)
+    {
+        _title = "Scene: " + scenePath.stem().string();
+        _localScene = std::make_unique<Frost::Scene>("Scene Editor");
+        _sceneContext = _localScene.get();
+        _gizmo = std::make_unique<Gizmo>(_sceneContext);
+
+        if (std::filesystem::exists(_assetPath))
+        {
+            SceneSerializer serializer(_sceneContext);
+            if (!serializer.Deserialize(_assetPath))
+            {
+                FT_ENGINE_ERROR("Failed to load scene for editing: {0}", _assetPath.string());
+            }
+        }
+
+        _Init();
+    }
+
     void SceneView::_Init()
     {
         _ResizeViewportFramebuffer(1280, 720);
@@ -108,8 +129,8 @@ namespace Editor
         cam.farClip = 1000.0f;
         cam.nearClip = 0.1f;
 
-        _editorSkybox = _sceneContext->CreateGameObject("__EDITOR__Skybox");
-        _editorSkybox.AddComponent<Skybox>("./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png");
+        _editorCamera.AddComponent<Skybox>(
+            SkyboxSourceCubemap{ "./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png" });
 
         _editorLight = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
         auto& lightTransform = _editorLight.AddComponent<Transform>();

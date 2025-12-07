@@ -42,10 +42,10 @@ namespace Frost
 
         ShaderDesc vsDesc = { .type = ShaderType::Vertex,
                               .debugName = "VS_HUDText",
-                              .filePath = "../Frost/resources/shaders/VS_HUDText.hlsl" };
+                              .filePath = "../Frost/resources/shaders/HUD/VS_HUDText.hlsl" };
         ShaderDesc psDesc = { .type = ShaderType::Pixel,
                               .debugName = "PS_HUDText",
-                              .filePath = "../Frost/resources/shaders/PS_HUDText.hlsl" };
+                              .filePath = "../Frost/resources/shaders/HUD/PS_HUDText.hlsl" };
         _vertexShader = Shader::Create(vsDesc);
         _pixelShader = Shader::Create(psDesc);
 
@@ -109,12 +109,12 @@ namespace Frost
         }
     }
 
-    void HUDTextRenderingPipeline::Submit(const Component::HUDText& texte)
+    void HUDTextRenderingPipeline::Submit(const Component::UIElement& element, const Component::UIText& text)
     {
         if (!_enabled)
             return;
 
-        _RegenerateMesh(texte);
+        _RegenerateMesh(element, text);
     }
 
     void HUDTextRenderingPipeline::EndFrame()
@@ -180,32 +180,31 @@ namespace Frost
         }
     }
 
-    void HUDTextRenderingPipeline::_RegenerateMesh(const Component::HUDText& textComponent)
+    void HUDTextRenderingPipeline::_RegenerateMesh(const Component::UIElement& element, const Component::UIText& text)
     {
-        if (textComponent.text.empty() || !textComponent.font)
+        if (text.text.empty() || !text.font)
             return;
 
-        const auto& font = textComponent.font;
-
+        const auto& font = text.font;
         const float FONT_BAKE_SIZE = 32.0f;
+
         float screenWidth = (float)Application::GetWindow()->GetWidth();
         float screenHeight = (float)Application::GetWindow()->GetHeight();
 
-        float startX_pixels = textComponent.viewport.x * screenWidth;
-        float startY_pixels = textComponent.viewport.y * screenHeight;
+        float startX_pixels = element.viewport.x * screenWidth;
+        float startY_pixels = element.viewport.y * screenHeight;
+        float scale = text.fontSize;
 
         float currentX = startX_pixels;
-        float currentY = startY_pixels + FONT_BAKE_SIZE * textComponent.fontSize;
-
+        float currentY = startY_pixels + FONT_BAKE_SIZE * scale;
         float z = 0.0f;
-        float scale = textComponent.fontSize;
 
         DrawCall currentDrawCall;
         currentDrawCall.texture = font->GetAtlasTexture().get();
         currentDrawCall.filter = font->GetFilterMode();
         currentDrawCall.vertexOffset = (uint32_t)_accumulatedVertices.size();
 
-        for (char c : textComponent.text)
+        for (char c : text.text)
         {
             if (c == ' ')
             {
@@ -255,15 +254,15 @@ namespace Frost
         if (currentDrawCall.vertexCount > 0)
         {
 
-            currentDrawCall.params.viewport[0] = textComponent.viewport.x;
-            currentDrawCall.params.viewport[1] = textComponent.viewport.y;
+            currentDrawCall.params.viewport[0] = element.viewport.x;
+            currentDrawCall.params.viewport[1] = element.viewport.y;
             currentDrawCall.params.viewport[2] = screenWidth;
             currentDrawCall.params.viewport[3] = screenHeight;
 
-            currentDrawCall.params.color[0] = textComponent.color.x;
-            currentDrawCall.params.color[1] = textComponent.color.y;
-            currentDrawCall.params.color[2] = textComponent.color.z;
-            currentDrawCall.params.color[3] = textComponent.color.w;
+            currentDrawCall.params.color[0] = element.color.r;
+            currentDrawCall.params.color[1] = element.color.g;
+            currentDrawCall.params.color[2] = element.color.b;
+            currentDrawCall.params.color[3] = element.color.a;
 
             _drawCalls.push_back(std::move(currentDrawCall));
         }

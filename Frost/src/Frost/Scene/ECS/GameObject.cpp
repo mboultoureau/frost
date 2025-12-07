@@ -172,6 +172,28 @@ namespace Frost
         return children;
     }
 
+    void GameObject::DestroyAllChildren()
+    {
+        if (!_scene)
+        {
+            FT_ENGINE_WARN("GameObject::DestroyAllChildren called on an invalid object (no scene context).");
+            return;
+        }
+
+        auto childrenCopy = GetChildren();
+        for (auto& child : childrenCopy)
+        {
+            _scene->DestroyGameObject(child);
+        }
+
+        if (HasComponent<Component::Relationship>())
+        {
+            auto& rel = GetComponent<Component::Relationship>();
+            rel.firstChild = entt::null;
+            rel.childrenCount = 0;
+        }
+    }
+
     const bool GameObject::IsValid() const
     {
         return _scene->GetRegistry().valid(_entityHandle);

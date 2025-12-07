@@ -13,29 +13,33 @@
 #include <optional>
 #include <filesystem>
 
+#ifdef FT_PLATFORM_WINDOWS
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#else
+#error "Only Windows platform is supported at the moment."
+#endif
 
 using namespace std::chrono_literals;
 
 namespace Frost
 {
-    struct ApplicationEntryPoint
+    struct ApplicationSpecification
     {
-        HINSTANCE hInstance;
-        HINSTANCE hPrevInstance;
-        PWSTR pCmdLine;
-        int nCmdShow;
-
-        Window::WindowTitle title;
+        std::wstring title = L"Frost";
+        uint32_t windowWidth = 1280;
+        uint32_t windowHeight = 720;
+        std::filesystem::path iconPath;
+        std::filesystem::path consoleIconPath;
+        std::filesystem::path scriptPath;
     };
 
     class Application : NoCopy
     {
     public:
-        Application(const ApplicationEntryPoint& entryPoint);
+        Application(const ApplicationSpecification& specification);
         virtual ~Application();
 
         void ConfigurePhysics(const PhysicsConfig& config);
@@ -75,9 +79,9 @@ namespace Frost
         bool _OnWindowClose(WindowCloseEvent& e);
 
     private:
-        static inline std::filesystem::path _projectDirectory = ".";
+        ApplicationSpecification _specification;
 
-        HINSTANCE _hInstance;
+        static inline std::filesystem::path _projectDirectory = ".";
 
         LayerStack _layerStack;
         PhysicsConfig _physicsConfig;
@@ -95,5 +99,5 @@ namespace Frost
         friend class Device;
     };
 
-    Application* CreateApplication(ApplicationEntryPoint entryPoint);
+    Application* CreateApplication(ApplicationSpecification entryPoint);
 } // namespace Frost

@@ -1,62 +1,57 @@
 #pragma once
 
-#include "Frost/Asset/Texture.h"
-#include "Frost/Debugging/Assert.h"
-#include "Frost/Scene/ECS/Component.h"
-#include "Frost/Asset/AssetManager.h"
-
-#include <memory>
+#include <variant>
 #include <string>
-#include <vector>
+#include <array>
+#include <filesystem>
 
 namespace Frost::Component
 {
-    struct Skybox : public Component
+    struct SkyboxSourceCubemap
     {
-        /*
-         * Face order:
-         * - Right: +X
-         * - Left: -X
-         * - Top: +Y
-         * - Bottom: -Y
-         * - Front: +Z
-         * - Back: -Z
-         */
-        std::array<std::string, 6> faceFilePaths;
-        std::shared_ptr<Texture> cubemapTexture;
+        std::filesystem::path filepath;
+    };
 
-        Skybox(const std::array<std::string, 6>& faces) : faceFilePaths(faces), cubemapTexture(nullptr)
+    struct SkyboxSource6Files
+    {
+        // Order: +X (Right), -X (Left), +Y (Up), -Y (Down), +Z (Forward), -Z (Backward)
+        std::array<std::filesystem::path, 6> faceFilepaths;
+    };
+
+    using SkyboxConfig = std::variant<SkyboxSourceCubemap, SkyboxSource6Files>;
+
+    enum class SkyboxType
+    {
+        Cubemap = 0,
+        SixFiles = 1
+    };
+
+    struct Skybox
+    {
+        SkyboxConfig config = SkyboxSourceCubemap{};
+        float intensity = 1.0f;
+
+        Skybox() = default;
+        Skybox(const SkyboxConfig& cfg) : config(cfg) {}
+
+        SkyboxType GetType() const { return static_cast<SkyboxType>(config.index()); }
+
+        void SetType(SkyboxType type)
         {
-            // Check if all face file paths are provided
-            for (const auto& path : faceFilePaths)
+            if (GetType() == type)
             {
-                FT_ENGINE_ASSERT(!path.empty(), "All 6 face file paths must be provided for the cubemap.");
+                return;
             }
 
-            TextureConfig cubemapConfig;
-
-            cubemapConfig.path = faceFilePaths[0];
-            cubemapConfig.debugName = "Skybox";
-
-            cubemapConfig.layout = TextureLayout::CUBEMAP;
-            cubemapConfig.faceFilePaths = faceFilePaths;
-
-            cubemapTexture = AssetManager::LoadAsset(cubemapConfig.path, cubemapConfig);
-        }
-
-        Skybox(const std::string& unfoldedFacePath) : faceFilePaths({}), cubemapTexture(nullptr)
-        {
-            FT_ENGINE_ASSERT(!unfoldedFacePath.empty(), "The unfolded cubemap file path must be provided.");
-
-            TextureConfig cubemapConfig;
-
-            cubemapConfig.path = unfoldedFacePath;
-            cubemapConfig.debugName = "SkyboxUnfolded";
-
-            cubemapConfig.layout = TextureLayout::CUBEMAP;
-            cubemapConfig.isUnfoldedCubemap = true;
-
-            cubemapTexture = AssetManager::LoadAsset(cubemapConfig.path, cubemapConfig);
+            switch (type)
+            {
+                case SkyboxType::Cubemap:
+                    config = SkyboxSourceCubemap{};
+                    break;
+                case SkyboxType::SixFiles:
+                    config = SkyboxSource6Files{};
+                    break;
+            }
         }
     };
 } // namespace Frost::Component

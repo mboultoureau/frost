@@ -6,7 +6,6 @@
 #include "Frost/Renderer/Renderer.h"
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Scene/Components/RelativeView.h"
-#include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Renderer/Pipeline/JoltDebugRenderingPipeline.h"
 
@@ -29,9 +28,7 @@ namespace Frost
         }
 
         auto cameraView = scene.ViewActive<Camera, WorldTransform>();
-        auto virtualCameraView = scene.ViewActive<VirtualCamera, WorldTransform>();
         auto lightView = scene.ViewActive<Light, WorldTransform>();
-        auto skyboxView = scene.ViewActive<Skybox>();
         auto meshView = scene.ViewActive<StaticMesh, WorldTransform>();
 
         std::vector<std::pair<Component::Light, Component::WorldTransform>> allLights;
@@ -39,121 +36,98 @@ namespace Frost
         lightView.each([&](const Component::Light& light, const Component::WorldTransform& transform)
                        { allLights.emplace_back(light, transform); });
 
-        std::shared_ptr<Texture> skyboxTexture{};
-        skyboxView.each(
-            [&](const Skybox& skybox)
+        std::vector<RenderCameraData> renderTargetCameras;
+        std::vector<RenderCameraData> mainCameras;
+
+        cameraView.each(
+            [&](entt::entity entity, const Camera& camera, const WorldTransform& transform)
             {
-                if (!skyboxTexture)
+                if (camera.renderTargetConfig.has_value())
                 {
-                    skyboxTexture = skybox.cubemapTexture;
+                    renderTargetCameras.push_back({ entity, &camera, &transform });
+                }
+                else
+                {
+                    mainCameras.push_back({ entity, &camera, &transform });
                 }
             });
 
-        std::vector<RenderCameraData> virtualCameras;
-        std::vector<RenderCameraData> classicCameras;
-        virtualCameras.reserve(virtualCameraView.size_hint());
-        classicCameras.reserve(cameraView.size_hint());
-
-        cameraView.each([&](entt::entity entity, const Camera& camera, const WorldTransform& transform)
-                        { classicCameras.push_back({ entity, &camera, &transform }); });
-
-        virtualCameraView.each(
-            [&](entt::entity entity, const VirtualCamera& virtualCamera, const WorldTransform& transform)
-            { virtualCameras.push_back({ entity, &virtualCamera, &transform }); });
-
         auto sortCam = [](const RenderCameraData& a, const RenderCameraData& b)
         { return a.camera->priority < b.camera->priority; };
-        std::sort(virtualCameras.begin(), virtualCameras.end(), sortCam);
-        std::sort(classicCameras.begin(), classicCameras.end(), sortCam);
+        std::sort(renderTargetCameras.begin(), renderTargetCameras.end(), sortCam);
+        std::sort(mainCameras.begin(), mainCameras.end(), sortCam);
+
+        const float mainAspectRatio = (currentHeight > 0) ? (currentWidth / currentHeight) : 1.0f;
+        for (const auto& camData : renderTargetCameras)
+        {
+            const auto& config = camData.camera->renderTargetConfig.value();
+
+            std::shared_ptr<Texture> renderTarget;
+            auto it = _renderTargetCache.find(camData.entity);
+            if (it != _renderTargetCache.end() && it->second->GetWidth() == config.width &&
+                it->second->GetHeight() == config.height)
+            {
+                renderTarget = it->second;
+            }
+            else
+            {
+                TextureConfig texConfig = { .debugName = "CameraTarget",
+                                            .format = Format::RGBA8_UNORM,
+                                            .width = config.width,
+                                            .height = config.height,
+                                            .isRenderTarget = true,
+                                            .isShaderResource = true };
+                renderTarget = Texture::Create(texConfig);
+                _renderTargetCache[camData.entity] = renderTarget;
+            }
+
+            float aspectRatioToUse = config.useScreenSpaceAspectRatio ? mainAspectRatio : 0.0f;
+            _RenderSceneToTexture(scene, camData, deltaTime, allLights, renderTarget, aspectRatioToUse);
+        }
+
+        meshView.each(
+            [&](StaticMesh& staticMesh, const WorldTransform&)
+            {
+                if (staticMesh.GetModel())
+                {
+                    for (auto& material : staticMesh.GetModel()->GetMaterials())
+                    {
+                        if (material.cameraRef != entt::null)
+                        {
+                            auto it = _renderTargetCache.find(static_cast<entt::entity>(material.cameraRef));
+                            if (it != _renderTargetCache.end())
+                            {
+                                material.albedoTextures.clear();
+                                material.albedoTextures.push_back(it->second);
+                            }
+                        }
+                    }
+                }
+            });
 
         JoltRenderingPipeline* joltDebugRenderer = static_cast<JoltRenderingPipeline*>(Physics::GetDebugRenderer());
 
-        for (const auto& camData : classicCameras)
+        for (const auto& camData : mainCameras)
         {
             if (!Debug::RendererConfig::display && !Debug::PhysicsConfig::display)
             {
                 continue;
             }
 
-            std::unordered_map<entt::entity, std::shared_ptr<Texture>> virtualCameraTargets;
-            Viewport mainRenderViewport = { camData.camera->viewport.x * currentWidth,
-                                            camData.camera->viewport.y * currentHeight,
-                                            camData.camera->viewport.width * currentWidth,
-                                            camData.camera->viewport.height * currentHeight };
-            const float mainCameraAspectRatio =
-                (mainRenderViewport.height > 0) ? (mainRenderViewport.width / mainRenderViewport.height) : 1.0f;
-
-            for (const auto& virtualCamData : virtualCameras)
-            {
-                const VirtualCamera& virtualCam = static_cast<const VirtualCamera&>(*virtualCamData.camera);
-
-                float aspectRatioToUse = 0.0f;
-                if (virtualCam.useScreenSpaceAspectRatio)
-                {
-                    aspectRatioToUse = mainCameraAspectRatio;
-                }
-
-                WorldTransform originalVirtualCamTransform = *virtualCamData.transform;
-
-                if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
-                {
-                    const auto& relativeView = scene.GetRegistry().get<RelativeView>(virtualCamData.entity);
-                    if (scene.GetRegistry().valid(relativeView.referenceEntity))
-                    {
-                        const auto& referenceTransform =
-                            scene.GetRegistry().get<WorldTransform>(relativeView.referenceEntity);
-
-                        Math::Matrix4x4 matPlayer = Math::GetTransformMatrix(*camData.transform);
-                        Math::Matrix4x4 matRef = Math::GetTransformMatrix(referenceTransform);
-                        Math::Matrix4x4 matOut = Math::GetTransformMatrix(*virtualCamData.transform);
-
-                        Math::Matrix4x4 matRel = matPlayer * Math::Matrix4x4::Invert(matRef);
-                        Math::Matrix4x4 matNew = matRel * relativeView.modifier * matOut;
-
-                        // Modifier temporairement la transformation de la caméra virtuelle
-                        auto& camTransform = scene.GetRegistry().get<WorldTransform>(virtualCamData.entity);
-                        Math::DecomposeTransform(
-                            matNew, camTransform.position, camTransform.rotation, camTransform.scale);
-                    }
-                }
-
-                _RenderSceneToTexture(scene, virtualCamData, deltaTime, allLights, skyboxTexture, aspectRatioToUse);
-                virtualCameraTargets[virtualCamData.entity] = virtualCam.GetRenderTarget();
-
-                if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
-                {
-                    scene.GetRegistry().get<WorldTransform>(virtualCamData.entity) = originalVirtualCamTransform;
-                }
-            }
-
-            meshView.each(
-                [&](StaticMesh& staticMesh, const WorldTransform& /*unused*/)
-                {
-                    if (staticMesh.GetModel())
-                    {
-                        for (auto& material : staticMesh.GetModel()->GetMaterials())
-                        {
-                            if (material.cameraRef != entt::null)
-                            {
-                                auto it = virtualCameraTargets.find(static_cast<entt::entity>(material.cameraRef));
-                                if (it != virtualCameraTargets.end())
-                                {
-                                    material.albedoTextures.clear();
-                                    material.albedoTextures.push_back(it->second);
-                                }
-                            }
-                        }
-                    }
-                });
-
             const Camera& camera = *camData.camera;
             const WorldTransform& cameraTransform = *camData.transform;
 
             Texture* finalRenderTarget =
                 _externalRenderTarget ? _externalRenderTarget.get() : RendererAPI::GetRenderer()->GetBackBuffer();
+            Viewport mainRenderViewport = { camera.viewport.x * currentWidth,
+                                            camera.viewport.y * currentHeight,
+                                            camera.viewport.width * currentWidth,
+                                            camera.viewport.height * currentHeight };
             if (mainRenderViewport.width == 0 || mainRenderViewport.height == 0)
                 continue;
 
+            const float mainCameraAspectRatio =
+                (mainRenderViewport.height > 0) ? (mainRenderViewport.width / mainRenderViewport.height) : 1.0f;
             _deferredRendering.OnResize(static_cast<uint32_t>(mainRenderViewport.width),
                                         static_cast<uint32_t>(mainRenderViewport.height));
 
@@ -163,6 +137,13 @@ namespace Frost
 
             CommandList* commandList = _deferredRendering.GetCommandList();
             commandList->BeginRecording();
+
+            std::shared_ptr<Texture> skyboxTexture = nullptr;
+            if (scene.GetRegistry().all_of<Skybox>(camData.entity))
+            {
+                const auto& skyboxComponent = scene.GetRegistry().get<Skybox>(camData.entity);
+                skyboxTexture = _GetOrCreateSkyboxTexture(skyboxComponent);
+            }
 
             if (Debug::RendererConfig::display)
             {
@@ -320,12 +301,12 @@ namespace Frost
         const RenderCameraData& camData,
         float deltaTime,
         const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
-        const std::shared_ptr<Texture>& skybox,
+        const std::shared_ptr<Texture>& renderTarget,
         float overrideAspectRatio)
     {
-        const VirtualCamera& camera = static_cast<const VirtualCamera&>(*camData.camera);
+        const Camera& camera = *camData.camera;
         const WorldTransform& cameraTransform = *camData.transform;
-        Texture* renderTarget = camera.GetRenderTarget().get();
+
         if (!renderTarget)
             return;
 
@@ -364,19 +345,91 @@ namespace Frost
                 }
             });
 
-        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget);
+        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget.get());
 
-        if (skybox)
+        std::shared_ptr<Texture> skyboxTexture = nullptr;
+        if (scene.GetRegistry().all_of<Skybox>(camData.entity))
+        {
+            const auto& skyboxComponent = scene.GetRegistry().get<Skybox>(camData.entity);
+            skyboxTexture = _GetOrCreateSkyboxTexture(skyboxComponent);
+        }
+
+        if (skyboxTexture)
         {
             _skyboxPipeline.Render(commandList,
-                                   renderTarget,
+                                   renderTarget.get(),
                                    _deferredRendering.GetDepthStencilTexture(),
-                                   skybox.get(),
+                                   skyboxTexture.get(),
                                    camera,
                                    cameraTransform);
         }
 
         commandList->EndRecording();
         commandList->Execute();
+    }
+
+    std::shared_ptr<Texture> RendererSystem::_GetOrCreateSkyboxTexture(const Component::Skybox& skybox)
+    {
+        std::string cacheKey;
+        TextureConfig textureConfig;
+        textureConfig.layout = TextureLayout::CUBEMAP;
+        textureConfig.hasMipmaps = true;
+
+        bool isValid = false;
+
+        std::visit(
+            [&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, SkyboxSourceCubemap>)
+                {
+                    if (!arg.filepath.empty())
+                    {
+                        cacheKey = arg.filepath.generic_string();
+                        textureConfig.path = cacheKey;
+                        textureConfig.isUnfoldedCubemap = true;
+                        isValid = true;
+                    }
+                }
+                else if constexpr (std::is_same_v<T, SkyboxSource6Files>)
+                {
+                    std::stringstream ss;
+                    bool allFacesSet = true;
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        if (arg.faceFilepaths[i].empty())
+                        {
+                            allFacesSet = false;
+                            textureConfig.isUnfoldedCubemap = false;
+                            break;
+                        }
+                        ss << arg.faceFilepaths[i].generic_string() << ";";
+                        textureConfig.faceFilePaths[i] = arg.faceFilepaths[i].generic_string();
+                    }
+
+                    if (allFacesSet)
+                    {
+                        cacheKey = ss.str();
+                        isValid = true;
+                    }
+                }
+            },
+            skybox.config);
+
+        if (!isValid)
+        {
+            return nullptr;
+        }
+
+        auto it = _skyboxTextureCache.find(cacheKey);
+        if (it != _skyboxTextureCache.end())
+        {
+            return it->second;
+        }
+
+        FT_ENGINE_INFO("Creating new skybox texture from source: {0}", cacheKey);
+        std::shared_ptr<Texture> newTexture = Texture::Create(textureConfig);
+        _skyboxTextureCache[cacheKey] = newTexture;
+        return newTexture;
     }
 } // namespace Frost

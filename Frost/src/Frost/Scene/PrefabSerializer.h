@@ -12,7 +12,9 @@ namespace Frost
     {
     public:
         static void CreatePrefab(GameObject rootEntity, const std::filesystem::path& destinationPath);
-        static GameObject Instantiate(Scene* scene, const std::filesystem::path& path);
+        static GameObject Instantiate(Scene* scene,
+                                      const std::filesystem::path& path,
+                                      std::set<std::filesystem::path>* instantiationStack = nullptr);
 
     private:
         static void _SerializeToYaml(const std::vector<GameObject>& entities, const std::filesystem::path& path);

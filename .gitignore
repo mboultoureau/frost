@@ -456,3 +456,8 @@ imgui.ini
 
 # Editor
 editor_recents.yaml
+
+# Frost
+*.bin
+*.meta
+.frost/
