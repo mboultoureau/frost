@@ -79,7 +79,7 @@ private:
     bool _specialInput = false;
 
     float _screenShakeDuration = 0.2f;
-    float _screenShakeSpeedMultiplier = 0.025f;
+    float _screenShakeSpeedMultiplier = 0.015f;
     float _shakeLinearSpeedDiffThreshold = 0.5f;
     float _shakeAngularSpeedDiffThreshold = 0.6f;
     float _shakeSpeedAngleDiffThreshold = 0.6f;
