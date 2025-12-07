@@ -12,6 +12,7 @@
 #include "Frost/Utils/Math/Matrix.h"
 #include "Frost/Utils/Math/Transform.h"
 
+#include "Editor/EditorLayer.h"
 #include "Editor/Utils/FileDialogs.h"
 
 #include <imgui.h>
@@ -65,7 +66,22 @@ namespace Editor
                 std::filesystem::path assetPath = std::filesystem::path((const wchar_t*)payload->Data);
                 if (assetPath.extension() == ".prefab")
                 {
-                    Frost::PrefabSerializer::Instantiate(_sceneContext, assetPath);
+                    Vector3 spawnPos = _GetSpawnPositionFromMouse();
+                    auto newEntity = _sceneContext->CreateGameObject(assetPath.stem().string());
+
+                    newEntity.AddComponent<Transform>(spawnPos);
+                    newEntity.AddComponent<Prefab>(assetPath);
+
+                    if (_isPrefabView)
+                    {
+                        Frost::GameObject prefabRoot = _GetPrefabRoot();
+                        if (prefabRoot)
+                        {
+                            newEntity.SetParent(prefabRoot);
+                        }
+                    }
+
+                    _selection = newEntity;
                 }
                 else if (std::find(MESH_FILE_EXTENSIONS.begin(),
                                    MESH_FILE_EXTENSIONS.end(),
@@ -219,8 +235,16 @@ namespace Editor
         std::string name = meta ? meta->name : "Entity " + std::to_string((uint32_t)entityID);
         ImGuiTreeNodeFlags flags = ((_selection.GetHandle() == entityID) ? ImGuiTreeNodeFlags_Selected : 0) |
                                    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if ((relation && relation->childrenCount == 0) || isPrefabInstance)
+
+        if (isPrefabInstance)
+        {
             flags |= ImGuiTreeNodeFlags_Leaf;
+            flags &= ~ImGuiTreeNodeFlags_OpenOnArrow;
+        }
+        else if (relation && relation->childrenCount == 0)
+        {
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        }
 
         if (isDisabled)
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -278,7 +302,7 @@ namespace Editor
 
         if (opened)
         {
-            if (relation)
+            if (relation && !isPrefabInstance)
             {
                 entt::entity currentChild = relation->firstChild;
                 while (registry.valid(currentChild))
@@ -304,6 +328,48 @@ namespace Editor
         if (!_selection)
         {
             ImGui::TextDisabled("Select an entity to view properties.");
+            return;
+        }
+
+        if (_selection.HasComponent<Prefab>())
+        {
+            auto& prefabComponent = _selection.GetComponent<Prefab>();
+            std::string assetName = prefabComponent.assetPath.filename().string();
+
+            ImGui::Text("Prefab Instance");
+            ImGui::Separator();
+
+            Frost::UIContext ctx{ !_isReadOnly, ImGui::GetIO().DeltaTime };
+            Frost::ComponentUIRegistry::Draw<Meta>(_sceneContext, _selection, ctx);
+            Frost::ComponentUIRegistry::Draw<Transform>(_sceneContext, _selection, ctx);
+
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0.0f, 10.0f));
+
+            if (ImGui::Button("Open Prefab Asset"))
+            {
+                EditorLayer::Get().OpenPrefab(prefabComponent.assetPath);
+            }
+
+            if (ImGui::Button("Unpack Prefab"))
+            {
+                auto transform = _selection.GetComponent<Transform>();
+                auto parent = _selection.GetParent();
+                std::string name = _selection.GetComponent<Meta>().name;
+
+                _sceneContext->DestroyGameObject(_selection);
+                _selection = {};
+
+                auto newRoot = Frost::PrefabSerializer::Instantiate(_sceneContext, prefabComponent.assetPath);
+                if (newRoot)
+                {
+                    newRoot.SetParent(parent);
+                    newRoot.GetComponent<Transform>() = transform;
+                    newRoot.GetComponent<Meta>().name = name;
+                    _selection = newRoot;
+                }
+            }
+
             return;
         }
 

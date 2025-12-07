@@ -20,6 +20,8 @@ namespace Editor
         if (!_sceneContext)
             return;
 
+        Frost::GameObject prefabRoot = _GetPrefabRoot();
+
         Vector3 spawnPos = _GetSpawnPositionFromMouse();
         auto newEntity = _sceneContext->CreateGameObject(relativePath.stem().string());
 
@@ -28,14 +30,9 @@ namespace Editor
 
         if (_isPrefabView)
         {
-            auto view = _sceneContext->GetRegistry().view<Component::Relationship>();
-            for (auto entity : view)
+            if (prefabRoot)
             {
-                if (view.get<Component::Relationship>(entity).parent == entt::null)
-                {
-                    newEntity.SetParent(Frost::GameObject(entity, _sceneContext));
-                    break;
-                }
+                newEntity.SetParent(prefabRoot);
             }
         }
 

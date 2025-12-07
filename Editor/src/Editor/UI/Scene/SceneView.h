@@ -66,6 +66,8 @@ namespace Editor
         void _ReparentEntity(entt::entity entity, entt::entity newParent);
         void _FocusCameraOnEntity(Frost::Component::Transform& cameraTransform, const Frost::BoundingBox& bounds);
 
+        Frost::GameObject _GetPrefabRoot();
+
         // Input
         void _HandleMeshDrop(const std::filesystem::path& meshPath);
         Frost::Math::Vector3 _GetSpawnPositionFromMouse();

@@ -38,6 +38,42 @@ namespace Editor
         cameraTransform.LookAt(center);
     }
 
+    Frost::GameObject SceneView::_GetPrefabRoot()
+    {
+        if (!_isPrefabView || !_sceneContext)
+        {
+            return Frost::GameObject();
+        }
+
+        auto allEntitiesView = _sceneContext->GetRegistry().view<entt::entity>();
+        for (auto entityID : allEntitiesView)
+        {
+            Frost::GameObject go(entityID, _sceneContext);
+
+            if (auto* meta = go.TryGetComponent<Frost::Component::Meta>();
+                meta && meta->name.rfind("__EDITOR__", 0) == 0)
+            {
+                continue;
+            }
+
+            bool isRoot = true;
+            if (auto* relationship = go.TryGetComponent<Frost::Component::Relationship>())
+            {
+                if (relationship->parent != entt::null)
+                {
+                    isRoot = false;
+                }
+            }
+
+            if (isRoot)
+            {
+                return go;
+            }
+        }
+
+        return _sceneContext->CreateGameObject("Prefab Root");
+    }
+
     void SceneView::_ReparentEntity(entt::entity entityID, entt::entity newParentID)
     {
         Frost::GameObject obj(entityID, _sceneContext);
