@@ -21,7 +21,7 @@ Terrain::Terrain()
     MakeCube(
         Vector3{ -10.0f, 55.0f, 50 }, EulerAngles{ -45.0_deg, 0, 15_deg }, Vector3{ 1, 15, 50 }, textureMetal, true);
 
-    MakeCube(Vector3{ 9.0f, 70, -47 }, EulerAngles{ 0_deg, 0, 0_deg }, Vector3{ 15, 1, 50 }, textureMetal, true);
+    MakeCube(Vector3{ 9.0f, 70, -47 }, EulerAngles{ 0_deg, 0, 0_deg }, Vector3{ 15, 1, 50 }, textureGrass, true);
 }
 
 void
@@ -114,4 +114,11 @@ Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string textu
         a.halfExtent = Vector3{ scale.x / 2, scale.y / 2, scale.z / 2 };
         auto& rb = boost.AddComponent<RigidBody>(a, ObjectLayers::NON_MOVING);
     }
+
+    auto _light = boost.GetScene()->CreateGameObject("Light", boost);
+    Light lightComponent;
+    lightComponent.color = { .0f, .75f, 1.0f };
+    lightComponent.intensity = 5.0f;
+    lightComponent.config = Frost::Component::LightPoint{ .radius = 15.0f };
+    _light.AddComponent<Light>(lightComponent);
 }
