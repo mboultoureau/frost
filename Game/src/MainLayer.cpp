@@ -43,7 +43,7 @@ MainLayer::OnAttach()
 
     _sun = std::make_unique<Sun>();
 
-    _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 }, _gamestate);
+    _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -360, 69, -85 }, _gamestate);
     _checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
     _checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
     _checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });

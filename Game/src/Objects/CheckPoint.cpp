@@ -4,10 +4,12 @@
 #include "Frost/Scene/Components/Script.h"
 
 #include "Frost/Scene/Components/RigidBody.h"
+#include "Frost/Scene/Components/Transform.h"
+#include "Frost/Scene/Components/WorldTransform.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
-
+#include "Billboard.h"
 #include <DirectXMath.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <algorithm>
@@ -17,7 +19,11 @@ using namespace Frost;
 using namespace Frost::Math;
 using namespace Frost::Component;
 
-const float CHECKPOINT_SIZE = 5.0f;
+// CONSTANTES MISES  JOUR
+const float COLLISION_THICKNESS = 0.5f;
+const float BILLBOARD_SIZE = 20.0f;
+const float COLLISION_SCALE = 1.5f;
+const std::string BILLBOARD_TEXTURE_PATH = "resources/textures/goal-flag.png";
 
 class CheckPointScript : public Script
 {
@@ -48,18 +54,23 @@ public:
     }
 };
 
+GameObject CheckPoint::lastCheckPoint{ GameObject::InvalidId };
+
 CheckPoint::CheckPoint(Vector3 startpos)
 {
     Scene& scene = Game::GetScene();
 
     _checkpoint = scene.CreateGameObject("CheckPoint");
-    _checkpoint.AddComponent<Transform>(startpos, Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, Vector3{ 5.0f, 5.0f, 5.0f });
+
+    _checkpoint.AddComponent<Transform>(startpos, Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
     _checkpoint.AddComponent<WorldTransform>();
 }
 
 void
 CheckPoint::FixedUpdate(float deltaTime)
 {
+    ProcessInput(deltaTime);
+    UpdatePhysics(deltaTime);
 }
 
 void
@@ -103,8 +114,6 @@ CheckPoint::UpdatePhysics(float deltaTime)
 void
 CheckPoint::ReinitializeChildrenPhysics()
 {
-    Scene& scene = Game::GetScene();
-
     for (std::shared_ptr<CheckPoint> child : _nextCheckPoints)
     {
         child->ActivatePhysics();
@@ -117,16 +126,16 @@ CheckPoint::DeleteChildrenPhysics()
     using namespace JPH;
     Scene& scene = Game::GetScene();
 
-    // Recuperation de l'interface Jolt
     JPH::BodyInterface* bodyInter = Physics::Get().body_interface;
 
     for (std::shared_ptr<CheckPoint> child : _nextCheckPoints)
     {
         GameObject childId = child->_checkpoint;
 
-        if (!childId.HasComponent<Transform>())
+        if (child->_flagBillboard)
         {
-            continue;
+            child->_flagBillboard->DestroyObject();
+            child->_flagBillboard.reset();
         }
 
         if (childId.HasComponent<RigidBody>())
@@ -134,10 +143,12 @@ CheckPoint::DeleteChildrenPhysics()
             RigidBody& bodyComponent = childId.GetComponent<RigidBody>();
             JPH::BodyID bodyId = bodyComponent.runtimeBodyID;
 
+            if (bodyId.IsInvalid() == false && bodyInter->IsAdded(bodyId))
+            {
+                bodyInter->RemoveBody(bodyId);
+            }
+
             childId.RemoveComponent<RigidBody>();
-
-            childId.RemoveComponent<StaticMesh>();
-
             childId.RemoveComponent<CheckPointScript>();
         }
     }
@@ -150,22 +161,47 @@ CheckPoint::DestroyGameObject()
     Scene& scene = Game::GetScene();
     GameObject id = _checkpoint;
 
+    if (_flagBillboard)
+    {
+        _flagBillboard->DestroyObject();
+        _flagBillboard.reset();
+    }
+
+    if (id.HasComponent<RigidBody>())
+    {
+        RigidBody& bodyComponent = id.GetComponent<RigidBody>();
+        JPH::BodyInterface* bodyInter = Physics::Get().body_interface;
+        JPH::BodyID bodyId = bodyComponent.runtimeBodyID;
+
+        if (bodyId.IsInvalid() == false)
+        {
+            if (bodyInter->IsAdded(bodyId))
+            {
+                bodyInter->RemoveBody(bodyId);
+            }
+            bodyInter->DestroyBody(bodyId);
+        }
+    }
+
     scene.DestroyGameObject(id);
 }
+
 void
 CheckPoint::ActivatePhysics()
 {
     Scene& scene = Game::GetScene();
-    if (!_checkpoint.HasComponent<StaticMesh>())
+
+    if (!_flagBillboard && _checkpoint.HasComponent<Transform>())
     {
-        _checkpoint.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/moto.glb" });
+        auto& transform = _checkpoint.GetComponent<Transform>();
+        _flagBillboard = std::make_unique<Billboard>(transform.position, BILLBOARD_SIZE, BILLBOARD_TEXTURE_PATH);
     }
+
     if (_checkpoint.HasComponent<RigidBody>())
     {
         return;
     }
+
     InitializePhysics();
     _checkpoint.AddScript<CheckPointScript>(this);
 }
-
-GameObject CheckPoint::lastCheckPoint{ GameObject::InvalidId };

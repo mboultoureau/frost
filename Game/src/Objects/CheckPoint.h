@@ -4,7 +4,7 @@
 
 #include <Jolt/Core/Core.h>
 #include <Jolt/Physics/Body/Body.h>
-
+#include "Billboard.h"
 using namespace Frost;
 
 class CheckPoint
@@ -30,7 +30,7 @@ private:
 
 protected:
     GameObject _checkpoint;
-
+    std::unique_ptr<Billboard> _flagBillboard;
     virtual void InitializePhysics();
     void ProcessInput(float deltaTime);
     void UpdatePhysics(float deltaTime);
