@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 
 :: Setup colors
 for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
-    set "ESC=%%b"
+  set "ESC=%%b"
 )
 
 set "RED=%ESC%[91m"
@@ -13,34 +13,21 @@ set "RESET=%ESC%[0m"
 set "BOLD=%ESC%[1m"
 
 :: Setup
-echo %BOLD%Initializing Project Environment (Clang step removed)...%RESET%
+echo %BOLD%Initializing Project Environment...%RESET%
 echo.
 
 :: -----------------------------------------------------------
-echo [STEP 1/3] Initializing Git Submodules
+echo [STEP 1/4] Initializing Git Submodules
 :: -----------------------------------------------------------
 
-:: Initialisation d'un depot Git temporaire si non trouve, pour permettre le telechargement des dependances.
-if not exist .git (
-    echo %YELLOW%[NOTICE] .git folder not found. Initializing a temporary Git repository...%RESET%
-    
-    git init >nul 2>&1
-    
-    if errorlevel 1 (
-        echo %RED%[ERROR] Git initialisation failed. Ensure Git is installed and in your PATH.%RESET%
-        goto :end
-    )
-    
-    if not exist .gitmodules (
-        echo %RED%[FATAL ERROR] Cannot find .gitmodules file!%RESET%
-        echo The script needs the .gitmodules file to know which dependencies to download.
-        goto :end
-    )
-    
-    echo %GREEN%Temporary Git repository created.%RESET%
-)
-
-git submodule update --init --recursive --depth 1
+git init
+git submodule add https://github.com/assimp/assimp.git .\Frost\vendor\assimp
+git submodule add https://github.com/jrouwe/JoltPhysics.git .\Frost\vendor\JoltPhysics
+git submodule add  -b docking https://github.com/ocornut/imgui.git .\Frost\vendor\imgui
+git submodule add https://github.com/gabime/spdlog.git .\Frost\vendor\spdlog
+git submodule add https://github.com/nothings/stb .\Frost\vendor\stb
+git submodule add https://github.com/skypjack/entt.git .\Frost\vendor\entt
+git submodule add https://github.com/jbeder/yaml-cpp.git .\Frost\vendor\yaml-cpp
 
 if errorlevel 1 (
     echo.
@@ -53,7 +40,7 @@ echo Submodules updated successfully.
 echo.
 
 :: -----------------------------------------------------------
-echo [STEP 2/3] Configuring Build System (CMake)
+echo [STEP 2/4] Configuring Build System (CMake)
 :: -----------------------------------------------------------
 
 cmake .
@@ -67,7 +54,40 @@ if errorlevel 1 (
 
 echo.
 :: -----------------------------------------------------------
-echo [STEP 3/3] Installing Git Hooks
+echo [STEP 3/4] Verifying Clang-Format Installation
+:: -----------------------------------------------------------
+
+where clang-format >nul 2>nul
+
+if %errorlevel% neq 0 (
+    echo.
+    echo %YELLOW%[WARNING] 'clang-format' was NOT found in your PATH!%RESET%
+    echo %YELLOW%Automatic code formatting will not work.%RESET%
+    echo.
+    echo ========================================================
+    echo HOW TO FIX:
+    echo 1. Via Visual Studio (If installed with C++^):
+    echo    You likely already have it. Add this path to your Environment Variables:
+    echo    "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\x64\bin"
+    echo    (Check your specific VS version/edition path^).
+    echo.
+    echo 2. Via Winget (PowerShell^):
+    echo    Run: winget install LLVM.LLVM
+    echo.
+    echo 3. Manual Download:
+    echo    https://github.com/llvm/llvm-project/releases
+    echo    (Select "Add LLVM to the system PATH" during install^).
+    echo.
+    echo NOTE: You must restart your terminal after changes.
+    echo ========================================================
+    echo.
+) else (
+    echo clang-format is installed and ready.
+)
+
+echo.
+:: -----------------------------------------------------------
+echo [STEP 4/4] Installing Git Hooks
 :: -----------------------------------------------------------
 
 git config core.hooksPath scripts
@@ -78,7 +98,7 @@ if errorlevel 1 (
     echo Ensure the 'scripts' directory exists at the project root.
 ) else (
     echo %GREEN%Git hooks configured successfully.%RESET%
-    echo Pre-commit hook is now active.
+    echo Pre-commit hook is now active (auto-formatting enabled^).
 )
 
 echo.
