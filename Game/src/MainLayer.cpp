@@ -130,17 +130,29 @@ MainLayer::OnFixedUpdate(float deltaTime)
         {
             _gamestate.StartGame();
             _player = std::make_unique<Player>();
-            _portal1 = std::make_shared<Portal>(Vector3{ -365, 68, -32 },
-                                                EulerAngles{ 0_deg, 0_deg, 0_deg },
+            _portal1 = std::make_shared<Portal>(Vector3{ -18, 60, -110 },
+                                                EulerAngles{ 0_deg, 180_deg, 0_deg },
                                                 Vector3{ 3.0f, 3.0f, 3.0f },
                                                 _player.get());
-            _portal2 = std::make_shared<Portal>(Vector3{ -130, 68, 180 },
-                                                EulerAngles{ 0_deg, 90_deg, 0_deg },
+            _portal2 = std::make_shared<Portal>(Vector3{ -22, 51, 87 },
+                                                EulerAngles{ 0_deg, 135_deg, 0_deg },
                                                 Vector3{ 3.0f, 3.0f, 3.0f },
                                                 _player.get());
 
             _portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
             _portal2->SetupPortal(PortalType::Exit);
+
+            _portal3 = std::make_shared<Portal>(Vector3{ -23, 50, 29 },
+                                                EulerAngles{ 0_deg, 180_deg, 0_deg },
+                                                Vector3{ 3.0f, 3.0f, 3.0f },
+                                                _player.get());
+            _portal4 = std::make_shared<Portal>(Vector3{ -23, 60, 23 },
+                                                EulerAngles{ 0_deg, 180_deg, 0_deg },
+                                                Vector3{ 3.0f, 3.0f, 3.0f },
+                                                _player.get());
+
+            _portal3->SetupPortal(PortalType::Entry, _portal4->_portal);
+            _portal4->SetupPortal(PortalType::Exit);
 
             _startMenu->OnDetach();
             _startMenu.reset();

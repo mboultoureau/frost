@@ -27,7 +27,7 @@ MainLayer::OnAttach()
     // auto _rain = std::make_unique<BallRain>();
     //_hudLogo = std::make_unique<HUD_Logo>();
     _sky = std::make_unique<Sky>();
-    _portal1 = std::make_unique<Portal>(Vector3{ 6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 220.0_deg, 0.0_deg });
+    _portal1 = std::make_unique<Portal>(Vector3{ -15, 51, 90 }, EulerAngles{ 0.0_deg, 220.0_deg, 0.0_deg });
     _portal2 = std::make_unique<Portal>(Vector3{ -6.0f, 0.0f, 0.0f }, EulerAngles{ 0.0_deg, 150.0_deg, 0.0_deg });
 
     _portal1->LinkTo(_portal2.get());
