@@ -32,6 +32,13 @@ Bike::Bike(Player* player, RendererParameters params) : Vehicle(player, params)
     // Create motorcycle controller
     // Set playerbody to made body
     RenderMesh(false);
+
+    _light = _gameObjectRenderer.GetScene()->CreateGameObject("Light", _gameObjectRenderer);
+    Light lightComponent;
+    lightComponent.color = { 1.0f, 1.0f, 1.0f };
+    lightComponent.intensity = 5.0f;
+    lightComponent.config = Frost::Component::LightSpot{ .range = 50.0f };
+    _light.AddComponent<Light>(lightComponent);
 }
 
 JPH::BodyID
@@ -40,6 +47,8 @@ Bike::Appear()
     using namespace JPH;
 
     RenderMesh(true);
+
+    _light.SetActive(true);
 
     // ----- Transform -----
     auto tr = _scene->GetComponent<Transform>(_player->GetPlayerID());

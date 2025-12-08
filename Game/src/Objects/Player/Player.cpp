@@ -21,6 +21,7 @@
 #include "../CheckPoint.h"
 #include "PlayerScript.h"
 #include "../HUD/Speedometer.h"
+#include "../HUD/RaceTimer.h"
 #include "../HUD/SelectedImageManager.h"
 #include "Vehicles/Bike.h"
 #include "Vehicles/Boat.h"
@@ -59,6 +60,7 @@ Player::Player()
 
     // Create Player Speedometer HUD
     _playerId.AddScript<SpeedometerScript>(*this);
+    _playerId.AddScript<RaceTimerScript>(*this);
 
     // Create playerCameras Game Objects -------------
     _playerCamera = new PlayerCamera(this);

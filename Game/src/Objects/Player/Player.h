@@ -49,6 +49,7 @@ public:
     PlayerCamera* GetCamera() { return _playerCamera; }
 
     bool forceSpecificCameraPos = false;
+    bool allowInput = false;
 
     static Player* GetClosestPlayer(Vector3 worldPos);
     static void ResetPlayers();

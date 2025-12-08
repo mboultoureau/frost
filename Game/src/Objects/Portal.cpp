@@ -42,6 +42,35 @@ PortalScript::OnInitialize()
 }
 
 void
+PortalScript::OnUpdate(float deltaTime)
+{
+    if (!_inChromaticEffect)
+        return;
+
+    auto total = std::chrono::duration<float>(_chromaticAberrationDuration).count();
+    auto elapsed =
+        std::chrono::duration<float>(_chromaticAberrationTimer.GetDurationAs<std::chrono::milliseconds>()).count();
+
+    float chromaticStrength = (total - elapsed) / total;
+
+    if (chromaticStrength < 0)
+    {
+        _inChromaticEffect = true;
+        return;
+    }
+
+    chromaticStrength *= _chromaticAberrationFactor;
+
+    auto& scene = Game::GetScene();
+    auto mainLayer = Game::GetMainLayer();
+    auto player = mainLayer->GetPlayer();
+
+    auto playerCamera = player->GetCamera();
+
+    playerCamera->SetChromaticAberrationStrength(chromaticStrength);
+}
+
+void
 PortalScript::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 {
     if (!linkedPortalId.has_value())
@@ -129,6 +158,9 @@ PortalScript::WarpPlayer()
     player->WarpCamera(Math::vector_cast<Vector3>(offsetWorld),
                        { newCamRot.GetX(), newCamRot.GetY(), newCamRot.GetZ(), newCamRot.GetW() },
                        Math::vector_cast<Vector3>(newCamVel));
+
+    _chromaticAberrationTimer.Start();
+    _inChromaticEffect = true;
 }
 
 Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player) :

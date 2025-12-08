@@ -6,6 +6,8 @@ using namespace Frost;
 void
 PlayerScript::OnPreFixedUpdate(float deltaTime)
 {
+    if (!player->allowInput)
+        return;
     auto vehiclePair = player->GetCurrentVehicle();
     vehicle = vehiclePair.second;
     type = vehiclePair.first;

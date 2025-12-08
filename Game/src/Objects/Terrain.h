@@ -3,6 +3,7 @@
 #include "Frost.h"
 
 using namespace Frost;
+using namespace Frost::Math;
 
 class Terrain
 {

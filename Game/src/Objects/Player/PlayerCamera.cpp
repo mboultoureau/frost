@@ -299,7 +299,7 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
     camComponent.postEffects.push_back(std::make_shared<FogEffect>());
     camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
     camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
-    // camComponent.postEffects.push_back(std::make_shared<ChromaticAberrationEffect>());
+    camComponent.postEffects.push_back(std::make_shared<ChromaticAberrationEffect>());
 
     camComponent.backgroundColor.r = 47.0f / 255.0f;
     camComponent.backgroundColor.g = 116.0f / 255.0f;
@@ -318,6 +318,11 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
 
     screenShake = camComponent.GetEffect<ScreenShakeEffect>().get();
     radialBlur = camComponent.GetEffect<RadialBlurEffect>().get();
+    chromaticAberration = camComponent.GetEffect<ChromaticAberrationEffect>().get();
+    chromaticAberration->SetCenterRed({ 0.292, 0.33 });
+    chromaticAberration->SetCenterGreen({ 0.708, 0.307 });
+    chromaticAberration->SetCenterBlue({ 0.51, 0.818 });
+    chromaticAberration->SetStrength(0.0f);
 }
 
 void
@@ -332,4 +337,11 @@ PlayerCamera::SetRadialBlurStrength(float strength)
 {
     if (radialBlur != nullptr && std::abs(strength) < _maxRadialBlurStrength)
         radialBlur->SetStrength(strength);
+}
+
+void
+PlayerCamera::SetChromaticAberrationStrength(float strength)
+{
+    if (chromaticAberration != nullptr)
+        chromaticAberration->SetStrength(strength);
 }

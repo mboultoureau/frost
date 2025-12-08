@@ -29,6 +29,31 @@ using namespace Frost::Math;
 Plane::Plane(Player* player, RendererParameters params) : Vehicle(player, params), _currentSpeed(_baseForwardSpeed)
 {
     RenderMesh(false);
+
+    // Left light
+    _leftLight = _gameObjectRenderer.GetScene()->CreateGameObject("Left Light", _gameObjectRenderer);
+    _leftLight.AddComponent<Transform>(Vector3{ 250.0f, 0.0, 0.f });
+
+    Light lightComponent1;
+    lightComponent1.color = { 0.57f, 0.98f, 0.0f };
+    lightComponent1.intensity = 3.5f;
+    lightComponent1.config =
+        Frost::Component::LightSpot{ .range = 100.0f, .innerConeAngle = 15.0_deg, .outerConeAngle = 20.0_deg };
+    _leftLight.AddComponent<Light>(lightComponent1);
+
+    // Right light
+    _rightLight = _gameObjectRenderer.GetScene()->CreateGameObject("Right Light", _gameObjectRenderer);
+    _rightLight.AddComponent<Transform>(Vector3{ -250.0f, 0.0f, 0.0f });
+
+    Light lightComponent2;
+    lightComponent2.color = { 0.98, 0.0f, 0.0f };
+    lightComponent2.intensity = 3.5f;
+    lightComponent2.config =
+        Frost::Component::LightSpot{ .range = 100.0f, .innerConeAngle = 15.0_deg, .outerConeAngle = 20.0_deg };
+    _rightLight.AddComponent<Light>(lightComponent2);
+
+    _leftLight.SetActive(false);
+    _rightLight.SetActive(false);
 }
 
 void
@@ -195,6 +220,10 @@ Plane::Appear()
 {
     using namespace JPH;
     RenderMesh(true);
+
+    _leftLight.SetActive(true);
+    _rightLight.SetActive(true);
+
     _player->SetIsInWater(false);
     auto wTransform = _scene->GetComponent<Transform>(_player->GetPlayerID());
     auto joltPos = Math::vector_cast<Vec3>(wTransform->position);
