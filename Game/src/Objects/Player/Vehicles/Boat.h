@@ -72,6 +72,8 @@ private:
     float _upDownInput;
     bool _handBrakeInput = false;
 
+    GameObject _light;
+
     static constexpr float cBoatMass = 1000.0f;
     static constexpr float cBoatFriction = 30.0f;
 

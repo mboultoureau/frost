@@ -22,5 +22,5 @@ Sun::Sun()
     // Light component
     auto& light = sun.AddComponent<Light>(LightDirectional{});
     light.color = Math::Color3{ 1.0f, 1.0f, 1.0f };
-    light.intensity = 2.0f;
+    light.intensity = 0.5f;
 }
