@@ -40,7 +40,7 @@ Player::Player()
     // Create Player Game Object -------------
     _playerId = _scene->CreateGameObject("Player");
     _playerId.AddComponent<Transform>(
-        Vector3{ -50, 65.0, -35.0 }, EulerAngles{ 0.0f, 200.0_deg, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
+        Vector3{ -14.0f, 70.0f, 85.0f }, EulerAngles{ 0.0f, 180.0_deg, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
     _playerId.AddComponent<WorldTransform>();
 
     // Create TransitionModelRenderer -----------

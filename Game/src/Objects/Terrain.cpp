@@ -18,8 +18,10 @@ Terrain::Terrain()
     const std::string textureMetal = "./resources/textures/metal.png";
 
     MakeTerrain(Frost::Math::Vector3(), filepathHeightmapBot, textureDirt);
-    // MakeCube(Vector3{ -14.0f, 55.0f, 88.0f }, EulerAngles rot, Vector3 scale, std::string texturePath, bool
-    // isPhysics);
+    MakeCube(
+        Vector3{ -10.0f, 55.0f, 50 }, EulerAngles{ -45.0_deg, 0, 15_deg }, Vector3{ 1, 15, 50 }, textureMetal, true);
+
+    MakeCube(Vector3{ 9.0f, 70, -47 }, EulerAngles{ 0_deg, 0, 0_deg }, Vector3{ 15, 1, 50 }, textureMetal, true);
 }
 
 void
@@ -30,8 +32,8 @@ Terrain::MakeTerrain(Frost::Math::Vector3 pos, std::string filepathHeightmap, st
 
     MeshSourceHeightMap terrainConfig;
     terrainConfig.texturePath = filepathHeightmap;
-    terrainConfig.width = 500.0f;
-    terrainConfig.depth = 500.0f;
+    terrainConfig.width = 500.f;
+    terrainConfig.depth = 500.f;
     terrainConfig.minHeight = 0.0f;
     terrainConfig.maxHeight = 125.0f;
     terrainConfig.segmentsWidth = 512;
@@ -108,7 +110,9 @@ Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string textu
     // (in this sample we could have assumed everything is in the water)
     if (isPhysics)
     {
-        auto& rb = boost.AddComponent<RigidBody>(ShapeBox{}, ObjectLayers::NON_MOVING);
+        auto a = ShapeBox{};
+        a.halfExtent = Vector3{ scale.x / 2, scale.y / 2, scale.z / 2 };
+        auto& rb = boost.AddComponent<RigidBody>(a, ObjectLayers::NON_MOVING);
         rb.isSensor = true;
     }
 }

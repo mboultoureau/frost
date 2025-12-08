@@ -53,6 +53,8 @@ private:
     std::unique_ptr<Player> _player;
     std::shared_ptr<Portal> _portal1;
     std::shared_ptr<Portal> _portal2;
+    std::shared_ptr<Portal> _portal3;
+    std::shared_ptr<Portal> _portal4;
     std::shared_ptr<CheckPoint> _checkPoint1;
     std::shared_ptr<CheckPoint> _checkPoint2;
     std::shared_ptr<CheckPoint> _checkPoint3;
