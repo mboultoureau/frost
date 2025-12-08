@@ -20,6 +20,7 @@ echo.
 echo [STEP 1/4] Initializing Git Submodules
 :: -----------------------------------------------------------
 
+RMDIR /S /Q .\Frost\vendor\
 git init
 git submodule add https://github.com/assimp/assimp.git .\Frost\vendor\assimp
 git submodule add https://github.com/jrouwe/JoltPhysics.git .\Frost\vendor\JoltPhysics
