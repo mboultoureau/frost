@@ -22,6 +22,7 @@ public:
     PortalScript(GameObject playerId, PortalType type, GameObject& linkedId);
     PortalScript(GameObject playerId, PortalType type);
     void OnInitialize() override;
+    void OnUpdate(float deltaTime) override;
     void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
     void WarpPlayer();
 
@@ -30,6 +31,11 @@ public:
     PortalType portalType;
 
     std::optional<GameObject> linkedPortalId;
+
+    const std::chrono::milliseconds _chromaticAberrationDuration = 2000ms;
+    const float _chromaticAberrationFactor = 0.1f;
+    Timer _chromaticAberrationTimer;
+    bool _inChromaticEffect = false;
 };
 
 class Portal
