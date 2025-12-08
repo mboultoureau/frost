@@ -10,10 +10,35 @@ using namespace Frost::Component;
 
 Terrain::Terrain()
 {
+
+    const std::string filepathHeightmapBot = "./resources/textures/MapDesespoir-min.png";
+
+    const std::string textureGrass = "./resources/textures/grass.png";
+    const std::string textureDirt = "./resources/textures/dirt.jpg";
+    const std::string textureMetal = "./resources/textures/metal.png";
+
+    MakeTerrain(Frost::Math::Vector3(), filepathHeightmapBot, textureDirt);
+    // MakeTerrain(Frost::Math::Vector3(), filepathHeightmapR, textureDirt);
+
+    /*
+    auto material2 = Material();
+    material2.diffuseColor = DirectX::XMFLOAT3{ 0.5, 0.5, 1 };
+    material2.roughnessValue = 0;
+    material2.emissiveColor = DirectX::XMFLOAT3{ 0.1, 0.1, 0.5 };
+    material2.uvTiling = { 10,10 };
+    material2.filterMode = Material::FilterMode::LINEAR;
+    material2.diffuseTextures.push_back(TextureLibrary::Get().GetTexture("./resources/textures/dirt.jpg",
+    TextureType::DIFFUSE)); _scene.AddComponent<Frost::ModelRenderer>(ground,
+    IsHeightMapRenderer(), filepath, material2, TextureChannel::G, 50,
+    heightScale);
+    */
+}
+
+void
+Terrain::MakeTerrain(Frost::Math::Vector3 pos, std::string filepathHeightmap, std::string texturePath)
+{
     using namespace JPH;
     Scene& _scene = Game::GetScene();
-
-    const std::string filepathHeightmap = "./resources/textures/image.png";
 
     MeshSourceHeightMap terrainConfig;
     terrainConfig.texturePath = filepathHeightmap;
@@ -30,7 +55,7 @@ Terrain::Terrain()
 
     TextureConfig rainbowConfig;
     rainbowConfig.textureType = TextureType::DIFFUSE;
-    rainbowConfig.path = "./resources/textures/rainbow.jpg";
+    rainbowConfig.path = texturePath;
 
     std::shared_ptr<Texture> heightmapTexture = Texture::Create(heightmapTexConfig);
     std::shared_ptr<Texture> rainbowTexture = Texture::Create(rainbowConfig);
@@ -38,8 +63,8 @@ Terrain::Terrain()
     _terrain = _scene.CreateGameObject("Terrain");
 
     auto& transform = _terrain.AddComponent<Transform>(
-        Vector3{ -180.0f, 0.0f, 0.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
-    _terrain.AddComponent<WorldTransform>(Vector3{ 0.0f, 0.0f, 0.0f });
+        pos, Frost::Math::EulerAngles{ 0.0f, 0.0f, 0.0f }, Frost::Math::Vector3{ 1.0f, 1.0f, 1.0f });
+    _terrain.AddComponent<WorldTransform>(Frost::Math::Vector3{ 0.0f, 0.0f, 0.0f });
 
     Material material;
     material.albedoTextures.push_back(rainbowTexture);
@@ -68,23 +93,31 @@ Terrain::Terrain()
     {
         FT_ENGINE_ERROR("Terrain RigidBody creation failed due to null shape.");
     }
+}
 
-    // Ground
-    auto ground = _scene.CreateGameObject("Ground");
-    ground.AddComponent<Transform>(
-        Vector3{ 0.0f, -10.0f, -150.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 1000.0f, 100.0f, 1000.0f });
-    ground.AddComponent<WorldTransform>(Vector3{ 0.0f, 0.0f, 0.0f });
+void
+Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string texturePath)
+{
+    using namespace JPH;
 
-    /*
-    auto material2 = Material();
-    material2.diffuseColor = DirectX::XMFLOAT3{ 0.5, 0.5, 1 };
-    material2.roughnessValue = 0;
-    material2.emissiveColor = DirectX::XMFLOAT3{ 0.1, 0.1, 0.5 };
-    material2.uvTiling = { 10,10 };
-    material2.filterMode = Material::FilterMode::LINEAR;
-    material2.diffuseTextures.push_back(TextureLibrary::Get().GetTexture("./resources/textures/dirt.jpg",
-    TextureType::DIFFUSE)); _scene.AddComponent<Frost::ModelRenderer>(ground,
-    IsHeightMapRenderer(), filepath, material2, TextureChannel::G, 50,
-    heightScale);
-    */
+    Scene& scene = Game::GetScene();
+
+    auto boost = scene.CreateGameObject("cube");
+    auto cubeModel = MeshSourceCube{ 1.0f };
+    boost.AddComponent<Transform>(pos, rot, scale);
+
+    Material waveMat;
+    waveMat.name = "TessellatedWaves";
+
+    TextureConfig texture;
+    texture.path = texturePath;
+    waveMat.albedoTextures.push_back(std::make_shared<TextureDX11>(texture));
+    waveMat.backFaceCulling = false;
+    auto mesh = boost.AddComponent<StaticMesh>(cubeModel);
+    mesh.GetModel()->GetMaterials()[0] = std::move(waveMat);
+
+    // Create water sensor. We use this to detect which bodies entered the water
+    // (in this sample we could have assumed everything is in the water)
+    auto& rb = boost.AddComponent<RigidBody>(ShapeBox{}, ObjectLayers::NON_MOVING);
+    rb.isSensor = true;
 }
