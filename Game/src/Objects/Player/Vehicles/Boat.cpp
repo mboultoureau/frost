@@ -33,6 +33,17 @@ Boat::Boat(Player* player, RendererParameters params) : Vehicle(player, params)
     // Create motorcycle controller
     // Set playerbody to made body
     RenderMesh(false);
+
+    _light = _gameObjectRenderer.GetScene()->CreateGameObject("Light", _gameObjectRenderer);
+    _light.AddComponent<Transform>(Vector3{ -725.0f, 23.0f, -210.f });
+
+    Light lightComponent;
+    lightComponent.color = { 0.57f, 0.98f, 0.0f };
+    lightComponent.intensity = 3.5f;
+    lightComponent.config = Frost::Component::LightPoint{ .radius = 10.0f, .falloff = 0.65f };
+    _light.AddComponent<Light>(lightComponent);
+
+    _light.SetActive(false);
 }
 
 JPH::BodyID
@@ -41,6 +52,8 @@ Boat::Appear()
     using namespace JPH;
 
     RenderMesh(true);
+
+    _light.SetActive(true);
     _player->SetIsInWater(false);
 
     // ----- Transform -----

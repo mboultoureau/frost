@@ -43,7 +43,11 @@ namespace Frost::Component
         LightConfig config = LightPoint{};
 
         Light() = default;
-        Light(const LightConfig& cfg) : config(cfg) {}
+        Light(Math::Color3 color, float intensity, const LightConfig& cfg) :
+            color{ color }, intensity{ intensity }, config{ cfg }
+        {
+        }
+        Light(const LightConfig& cfg) : config{ cfg } {}
 
         LightType GetType() const { return (LightType)config.index(); }
 

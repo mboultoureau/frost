@@ -60,6 +60,9 @@ private:
     float _rollSpeed = 3.0f;
     float _yawFromRoll = 1.2f;
 
+    GameObject _leftLight;
+    GameObject _rightLight;
+
     float _maxPitchAngle = 0.5f; // ~30 degres
     float _maxRollAngle = 0.7f;  // ~40 degres
     float _speedAcknowledgementThreshold = 1.0f;

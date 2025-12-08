@@ -66,6 +66,8 @@ private:
     float _specialDriftRotationPower = -20;
     float _speedAtDriftStart = 0;
 
+    GameObject _light;
+
     float _maxSpeed = 30;
 
     float _forward = 0;

@@ -83,6 +83,32 @@ namespace Frost
         return false;
     }
 
+    void DisableChildrenRecursive(entt::registry& registry, entt::entity parent)
+    {
+        if (!registry.all_of<Component::Relationship>(parent))
+        {
+            return;
+        }
+
+        auto& relationship = registry.get<Component::Relationship>(parent);
+        auto currentChildHandle = relationship.firstChild;
+
+        while (currentChildHandle != entt::null)
+        {
+            registry.emplace_or_replace<Component::Disabled>(currentChildHandle);
+            DisableChildrenRecursive(registry, currentChildHandle);
+
+            if (registry.valid(currentChildHandle) && registry.all_of<Component::Relationship>(currentChildHandle))
+            {
+                currentChildHandle = registry.get<Component::Relationship>(currentChildHandle).nextSibling;
+            }
+            else
+            {
+                currentChildHandle = entt::null;
+            }
+        }
+    }
+
     bool GameObject::IsActive() const
     {
         return !_registry->all_of<Component::Disabled>(_entityHandle);
@@ -90,6 +116,11 @@ namespace Frost
 
     void GameObject::SetActive(bool active)
     {
+        if (!IsValid())
+        {
+            return;
+        }
+
         if (active)
         {
             _registry->remove<Component::Disabled>(_entityHandle);
@@ -97,6 +128,7 @@ namespace Frost
         else
         {
             _registry->emplace_or_replace<Component::Disabled>(_entityHandle);
+            DisableChildrenRecursive(*_registry, _entityHandle);
         }
     }
 
