@@ -29,7 +29,7 @@ add_subdirectory(Lab)
 add_subdirectory(Game)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "Editor")
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "Gane")
 
 find_program(CLANG_FORMAT_EXE clang-format)
 
