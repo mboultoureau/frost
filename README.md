@@ -1,107 +1,79 @@
-# Frost Engine
+# SwiftBot : Portal Rush
 
-Frost is a game engine created by the Uno team ([Elias Del Pozo](https://depot.dinf.usherbrooke.ca/dele5830), [Mathis Boultoureau](https://depot.dinf.usherbrooke.ca/boum6233), [Simon Le Floch](https://depot.dinf.usherbrooke.ca/lefs1934) and [Thomas Vanwalleghem](https://depot.dinf.usherbrooke.ca/vant2523)) for DDJV courses.
+## Jeu
 
-## Constraints
+But du Jeu : Gagner -> Faire un tours -> Arriver au drapeau de fin -> Utiliser bien les véhicules
 
-For the purposes of the course, we were not allowed to use any external libraries except those listed below. A more robust implementation of the engine would use nvrhi, etc.
+Mécanique : 
+    *Changement de véhicule : 
+	-moto -> rapide, boost dérapage, roule sur les murs, 
+	-bateau -> flotte sur l'eau, ne roule pas
+	-planneur -> plane dans les air, rapide en descente, ne roule pas
+    *Portail -> les portails t'emmène plus vite vers la sortie … ou non !
 
-## Features
 
-- [x] ECS
-- [x] Rendering (DirectX 11)
-- [x] Model loading (assimp)
-- [x] Physics (Jolt)
-- [x] Input (mouse, keyboard, gamepad)
-- [x] Debugging (logger, debugging interface)
-- [x] Easily extensible
+Contrôle : Player (qwerty)
+w -> vers l'avant, s -> vers l'arrière, a -> vers la gauche, d -> vers la droite, 
+shift : brake, espace -> brake + boost (dans les virages), q -> véhicule vers la gauche,
+e -> véhicule vers la droite, clic molette -> 1ère personne
+  
+Contrôle : Autres (qwerty)
+ echap -> pause, R -> reload, C -> souris camera rotation, F1 -> menu debug
+
+## Auteurs
+
+Equipe : UNO
+Nom : Boultoureau, Del Pozo, Le Floch, Vanwallalleghem
+
+Moteur : Frost (moteur custom)
 
 ## Installation
 
-To install and run the project, you must be running Windows and have Visual Studio 2022 and CMake installed. Then run the `Setup.bat` script to generate the project.
+- Décompressez le zip
+- Exécutez Setup.bat
+- Ouvrir la solution Frost.sln
+- S'assurez que Game est sélectionné en mode Debug
+- Lancez le jeu
 
-## Development
 
-We use `clang-format` to format the code. Be sure it is included in your PATH (eg. `C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\bin`).
+Liste des Objets : Un terrain, 3 véhicules (moto, bateau, planneur), Checkpoint(ligne d'arrivée), Herbe, Block d'eau, Billboard (flèche indicatrice)
 
-## Resources
 
-- [Game Programming Patterns](https://gameprogrammingpatterns.com/)
-- [Real-Time Rendering](https://www.realtimerendering.com/)
-- [Game Engine Architecture](https://www.gameenginebook.com/)
-- [h-deb - Patrice Roy](https://h-deb.ca/)
-- [Game Engine Series - The Cherno](https://youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)
+HUD / Menu Pause : Nous avons des HUD images dynamique (compteur vitesse) et statique(image victory), du texte dynamique  (compteur vitesse) et statique (CountDown), puis des boutons cliquables (Play). Le "Menu Pause" en est un composée tout comme le "Menu Start" et "Menu Victory"
 
-## Dependencies
+SkyBox : Nous pouvons ajouter 6 images différentes pour la boîte dans le ciel
 
-Here are the dependencies present in the engine:
-- [assimp](https://github.com/assimp/assimp): importing 3D models
-- [imgui](https://github.com/ocornut/imgui): debug interface
-- [JoltPhysics](https://github.com/jrouwe/JoltPhysics): physics engine
-- [spdlog](https://github.com/gabime/spdlog): logging
-- [stb](https://github.com/nothings/stb): image loading
+Light : Nous gérons 3 types de light (directionnel, sphere/point, phare)
+	L'éclairage est de type "Blinn-Phong".
 
-The various dependencies are located in Frost/vendor for dependencies specific to the engine and Lab/vendor for dependencies specific to the Lab using git submodule.
+Texture : Nous avons X texture sur notre map. 
 
-To update dependencies to their latest versions, you can use: `git submodule update --remote --merge`.
+Post-Process : 
+	-Chromatic Aberation : passage dans les portails
+	-Screen Shake : collisions
+	-Radial Blur : selon la vitesse du joueur
+	-Fog : vision bleu si on est dans l'eau 
+	-Toon Shading : composée de "Toon" et de "Outline" qui rend un coté cartoon au jeu 
 
-## Docs
+Material : 
+	-Grass : de l'herbe qui bouge au vent 
+	-Water : les vagues sur l'eau 
+	-Billboard : Image avec transparence qui suit la direction de la camera
 
-### Gamepads
+Organisateur de Scène :  
+	- Culling : les objets du terrain est affichée seulement dans un cône directionnel de la vue du joueur
+	- ECS (Entity Component System): Il assure une architecture modulaire en séparant les données (Components) de la logique (Systems). Optimisation pour toutes les mises à jour des objets du jeu.
 
-Our game engine supports up to 4 game controllers simultaneously. The following features are implemented:
+Rendering : Le moteur est en mode Deferred Rendering
 
-- Buttons
-- Joysticks
-- Triggers
-- Deadzones (for joysticks and triggers)
-- Transformations (Linear, Quadratic, Cubic, Square Root)
-- Raw or normalized input values
-- Vibration support
-- Debug menu
-- Controller connection and disconnection events
+## Bibliothèques externes  
+- assimp : chargement des modèles 3D
+- entt : système ECS
+- imgui : menu de debug
+- JoltPhysics : moteur physique
+- spldlog : affichage et stockage des logs
+- stb : chargements des images et polices
+- yaml-cpp : stockage en yaml des scènes et prefabs (uniquement dans l'éditeur)
 
-### Logger and Asserts
 
-The engine uses spdlog for logging. There are two loggers available: one for the engine and one for the game. The loggers support different log levels: trace, info, warn, error and critical.
-
-```cpp
-// Engine logger
-FT_ENGINE_TRACE("Initializing renderer subsystem...");
-FT_ENGINE_INFO("Mouse button {} pressed", mouseButton);
-FT_ENGINE_WARN("Frame time is high: {} ms", 18.3f);
-FT_ENGINE_ERROR("Failed to load shader '{}'", "water_reflection");
-FT_ENGINE_CRITICAL("Renderer crashed! Error code: {}", -1);
-
-// Game logger
-FT_TRACE("Player {} entered the world", playerName);
-FT_INFO("Player health: {}", health);
-FT_WARN("Player {} is lagging (connected: {})", playerName, isConnected);
-FT_ERROR("Cannot spawn entity ID {}", 42);
-FT_CRITICAL("Fatal error: out of memory!");
-
-// Asserts
-FT_ENGINE_ASSERT(_buttonStates[i] != ButtonState::Pressed);
-FT_ASSERT(_buttonStates[i] != ButtonState::Pressed, "Button state should be Pressed after pressing the button");
-```
-
-### Entity Component System
-
-### Event System
-
-Sources :
-
-- [Event Queue - Game Programming Patterns](https://gameprogrammingpatterns.com/event-queue.html)
-- [Event System - Denys Kryvytskyi](https://denyskryvytskyi.github.io/event-system)
-
-### Utils
-
-Here are the different utility classes included in the project:
-- NoCopy: can be used as inheritance to block the copy constructor and public assignment operator.
-- UUID: allows you to generate a unique identifier.
-- Maths utilities: function to manage angle conversion or approximation between two floats.
-
-Sources :
-
-- [Code de grande personne – bloquer la copie - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Incopiable.html)
-- [Implémenter des conversions de référentiels - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Implementer-changement-referentiel.html)
+Lance le jeu et amuse toi bien !!!!
