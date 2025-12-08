@@ -53,8 +53,6 @@ PortalScript::OnUpdate(float deltaTime)
 
     float chromaticStrength = (total - elapsed) / total;
 
-    FT_ENGINE_INFO("chromatic Strength before multiplication : {}", chromaticStrength);
-
     if (chromaticStrength < 0)
     {
         _inChromaticEffect = true;

@@ -34,6 +34,7 @@ public:
     void OnFixedUpdate(float deltaTime) override;
     void OnDetach() override;
     void OnPressedButton();
+    GameState GetGameState() { return _gamestate; }
     Player* GetPlayer() const { return _player.get(); };
 
 private:
