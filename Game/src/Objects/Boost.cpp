@@ -34,7 +34,8 @@ Boost::Boost(Vector3 pos, EulerAngles rot, Vector3 scale, Frost::Math::Vector3 d
 
     // Create water sensor. We use this to detect which bodies entered the water
     // (in this sample we could have assumed everything is in the water)
-    auto& rb = boost.AddComponent<RigidBody>(ShapeBox{}, ObjectLayers::BOOST);
-    rb.isSensor = true;
-    boost.AddScript<BoostScript>(dir, power);
+    RigidBody rbComp{ ShapeBox{ Vector3{ scale * 0.5f } }, ObjectLayers::WATER, RigidBody::MotionType::Static };
+    rbComp.isSensor = true;
+    auto& rb = boost.AddComponent<RigidBody>(rbComp);
+    boost.AddScript<BoostScript>(dir, 15000.0f * power);
 }

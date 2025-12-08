@@ -113,6 +113,5 @@ Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string textu
         auto a = ShapeBox{};
         a.halfExtent = Vector3{ scale.x / 2, scale.y / 2, scale.z / 2 };
         auto& rb = boost.AddComponent<RigidBody>(a, ObjectLayers::NON_MOVING);
-        rb.isSensor = true;
     }
 }

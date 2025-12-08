@@ -21,6 +21,7 @@
 #include "Objects/Grass.h"
 #include "StartMenu/StartMenu.h"
 #include <memory>
+#include <Objects/Boost.h>
 
 class MainLayer : public Frost::Layer
 {
@@ -60,6 +61,7 @@ private:
     std::shared_ptr<Wall> _wall;
     std::unique_ptr<Grass> _grass;
     std::unique_ptr<CheckPoint> _debugCheckPoint;
+    std::shared_ptr<Boost> _boost;
 
     std::unique_ptr<Frost::StartMenu> _startMenu;
 };

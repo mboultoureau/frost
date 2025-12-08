@@ -49,10 +49,10 @@ MainLayer::OnAttach()
     _checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
     _checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
 
-    _grass = std::make_unique<Grass>(Vector3(-360, 67, -85), EulerAngles(180_deg, 0_deg, 0_deg), Vector3(1, 1, 1));
+    _grass = std::make_unique<Grass>(Vector3{ 9.0f, 60.7f, -47 }, EulerAngles(180_deg, 0_deg, 0_deg), Vector3(1, 1, 1));
 
-    auto boost =
-        std::make_shared<Boost>(Vector3{ -385, 69, -32 }, EulerAngles(), Vector3(2, 2, 2), Vector3(0, 1, 0), 15000.0f);
+    _boost =
+        std::make_shared<Boost>(Vector3{ -13.0f, 61.7f, -10 }, EulerAngles(), Vector3(10, 2, 2), Vector3(0, 1, 0), 2);
     // link 1 / 2
     _checkPoint1->AddChild(_checkPoint2);
     _checkPoint2->AddParent(_checkPoint1);
