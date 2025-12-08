@@ -38,7 +38,8 @@ MainLayer::OnAttach()
         billboardWidth, billboardHeight, texturePath, Frost::Material::FilterMode::LINEAR);
         */
     //_terrain = std::make_unique<Terrain>();
-    _water = std::make_unique<Water>(Vector3(-335, 69, -32), EulerAngles(), Vector3(10, 150, 40), 0.2f);
+    _water = std::make_unique<Water>(Vector3(-10.0, -70.0, 50.0), EulerAngles(), Vector3(50, 230, 50), 0.2f);
+    _sndWater = std::make_unique<Water>(Vector3(-50, 65, -30.0), EulerAngles(), Vector3(15, 10, 20), 0.2f);
     //_sndWater = std::make_unique<Water>(Vector3(-315, 69, -32), EulerAngles(), Vector3(20, 15, 20), 0.2f);
 
     _sun = std::make_unique<Sun>();
