@@ -22,13 +22,13 @@ RaceTimerScript::OnInitialize()
 
     _raceTimerCompenent = _scene.CreateGameObject("Speedometer");
     Viewport viewport;
-    viewport.x = 0.5f;
-    viewport.y = 0.5f;
+    viewport.x = 0.45f;
+    viewport.y = 0.4f;
     viewport.width = 0.5f;
     viewport.height = 0.5f;
     std::string initText = "3";
     _raceTimerCompenent.AddComponent<Frost::Component::HUDText>(viewport, font, initText);
-
+    _raceTimerCompenent.GetComponent<Frost::Component::HUDText>().fontSize = 5;
     _internalTimer.Start();
 }
 
