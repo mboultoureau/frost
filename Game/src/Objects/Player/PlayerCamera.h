@@ -88,14 +88,16 @@ public:
     // PostEffect calls
     void Shake(float duration, float amplitude, ScreenShakeEffect::AttenuationType type);
     void SetRadialBlurStrength(float strength);
+    void SetChromaticAberrationStrength(float strength);
 
 private:
     Player* _player;
     GameObject _cameraPivot;
     GameObject _3rdPersVirtCamera;
     GameObject _camera;
-    RadialBlurEffect* radialBlur;
-    ScreenShakeEffect* screenShake;
+    RadialBlurEffect* radialBlur = nullptr;
+    ScreenShakeEffect* screenShake = nullptr;
+    ChromaticAberrationEffect* chromaticAberration = nullptr;
 
     JPH::BodyID _cameraBodyID;
     JPH::BodyInterface* _bodyInter;
