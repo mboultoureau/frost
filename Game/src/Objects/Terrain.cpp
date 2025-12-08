@@ -18,20 +18,8 @@ Terrain::Terrain()
     const std::string textureMetal = "./resources/textures/metal.png";
 
     MakeTerrain(Frost::Math::Vector3(), filepathHeightmapBot, textureDirt);
-    // MakeTerrain(Frost::Math::Vector3(), filepathHeightmapR, textureDirt);
-
-    /*
-    auto material2 = Material();
-    material2.diffuseColor = DirectX::XMFLOAT3{ 0.5, 0.5, 1 };
-    material2.roughnessValue = 0;
-    material2.emissiveColor = DirectX::XMFLOAT3{ 0.1, 0.1, 0.5 };
-    material2.uvTiling = { 10,10 };
-    material2.filterMode = Material::FilterMode::LINEAR;
-    material2.diffuseTextures.push_back(TextureLibrary::Get().GetTexture("./resources/textures/dirt.jpg",
-    TextureType::DIFFUSE)); _scene.AddComponent<Frost::ModelRenderer>(ground,
-    IsHeightMapRenderer(), filepath, material2, TextureChannel::G, 50,
-    heightScale);
-    */
+    // MakeCube(Vector3{ -14.0f, 55.0f, 88.0f }, EulerAngles rot, Vector3 scale, std::string texturePath, bool
+    // isPhysics);
 }
 
 void
@@ -96,7 +84,7 @@ Terrain::MakeTerrain(Frost::Math::Vector3 pos, std::string filepathHeightmap, st
 }
 
 void
-Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string texturePath)
+Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string texturePath, bool isPhysics)
 {
     using namespace JPH;
 
@@ -107,7 +95,7 @@ Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string textu
     boost.AddComponent<Transform>(pos, rot, scale);
 
     Material waveMat;
-    waveMat.name = "TessellatedWaves";
+    waveMat.name = "cube";
 
     TextureConfig texture;
     texture.path = texturePath;
@@ -118,6 +106,9 @@ Terrain::MakeCube(Vector3 pos, EulerAngles rot, Vector3 scale, std::string textu
 
     // Create water sensor. We use this to detect which bodies entered the water
     // (in this sample we could have assumed everything is in the water)
-    auto& rb = boost.AddComponent<RigidBody>(ShapeBox{}, ObjectLayers::NON_MOVING);
-    rb.isSensor = true;
+    if (isPhysics)
+    {
+        auto& rb = boost.AddComponent<RigidBody>(ShapeBox{}, ObjectLayers::NON_MOVING);
+        rb.isSensor = true;
+    }
 }
