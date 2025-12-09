@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/PostEffect.h"
 #include "Frost/Renderer/Sampler.h"
@@ -10,7 +11,7 @@
 
 namespace Frost
 {
-    class RadialBlurEffect : public PostEffect
+    class FROST_API RadialBlurEffect : public PostEffect
     {
     public:
         RadialBlurEffect();

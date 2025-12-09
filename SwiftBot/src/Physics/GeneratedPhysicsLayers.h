@@ -10,7 +10,9 @@ namespace ObjectLayers
     static constexpr JPH::ObjectLayer MOVING = 1;
     static constexpr JPH::ObjectLayer DEBRIS = 2;
     static constexpr JPH::ObjectLayer SENSOR = 3;
-    static constexpr JPH::uint NUM_LAYERS = 4;
+    static constexpr JPH::ObjectLayer CAMERA = 4;
+    static constexpr JPH::ObjectLayer PLAYER = 5;
+    static constexpr JPH::uint NUM_LAYERS = 6;
 } // namespace ObjectLayers
 
 namespace BroadPhaseLayers
@@ -23,7 +25,7 @@ namespace BroadPhaseLayers
     static constexpr JPH::uint NUM_LAYERS = 5;
 } // namespace BroadPhaseLayers
 
-// Class mapping Object Layers to BroadPhase Layers
+// Classe faisant le lien entre les Object Layers et les BroadPhase Layers
 class GameBroadPhaseLayerInterface final : public JPH::BroadPhaseLayerInterface
 {
 public:
@@ -37,14 +39,14 @@ private:
     JPH::BroadPhaseLayer mObjectToBroadPhase[ObjectLayers::NUM_LAYERS];
 };
 
-// Class determining if two Object Layers collide
+// Classe déterminant si deux Object Layers peuvent entrer en collision
 class GameObjectLayerPairFilter : public JPH::ObjectLayerPairFilter
 {
 public:
     virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override;
 };
 
-// Class determining if an Object Layer collides with a BroadPhase Layer
+// Classe déterminant si un Object Layer entre en collision avec un BroadPhase Layer
 class GameObjectVsBroadPhaseLayerFilter : public JPH::ObjectVsBroadPhaseLayerFilter
 {
 public:

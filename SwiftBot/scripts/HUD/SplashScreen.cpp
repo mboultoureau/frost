@@ -1,5 +1,5 @@
 #include "HUD/SplashScreen.h"
-
+#include "GameState/GameState.h"
 using namespace Frost;
 using namespace Frost::Component;
 
@@ -176,6 +176,20 @@ namespace GameLogic
 
     void SplashScreen::OnStartButtonPress()
     {
+        auto player1Prefab = GetGameObject().GetScene()->FindGameObjectByName("Player1");
+        FT_ASSERT(player1Prefab.IsValid(), "Player1 is invalid");
+
+        auto player1 = player1Prefab.GetChildByName("Player");
+        FT_ASSERT(player1.IsValid(), "Player1's Player is invalid");
+        // add other players here if needed
+        // numbers of players is determined by splash screen selected by the user
+
+        std::vector<PlayerData> initialPlayers = {
+            PlayerData{ .playerObject = player1, .lapsCompleted = 0 },
+        };
+        GameState::Get().Initialize(0, initialPlayers);
+
+        GameState::Get().SetPlayerLaps(player1, 0);
         EventManager::Emit<Frost::UnPauseEvent>();
         HideMenu();
     }
