@@ -1,5 +1,35 @@
 Scene: RainbowRoad
 Entities:
+  - Entity: 20
+    Meta:
+      Name: SplashScreen
+    Transform:
+      Position: [-1.566119, 1.1920929e-07, -4.2393036]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\SplashScreen.prefab
+    Parent: -1
+  - Entity: 5
+    Meta:
+      Name: Player
+    Transform:
+      Position: [5.8567452, 0.45585728, 4.8872547]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Player\Player.prefab
+    Parent: -1
+  - Entity: 4
+    Meta:
+      Name: Water
+    Transform:
+      Position: [2.903134, -0.64916945, 6.193926]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\Water.prefab
+    Parent: -1
   - Entity: 3
     Meta:
       Name: Terrain

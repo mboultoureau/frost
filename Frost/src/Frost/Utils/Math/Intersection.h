@@ -130,4 +130,25 @@ namespace Frost::Math
 
         return (distanceToCenter >= torusRadius - torusThickness && distanceToCenter <= torusRadius + torusThickness);
     }
+
+    inline bool IntersectRaySphere(const Ray& ray, const Vector3& sphereCenter, float sphereRadius, float& t)
+    {
+        Vector3 oc = ray.origin - sphereCenter;
+        float b = Dot(oc, ray.direction);
+        float c = Dot(oc, oc) - sphereRadius * sphereRadius;
+        float h = b * b - c;
+
+        // No intersection
+        if (h < 0.0f)
+            return false;
+
+        h = sqrt(h);
+        t = -b - h;
+
+        // Camera inside the sphere
+        if (t < 0.0f)
+            t = -b + h;
+
+        return t > 0.0f;
+    }
 } // namespace Frost::Math

@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/Scene.h"
+
 #include <filesystem>
 
 namespace Frost
 {
-    class SceneSerializer
+    class FROST_API SceneSerializer
     {
     public:
         SceneSerializer(Scene* scene);

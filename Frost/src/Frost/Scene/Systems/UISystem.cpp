@@ -50,14 +50,8 @@ namespace Frost
 
     void UISystem::LateUpdate(Scene& scene, float deltaTime)
     {
-        auto uiView = scene.View<Component::UIElement>();
-        if (uiView.empty())
-        {
-            return;
-        }
-
+        auto uiView = scene.ViewActive<Component::UIElement>();
         std::vector<Component::UIElement*> elementsToRender;
-        elementsToRender.reserve(uiView.size());
 
         for (auto entity : uiView)
         {

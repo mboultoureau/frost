@@ -1,6 +1,6 @@
 #include "Frost/Scene/Systems/PhysicSystem.h"
 #include "Frost/Scene/Components/RigidBody.h"
-#include "Frost/Scene/Components/RelationShip.h"
+#include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Physics/Physics.h"
 #include "Frost/Scripting/Script.h"
 #include "Frost/Utils/Math/Angle.h"
@@ -12,12 +12,89 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 
 using namespace Frost::Component;
 
 namespace Frost
 {
+    static JPH::Ref<JPH::Shape> CreateJoltShape(const Component::CollisionShapeConfig& config,
+                                                const Math::Vector3& scale)
+    {
+        JPH::ShapeSettings::ShapeResult result;
+
+        JPH::Vec3 s = { abs(scale.x), abs(scale.y), abs(scale.z) };
+
+        float minScale = 0.001f;
+        if (s.GetX() < minScale)
+            s.SetX(minScale);
+        if (s.GetY() < minScale)
+            s.SetY(minScale);
+        if (s.GetZ() < minScale)
+            s.SetZ(minScale);
+
+        std::visit(
+            [&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, Component::ShapeBox>)
+                {
+                    JPH::Vec3 newHalfExtent = Math::vector_cast<JPH::Vec3>(arg.halfExtent) * s;
+
+                    float minScaleFactor = std::min({ s.GetX(), s.GetY(), s.GetZ() });
+                    float scaledConvexRadius = arg.convexRadius * minScaleFactor;
+
+                    float minDimension = std::min({ newHalfExtent.GetX(), newHalfExtent.GetY(), newHalfExtent.GetZ() });
+                    if (scaledConvexRadius >= minDimension)
+                    {
+                        scaledConvexRadius = minDimension * 0.9f;
+                    }
+
+                    JPH::BoxShapeSettings settings(newHalfExtent, scaledConvexRadius);
+                    result = settings.Create();
+                }
+                else if constexpr (std::is_same_v<T, Component::ShapeSphere>)
+                {
+                    float maxScale = std::max({ s.GetX(), s.GetY(), s.GetZ() });
+                    JPH::SphereShapeSettings settings(arg.radius * maxScale);
+                    result = settings.Create();
+                }
+                else if constexpr (std::is_same_v<T, Component::ShapeCapsule>)
+                {
+                    float radiusScale = std::max(s.GetX(), s.GetZ());
+                    float heightScale = s.GetY();
+
+                    JPH::CapsuleShapeSettings settings(arg.halfHeight * heightScale, arg.radius * radiusScale);
+                    result = settings.Create();
+                }
+                else if constexpr (std::is_same_v<T, Component::ShapeCylinder>)
+                {
+                    float radiusScale = std::max(s.GetX(), s.GetZ());
+                    float heightScale = s.GetY();
+                    float newRadius = arg.radius * radiusScale;
+
+                    float scaledConvexRadius = arg.convexRadius * std::min(radiusScale, heightScale);
+
+                    if (scaledConvexRadius >= newRadius)
+                    {
+                        scaledConvexRadius = newRadius * 0.9f;
+                    }
+
+                    JPH::CylinderShapeSettings settings(arg.halfHeight * heightScale, newRadius, scaledConvexRadius);
+                    result = settings.Create();
+                }
+            },
+            config);
+
+        if (result.IsValid())
+            return result.Get();
+
+        FT_ENGINE_ERROR("PhysicSystem: Failed to create shape (Scale: {0}, {1}, {2})", scale.x, scale.y, scale.z);
+        return nullptr;
+    }
+
     void PhysicSystem::OnAttach(Scene& scene)
     {
         _scene = &scene;
@@ -73,8 +150,37 @@ namespace Frost
         if (!scene.GetRegistry().valid(entity.GetHandle()))
             return;
 
-        _DestroyBodyForEntity(scene, entity.GetHandle());
-        _CreateBodyForEntity(scene, entity.GetHandle());
+        auto& registry = scene.GetRegistry();
+        if (!registry.all_of<Component::RigidBody, Component::Transform>(entity.GetHandle()))
+            return;
+
+        auto& rb = registry.get<Component::RigidBody>(entity.GetHandle());
+        auto& transform = registry.get<Component::Transform>(entity.GetHandle());
+
+        if (rb.runtimeBodyID.IsInvalid())
+        {
+            _CreateBodyForEntity(scene, entity.GetHandle());
+            return;
+        }
+
+        JPH::BodyInterface& bodyInterface = Physics::GetBodyInterface();
+
+        bodyInterface.SetPositionAndRotation(rb.runtimeBodyID,
+                                             Math::vector_cast<JPH::RVec3>(transform.position),
+                                             Math::vector_cast<JPH::Quat>(transform.rotation),
+                                             JPH::EActivation::DontActivate);
+
+        JPH::Ref<JPH::Shape> newShape = CreateJoltShape(rb.shape, transform.scale);
+
+        if (newShape)
+        {
+            bodyInterface.SetShape(rb.runtimeBodyID, newShape, true, JPH::EActivation::DontActivate);
+        }
+
+        bodyInterface.SetMotionType(
+            rb.runtimeBodyID, static_cast<JPH::EMotionType>(rb.motionType), JPH::EActivation::DontActivate);
+        bodyInterface.SetFriction(rb.runtimeBodyID, rb.friction);
+        bodyInterface.SetRestitution(rb.runtimeBodyID, rb.restitution);
     }
 
     void PhysicSystem::_CreateBodyForEntity(Scene& scene, entt::entity entity)
@@ -88,37 +194,17 @@ namespace Frost
         auto& body_interface = Physics::GetBodyInterface();
 
         if (!rb.runtimeBodyID.IsInvalid())
+            return;
+
+        JPH::Ref<JPH::Shape> finalShape = CreateJoltShape(rb.shape, transform.scale);
+
+        if (!finalShape)
         {
+            FT_ENGINE_ERROR("PhysicSystem: Failed to create shape for entity {0}", (uint32_t)entity);
             return;
         }
 
-        JPH::Ref<JPH::ShapeSettings> shapeSettings;
-        std::visit(
-            [&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, Component::ShapeBox>)
-                    shapeSettings =
-                        new JPH::BoxShapeSettings(Math::vector_cast<JPH::Vec3>(arg.halfExtent), arg.convexRadius);
-                else if constexpr (std::is_same_v<T, Component::ShapeSphere>)
-                    shapeSettings = new JPH::SphereShapeSettings(arg.radius);
-                else if constexpr (std::is_same_v<T, Component::ShapeCapsule>)
-                    shapeSettings = new JPH::CapsuleShapeSettings(arg.halfHeight, arg.radius);
-                else if constexpr (std::is_same_v<T, Component::ShapeCylinder>)
-                    shapeSettings = new JPH::CylinderShapeSettings(arg.halfHeight, arg.radius, arg.convexRadius);
-            },
-            rb.shape);
-
-        JPH::Shape::ShapeResult shapeResult = shapeSettings->Create();
-        if (shapeResult.HasError())
-        {
-            FT_ENGINE_ERROR("PhysicSystem: Failed to create shape for entity {0}: {1}",
-                            (uint32_t)entity,
-                            shapeResult.GetError().c_str());
-            return;
-        }
-
-        JPH::BodyCreationSettings bodySettings(shapeResult.Get(),
+        JPH::BodyCreationSettings bodySettings(finalShape,
                                                Math::vector_cast<JPH::RVec3>(transform.position),
                                                Math::vector_cast<JPH::Quat>(transform.rotation),
                                                static_cast<JPH::EMotionType>(rb.motionType),
@@ -207,14 +293,20 @@ namespace Frost
                 if (rb.runtimeBodyID.IsInvalid())
                     return;
 
-                auto jBodyPos = Physics::Get().body_interface->GetPosition(rb.runtimeBodyID);
-                auto jBodyRot = Physics::Get().body_interface->GetRotation(rb.runtimeBodyID);
+                if (rb.motionType == Component::RigidBody::MotionType::Static)
+                    return;
 
-                transform.position = Math::vector_cast<Math::Vector3>(jBodyPos);
-                transform.rotation.x = jBodyRot.GetX();
-                transform.rotation.y = jBodyRot.GetY();
-                transform.rotation.z = jBodyRot.GetZ();
-                transform.rotation.w = jBodyRot.GetW();
+                if (Physics::Get().body_interface->IsActive(rb.runtimeBodyID))
+                {
+                    auto jBodyPos = Physics::Get().body_interface->GetPosition(rb.runtimeBodyID);
+                    auto jBodyRot = Physics::Get().body_interface->GetRotation(rb.runtimeBodyID);
+
+                    transform.position = Math::vector_cast<Math::Vector3>(jBodyPos);
+                    transform.rotation.x = jBodyRot.GetX();
+                    transform.rotation.y = jBodyRot.GetY();
+                    transform.rotation.z = jBodyRot.GetZ();
+                    transform.rotation.w = jBodyRot.GetW();
+                }
             });
     }
 

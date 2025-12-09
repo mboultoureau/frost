@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
+
 #include <DirectXMath.h>
 #include <algorithm>
 
@@ -8,7 +10,7 @@
 
 namespace Frost
 {
-    struct BoundingBox
+    struct FROST_API BoundingBox
     {
         DirectX::XMFLOAT3 min; // coin inferieur (x-, y-, z-)
         DirectX::XMFLOAT3 max; // coin superieur (x+, y+, z+)

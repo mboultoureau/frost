@@ -1,11 +1,12 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/System.h"
 #include "Frost/Scene/Scene.h"
 
 namespace Frost
 {
-    class ScriptableSystem : public System
+    class FROST_API ScriptableSystem : public System
     {
     public:
         void OnAttach(Scene& scene) override;

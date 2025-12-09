@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
+
 #include <memory>
 #include <string>
 
@@ -23,7 +25,7 @@ namespace Frost
         std::string filePath;
     };
 
-    class Shader
+    class FROST_API Shader
     {
     public:
         Shader(const ShaderDesc& desc) : _desc(desc) {}

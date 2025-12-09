@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Asset/Model.h"
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/Component.h"
 #include "Frost/Asset/MeshConfig.h"
 
@@ -28,7 +29,7 @@ namespace Frost::Component
         HeightMap = 5
     };
 
-    class StaticMesh : public Component
+    class FROST_API StaticMesh : public Component
     {
     public:
         StaticMesh();

@@ -59,6 +59,12 @@ namespace Editor
                               float resetValue = 0.0f,
                               float columnWidth = 100.0f);
 
+        // Selection
+        bool _IsSelected(const Frost::GameObject& go) const;
+        void _AddToSelection(const Frost::GameObject& go);
+        void _RemoveFromSelection(const Frost::GameObject& go);
+        void _ClearSelection();
+
         // Actions
         void _SavePrefab();
         void _SaveScene();
@@ -85,7 +91,7 @@ namespace Editor
 
         Frost::Scene* _sceneContext = nullptr;
         std::unique_ptr<Frost::Scene> _localScene;
-        Frost::GameObject _selection;
+        std::vector<Frost::GameObject> _selection;
 
         std::shared_ptr<Frost::Texture> _viewportTexture;
         uint32_t _viewportWidth = 0, _viewportHeight = 0;

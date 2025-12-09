@@ -26,13 +26,19 @@ target_include_directories(SwiftBot PRIVATE
 
 target_link_libraries(SwiftBot PRIVATE
     Frost
+    ImGui
     Jolt
 )
 
 if(WIN32)
+    set_target_properties(SwiftBot PROPERTIES 
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+    )
+
     target_compile_options(SwiftBot PRIVATE
-        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
-        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MDd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MD>>
+        
         $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/bigobj>>
     )
@@ -61,7 +67,7 @@ set_property(TARGET SwiftBot APPEND PROPERTY COMPILE_OPTIONS
 
 add_custom_command(TARGET SwiftBot POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:SwiftBotLogic>
+    $<TARGET_FILE:Frost>
     $<TARGET_FILE_DIR:SwiftBot>
 )
 
@@ -92,13 +98,14 @@ target_include_directories(SwiftBotLogic PRIVATE
 
 target_link_libraries(SwiftBotLogic PRIVATE
     Frost
+    ImGui
     Jolt
 )
 
 if(WIN32)
     target_compile_options(SwiftBotLogic PRIVATE
-        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
-        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MDd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MD>>
         $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/bigobj>>
     )
@@ -123,4 +130,10 @@ target_compile_definitions(SwiftBotLogic PRIVATE
 
 set_property(TARGET SwiftBotLogic APPEND PROPERTY COMPILE_OPTIONS
     $<$<CONFIG:Dist>:$<$<CXX_COMPILER_ID:MSVC>:/O2>>
+)
+
+add_custom_command(TARGET SwiftBotLogic POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:SwiftBotLogic>
+    $<TARGET_FILE_DIR:SwiftBot>
 )

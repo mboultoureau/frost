@@ -1,7 +1,12 @@
 #include "Editor/UI/ProjectSettingsWindow.h"
+#include "Editor/Utils/PhysicsCodeGenerator.h"
+
+#include "Frost/Debugging/Logger.h"
 
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
+
+using namespace Frost;
 
 namespace Editor
 {
@@ -23,6 +28,17 @@ namespace Editor
             {
                 _projectInfo.GetConfigRef() = _editableConfig;
                 _projectInfo.Save();
+
+                std::string outputPath = _projectInfo.GetProjectDir() + "/src/Physics";
+
+                if (Editor::PhysicsCodeGenerator::Generate(_projectInfo.GetConfig(), outputPath))
+                {
+                    ImGui::OpenPopup("SuccessGeneration");
+                }
+                else
+                {
+                    FT_ENGINE_ERROR("Unable to generate physics layer code.");
+                }
             }
 
             ImGui::SameLine();

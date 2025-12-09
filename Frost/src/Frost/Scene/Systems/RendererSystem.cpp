@@ -109,7 +109,7 @@ namespace Frost
 
         for (const auto& camData : mainCameras)
         {
-            if (!Debug::RendererConfig::display && !Debug::PhysicsConfig::display)
+            if (!Debug::RendererConfig::display && !Debug::PhysicsConfig::IsDisplayEnabled())
             {
                 continue;
             }
@@ -199,7 +199,7 @@ namespace Frost
             _ApplyPostProcessing(commandList, sceneTexture, finalRenderTarget, camera, deltaTime);
 
 #ifdef FT_DEBUG
-            if (Debug::PhysicsConfig::display && joltDebugRenderer)
+            if (Debug::PhysicsConfig::IsDisplayEnabled() && joltDebugRenderer)
             {
                 joltDebugRenderer->Render(commandList,
                                           mainRenderViewport,

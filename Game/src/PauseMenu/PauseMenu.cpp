@@ -56,8 +56,6 @@ namespace Frost
         ProcessInput();
     }
 
-    void PauseMenu::OnLateUpdate(float deltaTime) {}
-
     void PauseMenu::ProcessInput()
     {
         if (Input::GetKeyboard().IsKeyDown(K_ESCAPE) && _pauseButtonReleased)

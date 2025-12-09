@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/Components/Scriptable.h"
+
 #include <entt/entt.hpp>
 
 namespace Frost
@@ -11,7 +13,7 @@ namespace Frost
         struct Scriptable;
     }
 
-    class GameObject
+    class FROST_API GameObject
     {
     public:
         using Id = entt::entity;
@@ -82,13 +84,14 @@ namespace Frost
 
         GameObject::Id GetId() const { return _entityHandle; }
         entt::entity GetHandle() const { return _entityHandle; }
-        Scene* GetScene() const { return _scene; }
+        Scene* GetScene() { return _scene; }
         const bool IsValid() const;
-
-        static const GameObject InvalidId;
 
         template<typename T, typename... Args>
         T& AddScript(Args&&... args);
+
+        std::vector<GameObject> GetChildrenByName(const std::string& name, bool recursive = false);
+        GameObject GetChildByName(const std::string& name, bool recursive = false);
 
     private:
         entt::entity _entityHandle{ entt::null };

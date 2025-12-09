@@ -3,6 +3,7 @@
 #include "Frost/Scene/Components/Disabled.h"
 #include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Scene/Components/Scriptable.h"
+#include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Scene.h"
 
 namespace Frost
@@ -16,8 +17,6 @@ namespace Frost
             _registry = &scene->GetRegistry();
         }
     }
-
-    const GameObject GameObject::InvalidId = GameObject();
 
     static void DetachFromParent(entt::registry& registry, entt::entity entity)
     {
@@ -197,5 +196,144 @@ namespace Frost
     const bool GameObject::IsValid() const
     {
         return _scene->GetRegistry().valid(_entityHandle);
+    }
+
+    // Find by name
+    void GetChildrenRecursiveHelper(entt::registry* registry,
+                                    Scene* scene,
+                                    entt::entity parentHandle,
+                                    const std::string& name,
+                                    std::vector<GameObject>& results)
+    {
+        auto* relation = registry->try_get<Component::Relationship>(parentHandle);
+        if (!relation)
+            return;
+
+        auto currentEntity = relation->firstChild;
+        while (currentEntity != entt::null)
+        {
+            // Check the current child
+            if (auto* meta = registry->try_get<Component::Meta>(currentEntity))
+            {
+                if (meta->name == name)
+                {
+                    results.emplace_back(currentEntity, scene);
+                }
+            }
+
+            // Recursively check the child's children
+            GetChildrenRecursiveHelper(registry, scene, currentEntity, name, results);
+
+            // Check the next sibling
+            if (auto* childRel = registry->try_get<Component::Relationship>(currentEntity))
+            {
+                currentEntity = childRel->nextSibling;
+            }
+            else
+            {
+                currentEntity = entt::null;
+            }
+        }
+    }
+
+    std::vector<GameObject> GameObject::GetChildrenByName(const std::string& name, bool recursive)
+    {
+        std::vector<GameObject> results;
+        if (!IsValid())
+            return results;
+
+        if (recursive)
+        {
+            // Recursive Version
+            GetChildrenRecursiveHelper(_registry, _scene, _entityHandle, name, results);
+        }
+        else
+        {
+            // Direct Children Only Version
+            auto* relation = _registry->try_get<Component::Relationship>(_entityHandle);
+            if (!relation)
+                return results;
+
+            auto currentEntity = relation->firstChild;
+            while (currentEntity != entt::null)
+            {
+                if (auto* meta = _registry->try_get<Component::Meta>(currentEntity))
+                {
+                    if (meta->name == name)
+                    {
+                        results.emplace_back(currentEntity, _scene);
+                    }
+                }
+
+                auto* childRel = _registry->try_get<Component::Relationship>(currentEntity);
+                currentEntity = childRel ? childRel->nextSibling : entt::null;
+            }
+        }
+
+        return results;
+    }
+
+    entt::entity GetChildRecursiveHelper(entt::registry* registry, entt::entity parentHandle, const std::string& name)
+    {
+        auto* relation = registry->try_get<Component::Relationship>(parentHandle);
+        if (!relation)
+            return entt::null;
+
+        auto currentEntity = relation->firstChild;
+        while (currentEntity != entt::null)
+        {
+            if (auto* meta = registry->try_get<Component::Meta>(currentEntity))
+            {
+                if (meta->name == name)
+                {
+                    return currentEntity;
+                }
+            }
+
+            entt::entity foundInDeep = GetChildRecursiveHelper(registry, currentEntity, name);
+            if (foundInDeep != entt::null)
+            {
+                return foundInDeep;
+            }
+
+            auto* childRel = registry->try_get<Component::Relationship>(currentEntity);
+            currentEntity = childRel ? childRel->nextSibling : entt::null;
+        }
+
+        return entt::null;
+    }
+
+    GameObject GameObject::GetChildByName(const std::string& name, bool recursive)
+    {
+        if (!IsValid())
+            return {};
+
+        if (recursive)
+        {
+            entt::entity foundHandle = GetChildRecursiveHelper(_registry, _entityHandle, name);
+            if (foundHandle != entt::null)
+                return GameObject(foundHandle, _scene);
+        }
+        else
+        {
+            auto* relation = _registry->try_get<Component::Relationship>(_entityHandle);
+            if (!relation)
+                return {};
+
+            auto currentEntity = relation->firstChild;
+            while (currentEntity != entt::null)
+            {
+                if (auto* meta = _registry->try_get<Component::Meta>(currentEntity))
+                {
+                    if (meta->name == name)
+                        return GameObject(currentEntity, _scene);
+                }
+
+                auto* childRel = _registry->try_get<Component::Relationship>(currentEntity);
+                currentEntity = childRel ? childRel->nextSibling : entt::null;
+            }
+        }
+
+        return {};
     }
 } // namespace Frost

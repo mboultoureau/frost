@@ -558,4 +558,22 @@ namespace Frost::Math
         auto clamp = [](float v) { return v < 0.0f ? 0.0f : (v > 255.0f ? 255.0f : v); };
         return { clamp(red) / 255.0f, clamp(green) / 255.0f, clamp(blue) / 255.0f };
     };
+
+    static Vector3& operator+=(Vector3& lhs, const Vector3& rhs)
+    {
+        lhs.x += rhs.x;
+        lhs.y += rhs.y;
+        lhs.z += rhs.z;
+        return lhs;
+    }
+
+    static Vector3 operator/(const Vector3& lhs, float rhs)
+    {
+        return { lhs.x / rhs, lhs.y / rhs, lhs.z / rhs };
+    }
+
+    static Vector3 operator*(const Vector3& lhs, const Vector3& rhs)
+    {
+        return { lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z };
+    }
 } // namespace Frost::Math

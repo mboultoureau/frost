@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Scene/Scene.h"
 
@@ -8,7 +9,7 @@
 
 namespace Frost
 {
-    class PrefabSerializer
+    class FROST_API PrefabSerializer
     {
     public:
         static void CreatePrefab(GameObject rootEntity, const std::filesystem::path& destinationPath);

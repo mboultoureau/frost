@@ -19,8 +19,7 @@ namespace Editor
         Gizmo(Frost::Scene* scene);
 
         void Update(GizmoOperation operation,
-                    Frost::Component::Transform& targetTransform,
-                    Frost::GameObject& targetGameObject,
+                    const std::vector<Frost::GameObject>& targets,
                     const Frost::Math::Matrix4x4& viewMatrix,
                     const Frost::Math::Matrix4x4& projectionMatrix,
                     const Frost::Math::Vector3& rayOrigin,
@@ -75,18 +74,17 @@ namespace Editor
         bool _isManipulating = false;
 
         // Transforms
-        Frost::Component::Transform* _targetTransform = nullptr;
-        Frost::GameObject* _targetGameObject = nullptr;
+        std::vector<Frost::GameObject> _targets;
         Frost::Math::Vector3 _gizmoPosition;
+        Frost::Math::Vector3 _pivotStartPos;
         float _gizmoScreenScale = 1.0f;
 
         // Manipulation
         Frost::Math::Vector3 _manipulationStartPos;
-        Frost::Component::Transform _originalTransform;
+        std::vector<Frost::Component::Transform> _originalTransforms;
 
         // Duplicate
-        std::optional<Frost::GameObject> _ownedDuplicatedObject;
-        std::function<void(Frost::GameObject)> _onTargetDuplicated;
+        bool _hasDuplicated = false;
 
         // Context
         Frost::Scene* _scene = nullptr;

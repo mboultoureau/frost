@@ -99,6 +99,39 @@ namespace Frost
         return newRoot;
     }
 
+    std::vector<GameObject> Scene::FindGameObjectsByName(const std::string& name)
+    {
+        std::vector<GameObject> results;
+        auto view = _registry.view<Component::Meta>();
+
+        for (auto entity : view)
+        {
+            const auto& meta = view.get<Component::Meta>(entity);
+            if (meta.name == name)
+            {
+                results.emplace_back(entity, this);
+            }
+        }
+
+        return results;
+    }
+
+    GameObject Scene::FindGameObjectByName(const std::string& name)
+    {
+        auto view = _registry.view<Component::Meta>();
+
+        for (auto entity : view)
+        {
+            const auto& meta = view.get<Component::Meta>(entity);
+            if (meta.name == name)
+            {
+                return GameObject(entity, this);
+            }
+        }
+
+        return GameObject();
+    }
+
     void Scene::_InitializeSystems()
     {
         _systems.push_back(std::make_unique<ScriptableSystem>());
