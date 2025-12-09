@@ -1,6 +1,9 @@
 #pragma once
 
-#include <windows.h>
+#include "Frost/Core/Core.h"
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 #include <XInput.h>
 
 namespace Frost
@@ -9,7 +12,7 @@ namespace Frost
     // slot every frame. We recommend that you space out checks for new
     // controllers every few seconds instead.
 
-    class Gamepad
+    class FROST_API Gamepad
     {
     public:
         using GamepadId = unsigned char;

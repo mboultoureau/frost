@@ -4,14 +4,21 @@
 
 namespace Frost
 {
-    bool Debug::PhysicsConfig::display = false;
+    namespace Debug
+    {
+        bool& PhysicsConfig::IsDisplayEnabled()
+        {
+            static bool s_Display = false;
+            return s_Display;
+        }
+    } // namespace Debug
 
     void DebugPhysics::OnImGuiRender(float deltaTime)
     {
         if (ImGui::CollapsingHeader("Physics"))
         {
             ImGui::PushID("PhysicsDebugHeader");
-            ImGui::Checkbox("Display", &Debug::PhysicsConfig::display);
+            ImGui::Checkbox("Display", &Debug::PhysicsConfig::IsDisplayEnabled());
             ImGui::PopID();
         }
     }

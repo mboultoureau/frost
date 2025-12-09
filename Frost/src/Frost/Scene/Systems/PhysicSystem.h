@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/System.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Scene.h"
@@ -8,7 +9,7 @@
 
 namespace Frost
 {
-    class PhysicSystem : public System
+    class FROST_API PhysicSystem : public System
     {
     public:
         PhysicSystem() = default;

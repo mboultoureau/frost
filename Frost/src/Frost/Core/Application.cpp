@@ -19,6 +19,7 @@
 namespace Frost
 {
     Application* Application::_singleton = nullptr;
+    std::filesystem::path Application::_projectDirectory = ".";
 
     Application::Application(const ApplicationSpecification& entryPoint) : _running{ true }
     {
@@ -30,6 +31,9 @@ namespace Frost
         _renderer = std::make_unique<RendererDX11>();
 
         RendererAPI::SetRenderer(_renderer.get());
+
+        FT_ENGINE_INFO("Initializing App...");
+
 #else
 #error "Platform not supported!"
 #endif
@@ -168,5 +172,15 @@ namespace Frost
     {
         _running = false;
         return true;
+    }
+
+    void Application::SetProjectDirectory(const std::filesystem::path& path)
+    {
+        _projectDirectory = path;
+    }
+
+    const std::filesystem::path& Application::GetProjectDirectory()
+    {
+        return _projectDirectory;
     }
 } // namespace Frost

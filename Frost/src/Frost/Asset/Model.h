@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Frost/Asset/Asset.h"
+#include "Frost/Core/Core.h"
 #include "Frost/Renderer/Material.h"
 #include "Frost/Renderer/Mesh.h"
 
@@ -18,7 +19,7 @@ namespace Frost
 {
     class Renderer;
 
-    class Model : public Asset
+    class FROST_API Model : public Asset
     {
     public:
         Model() = default;

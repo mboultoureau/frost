@@ -10,13 +10,16 @@ namespace GameLogic
 {
     void GameLogic::PlayerController::OnCreate()
     {
-        std::cout << "Hello" << std::endl;
-        // FT_INFO("Script PlayerController initialized");
+        /*
+        _bike = GetGameObject().GetChildByName("Bike", true);
+        _boat = GetGameObject().GetChildByName("Boat", true);
+        _plane = GetGameObject().GetChildByName("Plane", true);
+
+        FT_ASSERT(_bike.IsValid(), "Bike GameObject not found as child of PlayerController");
+        FT_ASSERT(_boat.IsValid(), "Boat GameObject not found as child of PlayerController");
+        FT_ASSERT(_plane.IsValid(), "Plane GameObject not found as child of PlayerController");
+        */
     }
 
-    void GameLogic::PlayerController::OnUpdate(float deltaTime)
-    {
-        std::cout << deltaTime << std::endl;
-        // FT_INFO("Script PlayerController updated {}ms", deltaTime);
-    }
+    void GameLogic::PlayerController::OnUpdate(float deltaTime) {}
 } // namespace GameLogic

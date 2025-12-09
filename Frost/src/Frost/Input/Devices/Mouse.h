@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Renderer/Viewport.h"
 
 #include <array>
@@ -7,9 +8,8 @@
 
 namespace Frost
 {
-    class Mouse
+    class FROST_API Mouse
     {
-
     public:
         struct MousePosition
         {

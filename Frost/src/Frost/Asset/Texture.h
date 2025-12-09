@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Asset/Asset.h"
+#include "Frost/Core/Core.h"
 #include "Frost/Renderer/Format.h"
 #include "Frost/Renderer/GPUResource.h"
 #include "Frost/Renderer/Renderer.h"
@@ -88,7 +89,7 @@ namespace Frost
         bool loadImmediately = true;
     };
 
-    class Texture : public Asset, GPUResource
+    class FROST_API Texture : public Asset, GPUResource
     {
     public:
         using Slot = unsigned int;

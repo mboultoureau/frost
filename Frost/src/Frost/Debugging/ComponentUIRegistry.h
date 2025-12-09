@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/Scene.h"
 
 #include <entt/entt.hpp>
@@ -15,7 +16,7 @@ namespace Frost
         float deltaTime = 0.0f;
     };
 
-    class ComponentUIRegistry
+    class FROST_API ComponentUIRegistry
     {
     public:
         using DrawCallback = std::function<void(Scene*, entt::entity, const UIContext&)>;
@@ -48,7 +49,7 @@ namespace Frost
         static void InitEngineComponents();
 
     private:
-        static std::unordered_map<std::type_index, std::function<void(Scene*, entt::entity, const UIContext&)>>
+        static inline std::unordered_map<std::type_index, std::function<void(Scene*, entt::entity, const UIContext&)>>
             _drawers;
     };
 } // namespace Frost

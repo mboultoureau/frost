@@ -1,6 +1,10 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
+
 #include <unordered_map>
+
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 namespace Frost
@@ -214,7 +218,7 @@ namespace Frost
         K_OEM_CLEAR = VK_OEM_CLEAR
     };
 
-    class Keyboard
+    class FROST_API Keyboard
     {
     public:
         KeyState GetKeyState(const VirtualKeyCode keyCode) const;

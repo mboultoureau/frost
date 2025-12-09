@@ -32,9 +32,14 @@ target_link_libraries(Editor PRIVATE
 )
 
 if(WIN32)
+    set_target_properties(Editor PROPERTIES 
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+    )
+
     target_compile_options(Editor PRIVATE
-        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MTd>>
-        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MT>>
+        $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/MDd>>
+        $<$<NOT:$<CONFIG:Debug>>:$<$<CXX_COMPILER_ID:MSVC>:/MD>>
+
         $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
         $<$<CONFIG:Debug>:$<$<CXX_COMPILER_ID:MSVC>:/bigobj>>
     )
@@ -59,4 +64,10 @@ target_compile_definitions(Editor PRIVATE
 
 set_property(TARGET Editor APPEND PROPERTY COMPILE_OPTIONS
     $<$<CONFIG:Dist>:$<$<CXX_COMPILER_ID:MSVC>:/O2>>
+)
+
+add_custom_command(TARGET Editor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:Frost>
+    $<TARGET_FILE_DIR:Editor>
 )

@@ -25,9 +25,6 @@ namespace Frost
 {
     using namespace Component;
 
-    std::unordered_map<std::type_index, std::function<void(Scene*, entt::entity, const UIContext&)>>
-        ComponentUIRegistry::_drawers;
-
     static entt::entity s_TransformLastEntity = entt::null;
     static Math::Vector3 s_TransformEulerCache = { 0.0f, 0.0f, 0.0f };
 
@@ -49,6 +46,8 @@ namespace Frost
 
     void ComponentUIRegistry::InitEngineComponents()
     {
+        FT_ENGINE_INFO("Initializing Component UI Registry for Engine Components...");
+
         // Meta and Disabled
         Register<Meta>(
             [](Scene* scene, entt::entity e, const UIContext& ctx)

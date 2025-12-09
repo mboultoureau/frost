@@ -1,12 +1,13 @@
 ﻿#pragma once
 
-#include "Vector.h"
+#include "Frost/Core/Core.h"
+#include "Frost/Utils/Math/Vector.h"
 
 #include <array>
 
 namespace Frost::Math
 {
-    struct Matrix4x4
+    struct FROST_API Matrix4x4
     {
         std::array<float, 16> elements;
 
@@ -37,7 +38,7 @@ namespace Frost::Math
         DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(outMatrix->elements.data()), matrix);
     }
 
-    Matrix4x4 operator*(const Matrix4x4& a, const Matrix4x4& b);
+    FROST_API Matrix4x4 operator*(const Matrix4x4& a, const Matrix4x4& b);
 
     inline Vector3 TransformCoord(const Vector3& v, const Matrix4x4& m)
     {
