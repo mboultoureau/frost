@@ -24,4 +24,6 @@ private:
     std::shared_ptr<Texture> _renderTarget;
 
     Portal* _linkedPortal{ nullptr };
+
+    bool _materialLinkPending = false;
 };

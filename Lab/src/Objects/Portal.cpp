@@ -38,20 +38,14 @@ Portal::Portal(Vector3 position, EulerAngles rotation)
     auto& transform = _portalObject.GetComponent<Transform>();
     transform.position = position;
     transform.SetRotation(rotation);
+    transform.scale = { 0.03, 0.03, 0.03 };
 }
 
 void
 Portal::LinkTo(Portal* other)
 {
     _linkedPortal = other;
-
-    auto& mesh = _frameObject.GetComponent<StaticMesh>();
-    auto& materials = mesh.GetModel()->GetMaterials();
-
-    if (!materials.empty())
-    {
-        materials[0].cameraRef = other->_cameraObject.GetId();
-    }
+    _materialLinkPending = true;
 
     auto& relativeView = other->_cameraObject.AddComponent<RelativeView>();
     relativeView.referenceEntity = this->_portalObject.GetId();
@@ -61,6 +55,22 @@ Portal::LinkTo(Portal* other)
 void
 Portal::Update()
 {
+    if (_materialLinkPending && _linkedPortal)
+    {
+        auto& mesh = _frameObject.GetComponent<StaticMesh>();
+        auto& model = mesh.GetModel();
+
+        if (model)
+        {
+            auto& materials = model->GetMaterials();
+            if (!materials.empty())
+            {
+                materials[0].cameraRef = _linkedPortal->_cameraObject.GetId();
+                _materialLinkPending = false;
+            }
+        }
+    }
+
     auto* window = Application::GetWindow();
     uint32_t width = window->GetWidth();
     uint32_t height = window->GetHeight();
