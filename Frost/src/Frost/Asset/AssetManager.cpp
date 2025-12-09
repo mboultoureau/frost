@@ -1,12 +1,35 @@
-#include "Frost/Asset/AssetManager.h"
+﻿#include "Frost/Asset/AssetManager.h"
 #include <assimp/texture.h>
 
 namespace Frost
 {
-    std::map<Asset::Path, std::shared_ptr<Asset>> AssetManager::_loadedAssets;
-    std::mutex AssetManager::_mutex;
-    std::deque<std::function<void()>> AssetManager::_uploadQueue;
-    std::mutex AssetManager::_queueMutex;
+    FROST_API std::map<Asset::Path, std::shared_ptr<Asset>> AssetManager::_loadedAssets;
+    FROST_API std::mutex AssetManager::_mutex;
+    FROST_API std::deque<std::function<void()>> AssetManager::_uploadQueue;
+    FROST_API std::mutex AssetManager::_queueMutex;
+
+    std::shared_ptr<Asset> AssetManager::FindAsset(const Asset::Path& path)
+    {
+        std::unique_lock lock(_mutex);
+        auto it = _loadedAssets.find(path);
+        if (it != _loadedAssets.end())
+        {
+            return it->second;
+        }
+        return nullptr;
+    }
+
+    void AssetManager::RegisterAsset(const Asset::Path& path, std::shared_ptr<Asset> asset)
+    {
+        std::unique_lock lock(_mutex);
+        _loadedAssets[path] = asset;
+    }
+
+    void AssetManager::AddToUploadQueue(std::function<void()>&& job)
+    {
+        std::lock_guard queueLock(_queueMutex);
+        _uploadQueue.emplace_back(std::move(job));
+    }
 
     void AssetManager::Shutdown()
     {

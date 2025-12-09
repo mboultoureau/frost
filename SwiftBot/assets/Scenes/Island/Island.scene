@@ -1,0 +1,32 @@
+Scene: Island
+Entities:
+  - Entity: 2
+    Meta:
+      Name: Lake
+    Transform:
+      Position: [4.1218524, 0, -6.813176]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Scenes\Island\Lake.prefab
+    Parent: -1
+  - Entity: 1
+    Meta:
+      Name: Player
+    Transform:
+      Position: [2.508731, 0, -7.762828]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Player\Player.prefab
+    Parent: -1
+  - Entity: 0
+    Meta:
+      Name: Water
+    Transform:
+      Position: [0.79565525, 0, -66.01084]
+      Rotation: [0, 0, 0, 1]
+      Scale: [88.586296, 1, 121.45659]
+    Prefab:
+      AssetPath: assets\Prefabs\Water.prefab
+    Parent: -1

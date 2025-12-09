@@ -138,7 +138,6 @@ void
 Water::UpdateShader(float deltaTime)
 {
     _shaderParams.Time += deltaTime;
-    _SetClosestPlayerPosToShader();
 
     if (_water.HasComponent<StaticMesh>())
     {

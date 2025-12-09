@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scripting/ScriptingBridge.h"
 #include "Frost/Utils/NoCopy.h"
 
@@ -10,7 +11,7 @@ namespace Frost::Scripting
 {
     class Script;
 
-    class ScriptingEngine : NoCopy
+    class FROST_API ScriptingEngine : NoCopy
     {
     public:
         static ScriptingEngine& GetInstance();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Event/Event.h"
 #include "Frost/Event/EventHandler.h"
 #include "Frost/Utils/NoCopy.h"
@@ -11,7 +12,7 @@ namespace Frost
 {
     using EventHandlerId = EventHandlerInterface::Id;
 
-    class EventManager : NoCopy
+    class FROST_API EventManager : NoCopy
     {
     public:
         template<typename EventType>

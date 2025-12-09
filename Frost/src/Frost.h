@@ -13,8 +13,13 @@
 #include "Frost/Core/Window.h"
 #include "Frost/Core/Windows/WindowWin.h"
 
+#include "Frost/Event/Events/PauseMenu/PauseEvent.h"
+#include "Frost/Event/Events/PauseMenu/ResetEvent.h"
+#include "Frost/Event/Events/PauseMenu/UnPauseEvent.h"
+
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/DebugLayer.h"
+#include "Frost/Debugging/ImGuiSymbols.h"
 #include "Frost/Debugging/Logger.h"
 
 #include "Frost/Input/Input.h"
@@ -32,6 +37,7 @@
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/Billboard.h"
+#include "Frost/Scene/Components/UIElement.h"
 #include "Frost/Scene/Scene.h"
 #include "Frost/Scene/SceneManager.h"
 

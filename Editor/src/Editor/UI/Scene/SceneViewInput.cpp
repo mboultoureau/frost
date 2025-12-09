@@ -36,7 +36,8 @@ namespace Editor
             }
         }
 
-        _selection = newEntity;
+        _ClearSelection();
+        _AddToSelection(newEntity);
     }
 
     Frost::Math::Vector3 SceneView::_GetSpawnPositionFromMouse()

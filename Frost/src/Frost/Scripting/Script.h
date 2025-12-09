@@ -26,9 +26,9 @@ namespace Frost::Scripting
         virtual void OnCollisionExit(std::pair<entt::entity, entt::entity> params, float deltaTime) {}
 
         // Accessors
-        GameObject GetGameObject() const { return _gameObject; }
+        GameObject GetGameObject() { return _gameObject; }
         void SetGameObject(GameObject gameObject) { _gameObject = gameObject; }
-        Scene* GetScene() const { return _gameObject.GetScene(); }
+        Scene* GetScene() { return _gameObject.GetScene(); }
 
     protected:
         GameObject _gameObject;

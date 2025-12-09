@@ -30,7 +30,15 @@ namespace Editor
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+
+        // Attach context to Frost
         ImGuiIO& io = ImGui::GetIO();
+        ImGuiMemAllocFunc allocFunc;
+        ImGuiMemFreeFunc freeFunc;
+        void* userData;
+        ImGui::GetAllocatorFunctions(&allocFunc, &freeFunc, &userData);
+        Frost::SyncImGuiContext(ImGui::GetCurrentContext(), allocFunc, freeFunc, userData);
+
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 

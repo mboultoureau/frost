@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/Component.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Math/Vector.h"
@@ -8,8 +9,7 @@
 
 namespace Frost::Component
 {
-
-    struct Transform : public Component
+    struct FROST_API Transform : public Component
     {
         Math::Vector3 position;
         Math::Vector4 rotation;

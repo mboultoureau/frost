@@ -24,6 +24,8 @@ namespace Game
         debugLayer->AddScene(mainScene.get());
 // debugLayer->AddScene(hudScene.get());
 #endif
+
+        Frost::FT_INFO("Application is ready.");
     }
 } // namespace Game
 

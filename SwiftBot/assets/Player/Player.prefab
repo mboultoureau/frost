@@ -8,19 +8,71 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
-    WorldTransform:
-      {}
   - LocalID: 1
     ParentID: 0
+    Meta:
+      Name: PlayerController
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 2
+    ParentID: 1
+    Meta:
+      Name: Plane
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [0.40063772, 0.40063772, 0.40063772]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/RedPlane.glb
+  - LocalID: 3
+    ParentID: 1
+    Meta:
+      Name: CameraPivot
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 4
+    ParentID: 3
+    Meta:
+      Name: DesiredCameraLocation
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 5
+    ParentID: 1
+    Meta:
+      Name: Boat
+    Transform:
+      Position: [-1.0997944, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [0.3628482, 0.36284783, 0.36284783]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/Boat.glb
+  - LocalID: 6
+    ParentID: 1
     Meta:
       Name: Moto
     Transform:
       Position: [0, 0, 0.07711053]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
-    WorldTransform:
-      {}
     StaticMesh:
       Type: 0
       Params:
-        Path: assets/Player/motorcycle.glb
+        Path: assets/Player/Moto.glb
+  - LocalID: 7
+    ParentID: 0
+    Meta:
+      Name: Camera
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]

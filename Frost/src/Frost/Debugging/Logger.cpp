@@ -8,8 +8,8 @@ namespace Frost
     constexpr const char* ENGINE_LOGGER_NAME = "FROST";
     constexpr const char* GAME_LOGGER_NAME = "GAME";
 
-    std::shared_ptr<spdlog::logger> Logger::s_EngineLogger = nullptr;
-    std::shared_ptr<spdlog::logger> Logger::s_GameLogger = nullptr;
+    std::shared_ptr<spdlog::logger> Logger::_engineLogger;
+    std::shared_ptr<spdlog::logger> Logger::_gameLogger;
 
     void Logger::Init()
     {
@@ -22,16 +22,26 @@ namespace Frost
         std::vector<spdlog::sink_ptr> engine_sinks = { console_sink, file_sink };
         std::vector<spdlog::sink_ptr> game_sinks = { console_sink };
 
-        s_EngineLogger = std::make_shared<spdlog::logger>(ENGINE_LOGGER_NAME, begin(engine_sinks), end(engine_sinks));
-        spdlog::register_logger(s_EngineLogger);
-        s_EngineLogger->set_level(spdlog::level::trace);
-        s_EngineLogger->flush_on(spdlog::level::trace);
+        _engineLogger = std::make_shared<spdlog::logger>(ENGINE_LOGGER_NAME, begin(engine_sinks), end(engine_sinks));
+        spdlog::register_logger(_engineLogger);
+        _engineLogger->set_level(spdlog::level::trace);
+        _engineLogger->flush_on(spdlog::level::trace);
 
-        s_GameLogger = std::make_shared<spdlog::logger>(GAME_LOGGER_NAME, begin(game_sinks), end(game_sinks));
-        spdlog::register_logger(s_GameLogger);
-        s_GameLogger->set_level(spdlog::level::trace);
-        s_GameLogger->flush_on(spdlog::level::trace);
+        _gameLogger = std::make_shared<spdlog::logger>(GAME_LOGGER_NAME, begin(game_sinks), end(game_sinks));
+        spdlog::register_logger(_gameLogger);
+        _gameLogger->set_level(spdlog::level::trace);
+        _gameLogger->flush_on(spdlog::level::trace);
 
-        spdlog::set_default_logger(s_EngineLogger);
+        spdlog::set_default_logger(_engineLogger);
+    }
+
+    std::shared_ptr<spdlog::logger>& Logger::GetEngineLogger()
+    {
+        return _engineLogger;
+    }
+
+    std::shared_ptr<spdlog::logger>& Logger::GetGameLogger()
+    {
+        return _gameLogger;
     }
 } // namespace Frost

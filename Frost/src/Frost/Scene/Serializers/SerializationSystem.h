@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/GameObject.h"
+
 #include <yaml-cpp/yaml.h>
 #include <functional>
 #include <string>
@@ -34,7 +36,7 @@ namespace Frost
         DeserializeBinaryFn DeserializeBinary;
     };
 
-    class SerializationSystem
+    class FROST_API SerializationSystem
     {
     public:
         template<typename T>
@@ -92,27 +94,9 @@ namespace Frost
             GetTypeIdMap()[std::type_index(typeid(T))] = serializer.ID;
         }
 
-        static const std::list<ComponentSerializer>& GetAllSerializers() { return GetSerializers(); }
-
-        static ComponentSerializer* GetSerializerByID(uint32_t id)
-        {
-            auto it = GetIdMap().find(id);
-            if (it != GetIdMap().end())
-            {
-                return it->second;
-            }
-            return nullptr;
-        }
-
-        static ComponentSerializer* GetSerializerByName(const std::string& name)
-        {
-            auto it = GetNameMap().find(name);
-            if (it != GetNameMap().end())
-            {
-                return it->second;
-            }
-            return nullptr;
-        }
+        static const std::list<ComponentSerializer>& GetAllSerializers();
+        static ComponentSerializer* GetSerializerByID(uint32_t id);
+        static ComponentSerializer* GetSerializerByName(const std::string& name);
 
         template<typename T>
         static ComponentSerializer* GetSerializer()
@@ -126,28 +110,9 @@ namespace Frost
         }
 
     private:
-        static std::list<ComponentSerializer>& GetSerializers()
-        {
-            static std::list<ComponentSerializer> serializers;
-            return serializers;
-        }
-
-        static std::unordered_map<uint32_t, ComponentSerializer*>& GetIdMap()
-        {
-            static std::unordered_map<uint32_t, ComponentSerializer*> map;
-            return map;
-        }
-
-        static std::unordered_map<std::string, ComponentSerializer*>& GetNameMap()
-        {
-            static std::unordered_map<std::string, ComponentSerializer*> map;
-            return map;
-        }
-
-        static std::unordered_map<std::type_index, uint32_t>& GetTypeIdMap()
-        {
-            static std::unordered_map<std::type_index, uint32_t> map;
-            return map;
-        }
+        static std::list<ComponentSerializer>& GetSerializers();
+        static std::unordered_map<uint32_t, ComponentSerializer*>& GetIdMap();
+        static std::unordered_map<std::string, ComponentSerializer*>& GetNameMap();
+        static std::unordered_map<std::type_index, uint32_t>& GetTypeIdMap();
     };
 } // namespace Frost

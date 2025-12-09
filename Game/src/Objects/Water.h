@@ -12,7 +12,7 @@ using namespace Frost::Component;
 struct alignas(16) WaterMaterialParameters
 {
     float Time = 0.0f;
-    float PlayerPosition[3] = { 0, 0, 0 };
+    float Padding1[3];
 
     float TopAmplitude = 1.0f;
     float TopFrequency = 1.0f;

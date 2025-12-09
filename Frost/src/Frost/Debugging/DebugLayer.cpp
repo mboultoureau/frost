@@ -25,12 +25,15 @@ namespace Frost
 
     void DebugLayer::OnAttach()
     {
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // IF using Docking Branch
+        if (ImGui::GetCurrentContext() == nullptr)
+        {
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImGuiIO& io = ImGui::GetIO();
+            io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+            io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        }
 
         // Setup Platform/Renderer backends
 #ifdef FT_PLATFORM_WINDOWS
@@ -112,6 +115,12 @@ namespace Frost
 
     void DebugLayer::AddScene(Scene* scene)
     {
+        // Ignore if scene is null
+        if (!scene)
+        {
+            return;
+        }
+
         for (auto& panel : _debugPanels)
         {
             if (auto debugScenePanel = dynamic_cast<DebugScene*>(panel.get()))

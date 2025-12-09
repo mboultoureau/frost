@@ -78,7 +78,7 @@ namespace Editor
     {
         Frost::GameObject obj(entityID, _sceneContext);
         Frost::GameObject parentObj =
-            (newParentID != entt::null) ? Frost::GameObject(newParentID, _sceneContext) : Frost::GameObject::InvalidId;
+            (newParentID != entt::null) ? Frost::GameObject(newParentID, _sceneContext) : Frost::GameObject{};
         obj.SetParent(parentObj);
     }
 
