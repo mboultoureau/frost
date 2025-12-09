@@ -1,18 +1,19 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Debugging/DebugInterface/DebugPanel.h"
 
 namespace Frost
 {
     namespace Debug
     {
-        struct PhysicsConfig
+        struct FROST_API PhysicsConfig
         {
-            static bool display;
+            static bool& IsDisplayEnabled();
         };
     } // namespace Debug
 
-    class DebugPhysics : public DebugPanel
+    class FROST_API DebugPhysics : public DebugPanel
     {
     public:
         DebugPhysics() = default;

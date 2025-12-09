@@ -1,22 +1,23 @@
 #pragma once
 
-#include <spdlog/spdlog.h>
+#include "Frost/Core/Core.h"
 
+#include <spdlog/spdlog.h>
 #include <memory>
 
 namespace Frost
 {
-    class Logger
+    class FROST_API Logger
     {
     public:
         static void Init();
 
-        static const std::shared_ptr<spdlog::logger>& GetEngineLogger() { return s_EngineLogger; }
-        static const std::shared_ptr<spdlog::logger>& GetGameLogger() { return s_GameLogger; }
+        static std::shared_ptr<spdlog::logger>& GetEngineLogger();
+        static std::shared_ptr<spdlog::logger>& GetGameLogger();
 
     private:
-        static std::shared_ptr<spdlog::logger> s_EngineLogger;
-        static std::shared_ptr<spdlog::logger> s_GameLogger;
+        static std::shared_ptr<spdlog::logger> _engineLogger;
+        static std::shared_ptr<spdlog::logger> _gameLogger;
     };
 
 #ifdef FT_DEBUG

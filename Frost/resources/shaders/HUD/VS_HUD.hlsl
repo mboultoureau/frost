@@ -1,7 +1,9 @@
 cbuffer TransformBuffer : register(b0)
 {
     float4 viewport; 
+    float4 color; 
     float rotation; 
+    float3 padding; 
 };
 
 struct VS_INPUT

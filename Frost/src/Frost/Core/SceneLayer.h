@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Core/Layer.h"
 #include "Frost/Scene/Scene.h"
 
@@ -7,7 +8,7 @@
 
 namespace Frost
 {
-    class SceneLayer : public Layer
+    class FROST_API SceneLayer : public Layer
     {
     public:
         SceneLayer(std::shared_ptr<Scene> scene, const std::string& name = "SceneLayer");

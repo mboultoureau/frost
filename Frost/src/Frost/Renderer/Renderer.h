@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Asset/Texture.h"
+#include "Frost/Core/Core.h"
 #include "Frost/Core/Window.h"
 #include "Frost/Event/EventManager.h"
 #include "Frost/Event/Events/Window/WindowResizeEvent.h"
@@ -12,7 +13,7 @@
 
 namespace Frost
 {
-    class Renderer
+    class FROST_API Renderer
     {
     public:
         Renderer();

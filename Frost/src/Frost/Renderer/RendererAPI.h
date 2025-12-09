@@ -1,33 +1,20 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Renderer/Renderer.h"
 #include "Frost/Utils/NoCopy.h"
 
 namespace Frost
 {
-    class RendererAPI : NoCopy
+    class FROST_API RendererAPI : NoCopy
     {
     public:
-        static void SetRenderer(Renderer* renderer) { _renderer = renderer; }
+        static Renderer* GetRenderer();
+        static void SetRenderer(Renderer* renderer);
 
-        static void BeginFrame()
-        {
-            FT_ENGINE_ASSERT(_renderer != nullptr, "RendererAPI::BeginFrame called but no renderer is set!");
-            _renderer->BeginFrame();
-        }
-
-        static void EndFrame()
-        {
-            FT_ENGINE_ASSERT(_renderer != nullptr, "RendererAPI::EndFrame called but no renderer is set!");
-            _renderer->EndFrame();
-        }
-
-        static Renderer* GetRenderer()
-        {
-            FT_ENGINE_ASSERT(_renderer != nullptr, "RendererAPI::Get called but no renderer is set!");
-            return _renderer;
-        }
+        static void BeginFrame();
+        static void EndFrame();
 
     private:
         static Renderer* _renderer;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Core/LayerStack.h"
 #include "Frost/Core/Timer.h"
 #include "Frost/Core/Window.h"
@@ -36,7 +37,7 @@ namespace Frost
         std::filesystem::path scriptPath;
     };
 
-    class Application : NoCopy
+    class FROST_API Application : NoCopy
     {
     public:
         Application(const ApplicationSpecification& specification);
@@ -66,8 +67,8 @@ namespace Frost
 
         static Window* GetWindow() { return Get()._window.get(); }
 
-        static void SetProjectDirectory(const std::filesystem::path& path) { _projectDirectory = path; }
-        static const std::filesystem::path& GetProjectDirectory() { return _projectDirectory; }
+        static void SetProjectDirectory(const std::filesystem::path& path);
+        static const std::filesystem::path& GetProjectDirectory();
 
     private:
         std::unique_ptr<Window> _window;
@@ -81,7 +82,7 @@ namespace Frost
     private:
         ApplicationSpecification _specification;
 
-        static inline std::filesystem::path _projectDirectory = ".";
+        static std::filesystem::path _projectDirectory;
 
         LayerStack _layerStack;
         PhysicsConfig _physicsConfig;

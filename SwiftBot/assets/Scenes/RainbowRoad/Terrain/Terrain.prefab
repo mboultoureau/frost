@@ -12,12 +12,12 @@ Entities:
       Type: 5
       Params:
         TexturePath: assets/Scenes/RainbowRoad/Terrain/heightmap.png
-        Width: 10
-        Depth: 10
+        Width: 500
+        Depth: 500
         MinHeight: 0
-        MaxHeight: 2
+        MaxHeight: 10.6
         SegmentWidth: 64
         SegmentDepth: 64
     Scriptable:
       Scripts:
-        []
+        - Terrain

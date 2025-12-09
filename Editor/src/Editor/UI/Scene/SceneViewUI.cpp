@@ -19,6 +19,8 @@
 #include <imgui_internal.h>
 #include <Frost/Scene/PrefabSerializer.h>
 
+#include <algorithm>
+
 namespace Editor
 {
     using namespace Frost;
@@ -64,6 +66,7 @@ namespace Editor
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
             {
                 std::filesystem::path assetPath = std::filesystem::path((const wchar_t*)payload->Data);
+
                 if (assetPath.extension() == ".prefab")
                 {
                     Vector3 spawnPos = _GetSpawnPositionFromMouse();
@@ -81,7 +84,8 @@ namespace Editor
                         }
                     }
 
-                    _selection = newEntity;
+                    _ClearSelection();
+                    _AddToSelection(newEntity);
                 }
                 else if (std::find(MESH_FILE_EXTENSIONS.begin(),
                                    MESH_FILE_EXTENSIONS.end(),
@@ -93,22 +97,34 @@ namespace Editor
             ImGui::EndDragDropTarget();
         }
 
-        if (_selection && _currentGizmoOp != GizmoOperation::None)
+        // Gizmos
+        if (!_selection.empty() && _currentGizmoOp != GizmoOperation::None)
         {
-            if (auto* transform = _sceneContext->GetRegistry().try_get<Transform>(_selection.GetHandle()))
+            bool hasTransform = false;
+            for (auto& go : _selection)
+            {
+                if (go.HasComponent<Transform>())
+                {
+                    hasTransform = true;
+                    break;
+                }
+            }
+
+            if (hasTransform)
             {
                 auto& cameraComponent = _editorCamera.GetComponent<Camera>();
                 auto& cameraTransform = _editorCamera.GetComponent<Transform>();
+
                 float aspectRatio = viewportPanelSize.x / viewportPanelSize.y;
                 Matrix4x4 viewMatrix = GetViewMatrix(cameraTransform);
                 Matrix4x4 projectionMatrix = GetProjectionMatrix(cameraComponent, aspectRatio);
+
                 ImVec2 mousePos = ImGui::GetMousePos();
                 float mx = mousePos.x - viewportMinRegion.x;
                 float my = mousePos.y - viewportMinRegion.y;
                 auto [rayOrigin, rayDir] = _GetCameraRay(mx, my, viewportPanelSize.x, viewportPanelSize.y);
 
                 _gizmo->Update(_currentGizmoOp,
-                               *transform,
                                _selection,
                                viewMatrix,
                                projectionMatrix,
@@ -125,21 +141,6 @@ namespace Editor
         {
             auto& tc = _editorCamera.GetComponent<Transform>();
             _cameraController.OnUpdate(deltaTime, tc, _isHovered && !_gizmo->IsManipulating());
-        }
-
-        if (ImGui::BeginDragDropTarget())
-        {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-            {
-                std::filesystem::path assetPath = std::filesystem::path((const wchar_t*)payload->Data);
-                std::string ext = assetPath.extension().string();
-                if (std::find(MESH_FILE_EXTENSIONS.begin(), MESH_FILE_EXTENSIONS.end(), ext) !=
-                    MESH_FILE_EXTENSIONS.end())
-                {
-                    _HandleMeshDrop(assetPath);
-                }
-            }
-            ImGui::EndDragDropTarget();
         }
 
         ImGui::End();
@@ -179,6 +180,9 @@ namespace Editor
                 {
                     newEntity.SetParent(Frost::GameObject(prefabRoot, _sceneContext));
                 }
+
+                _ClearSelection();
+                _AddToSelection(newEntity);
             }
             ImGui::EndPopup();
         }
@@ -211,9 +215,9 @@ namespace Editor
             ImGui::EndDragDropTarget();
         }
 
-        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered())
+        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && !ImGui::GetIO().KeyCtrl)
         {
-            _selection = {};
+            _ClearSelection();
         }
     }
 
@@ -233,8 +237,12 @@ namespace Editor
         bool isPrefabInstance = registry.all_of<Prefab>(entityID);
 
         std::string name = meta ? meta->name : "Entity " + std::to_string((uint32_t)entityID);
-        ImGuiTreeNodeFlags flags = ((_selection.GetHandle() == entityID) ? ImGuiTreeNodeFlags_Selected : 0) |
-                                   ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        Frost::GameObject currentGO(entityID, _sceneContext);
+        bool isSelected = _IsSelected(currentGO);
+
+        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow |
+                                   ImGuiTreeNodeFlags_SpanAvailWidth;
 
         if (isPrefabInstance)
         {
@@ -261,12 +269,35 @@ namespace Editor
             ImGui::PopStyleColor();
 
         if (ImGui::IsItemClicked())
-            _selection = Frost::GameObject(entityID, _sceneContext);
+        {
+            bool ctrlPressed = ImGui::GetIO().KeyCtrl;
+
+            if (ctrlPressed)
+            {
+                if (isSelected)
+                    _RemoveFromSelection(currentGO);
+                else
+                    _AddToSelection(currentGO);
+            }
+            else
+            {
+                // Mode Standard
+                if (!isSelected)
+                {
+                    _ClearSelection();
+                    _AddToSelection(currentGO);
+                }
+            }
+        }
 
         if (!_isReadOnly && !isPrefabRoot && ImGui::BeginDragDropSource())
         {
             ImGui::SetDragDropPayload("HIERARCHY_NODE", &entityID, sizeof(entt::entity));
-            ImGui::Text("%s", name.c_str());
+            if (_selection.size() > 1 && isSelected)
+                ImGui::Text("%d entities", (int)_selection.size());
+            else
+                ImGui::Text("%s", name.c_str());
+
             ImGui::EndDragDropSource();
         }
 
@@ -275,6 +306,7 @@ namespace Editor
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_NODE"))
             {
                 entt::entity payloadEntity = *(entt::entity*)payload->Data;
+
                 if (payloadEntity != entityID)
                     _ReparentEntity(payloadEntity, entityID);
             }
@@ -284,19 +316,26 @@ namespace Editor
         bool entityDeleted = false;
         if (!_isReadOnly && ImGui::BeginPopupContextItem())
         {
+            if (!isSelected && !ImGui::GetIO().KeyCtrl)
+            {
+                _ClearSelection();
+                _AddToSelection(currentGO);
+            }
+
             if (ImGui::MenuItem("Create Child"))
             {
                 auto child = _sceneContext->CreateGameObject("New Entity");
-                child.SetParent(Frost::GameObject(entityID, _sceneContext));
+                child.SetParent(currentGO);
             }
 
             if (!isPrefabRoot && ImGui::MenuItem("Duplicate"))
             {
-                _sceneContext->DuplicateGameObject(Frost::GameObject(entityID, _sceneContext));
+                _sceneContext->DuplicateGameObject(currentGO);
             }
 
             if (!isPrefabRoot && ImGui::MenuItem("Delete Entity"))
                 entityDeleted = true;
+
             ImGui::EndPopup();
         }
 
@@ -317,31 +356,42 @@ namespace Editor
 
         if (entityDeleted)
         {
-            _sceneContext->DestroyGameObject(Frost::GameObject(entityID, _sceneContext));
-            if (_selection.GetHandle() == entityID)
-                _selection = {};
+            if (_IsSelected(currentGO))
+                _RemoveFromSelection(currentGO);
+
+            _sceneContext->DestroyGameObject(currentGO);
         }
     }
 
     void SceneView::OnRenderInspector()
     {
-        if (!_selection)
+        if (_selection.empty())
         {
             ImGui::TextDisabled("Select an entity to view properties.");
             return;
         }
 
-        if (_selection.HasComponent<Prefab>())
+        if (_selection.size() > 1)
         {
-            auto& prefabComponent = _selection.GetComponent<Prefab>();
+            ImGui::Text("Multi-object editing not supported.");
+            ImGui::TextDisabled("%d objects selected", (int)_selection.size());
+            ImGui::Separator();
+            return;
+        }
+
+        Frost::GameObject activeSelection = _selection[0];
+
+        if (activeSelection.HasComponent<Prefab>())
+        {
+            auto& prefabComponent = activeSelection.GetComponent<Prefab>();
             std::string assetName = prefabComponent.assetPath.filename().string();
 
             ImGui::Text("Prefab Instance");
             ImGui::Separator();
 
             Frost::UIContext ctx{ !_isReadOnly, ImGui::GetIO().DeltaTime };
-            Frost::ComponentUIRegistry::Draw<Meta>(_sceneContext, _selection, ctx);
-            Frost::ComponentUIRegistry::Draw<Transform>(_sceneContext, _selection, ctx);
+            Frost::ComponentUIRegistry::Draw<Meta>(_sceneContext, activeSelection, ctx);
+            Frost::ComponentUIRegistry::Draw<Transform>(_sceneContext, activeSelection, ctx);
 
             ImGui::Separator();
             ImGui::Dummy(ImVec2(0.0f, 10.0f));
@@ -353,12 +403,12 @@ namespace Editor
 
             if (ImGui::Button("Unpack Prefab"))
             {
-                auto transform = _selection.GetComponent<Transform>();
-                auto parent = _selection.GetParent();
-                std::string name = _selection.GetComponent<Meta>().name;
+                auto transform = activeSelection.GetComponent<Transform>();
+                auto parent = activeSelection.GetParent();
+                std::string name = activeSelection.GetComponent<Meta>().name;
 
-                _sceneContext->DestroyGameObject(_selection);
-                _selection = {};
+                _sceneContext->DestroyGameObject(activeSelection);
+                _ClearSelection();
 
                 auto newRoot = Frost::PrefabSerializer::Instantiate(_sceneContext, prefabComponent.assetPath);
                 if (newRoot)
@@ -366,7 +416,7 @@ namespace Editor
                     newRoot.SetParent(parent);
                     newRoot.GetComponent<Transform>() = transform;
                     newRoot.GetComponent<Meta>().name = name;
-                    _selection = newRoot;
+                    _AddToSelection(newRoot);
                 }
             }
 
@@ -374,7 +424,7 @@ namespace Editor
         }
 
         Frost::UIContext ctx{ true, ImGui::GetIO().DeltaTime };
-        Frost::ComponentUIRegistry::DrawAll(_sceneContext, (entt::entity)_selection, ctx);
+        Frost::ComponentUIRegistry::DrawAll(_sceneContext, (entt::entity)activeSelection, ctx);
 
         ImGui::Separator();
         if (ImGui::Button("Add Component", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
@@ -389,20 +439,22 @@ namespace Editor
                 std::filesystem::path assetPath = std::filesystem::path((const wchar_t*)payload->Data);
                 if (assetPath.extension() == ".prefab")
                 {
-                    if (_selection && !_selection.HasComponent<Frost::Component::Prefab>())
+                    if (activeSelection && !activeSelection.HasComponent<Frost::Component::Prefab>())
                     {
-                        auto parent = _selection.GetParent();
-                        auto transform = _selection.GetComponent<Transform>();
+                        auto parent = activeSelection.GetParent();
+                        auto transform = activeSelection.GetComponent<Transform>();
+                        std::string originalName = activeSelection.GetComponent<Meta>().name;
 
-                        std::string originalName = _selection.GetComponent<Meta>().name;
-                        _sceneContext->DestroyGameObject(_selection);
+                        _sceneContext->DestroyGameObject(activeSelection);
+                        _ClearSelection();
 
-                        _selection = Frost::PrefabSerializer::Instantiate(_sceneContext, assetPath);
-                        if (_selection)
+                        auto newObj = Frost::PrefabSerializer::Instantiate(_sceneContext, assetPath);
+                        if (newObj)
                         {
-                            _selection.SetParent(parent);
-                            _selection.GetComponent<Transform>() = transform;
-                            _selection.GetComponent<Meta>().name = originalName;
+                            newObj.SetParent(parent);
+                            newObj.GetComponent<Transform>() = transform;
+                            newObj.GetComponent<Meta>().name = originalName;
+                            _AddToSelection(newObj);
                         }
                     }
                 }
@@ -419,14 +471,14 @@ namespace Editor
             for (const auto& serializer : SerializationSystem::GetAllSerializers())
             {
                 if ((searchBuffer[0] != '\0' && serializer.Name.find(searchBuffer) == std::string::npos) ||
-                    serializer.HasComponent(_selection) || serializer.Name == "Relationship" ||
+                    serializer.HasComponent(activeSelection) || serializer.Name == "Relationship" ||
                     serializer.Name == "Meta" || serializer.Name == "WorldTransform")
                 {
                     continue;
                 }
                 if (ImGui::MenuItem(serializer.Name.c_str()))
                 {
-                    serializer.AddComponent(_selection);
+                    serializer.AddComponent(activeSelection);
                     ImGui::CloseCurrentPopup();
                     searchBuffer[0] = '\0';
                 }

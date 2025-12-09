@@ -1,5 +1,8 @@
 #include "Frost/Scripting/Script.h"
 
+#include "HUD/SplashScreen.h"
+#include "Materials/Terrain.h"
+#include "Materials/Water.h"
 #include "Player/PlayerController.h"
 #include "Samples/Rotate.h"
 
@@ -9,8 +12,19 @@ static std::map<std::string, ScriptCreateFunc> _scriptRegistry;
 void
 InitializeRegistry()
 {
+    // HUD
+    _scriptRegistry["SplashScreen"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::SplashScreen()); };
+
+    // Materials
+    _scriptRegistry["Terrain"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Terrain()); };
+    _scriptRegistry["Water"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Water()); };
+
+    // Player
     _scriptRegistry["PlayerController"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerController()); };
+
+    // Samples
     _scriptRegistry["Rotate"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Rotate()); };
 }
 

@@ -81,31 +81,36 @@ namespace Editor
                                 const std::function<void()>& onLoadSceneCallback)
     {
         // Handle inputs
-        if (ImGui::IsKeyPressed(ImGuiKey_Q))
-            currentGizmo = GizmoOperation::None;
-        if (ImGui::IsKeyPressed(ImGuiKey_T))
-            currentGizmo = GizmoOperation::Translate;
-        if (ImGui::IsKeyPressed(ImGuiKey_E))
-            currentGizmo = GizmoOperation::Rotate;
-        if (ImGui::IsKeyPressed(ImGuiKey_R))
-            currentGizmo = GizmoOperation::Scale;
+        bool keyboardCapturedByWidget = ImGui::GetIO().WantCaptureKeyboard;
 
-        if (ImGui::IsKeyPressed(ImGuiKey_Space))
+        if (!keyboardCapturedByWidget)
         {
-            switch (currentGizmo)
+            if (ImGui::IsKeyPressed(ImGuiKey_Q))
+                currentGizmo = GizmoOperation::None;
+            if (ImGui::IsKeyPressed(ImGuiKey_T))
+                currentGizmo = GizmoOperation::Translate;
+            if (ImGui::IsKeyPressed(ImGuiKey_E))
+                currentGizmo = GizmoOperation::Rotate;
+            if (ImGui::IsKeyPressed(ImGuiKey_R))
+                currentGizmo = GizmoOperation::Scale;
+
+            if (ImGui::IsKeyPressed(ImGuiKey_Space))
             {
-                case GizmoOperation::None:
-                    currentGizmo = GizmoOperation::Translate;
-                    break;
-                case GizmoOperation::Translate:
-                    currentGizmo = GizmoOperation::Rotate;
-                    break;
-                case GizmoOperation::Rotate:
-                    currentGizmo = GizmoOperation::Scale;
-                    break;
-                case GizmoOperation::Scale:
-                    currentGizmo = GizmoOperation::Translate;
-                    break;
+                switch (currentGizmo)
+                {
+                    case GizmoOperation::None:
+                        currentGizmo = GizmoOperation::Translate;
+                        break;
+                    case GizmoOperation::Translate:
+                        currentGizmo = GizmoOperation::Rotate;
+                        break;
+                    case GizmoOperation::Rotate:
+                        currentGizmo = GizmoOperation::Scale;
+                        break;
+                    case GizmoOperation::Scale:
+                        currentGizmo = GizmoOperation::Translate;
+                        break;
+                }
             }
         }
 
@@ -252,7 +257,7 @@ namespace Editor
 
             ImGui::Separator();
 
-            ImGui::Checkbox("Show Physics Debug", &Frost::Debug::PhysicsConfig::display);
+            ImGui::Checkbox("Show Physics Debug", &Frost::Debug::PhysicsConfig::IsDisplayEnabled());
             // ImGui::Checkbox("Show Grid", &settings.showGrid);
             // ImGui::Checkbox("Wireframe Mode", &settings.showWireframe);
             // ImGui::Checkbox("Enable Lighting", &settings.enableLighting);

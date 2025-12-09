@@ -3,6 +3,7 @@
 #include "Frost/Core/Core.h"
 #include "Frost/Renderer/Material.h"
 #include "Frost/Asset/Asset.h"
+
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -19,7 +20,7 @@ namespace Frost
         float uvX, uvY, uvW, uvH;
     };
 
-    class Font : public Asset
+    class FROST_API Font : public Asset
     {
     public:
         Font();

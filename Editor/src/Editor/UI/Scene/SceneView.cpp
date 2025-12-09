@@ -16,6 +16,36 @@ namespace Editor
     using namespace Frost::Math;
     using namespace Frost::Component;
 
+    bool SceneView::_IsSelected(const Frost::GameObject& go) const
+    {
+        for (const auto& item : _selection)
+        {
+            if (item.GetHandle() == go.GetHandle())
+                return true;
+        }
+        return false;
+    }
+
+    void SceneView::_AddToSelection(const Frost::GameObject& go)
+    {
+        if (!_IsSelected(go))
+            _selection.push_back(go);
+    }
+
+    void SceneView::_RemoveFromSelection(const Frost::GameObject& go)
+    {
+        _selection.erase(std::remove_if(_selection.begin(),
+                                        _selection.end(),
+                                        [&](const Frost::GameObject& item)
+                                        { return item.GetHandle() == go.GetHandle(); }),
+                         _selection.end());
+    }
+
+    void SceneView::_ClearSelection()
+    {
+        _selection.clear();
+    }
+
     SceneView::SceneView(const std::string& title, Frost::Scene* existingScene) :
         _title(title),
         _sceneContext(existingScene),
@@ -134,7 +164,7 @@ namespace Editor
 
         _editorLight = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
         auto& lightTransform = _editorLight.AddComponent<Transform>();
-        _editorLight.AddComponent<Light>();
+        _editorLight.AddComponent<Light>(LightDirectional{});
         lightTransform.position = { 0.0f, 5.0f, -5.0f };
         lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
 

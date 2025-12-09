@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Core/Timer.h"
 #include "Frost/Scene/Components/Disabled.h"
 #include "Frost/Scene/Components/Scriptable.h"
@@ -17,7 +18,7 @@ namespace Frost
     class System;
     class GameObject;
 
-    class Scene : NoCopy
+    class FROST_API Scene : NoCopy
     {
     public:
         Scene(std::string name = "Scene");
@@ -27,6 +28,9 @@ namespace Frost
         GameObject CreateGameObject(std::string name, GameObject parent);
         void DestroyGameObject(GameObject gameObject);
         GameObject DuplicateGameObject(GameObject source);
+
+        std::vector<GameObject> FindGameObjectsByName(const std::string& name);
+        GameObject FindGameObjectByName(const std::string& name);
 
         void Update(float deltaTime);
         void PreFixedUpdate(float deltaTime);
