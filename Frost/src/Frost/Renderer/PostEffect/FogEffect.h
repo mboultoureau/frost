@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Renderer/PostEffect.h"
 #include "Frost/Utils/Math/Vector.h"
 #include "Frost/Renderer/Shader.h"
@@ -10,7 +11,7 @@
 
 namespace Frost
 {
-    class FogEffect : public PostEffect
+    class FROST_API FogEffect : public PostEffect
     {
     public:
         FogEffect();

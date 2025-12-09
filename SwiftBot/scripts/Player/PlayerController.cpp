@@ -1,4 +1,5 @@
 #include "Player/PlayerController.h"
+#include "GameState/GameState.h"
 
 #include <iostream>
 
@@ -22,4 +23,6 @@ namespace GameLogic
     }
 
     void GameLogic::PlayerController::OnUpdate(float deltaTime) {}
+
+    void PlayerController::OnPreFixedUpdate(float deltaTime) {}
 } // namespace GameLogic

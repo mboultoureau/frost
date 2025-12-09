@@ -8,6 +8,11 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
+    Scriptable:
+      Scripts:
+        - PlayerCamera
+        - PlayerSpringCamera
+        - PlayerController
   - LocalID: 1
     ParentID: 0
     Meta:
@@ -16,6 +21,27 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [0.5, 0.5, 0.5]
+        ConvexRadius: 0.05
   - LocalID: 2
     ParentID: 1
     Meta:
@@ -41,7 +67,7 @@ Entities:
     Meta:
       Name: DesiredCameraLocation
     Transform:
-      Position: [0, 0, 0]
+      Position: [0, 2, -10]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
   - LocalID: 5
@@ -76,3 +102,36 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 1
+      ShapeParams:
+        Radius: 0.01
+    Camera:
+      ProjectionType: 0
+      PerspectiveFOV: 60
+      OrthographicSize: 10
+      NearClip: 0.1
+      FarClip: 1000
+      Priority: 1
+      FrustumCulling: true
+      FrustumPadding: 1
+      ClearOnRender: true
+      BackgroundColor: [0.1, 0.1, 0.1, 1]
+      Viewport: [0, 0, 1, 1]
+      RenderToTexture: false

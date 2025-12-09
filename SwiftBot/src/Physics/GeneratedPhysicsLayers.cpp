@@ -7,6 +7,8 @@ GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()
     mObjectToBroadPhase[ObjectLayers::MOVING] = BroadPhaseLayers::MOVING;
     mObjectToBroadPhase[ObjectLayers::DEBRIS] = BroadPhaseLayers::DEBRIS;
     mObjectToBroadPhase[ObjectLayers::SENSOR] = BroadPhaseLayers::SENSOR;
+    mObjectToBroadPhase[ObjectLayers::CAMERA] = BroadPhaseLayers::NON_MOVING;
+    mObjectToBroadPhase[ObjectLayers::PLAYER] = BroadPhaseLayers::NON_MOVING;
 }
 
 JPH::uint
@@ -50,13 +52,18 @@ GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::Object
     switch (inObject1)
     {
         case ObjectLayers::NON_MOVING:
-            return inObject2 == ObjectLayers::MOVING || inObject2 == ObjectLayers::DEBRIS;
+            return inObject2 == ObjectLayers::MOVING || inObject2 == ObjectLayers::DEBRIS ||
+                   inObject2 == ObjectLayers::CAMERA || inObject2 == ObjectLayers::PLAYER;
         case ObjectLayers::MOVING:
-            return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING ||
-                   inObject2 == ObjectLayers::DEBRIS;
+            return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::DEBRIS ||
+                   inObject2 == ObjectLayers::SENSOR;
         case ObjectLayers::DEBRIS:
-            return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING;
+            return false;
         case ObjectLayers::SENSOR:
+            return false;
+        case ObjectLayers::CAMERA:
+            return false;
+        case ObjectLayers::PLAYER:
             return false;
         default:
             return false;
@@ -76,6 +83,10 @@ GameObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer inLayer1, JPH:
         case ObjectLayers::DEBRIS:
             return inLayer2 == BroadPhaseLayers::NON_MOVING || inLayer2 == BroadPhaseLayers::MOVING;
         case ObjectLayers::SENSOR:
+            return false;
+        case ObjectLayers::CAMERA:
+            return false;
+        case ObjectLayers::PLAYER:
             return false;
         default:
             return false;
