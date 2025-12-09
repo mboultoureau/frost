@@ -1,6 +1,16 @@
 Scene: RainbowRoad
 Entities:
-  - Entity: 20
+  - Entity: 8
+    Meta:
+      Name: VictoryScreen
+    Transform:
+      Position: [-3.044776, 0, -0.538332]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\VictoryScreen.prefab
+    Parent: -1
+  - Entity: 7
     Meta:
       Name: SplashScreen
     Transform:
@@ -10,9 +20,9 @@ Entities:
     Prefab:
       AssetPath: assets\HUD\SplashScreen.prefab
     Parent: -1
-  - Entity: 5
+  - Entity: 6
     Meta:
-      Name: Player
+      Name: Player1
     Transform:
       Position: [5.8567452, 0.45585728, 4.8872547]
       Rotation: [0, 0, 0, 1]
@@ -20,7 +30,7 @@ Entities:
     Prefab:
       AssetPath: assets\Player\Player.prefab
     Parent: -1
-  - Entity: 4
+  - Entity: 5
     Meta:
       Name: Water
     Transform:
@@ -30,7 +40,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Water.prefab
     Parent: -1
-  - Entity: 3
+  - Entity: 4
     Meta:
       Name: Terrain
     Transform:
@@ -40,7 +50,7 @@ Entities:
     Prefab:
       AssetPath: assets\Scenes\RainbowRoad\Terrain\Terrain.prefab
     Parent: -1
-  - Entity: 2
+  - Entity: 3
     Meta:
       Name: cat
     Transform:
@@ -50,7 +60,7 @@ Entities:
     Prefab:
       AssetPath: assets\Scenes\RainbowRoad\Samples\cat.prefab
     Parent: -1
-  - Entity: 1
+  - Entity: 2
     Meta:
       Name: LevelCamera
     Transform:
@@ -82,7 +92,7 @@ Entities:
       Viewport: [0, 0, 1, 1]
       RenderToTexture: false
     Parent: -1
-  - Entity: 0
+  - Entity: 1
     Meta:
       Name: Sun
     Transform:
@@ -96,4 +106,14 @@ Entities:
       Params:
         CastShadows: true
         ShadowBias: 0.005
+    Parent: -1
+  - Entity: 0
+    Meta:
+      Name: PauseScreen
+    Transform:
+      Position: [-1.8431911, 0, -2.4065137]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\PauseScreen.prefab
     Parent: -1

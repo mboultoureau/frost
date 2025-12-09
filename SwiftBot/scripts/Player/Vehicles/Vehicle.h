@@ -4,6 +4,13 @@
 
 namespace GameLogic
 {
+    enum class VehicleType
+    {
+        BIKE = 0,
+        BOAT = 1,
+        PLANE = 2
+    };
+
     class Vehicle
     {
     public:

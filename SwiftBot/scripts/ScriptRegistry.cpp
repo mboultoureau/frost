@@ -1,9 +1,20 @@
 #include "Frost/Scripting/Script.h"
 
+#include "GameState/GameState.h"
+
+#include "HUD/PauseScreen.h"
 #include "HUD/SplashScreen.h"
+#include "HUD/VictoryScreen.h"
+
 #include "Materials/Terrain.h"
 #include "Materials/Water.h"
+
+#include "CheckPoint/CheckpointScript.h"
+
+#include "Player/PlayerCamera.h"
 #include "Player/PlayerController.h"
+#include "Player/PlayerSpringCamera.h"
+
 #include "Samples/Rotate.h"
 
 using ScriptCreateFunc = std::function<Frost::Scripting::Script*()>;
@@ -13,16 +24,33 @@ void
 InitializeRegistry()
 {
     // HUD
+    // Pause Screen
+    _scriptRegistry["PauseScreen"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::PauseScreen()); };
+
+    // Splash Screen
     _scriptRegistry["SplashScreen"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::SplashScreen()); };
+
+    // Victory Screen
+    _scriptRegistry["VictoryScreen"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::VictoryScreen()); };
 
     // Materials
     _scriptRegistry["Terrain"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Terrain()); };
     _scriptRegistry["Water"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Water()); };
 
+    // Checkpoint
+    _scriptRegistry["CheckpointScript"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::CheckpointScript()); };
+
     // Player
+    _scriptRegistry["PlayerCamera"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerCamera()); };
     _scriptRegistry["PlayerController"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerController()); };
+    _scriptRegistry["PlayerSpringCamera"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerSpringCamera()); };
 
     // Samples
     _scriptRegistry["Rotate"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Rotate()); };
