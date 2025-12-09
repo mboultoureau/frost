@@ -21,22 +21,12 @@ MainLayer::OnAttach()
 
     _gamestate = GameState();
 
-    _gamestate.SetLap(4);
+    _gamestate.SetLap(2);
 
     // player
 
     // portal
 
-    /* Frost::Math::Vector3 billboardPosition = { -365.0f, 68.0f, -64.0f };
-    const float billboardWidth = 50.0f;
-    const float billboardHeight = 50.0f;
-    const std::string texturePath = "resources/textures/victoryScreen.png";
-    auto MyNewBillboard = _scene.CreateGameObject("My Test Billboard");
-    MyNewBillboard.AddComponent<Frost::Component::Transform>(billboardPosition);
-    MyNewBillboard.AddComponent<Frost::Component::WorldTransform>();
-    MyNewBillboard.AddComponent<Frost::Component::Billboard>(
-        billboardWidth, billboardHeight, texturePath, Frost::Material::FilterMode::LINEAR);
-        */
     //_terrain = std::make_unique<Terrain>();
     _water = std::make_unique<Water>(Vector3(-10.0, -70.0, 50.0), EulerAngles(), Vector3(50, 230, 50), 0.2f);
     _sndWater = std::make_unique<Water>(Vector3(-50, 65, -30.0), EulerAngles(), Vector3(15, 10, 20), 0.2f);
@@ -44,42 +34,29 @@ MainLayer::OnAttach()
 
     _sun = std::make_unique<Sun>();
 
-    _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -360, 69, -85 }, _gamestate);
-    _checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
-    _checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
-    _checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
-    _checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
+    _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -14, 52, 78 }, _gamestate);
+    _checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -14, 61, 17 });
+    _checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -17, 61, -111 });
+
+    auto arrow = Game::GetScene().CreateGameObject("Arrow Billboard");
+    arrow.AddComponent<Billboard>(Vector3(-17, 50, -50), 5.0f, "resources/textures/arrow-up.png");
 
     _grass = std::make_unique<Grass>(Vector3{ 9.0f, 60.7f, -47 }, EulerAngles(180_deg, 0_deg, 0_deg), Vector3(1, 1, 1));
 
     _boost =
         std::make_shared<Boost>(Vector3{ -13.0f, 61.7f, -10 }, EulerAngles(), Vector3(10, 2, 2), Vector3(0, 1, 0), 2);
+
     // link 1 / 2
     _checkPoint1->AddChild(_checkPoint2);
     _checkPoint2->AddParent(_checkPoint1);
+
+    // link 2 / 3
+    _checkPoint2->AddChild(_checkPoint3);
+    _checkPoint3->AddParent(_checkPoint2);
+
     // link 1 / 3
-    _checkPoint1->AddChild(_checkPoint3);
-    _checkPoint3->AddParent(_checkPoint1);
-
-    // DEBUG
-    // link 2 / 1
-    /*	_checkPoint2->AddChild(_checkPoint1);
-        _checkPoint1->AddParent(_checkPoint2);
-    */
-    // link 2 / 4
-    _checkPoint2->AddChild(_checkPoint4);
-    _checkPoint4->AddParent(_checkPoint2);
-    // link 3 / 4
-    _checkPoint3->AddChild(_checkPoint4);
-    _checkPoint4->AddParent(_checkPoint3);
-
-    // link 4 / 5
-    _checkPoint4->AddChild(_checkPoint5);
-    _checkPoint5->AddParent(_checkPoint4);
-
-    // link 5 / 1
-    _checkPoint5->AddChild(_checkPoint1);
-    _checkPoint1->AddParent(_checkPoint5);
+    _checkPoint3->AddChild(_checkPoint1);
+    _checkPoint1->AddParent(_checkPoint3);
 
     _checkPoint1->ActivatePhysics();
 
@@ -142,7 +119,7 @@ MainLayer::OnFixedUpdate(float deltaTime)
             _portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
             _portal2->SetupPortal(PortalType::Exit);
 
-            _portal3 = std::make_shared<Portal>(Vector3{ -23, 50, 29 },
+            _portal3 = std::make_shared<Portal>(Vector3{ -23, 45, 29 },
                                                 EulerAngles{ 0_deg, 180_deg, 0_deg },
                                                 Vector3{ 3.0f, 3.0f, 3.0f },
                                                 _player.get());
@@ -204,8 +181,6 @@ MainLayer::OnFixedUpdate(float deltaTime)
         _checkPoint1->FixedUpdate(deltaTime);
         _checkPoint2->FixedUpdate(deltaTime);
         _checkPoint3->FixedUpdate(deltaTime);
-        _checkPoint4->FixedUpdate(deltaTime);
-        _checkPoint5->FixedUpdate(deltaTime);
     }
     _scene.FixedUpdate(deltaTime);
 }

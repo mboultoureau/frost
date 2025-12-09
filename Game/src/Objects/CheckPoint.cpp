@@ -95,10 +95,10 @@ CheckPoint::InitializePhysics()
 
     constexpr float CHECKPOINT_SIZE = 5.0f;
 
-    auto& rb = _checkpoint.AddComponent<RigidBody>(ShapeSphere{ CHECKPOINT_SIZE }, ObjectLayers::CHECKPOINT);
-
-    rb.gravityFactor = 0.0f;
-    rb.isSensor = true;
+    RigidBody rbComp{ ShapeSphere{ CHECKPOINT_SIZE }, ObjectLayers::CHECKPOINT, RigidBody::MotionType::Static };
+    rbComp.isSensor = true;
+    rbComp.gravityFactor = 0.0f;
+    auto& rb = _checkpoint.AddComponent<RigidBody>(rbComp);
 }
 
 void

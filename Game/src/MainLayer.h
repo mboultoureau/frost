@@ -59,8 +59,6 @@ private:
     std::shared_ptr<CheckPoint> _checkPoint1;
     std::shared_ptr<CheckPoint> _checkPoint2;
     std::shared_ptr<CheckPoint> _checkPoint3;
-    std::shared_ptr<CheckPoint> _checkPoint4;
-    std::shared_ptr<CheckPoint> _checkPoint5;
     std::shared_ptr<Wall> _wall;
     std::unique_ptr<Grass> _grass;
     std::unique_ptr<CheckPoint> _debugCheckPoint;
