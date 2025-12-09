@@ -43,7 +43,9 @@
 
 #include "Frost/Renderer/DX11/RendererDX11.h"
 #include "Frost/Renderer/PostEffect/ChromaticAberrationEffect.h"
+#include "Frost/Renderer/PostEffect/FogEffect.h"
 #include "Frost/Renderer/PostEffect/RadialBlurEffect.h"
+#include "Frost/Renderer/PostEffect/ToonEffect.h"
 #include "Frost/Renderer/PostEffect/ScreenShakeEffect.h"
 #include "Frost/Renderer/RendererAPI.h"
 

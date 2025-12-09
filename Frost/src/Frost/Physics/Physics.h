@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/ECS/GameObject.h"
 #include "Frost/Utils/NoCopy.h"
@@ -31,7 +32,7 @@
 
 namespace Frost
 {
-    class Physics : NoCopy
+    class FROST_API Physics : NoCopy
     {
         friend class PhysicSystem;
         // ===== Constructors =================

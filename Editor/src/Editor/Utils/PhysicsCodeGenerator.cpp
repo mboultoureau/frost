@@ -8,16 +8,16 @@
 
 namespace Editor
 {
-    bool PhysicsCodeGenerator::Generate(const ProjectConfig& config, const std::string& outputDirectory)
+    bool PhysicsCodeGenerator::Generate(const ProjectConfig& config, const std::string& projectDirectory)
     {
-        std::filesystem::path dir(outputDirectory);
-        if (!std::filesystem::exists(dir))
+        std::filesystem::path srcDir = std::filesystem::path(projectDirectory) / "src" / "Physics";
+        if (!std::filesystem::exists(srcDir))
         {
-            std::filesystem::create_directories(dir);
+            std::filesystem::create_directories(srcDir);
         }
 
-        std::filesystem::path headerPath = dir / "GeneratedPhysicsLayers.h";
-        std::filesystem::path sourcePath = dir / "GeneratedPhysicsLayers.cpp";
+        std::filesystem::path headerPath = srcDir / "GeneratedPhysicsLayers.h";
+        std::filesystem::path sourcePath = srcDir / "GeneratedPhysicsLayers.cpp";
 
         // Header (.h)
         std::ofstream headerFile(headerPath);
@@ -33,13 +33,25 @@ namespace Editor
         sourceFile << _GenerateSourceContent(config);
         sourceFile.close();
 
+        std::filesystem::path scriptDir = std::filesystem::path(projectDirectory) / "scripts" / "Physics";
+        if (!std::filesystem::exists(scriptDir))
+        {
+            std::filesystem::create_directories(scriptDir);
+        }
+
+        std::filesystem::path scriptHeaderPath = scriptDir / "PhysicLayer.h";
+        std::ofstream scriptHeaderFile(scriptHeaderPath);
+        if (!scriptHeaderFile.is_open())
+            return false;
+        scriptHeaderFile << _GenerateScriptHeaderContent(config);
+        scriptHeaderFile.close();
+
         return true;
     }
 
     std::string PhysicsCodeGenerator::_SanitizeName(const std::string& name)
     {
         std::string result = name;
-        // Replace with underscores and uppercase
         std::transform(result.begin(),
                        result.end(),
                        result.begin(),
@@ -50,12 +62,44 @@ namespace Editor
                            return '_';
                        });
 
-        // If the name starts with a digit, prepend an underscore
+        // If name begins with a digit, prepend an underscore
         if (!result.empty() && std::isdigit(result[0]))
         {
             result = "_" + result;
         }
         return result;
+    }
+
+    std::string PhysicsCodeGenerator::_GenerateScriptHeaderContent(const ProjectConfig& config)
+    {
+        std::stringstream ss;
+
+        ss << "#pragma once\n\n";
+        ss << "#include <Jolt/Jolt.h>\n";
+        ss << "#include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>\n";
+        ss << "#include <Jolt/Physics/Collision/ObjectLayer.h>\n\n";
+
+        // Namespace ObjectLayers
+        ss << "namespace ObjectLayers\n{\n";
+        for (const auto& layer : config.objectLayers)
+        {
+            ss << "\tstatic constexpr JPH::ObjectLayer " << _SanitizeName(layer.name) << " = " << layer.layerId
+               << ";\n";
+        }
+        ss << "\tstatic constexpr JPH::uint NUM_LAYERS = " << config.objectLayers.size() << ";\n";
+        ss << "}\n\n";
+
+        // Namespace BroadPhaseLayers
+        ss << "namespace BroadPhaseLayers\n{\n";
+        for (const auto& layer : config.broadPhaseLayers)
+        {
+            ss << "\tstatic constexpr JPH::BroadPhaseLayer " << _SanitizeName(layer.name) << "(" << (int)layer.layerId
+               << ");\n";
+        }
+        ss << "\tstatic constexpr JPH::uint NUM_LAYERS = " << config.broadPhaseLayers.size() << ";\n";
+        ss << "}\n";
+
+        return ss.str();
     }
 
     std::string PhysicsCodeGenerator::_GenerateHeaderContent(const ProjectConfig& config)
@@ -67,7 +111,7 @@ namespace Editor
         ss << "#include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>\n";
         ss << "#include <Jolt/Physics/Collision/ObjectLayer.h>\n\n";
 
-        // Object Layers Namespace
+        // Namespace ObjectLayers
         ss << "namespace ObjectLayers\n{\n";
         for (const auto& layer : config.objectLayers)
         {
@@ -77,7 +121,7 @@ namespace Editor
         ss << "\tstatic constexpr JPH::uint NUM_LAYERS = " << config.objectLayers.size() << ";\n";
         ss << "}\n\n";
 
-        // BroadPhase Layers Namespace
+        // Namespace BroadPhaseLayers
         ss << "namespace BroadPhaseLayers\n{\n";
         for (const auto& layer : config.broadPhaseLayers)
         {
@@ -87,8 +131,8 @@ namespace Editor
         ss << "\tstatic constexpr JPH::uint NUM_LAYERS = " << config.broadPhaseLayers.size() << ";\n";
         ss << "}\n\n";
 
-        // Classes Definitions
-        ss << "// Class mapping Object Layers to BroadPhase Layers\n";
+        // Class definition
+        ss << "// Classe faisant le lien entre les Object Layers et les BroadPhase Layers\n";
         ss << "class GameBroadPhaseLayerInterface final : public JPH::BroadPhaseLayerInterface\n{\n";
         ss << "public:\n";
         ss << "\tGameBroadPhaseLayerInterface();\n";
@@ -101,13 +145,13 @@ namespace Editor
         ss << "\tJPH::BroadPhaseLayer mObjectToBroadPhase[ObjectLayers::NUM_LAYERS];\n";
         ss << "};\n\n";
 
-        ss << "// Class determining if two Object Layers collide\n";
+        ss << "// Classe déterminant si deux Object Layers peuvent entrer en collision\n";
         ss << "class GameObjectLayerPairFilter : public JPH::ObjectLayerPairFilter\n{\n";
         ss << "public:\n";
         ss << "\tvirtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override;\n";
         ss << "};\n\n";
 
-        ss << "// Class determining if an Object Layer collides with a BroadPhase Layer\n";
+        ss << "// Classe déterminant si un Object Layer entre en collision avec un BroadPhase Layer\n";
         ss << "class GameObjectVsBroadPhaseLayerFilter : public JPH::ObjectVsBroadPhaseLayerFilter\n{\n";
         ss << "public:\n";
         ss << "\tvirtual bool ShouldCollide(JPH::ObjectLayer inLayer1, JPH::BroadPhaseLayer inLayer2) const "
@@ -124,7 +168,7 @@ namespace Editor
         ss << "#include \"GeneratedPhysicsLayers.h\"\n";
         ss << "#include <cassert>\n\n";
 
-        // BroadPhaseLayerInterface Implementation
+        // BroadPhaseLayerInterface
         ss << "GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()\n{\n";
         for (const auto& objLayer : config.objectLayers)
         {
@@ -163,7 +207,7 @@ namespace Editor
         ss << "\t}\n}\n";
         ss << "#endif\n\n";
 
-        // ObjectLayerPairFilter Implementation
+        // ObjectLayerPairFilter
         ss << "bool GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) "
               "const\n{\n";
         ss << "\tswitch (inObject1)\n\t{\n";
@@ -198,7 +242,7 @@ namespace Editor
         ss << "\t\tdefault:\n\t\t\treturn false;\n";
         ss << "\t}\n}\n\n";
 
-        // ObjectVsBroadPhaseLayerFilter Implementation
+        // ObjectVsBroadPhaseLayerFilter
         ss << "bool GameObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer inLayer1, JPH::BroadPhaseLayer "
               "inLayer2) const\n{\n";
         ss << "\tswitch (inLayer1)\n\t{\n";

@@ -30,6 +30,12 @@ project:
       - name: SENSOR
         id: 3
         broadphase_id: 3
+      - name: CAMERA
+        id: 4
+        broadphase_id: 0
+      - name: PLAYER
+        id: 5
+        broadphase_id: 0
     broadphase_matrix:
       - false
       - true
@@ -73,6 +79,26 @@ project:
       - false
       - false
       - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
     object_broadphase_matrix:
       - false
       - true
@@ -86,6 +112,16 @@ project:
       - false
       - true
       - true
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
       - false
       - false
       - false

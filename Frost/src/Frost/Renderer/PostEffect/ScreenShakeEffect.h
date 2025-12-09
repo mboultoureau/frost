@@ -1,10 +1,11 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Renderer/PostEffect.h"
 
 namespace Frost
 {
-    class ScreenShakeEffect : public PostEffect
+    class FROST_API ScreenShakeEffect : public PostEffect
     {
     public:
         enum class AttenuationType

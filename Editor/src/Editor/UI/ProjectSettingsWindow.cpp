@@ -23,15 +23,12 @@ namespace Editor
         ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
         if (ImGui::Begin(GetStaticTitle(), &_isOpen, ImGuiWindowFlags_NoCollapse))
         {
-            // Top action bar
             if (ImGui::Button("Apply"))
             {
                 _projectInfo.GetConfigRef() = _editableConfig;
                 _projectInfo.Save();
 
-                std::string outputPath = _projectInfo.GetProjectDir() + "/src/Physics";
-
-                if (Editor::PhysicsCodeGenerator::Generate(_projectInfo.GetConfig(), outputPath))
+                if (Editor::PhysicsCodeGenerator::Generate(_projectInfo.GetConfig(), _projectInfo.GetProjectDir()))
                 {
                     ImGui::OpenPopup("SuccessGeneration");
                 }
@@ -104,7 +101,6 @@ namespace Editor
             {
                 ImGui::PushID(i);
 
-                // Minimum one layer must exist
                 if (_editableConfig.broadPhaseLayers.size() > 1)
                 {
                     if (ImGui::Button("-"))
@@ -132,7 +128,6 @@ namespace Editor
 
         if (ImGui::CollapsingHeader("Object Layers", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            // At least one BroadPhase layer must exist to create Object layers
             if (_editableConfig.broadPhaseLayers.empty())
             {
                 ImGui::TextDisabled("Please create a BroadPhase Layer first.");
@@ -219,7 +214,6 @@ namespace Editor
 
             if (ImGui::BeginTable("ObjectVsBroadPhaseMatrix", numBroadPhaseLayers + 1))
             {
-                // Header
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 ImGui::TextUnformatted("");
@@ -229,7 +223,7 @@ namespace Editor
                     ImGui::TextUnformatted(_editableConfig.broadPhaseLayers[i].name.c_str());
                 }
 
-                // Rows
+                // Lignes
                 for (int i = 0; i < numObjectLayers; ++i)
                 {
                     ImGui::TableNextRow();
@@ -263,7 +257,6 @@ namespace Editor
 
         if (ImGui::BeginTable("CollisionMatrix", numLayers + 1))
         {
-            // Header row
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::TextUnformatted("");
@@ -273,7 +266,6 @@ namespace Editor
                 ImGui::TextUnformatted(layers[i].name.c_str());
             }
 
-            // Matrix rows
             for (int i = 0; i < numLayers; ++i)
             {
                 ImGui::TableNextRow();

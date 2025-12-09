@@ -1,18 +1,94 @@
 Scene: Island
 Entities:
-  - Entity: 2
+  - Entity: 26
     Meta:
-      Name: Lake
+      Name: LevelCamera
     Transform:
-      Position: [4.1218524, 0, -6.813176]
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Camera:
+      ProjectionType: 0
+      PerspectiveFOV: 60
+      OrthographicSize: 10
+      NearClip: 0.1
+      FarClip: 1000
+      Priority: 0
+      FrustumCulling: true
+      FrustumPadding: 1
+      ClearOnRender: true
+      BackgroundColor: [0.1, 0.1, 0.1, 1]
+      Viewport: [0, 0, 1, 1]
+      RenderToTexture: false
+    Parent: -1
+  - Entity: 7
+    Meta:
+      Name: Sun
+    Transform:
+      Position: [8, 11.5, 0]
+      Rotation: [0, -0.100188054, 0, 0.99496853]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 0
+      Color: [1, 1, 1]
+      Intensity: 1
+      Params:
+        CastShadows: true
+        ShadowBias: 0.005
+    Parent: -1
+  - Entity: 6
+    Meta:
+      Name: PauseScreen
+    Transform:
+      Position: [5.939341, 3.1288216, -1.8784952]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     Prefab:
-      AssetPath: assets\Scenes\Island\Lake.prefab
+      AssetPath: assets\HUD\PauseScreen.prefab
+    Parent: -1
+  - Entity: 5
+    Meta:
+      Name: SplashScreen
+    Transform:
+      Position: [-3.4861403, 2.385097, -0.52147484]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\SplashScreen.prefab
+    Parent: -1
+  - Entity: 4
+    Meta:
+      Name: VictoryScreen
+    Transform:
+      Position: [-5.4507627, 2.538681, 0.07664871]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\VictoryScreen.prefab
+    Parent: -1
+  - Entity: 3
+    Meta:
+      Name: Checkpoint
+    Transform:
+      Position: [-5.896103, 0, 2.1468477]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\Checkpoint.prefab
+    Parent: -1
+  - Entity: 2
+    Meta:
+      Name: Water
+    Transform:
+      Position: [0.79565525, 0, -66.01084]
+      Rotation: [0, 0, 0, 1]
+      Scale: [88.586296, 1, 121.45659]
+    Prefab:
+      AssetPath: assets\Prefabs\Water.prefab
     Parent: -1
   - Entity: 1
     Meta:
-      Name: Player
+      Name: Player1
     Transform:
       Position: [2.508731, 0, -7.762828]
       Rotation: [0, 0, 0, 1]
@@ -22,11 +98,11 @@ Entities:
     Parent: -1
   - Entity: 0
     Meta:
-      Name: Water
+      Name: Island
     Transform:
-      Position: [0.79565525, 0, -66.01084]
+      Position: [0.5841521, 0.6865766, -55.049828]
       Rotation: [0, 0, 0, 1]
-      Scale: [88.586296, 1, 121.45659]
+      Scale: [1, 1, 1]
     Prefab:
-      AssetPath: assets\Prefabs\Water.prefab
+      AssetPath: assets\Prefabs\Island\Island.prefab
     Parent: -1
