@@ -642,11 +642,6 @@ namespace Frost
                         break;
                     }
                 }
-
-                if (auto* physicSystem = go.GetScene()->GetSystem<PhysicSystem>())
-                {
-                    physicSystem->NotifyRigidBodyUpdate(*go.GetScene(), go);
-                }
             },
             // Write Binary
             [](std::ostream& out, GameObject go)
@@ -773,11 +768,6 @@ namespace Frost
                         rb.shape = s;
                         break;
                     }
-                }
-
-                if (auto* physicSystem = go.GetScene()->GetSystem<PhysicSystem>())
-                {
-                    physicSystem->NotifyRigidBodyUpdate(*go.GetScene(), go);
                 }
             });
 
