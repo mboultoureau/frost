@@ -2,6 +2,8 @@ cbuffer PerFrame : register(b0)
 {
     matrix ViewMatrix;
     matrix ProjectionMatrix;
+    float3 CameraPosition;
+    float padding;
 }
 
 cbuffer PerObject : register(b1)
@@ -39,7 +41,6 @@ struct HS_Input
     float3 LocalPos : POSITION1;
     float3 Normal : NORMAL;
     float2 TexCoord : TEXCOORD;
-    float DistToPlayer : TEXCOORD1;
 };
 
 struct DS_Output

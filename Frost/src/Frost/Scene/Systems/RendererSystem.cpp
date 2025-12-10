@@ -162,7 +162,8 @@ namespace Frost
                     effect->OnPreRender(deltaTime, viewMatrix, projectionMatrix);
                 }
 
-                _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, mainRenderViewport);
+                _deferredRendering.BeginFrame(
+                    camera, cameraTransform, viewMatrix, projectionMatrix, mainRenderViewport);
 
                 meshView.each(
                     [&](const StaticMesh& staticMesh, const WorldTransform& meshTransform)
@@ -191,7 +192,8 @@ namespace Frost
             }
             else
             {
-                _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, mainRenderViewport);
+                _deferredRendering.BeginFrame(
+                    camera, cameraTransform, viewMatrix, projectionMatrix, mainRenderViewport);
                 _deferredRendering.EndFrame(camera, cameraTransform, {}, mainRenderViewport);
             }
 
@@ -333,7 +335,7 @@ namespace Frost
         CommandList* commandList = _deferredRendering.GetCommandList();
         commandList->BeginRecording();
 
-        _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, renderViewport);
+        _deferredRendering.BeginFrame(camera, cameraTransform, viewMatrix, projectionMatrix, renderViewport);
 
         meshView.each(
             [&](const StaticMesh& staticMesh, const WorldTransform& meshTransform)
