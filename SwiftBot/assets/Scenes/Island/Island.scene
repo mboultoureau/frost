@@ -162,3 +162,23 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
+  - Entity: 1
+    Meta:
+      Name: Portal
+    Transform:
+      Position: [15.163338, -28.959198, -241.6422]
+      Rotation: [0, 0.39288422, 0, 0.91958797]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\Portal\Portal.prefab
+    Parent: -1
+  - Entity: 0
+    Meta:
+      Name: island1
+    Transform:
+      Position: [-1.1219513, -29.25872, -55.676033]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\Island\island1.prefab
+    Parent: -1

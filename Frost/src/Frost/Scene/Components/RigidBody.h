@@ -16,7 +16,8 @@ namespace Frost::Component
         Box = 0,
         Sphere,
         Capsule,
-        Cylinder
+        Cylinder,
+        Mesh
     };
 
     struct ShapeBox
@@ -42,8 +43,12 @@ namespace Frost::Component
         float radius = 0.5f;
         float convexRadius = 0.05f;
     };
+    struct ShapeMesh
+    {
+        std::string path;
+    };
 
-    using CollisionShapeConfig = std::variant<ShapeBox, ShapeSphere, ShapeCapsule, ShapeCylinder>;
+    using CollisionShapeConfig = std::variant<ShapeBox, ShapeSphere, ShapeCapsule, ShapeCylinder, ShapeMesh>;
 
     struct RigidBody : public Component
     {

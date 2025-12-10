@@ -1,6 +1,5 @@
 #include "Player/PlayerController.h"
 #include "GameState/GameState.h"
-
 #include <iostream>
 
 using namespace Frost;
@@ -11,7 +10,11 @@ namespace GameLogic
 {
     void PlayerController::OnCreate()
     {
-        // TODO: Image manager
+
+        _InitializeHUD();
+
+        _currentIndex = 0;
+        _UpdateHUDDisplay();
 
         _moto = std::make_unique<Moto>(_gameObject);
         _boat = std::make_unique<Boat>(_gameObject);
@@ -118,6 +121,7 @@ namespace GameLogic
                 (static_cast<int>(currentVehicleType) - 1 + static_cast<int>(VehicleType::COUNT)) %
                 static_cast<int>(VehicleType::COUNT));
             _SetVehicle(previousVehicleType);
+            _ChangeImageLeft();
         }
         // Switch to next vehicle
         if (Input::GetKeyboard().IsKeyPressed(K_E))
@@ -125,6 +129,7 @@ namespace GameLogic
             auto nextVehicleType = static_cast<VehicleType>((static_cast<int>(currentVehicleType) + 1) %
                                                             static_cast<int>(VehicleType::COUNT));
             _SetVehicle(nextVehicleType);
+            _ChangeImageRight();
         }
 
         // Movement
@@ -191,5 +196,86 @@ namespace GameLogic
                 _plane->OnSpecialAction(isSpecial);
                 break;
         }
+    }
+
+    void PlayerController::_InitializeHUD()
+    {
+        auto _scene = GetGameObject().GetScene();
+
+        _hudLeft = _scene->CreateGameObject("HUD_Left_Icon");
+        _hudMiddle = _scene->CreateGameObject("HUD_Middle_Icon");
+        _hudRight = _scene->CreateGameObject("HUD_Right_Icon");
+
+        Viewport viewportLeft;
+        viewportLeft.height = 0.06f;
+        viewportLeft.width = 0.05f;
+        viewportLeft.x = 0.75f;
+        viewportLeft.y = 0.075f;
+
+        Viewport viewportRight;
+        viewportRight.height = 0.06f;
+        viewportRight.width = 0.05f;
+        viewportRight.x = 0.9f;
+        viewportRight.y = 0.075f;
+
+        Viewport viewportMiddle;
+        viewportMiddle.height = 0.1f;
+        viewportMiddle.width = 0.1f;
+        viewportMiddle.x = 0.8f;
+        viewportMiddle.y = 0.05f;
+
+        const std::string INIT_PATH = _imagePaths[0];
+
+        _hudLeft.AddComponent<UIElement>(
+            UIElement{ .viewport = viewportLeft,
+                       .content = UIImage{ .textureFilepath = INIT_PATH, .filter = Material::FilterMode::POINT } });
+        _hudMiddle.AddComponent<UIElement>(
+            UIElement{ .viewport = viewportMiddle,
+                       .content = UIImage{ .textureFilepath = INIT_PATH, .filter = Material::FilterMode::POINT } });
+        _hudRight.AddComponent<UIElement>(
+            UIElement{ .viewport = viewportRight,
+                       .content = UIImage{ .textureFilepath = INIT_PATH, .filter = Material::FilterMode::POINT } });
+    }
+
+    void PlayerController::_ChangeImageRight()
+    {
+        if (_imagePaths.empty())
+            return;
+
+        _currentIndex = (_currentIndex + 1) % _imagePaths.size();
+
+        _UpdateHUDDisplay();
+    }
+
+    void PlayerController::_ChangeImageLeft()
+    {
+        if (_imagePaths.empty())
+            return;
+
+        size_t numImages = _imagePaths.size();
+        _currentIndex = (_currentIndex - 1 + numImages) % numImages;
+
+        _UpdateHUDDisplay();
+    }
+
+    void PlayerController::_UpdateHUDDisplay()
+    {
+        size_t numImages = _imagePaths.size();
+
+        size_t current = _currentIndex;
+        size_t prev = (current - 1 + numImages) % numImages;
+        size_t next = (current + 1) % numImages;
+
+        auto updateImage = [](GameObject& hudObject, const std::string& path)
+        {
+            auto& uiElement = hudObject.GetComponent<UIElement>();
+            auto& uiImage = std::get<UIImage>(uiElement.content);
+            uiImage.SetTexturePath(path);
+            hudObject.SetActive(true);
+        };
+
+        updateImage(_hudMiddle, _imagePaths[current]);
+        updateImage(_hudLeft, _imagePaths[prev]);
+        updateImage(_hudRight, _imagePaths[next]);
     }
 } // namespace GameLogic

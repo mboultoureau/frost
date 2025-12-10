@@ -587,7 +587,7 @@ namespace Frost
                     ImGui::Separator();
                     ImGui::Text("Collision Shape");
 
-                    const char* shapeTypes[] = { "Box", "Sphere", "Capsule", "Cylinder" };
+                    const char* shapeTypes[] = { "Box", "Sphere", "Capsule", "Cylinder", "Mesh" };
                     int currentShapeType = static_cast<int>(rb.shape.index());
                     if (ImGui::Combo("Shape", &currentShapeType, shapeTypes, IM_ARRAYSIZE(shapeTypes)))
                     {
@@ -604,6 +604,9 @@ namespace Frost
                                 break;
                             case CollisionShapeType::Cylinder:
                                 rb.shape = ShapeCylinder{};
+                                break;
+                            case CollisionShapeType::Mesh:
+                                rb.shape = ShapeMesh{};
                                 break;
                         }
 
@@ -636,6 +639,37 @@ namespace Frost
                                 shapeModified |= ImGui::DragFloat("Radius", &arg.radius, 0.05f, 0.01f, 1000.0f);
                                 shapeModified |=
                                     ImGui::DragFloat("Convex Radius", &arg.convexRadius, 0.005f, 0.0f, 1.0f);
+                            }
+                            else if constexpr (std::is_same_v<T, ShapeMesh>)
+                            {
+                                char buffer[256];
+                                memset(buffer, 0, sizeof(buffer));
+                                strncpy_s(buffer, sizeof(buffer), arg.path.c_str(), _TRUNCATE);
+
+                                if (ImGui::InputText("Mesh Path", buffer, sizeof(buffer)))
+                                {
+                                    arg.path = std::string(buffer);
+                                    shapeModified = true;
+                                }
+
+                                if (ImGui::BeginDragDropTarget())
+                                {
+                                    if (const ImGuiPayload* payload =
+                                            ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                                    {
+                                        const wchar_t* path = (const wchar_t*)payload->Data;
+                                        std::filesystem::path filePath(path);
+
+                                        std::string ext = filePath.extension().string();
+                                        if (std::find(MESH_FILE_EXTENSIONS.begin(), MESH_FILE_EXTENSIONS.end(), ext) !=
+                                            MESH_FILE_EXTENSIONS.end())
+                                        {
+                                            arg.path = filePath.string();
+                                            shapeModified = true;
+                                        }
+                                    }
+                                    ImGui::EndDragDropTarget();
+                                }
                             }
 
                             return shapeModified;

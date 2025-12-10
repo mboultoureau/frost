@@ -3,54 +3,11 @@ Entities:
   - LocalID: 0
     ParentID: -1
     Meta:
-      Name: Portal
+      Name: island1
     Transform:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
-  - LocalID: 1
-    ParentID: 0
-    Meta:
-      Name: Trigger
-    Transform:
-      Position: [0, 5.116079, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    RigidBody:
-      MotionType: 0
-      IsSensor: false
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      ObjectLayer: 0
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 3
-      ShapeParams:
-        HalfHeight: 5.25
-        Radius: 6.45
-        ConvexRadius: 0.05
-  - LocalID: 2
-    ParentID: 0
-    Meta:
-      Name: Mesh
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [0.01, 0.01, 0.01]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Prefabs/Portal/portal.glb
     RigidBody:
       MotionType: 0
       IsSensor: false
@@ -71,4 +28,37 @@ Entities:
       LockRotationZ: false
       ShapeType: 4
       ShapeParams:
-        Path: assets\Prefabs\Portal\portal.glb
+        Path: assets\Prefabs\Island\islandV3.glb
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: islandV3
+    Transform:
+      Position: [-2.1428607, 0, 35.28088]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/Island/islandV3.glb
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 0
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 4
+      ShapeParams:
+        Path: assets\Prefabs\Island\islandV3.glb
