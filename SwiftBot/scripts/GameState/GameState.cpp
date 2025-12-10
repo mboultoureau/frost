@@ -1,4 +1,5 @@
-#include "GameState.h"
+#include "GameState/GameState.h"
+
 #include <algorithm>
 #include <Frost/Debugging/Logger.h>
 
@@ -76,5 +77,12 @@ namespace GameLogic
         {
             FT_ASSERT(false, "Player not found in GameState when setting laps.");
         }
+    }
+
+    bool GameState::IsPlayer(Frost::GameObject playerObject) const
+    {
+        return std::any_of(_playersData.begin(),
+                           _playersData.end(),
+                           [&](const PlayerData& data) { return data.playerObject == playerObject; });
     }
 } // namespace GameLogic
