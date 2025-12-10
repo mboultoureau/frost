@@ -148,8 +148,8 @@ namespace Frost
             else
             {
 
-                data = stbi_load_from_memory(_config.fileData.data(),
-                                             static_cast<int>(_config.fileData.size()),
+                data = stbi_load_from_memory(config.fileData.data(),
+                                             static_cast<int>(config.fileData.size()),
                                              &width,
                                              &height,
                                              &channels,
