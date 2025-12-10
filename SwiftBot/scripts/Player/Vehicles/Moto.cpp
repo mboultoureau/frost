@@ -396,8 +396,8 @@ namespace GameLogic
 
     void Moto::OnMove(float right, float forward)
     {
-        _rightInput = right;
-        _forwardInput = forward;
+        _rightInput = -right;
+        _forwardInput = -forward;
     }
 
     void Moto::_ProcessBikeInput(float fixedDeltaTime)
