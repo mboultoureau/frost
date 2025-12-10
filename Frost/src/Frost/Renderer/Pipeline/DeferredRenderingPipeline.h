@@ -35,6 +35,7 @@ namespace Frost
         void OnResize(uint32_t width, uint32_t height);
 
         void BeginFrame(const Component::Camera& camera,
+                        const Component::WorldTransform& cameraTransform,
                         const Math::Matrix4x4& viewMatrix,
                         const Math::Matrix4x4& projectionMatrix,
                         const Viewport& viewport);
