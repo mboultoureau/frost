@@ -1,69 +1,104 @@
 #include "Billboard.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Scene/Components/StaticMesh.h"
+#include "Frost/Renderer/Shader.h"
+#include "Frost/Renderer/Material.h"
+#include "Frost/Asset/Texture.h"
+#include "Frost/Scene/ECS/GameObject.h"
+#include "Frost/Core/Game.h"
 
 using namespace Frost;
 using namespace Frost::Math;
 using namespace Frost::Component;
 
+struct alignas(16) BillboardMaterialParameters
+{
+    Frost::Math::Vector4 CameraPosition;
+    float BillboardSize;
+    float padding1;
+    float padding2;
+    float padding3;
+};
+
 namespace GameLogic
 {
-    void BillboardScript::OnUpdate(float deltaTime)
+    void BillboardScript::OnCreate()
     {
-        /*
-        Vector3 cameraPosition = { 0.0f, 0.0f, 0.0f };
-
-        auto mainLayer = Game::GetMainLayer();
-        if (mainLayer)
+        if (!GetGameObject().HasComponent<StaticMesh>())
         {
-            auto player = mainLayer->GetPlayer();
-            if (player)
-            {
-                auto& scene = Game::GetScene();
-                auto playerCameraId = player->GetCamera()->GetCameraId();
-
-                auto camWorldTransform = scene.GetComponent<WorldTransform>(playerCameraId);
-
-                if (camWorldTransform)
-                {
-                    cameraPosition = camWorldTransform->position;
-                }
-            }
-        }
-
-        // 2. Appliquer la rotation
-        if (cameraPosition.length() > 0.0f)
-        {
-            FaceCamera(cameraPosition);
-        }
-
-        */
-    }
-
-    void BillboardScript::FaceCamera(const Vector3& cameraPosition)
-    {
-        GameObject currentObject = GetGameObject();
-        if (!currentObject.HasComponent<Transform>())
-        {
-            FT_ASSERT(false, "Billboard GameObject missing Transform component!");
+            FT_ASSERT(false, "Billboard GameObject missing StaticMesh component!");
             return;
         }
 
-        Transform& transform = currentObject.GetComponent<Transform>();
+        auto& meshComp = GetGameObject().GetComponent<StaticMesh>();
+        auto model = meshComp.GetModel();
 
-        Vector3 billboardPosition = transform.position;
+        if (model && !model->GetMaterials().empty())
+        {
+            ShaderDesc vsDesc = { .type = ShaderType::Vertex,
+                                  .filePath = "../Frost/resources/shaders/Material/Billboard/VS_Billboard.hlsl" };
+            ShaderDesc gsDesc = { .type = ShaderType::Geometry,
+                                  .filePath = "../Frost/resources/shaders/Material/Billboard/GS_Billboard.hlsl" };
+            ShaderDesc psDesc = { .type = ShaderType::Pixel,
+                                  .filePath = "../Frost/resources/shaders/Material/Billboard/PS_Billboard.hlsl" };
 
-        Vector3 lookDirection = billboardPosition - cameraPosition;
-        lookDirection.y = 0.0f;
-        lookDirection =
-            lookDirection /
-            std::sqrt((std::pow(lookDirection.x, 2) + std::pow(lookDirection.z, 2) + std::pow(lookDirection.y, 2)));
+            auto vs = Shader::Create(vsDesc);
+            auto gs = Shader::Create(gsDesc);
+            auto ps = Shader::Create(psDesc);
 
-        float yaw = std::atan2(lookDirection.x, lookDirection.z);
+            TextureConfig billboardConfig;
+            billboardConfig.path = "../Frost/resources/textures/my_billboard_image.png";
+            billboardConfig.textureType = TextureType::BILLBOARD;
+            auto billboardTexture = Texture::Create(billboardConfig);
 
-        EulerAngles newRotation;
-        newRotation.Yaw = yaw;
+            Material billboardMat = model->GetMaterials()[0];
+            billboardMat.name = "RealBillboard";
+            billboardMat.customVertexShader = vs;
+            billboardMat.geometryShader = gs;
+            billboardMat.customPixelShader = ps;
 
-        transform.SetRotation(newRotation);
+            billboardMat.topology = Material::Topology::TRIANGLES;
+
+            billboardMat.albedoTextures.clear();
+            if (billboardTexture)
+            {
+                billboardMat.albedoTextures.push_back(std::move(billboardTexture));
+            }
+
+            billboardMat.backFaceCulling = false;
+
+            BillboardMaterialParameters params = {};
+            params.BillboardSize = 5.0f;
+
+            std::vector<uint8_t> paramData(sizeof(BillboardMaterialParameters));
+            memcpy(paramData.data(), &params, sizeof(BillboardMaterialParameters));
+            billboardMat.parameters = paramData;
+
+            model->GetMaterials()[0] = std::move(billboardMat);
+        }
+    }
+
+    void BillboardScript::OnUpdate(float deltaTime)
+    {
+        if (GetGameObject().HasComponent<StaticMesh>())
+        {
+            Frost::Math::Vector3 camPos = { 0.0f, 0.0f, 0.0f };
+
+            auto& mesh = GetGameObject().GetComponent<StaticMesh>();
+            if (mesh.GetModel() && !mesh.GetModel()->GetMaterials().empty())
+            {
+                auto& mat = mesh.GetModel()->GetMaterials()[0];
+                if (mat.parameters.size() >= sizeof(BillboardMaterialParameters))
+                {
+                    BillboardMaterialParameters params;
+                    memcpy(&params, mat.parameters.data(), sizeof(BillboardMaterialParameters));
+
+                    params.CameraPosition = { camPos.x, camPos.y, camPos.z, 1.0f };
+
+                    memcpy(mat.parameters.data(), &params, sizeof(BillboardMaterialParameters));
+                }
+            }
+        }
     }
 } // namespace GameLogic

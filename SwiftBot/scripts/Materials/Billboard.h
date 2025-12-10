@@ -12,7 +12,6 @@ namespace GameLogic
 
         void OnUpdate(float deltaTime) override;
 
-    private:
-        void FaceCamera(const Frost::Math::Vector3& cameraPosition);
+        void OnCreate() override;
     };
 } // namespace GameLogic
