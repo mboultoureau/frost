@@ -1,4 +1,4 @@
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 
 # assimp
 set(ASSIMP_BUILD_TESTS OFF)
@@ -259,6 +259,7 @@ endif()
 target_compile_definitions(Frost PRIVATE
     $<$<CONFIG:Debug>:FT_DEBUG>
     $<$<CONFIG:Debug>:_DEBUG>
+    JPH_SHARED_LIBRARY
 )
 
 target_compile_definitions(Frost PRIVATE

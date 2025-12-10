@@ -51,7 +51,7 @@ void
 SpeedometerScript::OnUpdate(float deltaTime)
 {
     // Speed Update
-    float speed = std::abs(Physics::GetBodyInterface().GetLinearVelocity(_player.GetBodyID()).Length() *
+    float speed = std::abs(Physics::GetBodyInterface().GetLinearVelocity(_playerController.GetBodyID()).Length() *
                            METERS_PER_SECOND_TO_KMH);
 
     std::stringstream ss;

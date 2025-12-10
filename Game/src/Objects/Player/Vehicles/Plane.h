@@ -38,8 +38,8 @@ private:
     float _currentYaw = 0.0f;
     float _currentSpeed = 0.0f;
 
-    float _leftRightInput = 0;
-    float _upDownInput = 0;
+    float _rightInput = 0;
+    float _forwardInput = 0;
 
     bool _inContinuousCollision = false;
     bool _justAppeared = false;

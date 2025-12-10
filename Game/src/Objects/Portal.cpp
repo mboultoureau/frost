@@ -132,7 +132,7 @@ PortalScript::WarpPlayer()
 }
 
 Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player) :
-    _player{ player }, _portal{ Game::GetScene().CreateGameObject("Portal") }
+    _playerController{ player }, _portal{ Game::GetScene().CreateGameObject("Portal") }
 {
     Game::GetScene().AddComponent<Transform>(_portal, position, rotation, scale);
     Game::GetScene().AddComponent<WorldTransform>(_portal);
@@ -141,11 +141,11 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
 void
 Portal::SetupPortal(PortalType type, GameObject& otherPortal)
 {
-    Game::GetScene().AddScript<PortalScript>(_portal, _player->GetPlayerID(), type, otherPortal);
+    Game::GetScene().AddScript<PortalScript>(_portal, _playerController->GetPlayerID(), type, otherPortal);
 }
 
 void
 Portal::SetupPortal(PortalType type)
 {
-    Game::GetScene().AddScript<PortalScript>(_portal, _player->GetPlayerID(), type);
+    Game::GetScene().AddScript<PortalScript>(_portal, _playerController->GetPlayerID(), type);
 }

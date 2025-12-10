@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
+
 #include <chrono>
 
 namespace Frost
 {
-    class Timer
+    class FROST_API Timer
     {
     public:
         using Clock = std::chrono::high_resolution_clock;

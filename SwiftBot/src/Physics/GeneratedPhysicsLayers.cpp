@@ -8,7 +8,7 @@ GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()
     mObjectToBroadPhase[ObjectLayers::DEBRIS] = BroadPhaseLayers::DEBRIS;
     mObjectToBroadPhase[ObjectLayers::SENSOR] = BroadPhaseLayers::SENSOR;
     mObjectToBroadPhase[ObjectLayers::CAMERA] = BroadPhaseLayers::NON_MOVING;
-    mObjectToBroadPhase[ObjectLayers::PLAYER] = BroadPhaseLayers::NON_MOVING;
+    mObjectToBroadPhase[ObjectLayers::PLAYER] = BroadPhaseLayers::MOVING;
 }
 
 JPH::uint
@@ -58,13 +58,13 @@ GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::Object
             return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::DEBRIS ||
                    inObject2 == ObjectLayers::SENSOR;
         case ObjectLayers::DEBRIS:
-            return false;
+            return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING;
         case ObjectLayers::SENSOR:
-            return false;
+            return inObject2 == ObjectLayers::MOVING;
         case ObjectLayers::CAMERA:
-            return false;
+            return inObject2 == ObjectLayers::NON_MOVING;
         case ObjectLayers::PLAYER:
-            return false;
+            return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::PLAYER;
         default:
             return false;
     }
@@ -87,7 +87,8 @@ GameObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer inLayer1, JPH:
         case ObjectLayers::CAMERA:
             return false;
         case ObjectLayers::PLAYER:
-            return false;
+            return inLayer2 == BroadPhaseLayers::NON_MOVING || inLayer2 == BroadPhaseLayers::MOVING ||
+                   inLayer2 == BroadPhaseLayers::SENSOR;
         default:
             return false;
     }

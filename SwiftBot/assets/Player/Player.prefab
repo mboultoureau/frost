@@ -10,10 +10,62 @@ Entities:
       Scale: [1, 1, 1]
     Scriptable:
       Scripts:
-        - PlayerCamera
         - PlayerSpringCamera
         - PlayerController
   - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: Camera
+    Transform:
+      Position: [0, 1.5, 6.5]
+      Rotation: [0, 1, -0, -6.229855e-08]
+      Scale: [1, 1, 1]
+    RigidBody:
+      MotionType: 1
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 4
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 1
+      ShapeParams:
+        Radius: 0.01
+    Skybox:
+      Type: 1
+      Intensity: 1
+      Params:
+        Faces:
+          - assets/Player/skybox/right.png
+          - assets/Player/skybox/left.png
+          - assets/Player/skybox/top.png
+          - assets/Player/skybox/bottom.png
+          - assets/Player/skybox/front.png
+          - assets/Player/skybox/back.png
+    Camera:
+      ProjectionType: 0
+      PerspectiveFOV: 60
+      OrthographicSize: 10
+      NearClip: 0.1
+      FarClip: 1000
+      Priority: 1
+      FrustumCulling: true
+      FrustumPadding: 1
+      ClearOnRender: true
+      BackgroundColor: [0.1, 0.1, 0.1, 1]
+      Viewport: [0, 0, 1, 1]
+      RenderToTexture: false
+  - LocalID: 2
     ParentID: 0
     Meta:
       Name: PlayerController
@@ -30,6 +82,7 @@ Entities:
       LinearDamping: 0.05
       AngularDamping: 0.05
       GravityFactor: 1
+      ObjectLayer: 1
       OverrideMassProperties: 0
       Mass: 1
       LockPositionX: false
@@ -42,48 +95,8 @@ Entities:
       ShapeParams:
         HalfExtent: [0.5, 0.5, 0.5]
         ConvexRadius: 0.05
-  - LocalID: 2
-    ParentID: 1
-    Meta:
-      Name: Plane
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [0.40063772, 0.40063772, 0.40063772]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Player/RedPlane.glb
   - LocalID: 3
-    ParentID: 1
-    Meta:
-      Name: CameraPivot
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-  - LocalID: 4
-    ParentID: 3
-    Meta:
-      Name: DesiredCameraLocation
-    Transform:
-      Position: [0, 2, -10]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-  - LocalID: 5
-    ParentID: 1
-    Meta:
-      Name: Boat
-    Transform:
-      Position: [-1.0997944, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [0.3628482, 0.36284783, 0.36284783]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Player/Boat.glb
-  - LocalID: 6
-    ParentID: 1
+    ParentID: 2
     Meta:
       Name: Moto
     Transform:
@@ -94,44 +107,43 @@ Entities:
       Type: 0
       Params:
         Path: assets/Player/Moto.glb
-  - LocalID: 7
-    ParentID: 0
+  - LocalID: 4
+    ParentID: 2
     Meta:
-      Name: Camera
+      Name: Boat
+    Transform:
+      Position: [-1.0997944, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [0.3628482, 0.36284783, 0.36284783]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/Boat.glb
+  - LocalID: 5
+    ParentID: 2
+    Meta:
+      Name: CameraPivot
+    Transform:
+      Position: [0, 2, 10]
+      Rotation: [0, 1, -0, -6.229855e-08]
+      Scale: [1, 1, 1]
+  - LocalID: 6
+    ParentID: 5
+    Meta:
+      Name: DesiredCameraLocation
+    Transform:
+      Position: [0, 2, -10]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 7
+    ParentID: 2
+    Meta:
+      Name: Plane
     Transform:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    RigidBody:
-      MotionType: 0
-      IsSensor: false
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 1
-      ShapeParams:
-        Radius: 0.01
-    Camera:
-      ProjectionType: 0
-      PerspectiveFOV: 60
-      OrthographicSize: 10
-      NearClip: 0.1
-      FarClip: 1000
-      Priority: 1
-      FrustumCulling: true
-      FrustumPadding: 1
-      ClearOnRender: true
-      BackgroundColor: [0.1, 0.1, 0.1, 1]
-      Viewport: [0, 0, 1, 1]
-      RenderToTexture: false
+      Scale: [0.40063772, 0.40063772, 0.40063772]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/RedPlane.glb

@@ -80,7 +80,7 @@ namespace Editor
         ss << "#include <Jolt/Physics/Collision/ObjectLayer.h>\n\n";
 
         // Namespace ObjectLayers
-        ss << "namespace ObjectLayers\n{\n";
+        ss << "namespace GameLogic::ObjectLayers\n{\n";
         for (const auto& layer : config.objectLayers)
         {
             ss << "\tstatic constexpr JPH::ObjectLayer " << _SanitizeName(layer.name) << " = " << layer.layerId
@@ -90,7 +90,7 @@ namespace Editor
         ss << "}\n\n";
 
         // Namespace BroadPhaseLayers
-        ss << "namespace BroadPhaseLayers\n{\n";
+        ss << "namespace GameLogic::BroadPhaseLayers\n{\n";
         for (const auto& layer : config.broadPhaseLayers)
         {
             ss << "\tstatic constexpr JPH::BroadPhaseLayer " << _SanitizeName(layer.name) << "(" << (int)layer.layerId
@@ -223,8 +223,18 @@ namespace Editor
 
             for (int j = 0; j < numObjLayers; ++j)
             {
-                int matrixIdx = i * numObjLayers + j;
-                if (matrixIdx < config.objectCollisionMatrix.size() && config.objectCollisionMatrix[matrixIdx])
+                // Symmetrical matrix check
+                int idxDirect = i * numObjLayers + j;
+                int idxReverse = j * numObjLayers + i;
+
+                bool collisionEnabled = false;
+
+                if (idxDirect < config.objectCollisionMatrix.size() && config.objectCollisionMatrix[idxDirect])
+                    collisionEnabled = true;
+                else if (idxReverse < config.objectCollisionMatrix.size() && config.objectCollisionMatrix[idxReverse])
+                    collisionEnabled = true;
+
+                if (collisionEnabled)
                 {
                     if (!first)
                         ss << " || ";

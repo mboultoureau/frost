@@ -29,12 +29,19 @@ namespace GameLogic
 
     void PlayerSpringCamera::OnCreate()
     {
+        // Set parent transform to 0, 0, 0
+        auto _parent = GetGameObject().GetParent();
+        if (_parent.IsValid())
+        {
+            _parent.AddComponent<Transform>();
+        }
+
         // Get camera game objects
         _player = GetGameObject();
         _playerController = GetGameObject().GetChildByName("PlayerController");
         _camera = GetGameObject().GetChildByName("Camera");
-        _cameraPivot = GetGameObject().GetChildByName("CameraPivot", true);
-        _desiredCameraLocation = GetGameObject().GetChildByName("DesiredCameraLocation", true);
+        _cameraPivot = _playerController.GetChildByName("CameraPivot");
+        _desiredCameraLocation = _cameraPivot.GetChildByName("DesiredCameraLocation");
 
         FT_ASSERT(_player.IsValid(), "PlayerCamera script requires to be attached to the Player GameObject");
         FT_ASSERT(_playerController.IsValid(),
@@ -46,9 +53,9 @@ namespace GameLogic
                   "PlayerCamera script requires a child GameObject named 'DesiredCameraLocation' (can be nested)");
 
         // Get vehicle game objects
-        _moto = _player.GetChildByName("Moto", true);
-        _boat = _player.GetChildByName("Boat", true);
-        _plane = _player.GetChildByName("Plane", true);
+        _moto = _playerController.GetChildByName("Moto", true);
+        _boat = _playerController.GetChildByName("Boat", true);
+        _plane = _playerController.GetChildByName("Plane", true);
 
         FT_ASSERT(_moto.IsValid(),
                   "PlayerSpringCamera script requires a child GameObject named 'Bike' (can be nested)");
@@ -59,6 +66,11 @@ namespace GameLogic
 
         // Get post effects
         auto& camComponent = _camera.GetComponent<Camera>();
+        // camComponent.postEffects.push_back(std::make_shared<ToonEffect>());
+        // camComponent.postEffects.push_back(std::make_shared<FogEffect>());
+        // camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
+        camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
+
         _radialBlur = camComponent.GetEffect<RadialBlurEffect>().get();
         _screenShake = camComponent.GetEffect<ScreenShakeEffect>().get();
     }
@@ -128,6 +140,9 @@ namespace GameLogic
 
     void PlayerSpringCamera::_UpdateTPCam(float fixedDeltaTime)
     {
+        if (!_playerController.HasComponent<RigidBody>())
+            return;
+
         DirectX::XMVECTOR quaternion =
             DirectX::XMQuaternionRotationRollPitchYaw(_cameraPivotRotationX, _cameraPivotRotationY, 0.0f);
 
@@ -151,6 +166,9 @@ namespace GameLogic
 
     void PlayerSpringCamera::_UpdateSpringCam(float fixedDeltaTime)
     {
+        if (!_playerController.HasComponent<RigidBody>())
+            return;
+
         auto& playerWTransform = _playerController.GetComponent<WorldTransform>();
         auto& thirdPersonCameraWTransform = _desiredCameraLocation.GetComponent<WorldTransform>();
         auto& springCamRigidBody = _camera.GetComponent<RigidBody>();
@@ -167,7 +185,7 @@ namespace GameLogic
         auto& playerData = GameState::Get().GetPlayerData(_player);
         switch (playerData.currentVehicle)
         {
-            case VehicleType::BIKE:
+            case VehicleType::MOTO:
                 _moto.SetActive(active);
                 break;
 
@@ -183,23 +201,7 @@ namespace GameLogic
         JPH::Vec3 displacement = desiredPos - cameraPos;
         JPH::Vec3 springForce = displacement * _stiffness;
 
-        JPH::BodyID playerBodyId;
-        switch (playerData.currentVehicle)
-        {
-            case VehicleType::BIKE:
-                // playerBodyId = _moto.GetComponent<RigidBody>().runtimeBodyID;
-                return;
-                break;
-            case VehicleType::BOAT:
-                playerBodyId = _boat.GetComponent<RigidBody>().runtimeBodyID;
-                break;
-            case VehicleType::PLANE:
-                playerBodyId = _plane.GetComponent<RigidBody>().runtimeBodyID;
-                break;
-            default:
-                playerBodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
-                break;
-        }
+        JPH::BodyID playerBodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
 
         springForce *= 1 / (1 + Physics::GetBodyInterface().GetAngularVelocity(playerBodyId).Length());
         auto newPos = cameraPos + fixedDeltaTime * springForce;

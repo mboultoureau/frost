@@ -1,8 +1,13 @@
-#include "Plane.h"
+ï»¿#include "Plane.h"
 #include "Physics/PhysicLayer.h"
 #include <Frost/Scene/Components/RigidBody.h>
 #include <Frost/Scene/Components/WorldTransform.h>
-#include <Frost/Math/Math.h>
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+
+#undef max
+#undef min
 
 using namespace JPH;
 using namespace Frost;
@@ -54,7 +59,6 @@ namespace GameLogic
         _justAppeared = true;
         _inContinuousCollision = false;
 
-        // On force une mise à jour immédiate pour caler le Yaw
         _UpdateInternalStateFromBody(false);
     }
 
@@ -118,7 +122,6 @@ namespace GameLogic
         JPH::Vec3 vel = bodyInterface.GetLinearVelocity(bodyId);
         JPH::Vec3 horizontalVel = { vel.GetX(), 0, vel.GetZ() };
 
-        // On récupère la vitesse. Si on vient de spawner, on s'assure d'avoir la vitesse de base
         _currentSpeed = horizontalVel.Length();
         if (_justAppeared && _currentSpeed < 1.0f)
             _currentSpeed = _baseForwardSpeed;
@@ -129,10 +132,10 @@ namespace GameLogic
         _currentPitch = MoveTowards(_currentPitch, targetPitch, _pitchSpeed * fixedDeltaTime);
         _currentRoll = MoveTowards(_currentRoll, targetRoll, _rollSpeed * fixedDeltaTime);
 
-        // Note: Inversion possible ici aussi selon le sens de rotation voulu
+        // Le Yaw tourne normalement
         _currentYaw -= _currentRoll * _yawFromRoll * fixedDeltaTime;
 
-        // Gestion de la vitesse (W = piqué = accélération)
+        // Gestion de la vitesse
         if (_upDownInput < 0)
         {
             float targetSpeed = _maxForwardSpeed;
@@ -161,19 +164,19 @@ namespace GameLogic
         else if (_upDownInput > 0)
             verticalRate = (_currentSpeed / _maxForwardSpeed) * _climbLiftRateOffset;
 
-        // Construction de la rotation
-        // FIX : On ajoute JPH_PI (180°) au Yaw pour retourner la logique physique
-        Quat yawQuat = Quat::sRotation(Vec3::sAxisY(), _currentYaw + JPH::JPH_PI);
+        // Construction de la rotation (Standard, Yaw 0 = Z+)
+        Quat yawQuat = Quat::sRotation(Vec3::sAxisY(), _currentYaw);
         Quat pitchQuat = Quat::sRotation(Vec3::sAxisX(), _currentPitch);
         Quat rollQuat = Quat::sRotation(Vec3::sAxisZ(), _currentRoll);
         Quat newRotation = yawQuat * pitchQuat * rollQuat;
 
-        // Calcul du vecteur direction basé sur la rotation calculée
-        // On prend l'axe Z de la rotation finale pour être sûr d'aller "tout droit"
-        Vec3 forwardDir = newRotation.RotateAxisZ();
+        // Calcul du vecteur direction Horizontal
+        // Utilisation stricte de l'ancienne mÃ©thode (Sin/Cos du Yaw)
+        // FIX: On INVERSE le vecteur (-Vec3) pour aller vers Z- (lÃ  oÃ¹ regarde le mesh)
+        JPH::Vec3 horizontalDir = -JPH::Vec3(std::sin(_currentYaw), 0, std::cos(_currentYaw));
 
         // Application de la vitesse
-        Vec3 finalVelocity = forwardDir * _currentSpeed + Vec3(0, verticalRate, 0);
+        JPH::Vec3 finalVelocity = horizontalDir * _currentSpeed + JPH::Vec3(0, verticalRate, 0);
 
         bodyInterface.SetRotation(bodyId, newRotation, EActivation::Activate);
         bodyInterface.SetLinearVelocity(bodyId, finalVelocity);
@@ -193,17 +196,17 @@ namespace GameLogic
         Vec3 fwd;
 
         if (accountForVelocity && speed.Length() > _speedAcknowledgementThreshold)
-            fwd = speed.NormalizedOr(rot.RotateAxisZ());
+        {
+            // FIX: On inverse la vitesse lue (-speed) pour retrouver le "Forward" logique du mesh
+            // Si l'avion va vers Z- (arriÃ¨re physique), c'est qu'il va tout droit visuellement.
+            fwd = -speed.NormalizedOr(rot.RotateAxisZ());
+        }
         else
+        {
             fwd = rot.RotateAxisZ();
+        }
 
-        // Calcul du Yaw standard
         _currentYaw = std::atan2(fwd.GetX(), fwd.GetZ());
-
-        // FIX : Si on détecte qu'on est inversé par rapport au modèle, on compense ici aussi
-        // Si l'avion part en arrière, c'est que l'avant physique est l'arrière visuel.
-        // On décale de 180° (PI) pour s'aligner.
-        _currentYaw += JPH::JPH_PI;
 
         Vec3 up = rot.RotateAxisY();
         _currentPitch = std::asin(-fwd.GetY());

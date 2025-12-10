@@ -128,15 +128,15 @@ MainLayer::OnFixedUpdate(float deltaTime)
         if (!_paused)
         {
             _gamestate.StartGame();
-            _player = std::make_unique<Player>();
+            _playerController = std::make_unique<Player>();
             _portal1 = std::make_shared<Portal>(Vector3{ -365, 68, -32 },
                                                 EulerAngles{ 0_deg, 0_deg, 0_deg },
                                                 Vector3{ 3.0f, 3.0f, 3.0f },
-                                                _player.get());
+                                                _playerController.get());
             _portal2 = std::make_shared<Portal>(Vector3{ -130, 68, 180 },
                                                 EulerAngles{ 0_deg, 90_deg, 0_deg },
                                                 Vector3{ 3.0f, 3.0f, 3.0f },
-                                                _player.get());
+                                                _playerController.get());
 
             _portal1->SetupPortal(PortalType::Entry, _portal2->_portal);
             _portal2->SetupPortal(PortalType::Exit);

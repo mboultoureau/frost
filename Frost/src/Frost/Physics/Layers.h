@@ -19,14 +19,14 @@ namespace Frost
         static constexpr JPH::ObjectLayer PLAYER_MOVING = 1;
         static constexpr JPH::ObjectLayer BULLET_MOVING = 2;
         static constexpr JPH::ObjectLayer SENSOR = 3;
-        static constexpr JPH::ObjectLayer NUM_LAYERS = 4;
+        static constexpr JPH::ObjectLayer NUM_LAYERS = 100;
     } // namespace PhysicLayers
 
     namespace BroadPhaseLayers
     {
         static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
         static constexpr JPH::BroadPhaseLayer MOVING(1);
-        static constexpr JPH::uint NUM_LAYERS(2);
+        static constexpr JPH::uint NUM_LAYERS(100);
     } // namespace BroadPhaseLayers
 
     class ObjectLayerPairFilterImpl : public JPH::ObjectLayerPairFilter

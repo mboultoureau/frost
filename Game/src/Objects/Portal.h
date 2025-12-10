@@ -41,5 +41,5 @@ public:
     GameObject _portal;
 
 private:
-    Player* _player;
+    Player* _playerController;
 };

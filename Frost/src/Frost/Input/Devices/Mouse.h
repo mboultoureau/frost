@@ -73,6 +73,7 @@ namespace Frost
 
         // Update
         void Update();
+        void Reset();
 
     private:
         MousePosition _position{};
