@@ -86,6 +86,8 @@ namespace Frost
     {
         Math::Matrix4x4 ViewMatrix;
         Math::Matrix4x4 ProjectionMatrix;
+        Math::Vector3 CameraPosition;
+        float Padding;
     };
 
     struct alignas(16) VS_PerObjectConstants
@@ -384,6 +386,7 @@ namespace Frost
     }
 
     void DeferredRenderingPipeline::BeginFrame(const Component::Camera& camera,
+                                               const Component::WorldTransform& cameraTransform,
                                                const Math::Matrix4x4& viewMatrix,
                                                const Math::Matrix4x4& projectionMatrix,
                                                const Viewport& viewport)
@@ -411,6 +414,7 @@ namespace Frost
         VS_PerFrameConstants vsPerFrameData;
         vsPerFrameData.ViewMatrix = Math::Matrix4x4::CreateTranspose(viewMatrix);
         vsPerFrameData.ProjectionMatrix = Math::Matrix4x4::CreateTranspose(projectionMatrix);
+        vsPerFrameData.CameraPosition = cameraTransform.position;
         _vsPerFrameConstants->UpdateData(_commandList.get(), &vsPerFrameData, sizeof(VS_PerFrameConstants));
 
         Texture* gBufferRTs[] = {
