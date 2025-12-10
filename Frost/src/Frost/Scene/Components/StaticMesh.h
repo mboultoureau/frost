@@ -3,6 +3,7 @@
 #include "Frost/Asset/Model.h"
 #include "Frost/Scene/ECS/Component.h"
 #include "Frost/Asset/MeshConfig.h"
+#include "Frost/Scene/Components/VirtualCamera.h"
 
 #include <memory>
 #include <string>
@@ -45,6 +46,8 @@ namespace Frost::Component
         MeshType GetType() const { return static_cast<MeshType>(_config.index()); }
 
         void Reload();
+
+        std::vector<VirtualCamera*> hiddenFromCameras;
 
     private:
         void _Generate();

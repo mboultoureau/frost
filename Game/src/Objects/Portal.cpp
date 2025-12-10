@@ -309,6 +309,8 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
     // Portal frame
     _frameObject = Game::GetScene().CreateGameObject("Portal Frame", _portal);
     auto& mesh = _frameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal.fbx" }, true);
+
+    mesh.hiddenFromCameras.push_back(&camera);
 }
 
 void

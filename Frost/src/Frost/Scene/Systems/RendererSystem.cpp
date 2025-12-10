@@ -359,8 +359,12 @@ namespace Frost
             {
                 if (staticMesh.GetModel())
                 {
-                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                    _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
+                    if (std::find(staticMesh.hiddenFromCameras.begin(), staticMesh.hiddenFromCameras.end(), &camera) ==
+                        staticMesh.hiddenFromCameras.end())
+                    {
+                        Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
+                        _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
+                    }
                 }
             });
 
