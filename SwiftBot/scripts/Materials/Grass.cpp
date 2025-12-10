@@ -60,28 +60,6 @@ namespace GameLogic
 
     void GrassScript::_SetClosestPlayerPosToShader()
     {
-
-        /*
-        auto mainLayer = GetMainLayer();
-        if (mainLayer)
-        {
-            auto player = mainLayer->GetPlayer();
-            if (player)
-            {
-                auto& scene = Game::GetScene();
-                auto playerCameraId = player->GetCamera()->GetCameraId();
-                // On suppose que GetComponent<WorldTransform> retourne un pointeur ou un type déréférençable
-                auto camPos = scene.GetComponent<WorldTransform>(playerCameraId);
-
-                if (camPos)
-                {
-                    _params.CameraPosition = { camPos->position.x, camPos->position.y, camPos->position.z };
-                    return;
-                }
-            }
-        }
-        */
-
         _params.CameraPosition = { 0.0f, 0.0f, 0.0f };
     }
 

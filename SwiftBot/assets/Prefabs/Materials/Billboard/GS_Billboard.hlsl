@@ -7,6 +7,7 @@ void EmitVertex(float3 worldPos, float2 uv, inout TriangleStream<GSOutput> strea
     GSOutput output;
     output.position = mul(float4(worldPos, 1.0), mul(viewMatrix, projectionMatrix));
     output.uv = uv;
+    output.worldPos = worldPos;
     stream.Append(output);
 }
 
