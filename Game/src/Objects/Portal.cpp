@@ -8,17 +8,18 @@
 #include "Player/PlayerCamera.h"
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Frost/Scene/Components/RelativeView.h>
 
 using namespace Frost;
 
-PortalScript::PortalScript(GameObject playerId, PortalType type, GameObject& linkedId) :
-    playerId(playerId), linkedPortalId(linkedId), portalType(type)
+PortalScript::PortalScript(GameObject playerId, PortalType type, Portal* linkedPortal, Portal* parent) :
+    playerId(playerId), linkedPortal(linkedPortal), portalType(type), parentPortal(parent)
 {
-}
+    _materialLinkPending = true;
 
-PortalScript::PortalScript(GameObject playerId, PortalType type) :
-    playerId(playerId), portalType(type), linkedPortalId{}
-{
+    auto& relativeView = linkedPortal->_cameraObject.AddComponent<RelativeView>();
+    relativeView.referenceEntity = GetGameObject().GetId();
+    relativeView.modifier = Matrix4x4::CreateFromQuaternion(Vector4(0, 1, 0, 0)); // 180 deg Y
 }
 
 void
@@ -26,10 +27,6 @@ PortalScript::OnInitialize()
 {
     using namespace JPH;
 
-    if (!_gameObject.HasComponent<StaticMesh>())
-    {
-        _gameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal4.glb" });
-    }
     if (_gameObject.HasComponent<RigidBody>())
     {
         return;
@@ -44,36 +41,50 @@ PortalScript::OnInitialize()
 void
 PortalScript::OnUpdate(float deltaTime)
 {
-    if (!_inChromaticEffect)
-        return;
+    UpdateChromaticAberrationEffect();
 
-    auto total = std::chrono::duration<float>(_chromaticAberrationDuration).count();
-    auto elapsed =
-        std::chrono::duration<float>(_chromaticAberrationTimer.GetDurationAs<std::chrono::milliseconds>()).count();
-
-    float chromaticStrength = (total - elapsed) / total;
-
-    if (chromaticStrength < 0)
+    if (_materialLinkPending && linkedPortal)
     {
-        _inChromaticEffect = true;
-        return;
+        auto& mesh = parentPortal->_frameObject.GetComponent<StaticMesh>();
+        auto& model = mesh.GetModel();
+
+        if (model)
+        {
+            auto& materials = model->GetMaterials();
+            if (!materials.empty())
+            {
+                materials[0].cameraRef = linkedPortal->_cameraObject.GetId();
+                _materialLinkPending = false;
+            }
+        }
     }
 
-    chromaticStrength *= _chromaticAberrationFactor;
+    auto* window = Application::GetWindow();
+    uint32_t width = window->GetWidth();
+    uint32_t height = window->GetHeight();
 
-    auto& scene = Game::GetScene();
-    auto mainLayer = Game::GetMainLayer();
-    auto player = mainLayer->GetPlayer();
+    if (parentPortal->_renderTarget &&
+        (parentPortal->_renderTarget->GetWidth() != width || parentPortal->_renderTarget->GetHeight() != height))
+    {
+        TextureConfig textureConfig{
+            .format = Format::RGBA8_UNORM,
+            .width = width,
+            .height = height,
+            .isRenderTarget = true,
+        };
 
-    auto playerCamera = player->GetCamera();
+        parentPortal->_renderTarget = Texture::Create(textureConfig);
 
-    playerCamera->SetChromaticAberrationStrength(chromaticStrength);
+        auto& camera = parentPortal->_cameraObject.GetComponent<VirtualCamera>();
+        camera.SetRenderTarget(parentPortal->_renderTarget);
+        camera.useScreenSpaceAspectRatio = true;
+    }
 }
 
 void
 PortalScript::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 {
-    if (!linkedPortalId.has_value())
+    if (!linkedPortal)
         return;
     if (portalType == PortalType::Exit)
         return;
@@ -98,7 +109,7 @@ PortalScript::WarpPlayer()
     Vector3 playerSpeed = Math::vector_cast<Vector3>(bodyInter->GetLinearVelocity(playerBodyId));
 
     auto portal1Transform = scene.GetComponent<WorldTransform>(GetGameObject());
-    auto portal2Transform = scene.GetComponent<WorldTransform>(linkedPortalId.value());
+    auto portal2Transform = scene.GetComponent<WorldTransform>(linkedPortal->_portal);
     auto cameraTransform = scene.GetComponent<WorldTransform>(playerCamera);
 
     auto cameraRb = scene.GetComponent<RigidBody>(playerCamera);
@@ -163,21 +174,63 @@ PortalScript::WarpPlayer()
     _inChromaticEffect = true;
 }
 
+void
+PortalScript::UpdateChromaticAberrationEffect()
+{
+    if (!_inChromaticEffect)
+        return;
+
+    auto total = std::chrono::duration<float>(_chromaticAberrationDuration).count();
+    auto elapsed =
+        std::chrono::duration<float>(_chromaticAberrationTimer.GetDurationAs<std::chrono::milliseconds>()).count();
+
+    float chromaticStrength = (total - elapsed) / total;
+
+    if (chromaticStrength < 0)
+    {
+        _inChromaticEffect = true;
+        return;
+    }
+
+    chromaticStrength *= _chromaticAberrationFactor;
+
+    auto& scene = Game::GetScene();
+    auto mainLayer = Game::GetMainLayer();
+    auto player = mainLayer->GetPlayer();
+
+    auto playerCamera = player->GetCamera();
+
+    playerCamera->SetChromaticAberrationStrength(chromaticStrength);
+}
+
 Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player) :
     _player{ player }, _portal{ Game::GetScene().CreateGameObject("Portal") }
 {
     Game::GetScene().AddComponent<Transform>(_portal, position, rotation, scale);
     Game::GetScene().AddComponent<WorldTransform>(_portal);
+
+    _cameraObject = Game::GetScene().CreateGameObject("Portal Camera", _portal);
+    auto& camera = _cameraObject.AddComponent<VirtualCamera>();
+
+    TextureConfig textureConfig{
+        .format = Format::RGBA8_UNORM,
+        .width = 1024,
+        .height = 1024,
+        .isRenderTarget = true,
+    };
+
+    _renderTarget = AssetManager::LoadAsset("PortalRT_" + std::to_string(static_cast<uint32_t>(_cameraObject.GetId())),
+                                            textureConfig);
+
+    camera.SetRenderTarget(_renderTarget);
+
+    // Portal frame
+    _frameObject = Game::GetScene().CreateGameObject("Portal Frame", _portal);
+    auto& mesh = _frameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal.fbx" }, true);
 }
 
 void
-Portal::SetupPortal(PortalType type, GameObject& otherPortal)
+Portal::SetupPortal(PortalType type, Portal* otherPortal)
 {
-    Game::GetScene().AddScript<PortalScript>(_portal, _player->GetPlayerID(), type, otherPortal);
-}
-
-void
-Portal::SetupPortal(PortalType type)
-{
-    Game::GetScene().AddScript<PortalScript>(_portal, _player->GetPlayerID(), type);
+    Game::GetScene().AddScript<PortalScript>(_portal, _player->GetPlayerID(), type, otherPortal, this);
 }

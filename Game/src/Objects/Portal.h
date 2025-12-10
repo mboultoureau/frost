@@ -16,11 +16,11 @@ enum PortalType
     BothWays
 };
 
+class Portal;
 class PortalScript : public Script
 {
 public:
-    PortalScript(GameObject playerId, PortalType type, GameObject& linkedId);
-    PortalScript(GameObject playerId, PortalType type);
+    PortalScript(GameObject playerId, PortalType type, Portal* linkedPortal, Portal* parent);
     void OnInitialize() override;
     void OnUpdate(float deltaTime) override;
     void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
@@ -30,21 +30,28 @@ public:
 
     PortalType portalType;
 
-    std::optional<GameObject> linkedPortalId;
+    Portal* linkedPortal;
+    Portal* parentPortal;
 
     const std::chrono::milliseconds _chromaticAberrationDuration = 2000ms;
     const float _chromaticAberrationFactor = 0.1f;
     Timer _chromaticAberrationTimer;
     bool _inChromaticEffect = false;
+
+private:
+    void UpdateChromaticAberrationEffect();
+    bool _materialLinkPending = false;
 };
 
 class Portal
 {
 public:
     Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player);
-    void SetupPortal(PortalType type, GameObject& otherPortal);
-    void SetupPortal(PortalType type);
+    void SetupPortal(PortalType type, Portal* otherPortal);
     GameObject _portal;
+    GameObject _frameObject;
+    GameObject _cameraObject;
+    std::shared_ptr<Texture> _renderTarget;
 
 private:
     Player* _player;
