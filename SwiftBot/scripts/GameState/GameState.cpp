@@ -79,6 +79,22 @@ namespace GameLogic
         }
     }
 
+    void GameState::SetPlayerVehicle(Frost::GameObject playerId, VehicleType type)
+    {
+        auto it = std::find_if(_playersData.begin(),
+                               _playersData.end(),
+                               [&playerId](const PlayerData& data) { return data.playerObject == playerId; });
+
+        if (it != _playersData.end())
+        {
+            it->currentVehicle = type;
+        }
+        else
+        {
+            FT_ASSERT(false, "Player not found in GameState when setting vehicle type.");
+        }
+    }
+
     bool GameState::IsPlayer(Frost::GameObject playerObject) const
     {
         return std::any_of(_playersData.begin(),

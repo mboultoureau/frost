@@ -576,6 +576,10 @@ namespace Frost
                             out << YAML::Key << "Radius" << YAML::Value << arg.radius;
                             out << YAML::Key << "ConvexRadius" << YAML::Value << arg.convexRadius;
                         }
+                        else if constexpr (std::is_same_v<T, ShapeMesh>)
+                        {
+                            out << YAML::Key << "Path" << YAML::Value << arg.path;
+                        }
                     },
                     rb.shape);
                 out << YAML::EndMap;
@@ -641,6 +645,13 @@ namespace Frost
                         rb.shape = s;
                         break;
                     }
+                    case CollisionShapeType::Mesh:
+                    {
+                        ShapeMesh s;
+                        s.path = params["Path"].as<std::string>();
+                        rb.shape = s;
+                        break;
+                    }
                 }
             },
             // Write Binary
@@ -697,6 +708,10 @@ namespace Frost
                             out.write(reinterpret_cast<const char*>(&arg.halfHeight), sizeof(float));
                             out.write(reinterpret_cast<const char*>(&arg.radius), sizeof(float));
                             out.write(reinterpret_cast<const char*>(&arg.convexRadius), sizeof(float));
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeMesh>)
+                        {
+                            WriteBinaryString(out, arg.path);
                         }
                     },
                     rb.shape);
@@ -765,6 +780,13 @@ namespace Frost
                         in.read(reinterpret_cast<char*>(&s.halfHeight), sizeof(float));
                         in.read(reinterpret_cast<char*>(&s.radius), sizeof(float));
                         in.read(reinterpret_cast<char*>(&s.convexRadius), sizeof(float));
+                        rb.shape = s;
+                        break;
+                    }
+                    case CollisionShapeType::Mesh:
+                    {
+                        ShapeMesh s;
+                        s.path = ReadBinaryString(in);
                         rb.shape = s;
                         break;
                     }
@@ -1149,6 +1171,10 @@ namespace Frost
                             out << YAML::Key << "IdleTexturePath" << YAML::Value << arg.idleTextureFilepath;
                             out << YAML::Key << "HoverTexturePath" << YAML::Value << arg.hoverTextureFilepath;
                             out << YAML::Key << "PressedTexturePath" << YAML::Value << arg.pressedTextureFilepath;
+                        }
+                        else if constexpr (std::is_same_v<T, ShapeMesh>)
+                        {
+                            out << YAML::Key << "Path" << YAML::Value << arg.path;
                         }
                     },
                     element.content);

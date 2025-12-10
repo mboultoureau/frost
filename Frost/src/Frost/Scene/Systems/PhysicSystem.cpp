@@ -13,7 +13,12 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 using namespace Frost::Component;
 
@@ -34,65 +39,121 @@ namespace Frost
         if (s.GetZ() < minScale)
             s.SetZ(minScale);
 
-        std::visit(
-            [&](auto&& arg)
+        if (std::holds_alternative<ShapeBox>(config))
+        {
+            const auto& box = std::get<ShapeBox>(config);
+            result = JPH::BoxShapeSettings({ box.halfExtent.x, box.halfExtent.y, box.halfExtent.z }, box.convexRadius)
+                         .Create();
+        }
+        else if (std::holds_alternative<ShapeSphere>(config))
+        {
+            const auto& sphere = std::get<ShapeSphere>(config);
+            result = JPH::SphereShapeSettings(sphere.radius).Create();
+        }
+        else if (std::holds_alternative<ShapeCapsule>(config))
+        {
+            const auto& capsule = std::get<ShapeCapsule>(config);
+            result = JPH::CapsuleShapeSettings(capsule.halfHeight, capsule.radius).Create();
+        }
+        else if (std::holds_alternative<ShapeCylinder>(config))
+        {
+            const auto& cylinder = std::get<ShapeCylinder>(config);
+            result = JPH::CylinderShapeSettings(cylinder.halfHeight, cylinder.radius, cylinder.convexRadius).Create();
+        }
+        else if (std::holds_alternative<ShapeMesh>(config))
+        {
+            const auto& meshConfig = std::get<ShapeMesh>(config);
+
+            if (meshConfig.path.empty())
             {
-                using T = std::decay_t<decltype(arg)>;
+                result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+            }
+            else
+            {
+                Assimp::Importer importer;
+                const aiScene* scene = importer.ReadFile(
+                    meshConfig.path.c_str(),
+                    aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals |
+                        aiProcess_OptimizeMeshes | aiProcess_RemoveRedundantMaterials | aiProcess_PreTransformVertices);
 
-                if constexpr (std::is_same_v<T, Component::ShapeBox>)
+                if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
                 {
-                    JPH::Vec3 newHalfExtent = Math::vector_cast<JPH::Vec3>(arg.halfExtent) * s;
+                    result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+                }
 
-                    float minScaleFactor = std::min({ s.GetX(), s.GetY(), s.GetZ() });
-                    float scaledConvexRadius = arg.convexRadius * minScaleFactor;
+                else
+                {
+                    JPH::VertexList vertices;
+                    JPH::IndexedTriangleList triangles;
 
-                    float minDimension = std::min({ newHalfExtent.GetX(), newHalfExtent.GetY(), newHalfExtent.GetZ() });
-                    if (scaledConvexRadius >= minDimension)
+                    for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
                     {
-                        scaledConvexRadius = minDimension * 0.9f;
+                        const aiMesh* mesh = scene->mMeshes[i];
+
+                        uint32_t vertexStartIdx = (uint32_t)vertices.size();
+
+                        for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
+                        {
+                            const aiVector3D& pos = mesh->mVertices[v];
+                            vertices.push_back({ pos.x, pos.y, pos.z });
+                        }
+
+                        for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
+                        {
+                            const aiFace& face = mesh->mFaces[f];
+                            if (face.mNumIndices == 3)
+                            {
+                                JPH::IndexedTriangle triangle;
+                                triangle.mIdx[0] = vertexStartIdx + face.mIndices[0];
+                                triangle.mIdx[1] = vertexStartIdx + face.mIndices[1];
+                                triangle.mIdx[2] = vertexStartIdx + face.mIndices[2];
+                                triangle.mMaterialIndex = 0;
+                                triangles.push_back(triangle);
+                            }
+                        }
                     }
 
-                    JPH::BoxShapeSettings settings(newHalfExtent, scaledConvexRadius);
-                    result = settings.Create();
-                }
-                else if constexpr (std::is_same_v<T, Component::ShapeSphere>)
-                {
-                    float maxScale = std::max({ s.GetX(), s.GetY(), s.GetZ() });
-                    JPH::SphereShapeSettings settings(arg.radius * maxScale);
-                    result = settings.Create();
-                }
-                else if constexpr (std::is_same_v<T, Component::ShapeCapsule>)
-                {
-                    float radiusScale = std::max(s.GetX(), s.GetZ());
-                    float heightScale = s.GetY();
-
-                    JPH::CapsuleShapeSettings settings(arg.halfHeight * heightScale, arg.radius * radiusScale);
-                    result = settings.Create();
-                }
-                else if constexpr (std::is_same_v<T, Component::ShapeCylinder>)
-                {
-                    float radiusScale = std::max(s.GetX(), s.GetZ());
-                    float heightScale = s.GetY();
-                    float newRadius = arg.radius * radiusScale;
-
-                    float scaledConvexRadius = arg.convexRadius * std::min(radiusScale, heightScale);
-
-                    if (scaledConvexRadius >= newRadius)
+                    if (vertices.empty() || triangles.empty())
                     {
-                        scaledConvexRadius = newRadius * 0.9f;
+                        result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
                     }
+                    else
+                    {
+                        JPH::MeshShapeSettings settings(vertices, triangles);
+                        result = settings.Create();
 
-                    JPH::CylinderShapeSettings settings(arg.halfHeight * heightScale, newRadius, scaledConvexRadius);
-                    result = settings.Create();
+                        if (result.HasError())
+                        {
+                            result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+                        }
+                    }
                 }
-            },
-            config);
+            }
+        }
+        else
+        {
+            result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+        }
 
-        if (result.IsValid())
+        if (result.HasError())
+        {
+            return nullptr;
+        }
+
+        if (s.IsClose(JPH::Vec3::sReplicate(1.0f), 1.0e-5f))
+        {
             return result.Get();
-
-        FT_ENGINE_ERROR("PhysicSystem: Failed to create shape (Scale: {0}, {1}, {2})", scale.x, scale.y, scale.z);
-        return nullptr;
+        }
+        else
+        {
+            JPH::ScaledShapeSettings scaledShapeSettings(result.Get(), s);
+            JPH::ShapeSettings::ShapeResult scaledResult = scaledShapeSettings.Create();
+            if (scaledResult.HasError())
+            {
+                return nullptr;
+            }
+            return scaledResult.Get();
+        }
     }
 
     void PhysicSystem::OnAttach(Scene& scene)

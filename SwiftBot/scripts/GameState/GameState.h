@@ -44,6 +44,9 @@ namespace GameLogic
         void SetPlayerLaps(Frost::GameObject playerId, int laps);
         int GetCheckpointsCount() const { return _checkpointsCount; }
 
+        // Vehicle
+        void SetPlayerVehicle(Frost::GameObject playerId, VehicleType type);
+
         const std::vector<PlayerData>& GetPlayersData() const { return _playersData; }
 
     private:
