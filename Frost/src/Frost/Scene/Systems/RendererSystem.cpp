@@ -100,7 +100,7 @@ namespace Frost
                     const auto& relativeView = scene.GetRegistry().get<RelativeView>(virtualCamData.entity);
                     if (scene.GetRegistry().valid(relativeView.referenceEntity))
                     {
-                        const auto& referenceTransform =
+                        /*const auto& referenceTransform =
                             scene.GetRegistry().get<WorldTransform>(relativeView.referenceEntity);
 
                         Math::Matrix4x4 matPlayer = Math::GetTransformMatrix(*camData.transform);
@@ -113,7 +113,7 @@ namespace Frost
                         // Modifier temporairement la transformation de la caméra virtuelle
                         auto& camTransform = scene.GetRegistry().get<WorldTransform>(virtualCamData.entity);
                         Math::DecomposeTransform(
-                            matNew, camTransform.position, camTransform.rotation, camTransform.scale);
+                            matNew, camTransform.position, camTransform.rotation, camTransform.scale);*/
                     }
                 }
 
@@ -122,7 +122,7 @@ namespace Frost
 
                 if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
                 {
-                    scene.GetRegistry().get<WorldTransform>(virtualCamData.entity) = originalVirtualCamTransform;
+                    // scene.GetRegistry().get<WorldTransform>(virtualCamData.entity) = originalVirtualCamTransform;
                 }
             }
 

@@ -40,6 +40,9 @@ public:
 
 private:
     void UpdateChromaticAberrationEffect();
+    void UpdateLinkedCameraRef();
+    void UpdateCameraRenderTarget();
+    void UpdateCameraPos();
     bool _materialLinkPending = false;
 };
 

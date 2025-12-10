@@ -45,40 +45,11 @@ PortalScript::OnUpdate(float deltaTime)
 
     if (_materialLinkPending && linkedPortal)
     {
-        auto& mesh = parentPortal->_frameObject.GetComponent<StaticMesh>();
-        auto& model = mesh.GetModel();
-
-        if (model)
-        {
-            auto& materials = model->GetMaterials();
-            if (!materials.empty())
-            {
-                materials[0].cameraRef = linkedPortal->_cameraObject.GetId();
-                _materialLinkPending = false;
-            }
-        }
+        UpdateLinkedCameraRef();
     }
 
-    auto* window = Application::GetWindow();
-    uint32_t width = window->GetWidth();
-    uint32_t height = window->GetHeight();
-
-    if (parentPortal->_renderTarget &&
-        (parentPortal->_renderTarget->GetWidth() != width || parentPortal->_renderTarget->GetHeight() != height))
-    {
-        TextureConfig textureConfig{
-            .format = Format::RGBA8_UNORM,
-            .width = width,
-            .height = height,
-            .isRenderTarget = true,
-        };
-
-        parentPortal->_renderTarget = Texture::Create(textureConfig);
-
-        auto& camera = parentPortal->_cameraObject.GetComponent<VirtualCamera>();
-        camera.SetRenderTarget(parentPortal->_renderTarget);
-        camera.useScreenSpaceAspectRatio = true;
-    }
+    UpdateCameraRenderTarget();
+    UpdateCameraPos();
 }
 
 void
@@ -203,13 +174,124 @@ PortalScript::UpdateChromaticAberrationEffect()
     playerCamera->SetChromaticAberrationStrength(chromaticStrength);
 }
 
+void
+PortalScript::UpdateLinkedCameraRef()
+{
+    auto& mesh = parentPortal->_frameObject.GetComponent<StaticMesh>();
+    auto& model = mesh.GetModel();
+
+    if (model)
+    {
+        auto& materials = model->GetMaterials();
+        if (!materials.empty())
+        {
+            materials[0].cameraRef = linkedPortal->_cameraObject.GetId();
+            _materialLinkPending = false;
+        }
+    }
+}
+
+void
+PortalScript::UpdateCameraRenderTarget()
+{
+    auto* window = Application::GetWindow();
+    uint32_t width = window->GetWidth();
+    uint32_t height = window->GetHeight();
+
+    if (parentPortal->_renderTarget &&
+        (parentPortal->_renderTarget->GetWidth() != width || parentPortal->_renderTarget->GetHeight() != height))
+    {
+        TextureConfig textureConfig{
+            .format = Format::RGBA8_UNORM,
+            .width = width,
+            .height = height,
+            .isRenderTarget = true,
+        };
+
+        parentPortal->_renderTarget = Texture::Create(textureConfig);
+
+        auto& camera = parentPortal->_cameraObject.GetComponent<VirtualCamera>();
+        camera.SetRenderTarget(parentPortal->_renderTarget);
+        camera.useScreenSpaceAspectRatio = true;
+    }
+}
+
+void
+PortalScript::UpdateCameraPos()
+{
+    auto& scene = Game::GetScene();
+    auto mainLayer = Game::GetMainLayer();
+    auto player = mainLayer->GetPlayer();
+
+    auto playerTransform = scene.GetComponent<WorldTransform>(playerId);
+
+    auto& playerCamera = player->GetCamera()->GetCameraId();
+
+    auto portal1Transform = scene.GetComponent<WorldTransform>(GetGameObject());
+    auto portal2Transform = scene.GetComponent<WorldTransform>(linkedPortal->_portal);
+    auto cameraTransform = scene.GetComponent<WorldTransform>(playerCamera);
+
+    JPH::Quat portal1Rotation{ portal1Transform->rotation.x,
+                               portal1Transform->rotation.y,
+                               portal1Transform->rotation.z,
+                               portal1Transform->rotation.w };
+    JPH::Quat portal2Rotation{ portal2Transform->rotation.x,
+                               portal2Transform->rotation.y,
+                               portal2Transform->rotation.z,
+                               portal2Transform->rotation.w };
+    JPH::Quat playerRotation{ playerTransform->rotation.x,
+                              playerTransform->rotation.y,
+                              playerTransform->rotation.z,
+                              playerTransform->rotation.w };
+    JPH::Quat cameraRotation{ cameraTransform->rotation.x,
+                              cameraTransform->rotation.y,
+                              cameraTransform->rotation.z,
+                              cameraTransform->rotation.w };
+
+    // Inverse rotation of portal 1
+    JPH::Quat rotAInv = portal1Rotation.Conjugated();
+
+    // --- POSITION ---
+    JPH::Vec3 localPos = rotAInv * (Math::vector_cast<JPH::Vec3>(playerTransform->position) -
+                                    Math::vector_cast<JPH::Vec3>(portal1Transform->position));
+    JPH::Vec3 newPlayerPos = Math::vector_cast<JPH::Vec3>(portal2Transform->position) + portal2Rotation * localPos;
+
+    // --- ROTATION ---
+    JPH::Quat localRot = rotAInv * playerRotation;
+    JPH::Vec4 newPlayerRot = (portal2Rotation * localRot).GetXYZW();
+
+    // --- OFFSET POSITION ---
+    JPH::Vec3 offsetLocal = rotAInv * (Math::vector_cast<JPH::Vec3>(cameraTransform->position) -
+                                       Math::vector_cast<JPH::Vec3>(playerTransform->position));
+    JPH::Vec3 offsetWorld = portal2Rotation * offsetLocal;
+
+    // --- ROTATION ---
+    JPH::Quat camLocalRot = rotAInv * cameraRotation;
+    JPH::Quat newCamRot = portal2Rotation * camLocalRot;
+
+    /* player->Warp(Math::vector_cast<Vector3>(newPlayerPos),
+                 { newPlayerRot.GetX(), newPlayerRot.GetY(), newPlayerRot.GetZ(), newPlayerRot.GetW() },
+                 Math::vector_cast<Vector3>(newPlayerSpeed));
+
+    player->WarpCamera(Math::vector_cast<Vector3>(offsetWorld),
+                       { newCamRot.GetX(), newCamRot.GetY(), newCamRot.GetZ(), newCamRot.GetW() },
+                       Math::vector_cast<Vector3>(newCamVel));*/
+
+    auto portalCamTransform = scene.GetComponent<Transform>(linkedPortal->_cameraObject);
+
+    Vector3 newPortalCameraPos = Math::vector_cast<Vector3>(newPlayerPos) + Math::vector_cast<Vector3>(offsetWorld);
+
+    portalCamTransform->position = newPortalCameraPos;
+    portalCamTransform->rotation = { newCamRot.GetX(), newCamRot.GetY(), newCamRot.GetZ(), newCamRot.GetW() };
+}
+
 Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player) :
     _player{ player }, _portal{ Game::GetScene().CreateGameObject("Portal") }
 {
     Game::GetScene().AddComponent<Transform>(_portal, position, rotation, scale);
     Game::GetScene().AddComponent<WorldTransform>(_portal);
 
-    _cameraObject = Game::GetScene().CreateGameObject("Portal Camera", _portal);
+    _cameraObject = Game::GetScene().CreateGameObject("Portal Camera");
     auto& camera = _cameraObject.AddComponent<VirtualCamera>();
 
     TextureConfig textureConfig{
