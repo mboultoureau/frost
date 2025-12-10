@@ -16,6 +16,8 @@
 #include "Player/PlayerController.h"
 #include "Player/PlayerSpringCamera.h"
 
+#include "Portal/Portal.h"
+
 #include "Samples/Rotate.h"
 
 using ScriptCreateFunc = std::function<Frost::Scripting::Script*()>;
@@ -62,6 +64,9 @@ InitializeRegistry()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerController()); };
     _scriptRegistry["PlayerSpringCamera"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerSpringCamera()); };
+
+    // Portal
+    _scriptRegistry["Portal"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Portal()); };
 
     // Samples
     _scriptRegistry["Rotate"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Rotate()); };
