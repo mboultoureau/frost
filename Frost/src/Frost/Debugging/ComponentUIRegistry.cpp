@@ -16,6 +16,7 @@
 #include "Frost/Scene/Components/Disabled.h"
 #include "Frost/Scene/Systems/PhysicSystem.h"
 #include "Frost/Scripting/ScriptingEngine.h"
+#include "Frost/Physics/Physics.h"
 
 #include "Frost/Debugging/DebugInterface/DebugUtils.h"
 #include "Frost/Utils/Math/Angle.h"
@@ -536,6 +537,51 @@ namespace Frost
                     {
                         rb.motionType = static_cast<RigidBody::MotionType>(currentMotionType);
                         modified = true;
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Text("Collision Settings");
+
+                    // Object Layer
+                    const auto& layers = Physics::GetLayerNames();
+
+                    if (!layers.empty())
+                    {
+                        int currentLayerIndex = -1;
+                        std::string previewValue = "Unknown (" + std::to_string(rb.objectLayer) + ")";
+
+                        std::vector<const char*> layerNamesCStr;
+                        layerNamesCStr.reserve(layers.size());
+
+                        for (int i = 0; i < layers.size(); ++i)
+                        {
+                            layerNamesCStr.push_back(layers[i].name.c_str());
+                            if (layers[i].layerId == rb.objectLayer)
+                            {
+                                currentLayerIndex = i;
+                                previewValue = layers[i].name;
+                            }
+                        }
+
+                        if (ImGui::Combo(
+                                "Layer", &currentLayerIndex, layerNamesCStr.data(), (int)layerNamesCStr.size()))
+                        {
+                            if (currentLayerIndex >= 0 && currentLayerIndex < layers.size())
+                            {
+                                rb.objectLayer = layers[currentLayerIndex].layerId;
+                                modified = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Raw input if no layers are defined
+                        int rawLayer = (int)rb.objectLayer;
+                        if (ImGui::InputInt("Layer ID", &rawLayer))
+                        {
+                            rb.objectLayer = (JPH::ObjectLayer)rawLayer;
+                            modified = true;
+                        }
                     }
 
                     ImGui::Separator();

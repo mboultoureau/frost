@@ -14,13 +14,13 @@ namespace Frost
     class SpeedometerScript : public Script
     {
     public:
-        SpeedometerScript(Player& player) : _player(player) {}
+        SpeedometerScript(Player& player) : _playerController(player) {}
 
         void OnInitialize() override;
         void OnUpdate(float deltaTime) override;
 
     private:
-        Player& _player;
+        Player& _playerController;
 
         GameObject _speedometerComponent;
         GameObject _speedometerNeedleComponent;

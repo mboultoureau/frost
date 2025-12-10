@@ -1,10 +1,16 @@
 #include "SwiftBot/Application.h"
+#include "Physics/GeneratedPhysicsLayers.h"
 
 #include <memory>
 
 namespace Game
 {
-    Application::Application(Frost::ApplicationSpecification entryPoint) : Frost::Application(entryPoint) {}
+    Application::Application(Frost::ApplicationSpecification entryPoint) : Frost::Application(entryPoint)
+    {
+        ConfigurePhysics({ .broadPhaseLayerInterface = new GameBroadPhaseLayerInterface(),
+                           .objectLayerPairFilter = new GameObjectLayerPairFilter(),
+                           .objectVsBroadPhaseLayerFilter = new GameObjectVsBroadPhaseLayerFilter() });
+    }
 
     Application::~Application() {}
 

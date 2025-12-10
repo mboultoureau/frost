@@ -190,13 +190,15 @@ Player::Player()
 {
     Scene& scene = Game::GetScene();
 
-    _player = scene.CreateGameObject("Player");
-    scene.AddComponent<Transform>(
-        _player, Vector3{ 0.0f, 0.0f, -10.0f }, Vector4{ 0.0f, 0.0f, 0.0f, 1.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
-    scene.AddComponent<WorldTransform>(_player);
+    _playerController = scene.CreateGameObject("Player");
+    scene.AddComponent<Transform>(_playerController,
+                                  Vector3{ 0.0f, 0.0f, -10.0f },
+                                  Vector4{ 0.0f, 0.0f, 0.0f, 1.0f },
+                                  Vector3{ 1.0f, 1.0f, 1.0f });
+    scene.AddComponent<WorldTransform>(_playerController);
 
     // Camera
-    _camera = scene.CreateGameObject("Camera", _player);
+    _camera = scene.CreateGameObject("Camera", _playerController);
     scene.AddComponent<Transform>(_camera, Vector3{ 0.0f, 0.0f, 0.0f });
     scene.AddComponent<WorldTransform>(_camera, Vector3{ 0.0f, 0.0f, 0.0f });
     scene.AddComponent<Camera>(_camera);
@@ -219,13 +221,13 @@ Player::InitializePhysics()
 {
     using namespace JPH;
 
-    FT_ENGINE_ASSERT(_player != GameObject::InvalidId, "Player GameObject is invalid");
+    FT_ENGINE_ASSERT(_playerController != GameObject::InvalidId, "Player GameObject is invalid");
     Scene& scene = Game::GetScene();
 
     // Create vehicle body
-    auto& rb =
-        _player.AddComponent<RigidBody>(ShapeSphere{ 1.0f }, ObjectLayers::PLAYER, RigidBody::MotionType::Dynamic);
+    auto& rb = _playerController.AddComponent<RigidBody>(
+        ShapeSphere{ 1.0f }, ObjectLayers::PLAYER, RigidBody::MotionType::Dynamic);
     rb.gravityFactor = 0.0f;
 
-    scene.AddScript<PlayerScript>(_player);
+    scene.AddScript<PlayerScript>(_playerController);
 }

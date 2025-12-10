@@ -4,7 +4,7 @@
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 
-namespace ObjectLayers
+namespace GameLogic::ObjectLayers
 {
     static constexpr JPH::ObjectLayer NON_MOVING = 0;
     static constexpr JPH::ObjectLayer MOVING = 1;
@@ -13,9 +13,9 @@ namespace ObjectLayers
     static constexpr JPH::ObjectLayer CAMERA = 4;
     static constexpr JPH::ObjectLayer PLAYER = 5;
     static constexpr JPH::uint NUM_LAYERS = 6;
-} // namespace ObjectLayers
+} // namespace GameLogic::ObjectLayers
 
-namespace BroadPhaseLayers
+namespace GameLogic::BroadPhaseLayers
 {
     static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
     static constexpr JPH::BroadPhaseLayer MOVING(1);
@@ -23,4 +23,4 @@ namespace BroadPhaseLayers
     static constexpr JPH::BroadPhaseLayer SENSOR(3);
     static constexpr JPH::BroadPhaseLayer UNUSED(4);
     static constexpr JPH::uint NUM_LAYERS = 5;
-} // namespace BroadPhaseLayers
+} // namespace GameLogic::BroadPhaseLayers

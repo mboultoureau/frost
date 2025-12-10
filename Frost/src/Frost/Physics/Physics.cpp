@@ -26,6 +26,68 @@ using namespace Frost::Math;
 
 namespace Frost
 {
+    void Physics::InitPhysics(PhysicsConfig& config, bool useConfig)
+    {
+        FT_ENGINE_ASSERT(!_physicsInitialized, "Physics has already been initialized!");
+        FT_ENGINE_INFO("Initializing Physics...");
+
+        if (useConfig)
+        {
+            FT_ENGINE_ASSERT(config.broadPhaseLayerInterface, "broadPhaseLayerInterface is null!");
+            FT_ENGINE_ASSERT(config.objectLayerPairFilter, "objectLayerPairFilter is null!");
+            FT_ENGINE_ASSERT(config.objectVsBroadPhaseLayerFilter, "objectVsBroadPhaseLayerFilter is null!");
+            _physicsConfig = config;
+            _ownsConfigPointers = false;
+        }
+        else
+        {
+            _physicsConfig = PhysicsConfig{ new BPLayerInterfaceImpl{},
+                                            new ObjectLayerPairFilterImpl{},
+                                            new ObjectVsBroadPhaseLayerFilterImpl{} };
+            _ownsConfigPointers = true;
+        }
+
+        JPH::RegisterDefaultAllocator();
+        JPH::Trace = Physics::TraceImpl;
+        JPH_IF_ENABLE_ASSERTS(AssertFailed = Physics::AssertFailedImpl;)
+        JPH::Factory::sInstance = new JPH::Factory();
+        RegisterTypes();
+
+        _singleton = new Physics();
+
+        _physicsInitialized = true;
+    }
+
+    void Physics::Shutdown()
+    {
+        if (!_physicsInitialized)
+            return;
+
+        FT_ENGINE_INFO("Shutting down Physics...");
+
+        delete _singleton;
+        _singleton = nullptr;
+
+        JPH::UnregisterTypes();
+        delete JPH::Factory::sInstance;
+        JPH::Factory::sInstance = nullptr;
+
+        if (_ownsConfigPointers)
+        {
+            delete _physicsConfig.broadPhaseLayerInterface;
+            delete _physicsConfig.objectLayerPairFilter;
+            delete _physicsConfig.objectVsBroadPhaseLayerFilter;
+        }
+
+        _physicsInitialized = false;
+    }
+
+    Physics& Physics::Get()
+    {
+        FT_ENGINE_ASSERT(_singleton, "Physics not initialized or already shut down. Call InitPhysics first.");
+        return *_singleton;
+    }
+
     Physics::Physics() :
         cMaxBodies(1024),
         cMaxBodyPairs(1024),
@@ -47,63 +109,58 @@ namespace Frost
                             *object_vs_broadphase_layer_filter,
                             *object_vs_object_layer_filter);
         physics_system.SetBodyActivationListener(&body_activation_listener);
-
         physics_system.SetContactListener(&contact_listener);
         body_interface = &physics_system.GetBodyInterface();
 
         physics_system.OptimizeBroadPhase();
-        FT_ENGINE_INFO("Physics initialized");
 
 #ifdef FT_DEBUG
         _debugRenderer = new JoltRenderingPipeline();
 #endif
+
+        FT_ENGINE_INFO("Physics instance created.");
     }
 
-    Physics::~Physics() {}
-
-    Physics& Physics::Get()
+    Physics::~Physics()
     {
-        static Physics _singleton;
-        return _singleton;
-    }
-
-    void Physics::Shutdown()
-    {
-        if (!_physicsInitialized)
-            return;
-
-        FT_ENGINE_INFO("Shutting down Physics...");
-
 #ifdef FT_DEBUG
-        if (Get()._debugRenderer)
-        {
-            delete Get()._debugRenderer;
-            Get()._debugRenderer = nullptr;
-        }
+        delete _debugRenderer;
+        _debugRenderer = nullptr;
 #endif
+    }
 
-        JPH::UnregisterTypes();
-        delete JPH::Factory::sInstance;
-        JPH::Factory::sInstance = nullptr;
-
-        _physicsInitialized = false;
+    void Physics::UpdatePhysics(float fixedDeltaTime)
+    {
+        physics_system.Update(fixedDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
     }
 
 #ifdef FT_DEBUG
     void Physics::DrawDebug()
     {
         FT_ENGINE_ASSERT(Get()._debugRenderer != nullptr, "Debug renderer is null!");
-
-        // auto debugRendererConfig = GetDebugRendererConfig();
-
-        // if (debugRendererConfig.DrawBodies)
-        //{
         JPH::BodyManager::DrawSettings bodyDrawSettings;
-
         Get().physics_system.DrawBodies(bodyDrawSettings, Get()._debugRenderer);
-        //}
     }
 #endif
+
+    JPH::DebugRenderer* Physics::GetDebugRenderer()
+    {
+#ifdef FT_DEBUG
+        return Get()._debugRenderer;
+#else
+        return nullptr;
+#endif
+    }
+
+    void Physics::SetLayerNames(const std::vector<PhysicsLayerInfo>& layers)
+    {
+        _layerNames = layers;
+    }
+
+    const std::vector<PhysicsLayerInfo>& Physics::GetLayerNames()
+    {
+        return _layerNames;
+    }
 
     void Physics::AddConstraint(JPH::Constraint* inConstraint)
     {
@@ -152,13 +209,10 @@ namespace Frost
 
     void Physics::RemoveAndDestroyBody(const JPH::BodyID& inBodyID)
     {
-        if (!inBodyID.IsInvalid())
+        if (!inBodyID.IsInvalid() && Get().body_interface->IsAdded(inBodyID))
         {
-            if (Physics::Get().body_interface->IsAdded(inBodyID))
-            {
-                Physics::Get().body_interface->RemoveBody(inBodyID);
-                Physics::Get().body_interface->DestroyBody(inBodyID);
-            }
+            Get().body_interface->RemoveBody(inBodyID);
+            Get().body_interface->DestroyBody(inBodyID);
         }
     }
 
@@ -177,11 +231,6 @@ namespace Frost
         return static_cast<entt::entity>(GetBodyInterface().GetUserData(inBodyID));
     }
 
-    void Physics::UpdatePhysics(float fixedDeltaTime)
-    {
-        physics_system.Update(fixedDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
-    }
-
     void Physics::TraceImpl(const char* inFMT, ...)
     {
         // Format the message
@@ -197,80 +246,15 @@ namespace Frost
 
 #ifdef JPH_ENABLE_ASSERTS
 
-    // Callback for asserts, connect this to your own assert handler if you have
-    // one
     bool Physics::AssertFailedImpl(const char* inExpression, const char* inMessage, const char* inFile, uint inLine)
     {
         // Print to the TTY
         std::cout << inFile << ":" << inLine << ": (" << inExpression << ") " << (inMessage != nullptr ? inMessage : "")
                   << std::endl;
 
-        // Breakpoint
         return true;
     }
 #endif
-
-    JPH::DebugRenderer* Physics::GetDebugRenderer()
-    {
-#ifdef FT_DEBUG
-        return Get()._debugRenderer;
-#else
-        return nullptr;
-#endif
-    }
-
-    void Physics::InitPhysics(PhysicsConfig& config, bool useConfig)
-    {
-        FT_ENGINE_ASSERT(!_physicsInitialized, "Physics has already been initialized!");
-        FT_ENGINE_INFO("Initializing Physics...");
-
-        if (useConfig)
-        {
-            FT_ENGINE_ASSERT(config.broadPhaseLayerInterface != nullptr,
-                             "broadPhaseLayerInterface in PhysicsConfig is null!");
-            FT_ENGINE_ASSERT(config.objectLayerPairFilter != nullptr,
-                             "objectLayerPairFilter in PhysicsConfig is null!");
-            FT_ENGINE_ASSERT(config.objectVsBroadPhaseLayerFilter != nullptr,
-                             "objectVsBroadPhaseLayerFilter in PhysicsConfig is null!");
-            _physicsConfig = config;
-        }
-        else
-        {
-            _physicsConfig = PhysicsConfig{ new BPLayerInterfaceImpl{},
-                                            new ObjectLayerPairFilterImpl{},
-                                            new ObjectVsBroadPhaseLayerFilterImpl{} };
-        }
-
-        JPH::RegisterDefaultAllocator();
-        JPH::Trace = Physics::TraceImpl;
-        JPH_IF_ENABLE_ASSERTS(AssertFailed = Physics::AssertFailedImpl;)
-        JPH::Factory::sInstance = new JPH::Factory();
-        RegisterTypes();
-
-        Physics::Get();
-
-        _physicsInitialized = true;
-    }
-
-    bool ObjectLayerPairFilterImpl::ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const
-    {
-        switch (inObject1)
-        {
-            case PhysicLayers::NON_MOVING:
-                return inObject2 == PhysicLayers::PLAYER_MOVING; // Non moving only
-                                                                 // collides with moving
-            case PhysicLayers::PLAYER_MOVING:
-                return inObject2 == PhysicLayers::NON_MOVING; // Non moving only collides
-                                                              // with moving
-                /*case Layers::SENSOR:
-                        return inObject2 == Layers::GHOST_MOVING;
-                case Layers::GHOST_MOVING:
-                        return inObject2 == Layers::SENSOR;*/
-            default:
-                JPH_ASSERT(false);
-                return false;
-        }
-    }
 
     bool ObjectVsBroadPhaseLayerFilterImpl::ShouldCollide(JPH::ObjectLayer inLayer1,
                                                           JPH::BroadPhaseLayer inLayer2) const
@@ -284,7 +268,7 @@ namespace Frost
                 /*case PhysicLayers::GHOST_MOVING:
                         return inLayer2 == BroadPhaseLayers::NON_MOVING;*/
             default:
-                JPH_ASSERT(false);
+                // JPH_ASSERT(false);
                 return false;
         }
     }
@@ -295,6 +279,11 @@ namespace Frost
         mObjectToBroadPhase[PhysicLayers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
         mObjectToBroadPhase[PhysicLayers::PLAYER_MOVING] = BroadPhaseLayers::MOVING;
         mObjectToBroadPhase[PhysicLayers::SENSOR] = BroadPhaseLayers::NON_MOVING;
+
+        for (int i = 0; i < PhysicLayers::NUM_LAYERS; ++i)
+        {
+            mObjectToBroadPhase[i] = BroadPhaseLayers::NON_MOVING;
+        }
     }
 
     JPH::uint BPLayerInterfaceImpl::GetNumBroadPhaseLayers() const
@@ -317,9 +306,22 @@ namespace Frost
             case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:
                 return "MOVING";
             default:
-                JPH_ASSERT(false);
+                // JPH_ASSERT(false);
                 return "INVALID";
         }
     }
 
+    bool ObjectLayerPairFilterImpl::ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const
+    {
+        switch (inObject1)
+        {
+            case PhysicLayers::NON_MOVING:
+                return inObject2 == PhysicLayers::PLAYER_MOVING;
+            case PhysicLayers::PLAYER_MOVING:
+                return inObject2 == PhysicLayers::NON_MOVING;
+            default:
+                // JPH_ASSERT(false);
+                return false;
+        }
+    }
 } // namespace Frost

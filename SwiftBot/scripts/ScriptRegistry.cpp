@@ -11,7 +11,6 @@
 
 #include "CheckPoint/CheckpointScript.h"
 
-#include "Player/PlayerCamera.h"
 #include "Player/PlayerController.h"
 #include "Player/PlayerSpringCamera.h"
 
@@ -45,8 +44,6 @@ InitializeRegistry()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::CheckpointScript()); };
 
     // Player
-    _scriptRegistry["PlayerCamera"] = []()
-    { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerCamera()); };
     _scriptRegistry["PlayerController"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::PlayerController()); };
     _scriptRegistry["PlayerSpringCamera"] = []()

@@ -44,7 +44,7 @@ Entities:
     Meta:
       Name: Terrain
     Transform:
-      Position: [2, -2, 8]
+      Position: [2, -46.81077, 8]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     Prefab:
