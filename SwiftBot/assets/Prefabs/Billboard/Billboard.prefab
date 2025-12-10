@@ -1,0 +1,19 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: Billboard
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 1
+      Params:
+        Size: 1
+        Segments: [1, 1, 1]
+        Bevel: 0
+    Scriptable:
+      Scripts:
+        - BillboardScript

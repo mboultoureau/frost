@@ -1,3 +1,4 @@
+// PS_Billboard.hlsl
 #include "BillboardCommon.hlsli"
 
 Texture2D BillboardTexture : register(t0);
@@ -24,9 +25,9 @@ PS_Output main(GSOutput input)
     
     output.Albedo = textureColor;
     
+    float3 normalWorld = normalize(CameraPosition.xyz - input.worldPos);
     
-    float3 normal = normalize(input.worldPos - CameraPosition.xyz); 
-    output.Normal = float4(normal * 0.5f + 0.5f, 1.0f); 
+    output.Normal = float4(normalWorld * 0.5f + 0.5f, 1.0f);
     
     output.WorldPos = float4(input.worldPos, 1.0f);
     
