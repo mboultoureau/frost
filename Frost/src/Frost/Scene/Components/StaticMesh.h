@@ -33,6 +33,7 @@ namespace Frost::Component
     public:
         StaticMesh();
         StaticMesh(const MeshConfig& newConfig);
+        StaticMesh(const MeshConfig& newConfig, bool forceNewModel);
 
         std::shared_ptr<Model>& GetModel() { return _model; }
         const std::shared_ptr<Model>& GetModel() const { return _model; }
@@ -51,6 +52,7 @@ namespace Frost::Component
     private:
         MeshConfig _config;
         std::shared_ptr<Model> _model;
+        bool _forceNewModel = false;
     };
 
 } // namespace Frost::Component

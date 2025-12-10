@@ -32,7 +32,7 @@ Portal::Portal(Vector3 position, EulerAngles rotation)
 
     // Portal frame
     _frameObject = scene.CreateGameObject("Portal Frame", _portalObject);
-    auto& mesh = _frameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal.fbx" });
+    auto& mesh = _frameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal.fbx" }, true);
 
     // Initial position and rotation
     auto& transform = _portalObject.GetComponent<Transform>();

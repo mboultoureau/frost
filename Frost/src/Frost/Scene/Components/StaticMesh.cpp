@@ -17,6 +17,12 @@ namespace Frost::Component
         _Generate();
     }
 
+    StaticMesh::StaticMesh(const MeshConfig& newConfig, bool forceNewModel) :
+        _config{ newConfig }, _forceNewModel(forceNewModel)
+    {
+        _Generate();
+    }
+
     void StaticMesh::SetMeshConfig(const MeshConfig& newConfig)
     {
         _config = newConfig;
@@ -62,7 +68,17 @@ namespace Frost::Component
             {
                 try
                 {
-                    _model = AssetManager::LoadAsset<Model>(loadPath.string());
+                    if (_forceNewModel)
+                    {
+                        _model = std::make_shared<Model>();
+                        _model->SetStatus(AssetStatus::Loading);
+                        _model->LoadCPU(loadPath.string());
+                        _model->UploadGPU();
+                    }
+                    else
+                    {
+                        _model = AssetManager::LoadAsset<Model>(loadPath.string());
+                    }
                 }
                 catch (const std::exception& e)
                 {
