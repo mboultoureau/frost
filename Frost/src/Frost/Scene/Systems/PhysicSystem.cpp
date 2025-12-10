@@ -99,11 +99,6 @@ namespace Frost
     {
         _scene = &scene;
 
-        // Subscribe to changes
-        auto& registry = scene.GetRegistry();
-        registry.on_construct<Component::RigidBody>().connect<&PhysicSystem::_OnCreateBody>(*this);
-        registry.on_destroy<Component::RigidBody>().connect<&PhysicSystem::_OnDestroyBody>(*this);
-
         auto view = scene.GetRegistry().view<RigidBody>();
         for (auto entity : view)
         {
@@ -113,11 +108,6 @@ namespace Frost
 
     void PhysicSystem::OnDetach(Scene& scene)
     {
-        // Unsubscribe to changes
-        auto& registry = scene.GetRegistry();
-        registry.on_construct<Component::RigidBody>().disconnect<&PhysicSystem::_OnCreateBody>(*this);
-        registry.on_destroy<Component::RigidBody>().disconnect<&PhysicSystem::_OnDestroyBody>(*this);
-
         auto view = scene.GetRegistry().view<RigidBody>();
         for (auto entity : view)
         {
@@ -127,6 +117,18 @@ namespace Frost
 
     void PhysicSystem::FixedUpdate(Scene& scene, float fixedDeltaTime)
     {
+        {
+            auto view = scene.GetRegistry().view<RigidBody, WorldTransform>();
+            view.each(
+                [&](entt::entity entity, RigidBody& rb, WorldTransform& worldTransform)
+                {
+                    if (rb.runtimeBodyID.IsInvalid())
+                    {
+                        _CreateBodyForEntity(scene, entity);
+                    }
+                });
+        }
+
         Physics::Get().UpdatePhysics(fixedDeltaTime);
 
         _SynchronizeTransforms(scene);
@@ -151,11 +153,10 @@ namespace Frost
             return;
 
         auto& registry = scene.GetRegistry();
-        if (!registry.all_of<Component::RigidBody, Component::Transform>(entity.GetHandle()))
+        if (!registry.all_of<Component::RigidBody, Component::Transform, Component::WorldTransform>(entity.GetHandle()))
             return;
 
         auto& rb = registry.get<Component::RigidBody>(entity.GetHandle());
-        auto& transform = registry.get<Component::Transform>(entity.GetHandle());
 
         if (!rb.runtimeBodyID.IsInvalid())
         {
@@ -196,17 +197,17 @@ namespace Frost
     void PhysicSystem::_CreateBodyForEntity(Scene& scene, entt::entity entity)
     {
         auto& registry = scene.GetRegistry();
-        if (!registry.all_of<Component::RigidBody, Component::Transform>(entity))
+        if (!registry.all_of<Component::RigidBody, Component::WorldTransform>(entity))
             return;
 
         auto& rb = registry.get<Component::RigidBody>(entity);
-        auto& transform = registry.get<Component::Transform>(entity);
+        auto& worldTransform = registry.get<Component::WorldTransform>(entity);
         auto& body_interface = Physics::GetBodyInterface();
 
         if (!rb.runtimeBodyID.IsInvalid())
             return;
 
-        JPH::Ref<JPH::Shape> finalShape = CreateJoltShape(rb.shape, transform.scale);
+        JPH::Ref<JPH::Shape> finalShape = CreateJoltShape(rb.shape, worldTransform.scale);
 
         if (!finalShape)
         {
@@ -215,8 +216,8 @@ namespace Frost
         }
 
         JPH::BodyCreationSettings bodySettings(finalShape,
-                                               Math::vector_cast<JPH::RVec3>(transform.position),
-                                               Math::vector_cast<JPH::Quat>(transform.rotation),
+                                               Math::vector_cast<JPH::RVec3>(worldTransform.position),
+                                               Math::vector_cast<JPH::Quat>(worldTransform.rotation),
                                                static_cast<JPH::EMotionType>(rb.motionType),
                                                rb.objectLayer);
 
@@ -280,42 +281,60 @@ namespace Frost
         rb.runtimeBodyID = JPH::BodyID();
     }
 
-    void PhysicSystem::_OnCreateBody(entt::registry& registry, entt::entity entity)
-    {
-        _CreateBodyForEntity(*_scene, entity);
-    }
-
-    void PhysicSystem::_OnDestroyBody(entt::registry& registry, entt::entity entity)
-    {
-        _DestroyBodyForEntity(*_scene, entity);
-    }
-
     void PhysicSystem::_SynchronizeTransforms(Scene& scene)
     {
         auto& registry = scene.GetRegistry();
         auto& body_interface = Physics::GetBodyInterface();
 
-        auto view = registry.view<Component::RigidBody, Component::Transform>();
+        auto view = registry.view<Component::RigidBody, Component::Transform, Component::WorldTransform>();
 
         view.each(
-            [&](auto entity, Component::RigidBody& rb, Component::Transform& transform)
+            [&](auto entity,
+                Component::RigidBody& rb,
+                Component::Transform& localTransform,
+                Component::WorldTransform& worldTransform)
             {
-                if (rb.runtimeBodyID.IsInvalid())
+                if (rb.runtimeBodyID.IsInvalid() || !body_interface.IsActive(rb.runtimeBodyID))
                     return;
 
-                /*if (rb.motionType == Component::RigidBody::MotionType::Static)
-                    return;*/
+                auto jBodyPos = body_interface.GetPosition(rb.runtimeBodyID);
+                auto jBodyRot = body_interface.GetRotation(rb.runtimeBodyID);
 
-                if (Physics::Get().body_interface->IsActive(rb.runtimeBodyID))
+                Math::Vector3 newWorldPosition = Math::vector_cast<Math::Vector3>(jBodyPos);
+                Math::Vector4 newWorldRotation = { jBodyRot.GetX(), jBodyRot.GetY(), jBodyRot.GetZ(), jBodyRot.GetW() };
+
+                auto* relationship = registry.try_get<Component::Relationship>(entity);
+                if (relationship && relationship->parent != entt::null)
                 {
-                    auto jBodyPos = Physics::Get().body_interface->GetPosition(rb.runtimeBodyID);
-                    auto jBodyRot = Physics::Get().body_interface->GetRotation(rb.runtimeBodyID);
+                    auto* parentWorldTransform = registry.try_get<Component::WorldTransform>(relationship->parent);
+                    if (parentWorldTransform)
+                    {
+                        Math::Matrix4x4 newWorldMat = Math::Matrix4x4::CreateFromQuaternion(newWorldRotation) *
+                                                      Math::Matrix4x4::CreateTranslation(newWorldPosition);
 
-                    transform.position = Math::vector_cast<Math::Vector3>(jBodyPos);
-                    transform.rotation.x = jBodyRot.GetX();
-                    transform.rotation.y = jBodyRot.GetY();
-                    transform.rotation.z = jBodyRot.GetZ();
-                    transform.rotation.w = jBodyRot.GetW();
+                        Math::Matrix4x4 parentWorldMat = Math::GetTransformMatrix(*parentWorldTransform);
+
+                        DirectX::XMMATRIX parentMatDX = Math::LoadMatrix(parentWorldMat);
+                        DirectX::XMVECTOR det;
+                        DirectX::XMMATRIX parentInverseMatDX = DirectX::XMMatrixInverse(&det, parentMatDX);
+
+                        Math::Matrix4x4 parentInverseMat;
+                        Math::StoreMatrix(&parentInverseMat, parentInverseMatDX);
+
+                        Math::Matrix4x4 newLocalMat = newWorldMat * parentInverseMat;
+
+                        Math::Vector3 newLocalPosition, newLocalScale;
+                        Math::Vector4 newLocalRotation;
+                        Math::DecomposeTransform(newLocalMat, newLocalPosition, newLocalRotation, newLocalScale);
+
+                        localTransform.position = newLocalPosition;
+                        localTransform.rotation = newLocalRotation;
+                    }
+                }
+                else
+                {
+                    localTransform.position = newWorldPosition;
+                    localTransform.rotation = newWorldRotation;
                 }
             });
     }

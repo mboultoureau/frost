@@ -11,7 +11,7 @@ namespace Frost
 {
     WorldTransformSystem::WorldTransformSystem() {}
 
-    void WorldTransformSystem::Update(Scene& scene, float deltaTime)
+    void WorldTransformSystem::PreFixedUpdate(Scene& scene, float deltaTime)
     {
         auto& registry = scene.GetRegistry();
         auto view = scene.ViewActive<Transform, WorldTransform, Relationship>();
