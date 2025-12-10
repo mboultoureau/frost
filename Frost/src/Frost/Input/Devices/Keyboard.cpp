@@ -39,7 +39,7 @@ namespace Frost
         return false;
     }
 
-    void Keyboard::Update()
+    void Keyboard::Reset()
     {
         for (auto& pair : _keyStates)
         {

@@ -83,14 +83,14 @@ public:
     friend class Player;
 
     GameObject& GetCameraId() { return _camera; }
-    PlayerCamera(Player* _player);
+    PlayerCamera(Player* _playerController);
 
     // PostEffect calls
     void Shake(float duration, float amplitude, ScreenShakeEffect::AttenuationType type);
     void SetRadialBlurStrength(float strength);
 
 private:
-    Player* _player;
+    Player* _playerController;
     GameObject _cameraPivot;
     GameObject _3rdPersVirtCamera;
     GameObject _camera;

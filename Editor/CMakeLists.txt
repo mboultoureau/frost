@@ -70,4 +70,24 @@ add_custom_command(TARGET Editor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:Frost>
     $<TARGET_FILE_DIR:Editor>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:Jolt>
+    $<TARGET_FILE_DIR:Editor>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:assimp>
+    $<TARGET_FILE_DIR:Editor>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:spdlog>
+    $<TARGET_FILE_DIR:Editor>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:yaml-cpp>
+    $<TARGET_FILE_DIR:Editor>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:assimp>
+    $<TARGET_FILE_DIR:Editor>
 )

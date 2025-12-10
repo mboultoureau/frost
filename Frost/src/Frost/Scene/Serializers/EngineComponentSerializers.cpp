@@ -538,6 +538,7 @@ namespace Frost
                 out << YAML::Key << "LinearDamping" << YAML::Value << rb.linearDamping;
                 out << YAML::Key << "AngularDamping" << YAML::Value << rb.angularDamping;
                 out << YAML::Key << "GravityFactor" << YAML::Value << rb.gravityFactor;
+                out << YAML::Key << "ObjectLayer" << YAML::Value << rb.objectLayer;
                 out << YAML::Key << "OverrideMassProperties" << YAML::Value
                     << static_cast<int>(rb.overrideMassProperties);
                 out << YAML::Key << "Mass" << YAML::Value << rb.mass;
@@ -592,6 +593,7 @@ namespace Frost
                 rb.linearDamping = node["LinearDamping"].as<float>();
                 rb.angularDamping = node["AngularDamping"].as<float>();
                 rb.gravityFactor = node["GravityFactor"].as<float>();
+                rb.objectLayer = node["ObjectLayer"].as<JPH::ObjectLayer>();
                 rb.overrideMassProperties =
                     static_cast<RigidBody::OverrideMassProperties>(node["OverrideMassProperties"].as<int>());
                 rb.mass = node["Mass"].as<float>();
@@ -661,6 +663,7 @@ namespace Frost
                 out.write(reinterpret_cast<const char*>(&rb.linearDamping), sizeof(float));
                 out.write(reinterpret_cast<const char*>(&rb.angularDamping), sizeof(float));
                 out.write(reinterpret_cast<const char*>(&rb.gravityFactor), sizeof(float));
+                out.write(reinterpret_cast<const char*>(&rb.objectLayer), sizeof(JPH::ObjectLayer));
 
                 int overrideMass = static_cast<int>(rb.overrideMassProperties);
                 out.write(reinterpret_cast<const char*>(&overrideMass), sizeof(int));
@@ -719,6 +722,7 @@ namespace Frost
                 in.read(reinterpret_cast<char*>(&rb.linearDamping), sizeof(float));
                 in.read(reinterpret_cast<char*>(&rb.angularDamping), sizeof(float));
                 in.read(reinterpret_cast<char*>(&rb.gravityFactor), sizeof(float));
+                in.read(reinterpret_cast<char*>(&rb.objectLayer), sizeof(JPH::ObjectLayer));
 
                 int overrideMass;
                 in.read(reinterpret_cast<char*>(&overrideMass), sizeof(int));

@@ -7,45 +7,8 @@ Entities:
     Transform:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-  - LocalID: 1
-    ParentID: 0
-    Meta:
-      Name: island
-    Transform:
-      Position: [-0.042597115, 0, -1.6937265]
-      Rotation: [0, 0, 0, 1]
-      Scale: [5, 5, 5]
+      Scale: [10, 10, 10]
     StaticMesh:
       Type: 0
       Params:
         Path: assets/Prefabs/Island/island.glb
-  - LocalID: 2
-    ParentID: 1
-    Meta:
-      Name: New Entity
-    Transform:
-      Position: [1.5332909, -0.022046566, -2.570644]
-      Rotation: [0, 0, 0, 1]
-      Scale: [14.048335, 1.1880903, 19.52722]
-    RigidBody:
-      MotionType: 0
-      IsSensor: false
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 0
-      ShapeParams:
-        HalfExtent: [0.5, 0.5, 0.5]
-        ConvexRadius: 0.05

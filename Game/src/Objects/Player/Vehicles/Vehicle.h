@@ -32,7 +32,7 @@ public:
     // Called after constructor, so you have gameobject and ecs that are
     // accessible
     Vehicle(Player* playerManager, RendererParameters rendererParams) :
-        _player{ playerManager }, _scene{ _player->GetScene() }
+        _playerController{ playerManager }, _scene{ _playerController->GetScene() }
     {
         _gameObjectRenderer =
             _scene->CreateGameObject("Vehicle Renderer : " + rendererParams.name, playerManager->GetPlayerID());
@@ -79,7 +79,7 @@ public:
     virtual void Disappear() = 0;
 
 protected:
-    Player* _player;
+    Player* _playerController;
     GameObject _gameObjectRenderer;
     Scene* _scene;
     JPH::BodyID _bodyId;

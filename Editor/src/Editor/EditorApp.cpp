@@ -3,6 +3,7 @@
 #include "Frost/Core/EntryPoint.h"
 #include "Frost/Core/Layer.h"
 #include "Frost/Scripting/ScriptingEngine.h"
+#include "Frost/Physics/Physics.h"
 
 using namespace Frost;
 
@@ -58,10 +59,21 @@ namespace Editor
         FT_ENGINE_INFO(
             "Project '{0}' loaded from path: {1}", _projectInfo.GetConfig().name, _projectInfo.GetProjectFilePath());
 
+        const auto& config = _projectInfo.GetConfig();
+
+        std::vector<Frost::PhysicsLayerInfo> engineLayers;
+        engineLayers.reserve(config.objectLayers.size());
+
+        for (const auto& layer : config.objectLayers)
+        {
+            engineLayers.push_back({ layer.name, layer.layerId });
+        }
+
+        Frost::Physics::SetLayerNames(engineLayers);
+
         PopLayer(_projectHubLayer);
         _projectHubLayer = nullptr;
 
-        const auto& config = _projectInfo.GetConfig();
         if (!config.scriptingModule.empty())
         {
             std::filesystem::path projectDir = _projectInfo.GetProjectDir();
@@ -85,6 +97,7 @@ namespace Editor
         }
 
         _projectInfo.Clear();
+        Frost::Physics::SetLayerNames({});
 
         if (!_projectHubLayer)
         {

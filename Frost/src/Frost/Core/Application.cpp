@@ -158,6 +158,7 @@ namespace Frost
                 }
 
                 RendererAPI::EndFrame();
+                Input::Reset();
             }
         }
     }
