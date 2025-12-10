@@ -8,6 +8,8 @@
 
 #include "Materials/Terrain.h"
 #include "Materials/Water.h"
+#include "Materials/Billboard.h"
+#include "Materials/Grass.h"
 
 #include "CheckPoint/CheckpointScript.h"
 
@@ -36,8 +38,20 @@ InitializeRegistry()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::VictoryScreen()); };
 
     // Materials
+    // Terrain
     _scriptRegistry["Terrain"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Terrain()); };
+    // Water
     _scriptRegistry["Water"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Water()); };
+    // Billboard
+    _scriptRegistry["BillboardScript"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::BillboardScript()); };
+    // Grass
+    _scriptRegistry["GrassScript"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::GrassScript()); };
+
+    // Checkpoint
+    _scriptRegistry["CheckpointScript"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::CheckpointScript()); };
 
     // Checkpoint
     _scriptRegistry["CheckpointScript"] = []()
