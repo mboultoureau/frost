@@ -24,6 +24,8 @@ target_include_directories(SwiftBot PRIVATE
     ${CMAKE_SOURCE_DIR}/Frost/src
 )
 
+target_compile_definitions(SwiftBot PRIVATE JPH_SHARED_LIBRARY)
+
 target_link_libraries(SwiftBot PRIVATE
     Frost
     ImGui
@@ -66,8 +68,28 @@ set_property(TARGET SwiftBot APPEND PROPERTY COMPILE_OPTIONS
 )
 
 add_custom_command(TARGET SwiftBot POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    COMMAND ${CMAKE_COMMAND} -E copy
     $<TARGET_FILE:Frost>
+    $<TARGET_FILE_DIR:SwiftBot>
+    
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:Jolt>
+    $<TARGET_FILE_DIR:SwiftBot>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:assimp>
+    $<TARGET_FILE_DIR:SwiftBot>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:spdlog>
+    $<TARGET_FILE_DIR:SwiftBot>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:yaml-cpp>
+    $<TARGET_FILE_DIR:SwiftBot>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:assimp>
     $<TARGET_FILE_DIR:SwiftBot>
 )
 
@@ -90,6 +112,8 @@ set_target_properties(SwiftBotLogic PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/SwiftBotLogic"
     CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${INT_BASE_DIR}/$<CONFIG>-${CMAKE_SYSTEM_NAME}-x64/SwiftBotLogic"
 )
+
+target_compile_definitions(SwiftBotLogic PRIVATE JPH_SHARED_LIBRARY)
 
 target_include_directories(SwiftBotLogic PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/scripts

@@ -35,7 +35,7 @@ project:
         broadphase_id: 0
       - name: PLAYER
         id: 5
-        broadphase_id: 0
+        broadphase_id: 1
     broadphase_matrix:
       - false
       - true
@@ -98,7 +98,7 @@ project:
       - false
       - false
       - false
-      - false
+      - true
     object_broadphase_matrix:
       - false
       - true
@@ -125,8 +125,8 @@ project:
       - false
       - false
       - false
+      - true
+      - true
       - false
-      - false
-      - false
-      - false
+      - true
       - false

@@ -13,7 +13,7 @@ namespace GameLogic
     {
         Frost::GameObject playerObject;
         int lapsCompleted = 0;
-        VehicleType currentVehicle = VehicleType::BIKE;
+        VehicleType currentVehicle = VehicleType::MOTO;
         bool forceSpecificCameraPos = false;
         int checkpointNumber = 0;
     };

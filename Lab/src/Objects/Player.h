@@ -12,10 +12,10 @@ class Player
 public:
     Player();
     void FixedUpdate(float deltaTime);
-    GameObject GetPlayerID() { return _player; };
+    GameObject GetPlayerID() { return _playerController; };
 
 private:
-    GameObject _player;
+    GameObject _playerController;
     GameObject _camera;
     void InitializePhysics();
 };

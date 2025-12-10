@@ -42,7 +42,7 @@ Bike::Appear()
     RenderMesh(true);
 
     // ----- Transform -----
-    auto tr = _scene->GetComponent<Transform>(_player->GetPlayerID());
+    auto tr = _scene->GetComponent<Transform>(_playerController->GetPlayerID());
     Vec3 pos = Math::vector_cast<Vec3>(tr->position);
     Quat rot = Math::vector_cast<Quat>(tr->rotation);
 
@@ -83,7 +83,7 @@ Bike::Appear()
         motorcycle_shape, pos, rot, EMotionType::Dynamic, ObjectLayers::PLAYER);
     motorcycle_body_settings.mOverrideMassProperties = EOverrideMassProperties::CalculateInertia;
     motorcycle_body_settings.mMassPropertiesOverride.mMass = 240.0f;
-    motorcycle_body_settings.mUserData = _player->GetPlayerID();
+    motorcycle_body_settings.mUserData = _playerController->GetPlayerID();
     motorcycle_body_settings.mRestitution = 0;
     _body = Physics::CreateBody(motorcycle_body_settings);
     _bodyId = _body->GetID();
@@ -206,7 +206,7 @@ Bike::Appear()
 void
 Bike::Disappear()
 {
-    if (!_player->GetPlayerID().IsValid())
+    if (!_playerController->GetPlayerID().IsValid())
         return;
 
     RenderMesh(false);
@@ -216,9 +216,9 @@ Bike::Disappear()
         Physics::Get().physics_system.RemoveStepListener(mConstraint);
     }
 
-    if (_player->GetPlayerID().HasComponent<RigidBody>())
+    if (_playerController->GetPlayerID().HasComponent<RigidBody>())
     {
-        _player->GetPlayerID().RemoveComponent<RigidBody>();
+        _playerController->GetPlayerID().RemoveComponent<RigidBody>();
     }
 
     mConstraint = nullptr;
@@ -234,10 +234,10 @@ Bike::ProcessBikeInput(float deltaTime)
     _brake = 0.0f;
     if (_handBrakeInput || _specialInput)
         _brake = 1.0f;
-    else if (_upDownInput > 0)
-        _forward = _upDownInput;
-    else if (_upDownInput < 0)
-        _forward = _upDownInput;
+    else if (_forwardInput > 0)
+        _forward = _forwardInput;
+    else if (_forwardInput < 0)
+        _forward = _forwardInput;
 
     // Check if we're reversing direction
     if (_previousForward * _forward < 0.0f)
@@ -268,12 +268,12 @@ Bike::ProcessBikeInput(float deltaTime)
 
     steer_speed *= multiplier;
 
-    if (_leftRightInput > _right)
-        _right = std::min(_right + steer_speed * deltaTime, _leftRightInput);
-    else if (_leftRightInput < _right)
-        _right = std::max(_right - steer_speed * deltaTime, _leftRightInput);
+    if (_rightInput > _right)
+        _right = std::min(_right + steer_speed * deltaTime, _rightInput);
+    else if (_rightInput < _right)
+        _right = std::max(_right - steer_speed * deltaTime, _rightInput);
 
-    if (_upDownInput == 0)
+    if (_forwardInput == 0)
         _brake = 1.0f;
 
     // When leaned, we don't want to use the brakes fully as we'll spin out
@@ -443,13 +443,13 @@ Bike::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float de
 void
 Bike::OnLeftRightInput(float deltaTime, float leftRightInput)
 {
-    _leftRightInput = -leftRightInput;
+    _rightInput = -leftRightInput;
 }
 
 void
 Bike::OnAccelerateInput(float deltaTime, float upDownInput)
 {
-    _upDownInput = upDownInput;
+    _forwardInput = upDownInput;
 }
 
 void
@@ -490,7 +490,7 @@ Bike::OnSpecial(float deltaTime, bool specialInput)
         // On key pressed : start drift
         if (specialInput)
         {
-            if (_leftRightInput != 0)
+            if (_rightInput != 0)
             {
                 _specialDriftTimer.Start();
                 _speedAtDriftStart = Physics::GetBodyInterface().GetLinearVelocity(_bodyId).Length();

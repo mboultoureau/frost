@@ -19,6 +19,7 @@ namespace Frost
         static Gamepad& GetGamepad(const Gamepad::GamepadId id);
 
         static void Update();
+        static void Reset();
 
     private:
         Input() = default;

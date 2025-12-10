@@ -157,11 +157,20 @@ namespace Frost
         auto& rb = registry.get<Component::RigidBody>(entity.GetHandle());
         auto& transform = registry.get<Component::Transform>(entity.GetHandle());
 
+        if (!rb.runtimeBodyID.IsInvalid())
+        {
+            _DestroyBodyForEntity(scene, entity.GetHandle());
+        }
+
+        _CreateBodyForEntity(scene, entity.GetHandle());
+
+        /*
         if (rb.runtimeBodyID.IsInvalid())
         {
             _CreateBodyForEntity(scene, entity.GetHandle());
             return;
         }
+
 
         JPH::BodyInterface& bodyInterface = Physics::GetBodyInterface();
 
@@ -181,6 +190,7 @@ namespace Frost
             rb.runtimeBodyID, static_cast<JPH::EMotionType>(rb.motionType), JPH::EActivation::DontActivate);
         bodyInterface.SetFriction(rb.runtimeBodyID, rb.friction);
         bodyInterface.SetRestitution(rb.runtimeBodyID, rb.restitution);
+        */
     }
 
     void PhysicSystem::_CreateBodyForEntity(Scene& scene, entt::entity entity)
@@ -293,8 +303,8 @@ namespace Frost
                 if (rb.runtimeBodyID.IsInvalid())
                     return;
 
-                if (rb.motionType == Component::RigidBody::MotionType::Static)
-                    return;
+                /*if (rb.motionType == Component::RigidBody::MotionType::Static)
+                    return;*/
 
                 if (Physics::Get().body_interface->IsActive(rb.runtimeBodyID))
                 {

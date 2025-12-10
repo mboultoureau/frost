@@ -272,13 +272,13 @@ PlayerSpringCameraScript::ProcessInput(float deltaTime)
     }*/
 }
 
-PlayerCamera::PlayerCamera(Player* player) : _player{ player }
+PlayerCamera::PlayerCamera(Player* player) : _playerController{ player }
 {
     using namespace JPH;
     auto& scene = Game::GetScene();
 
     // Camera Pivot
-    _cameraPivot = scene.CreateGameObject("Camera Pivot", _player->GetPlayerID());
+    _cameraPivot = scene.CreateGameObject("Camera Pivot", _playerController->GetPlayerID());
     _cameraPivot.AddComponent<Transform>(Vector3{ 0.0f, 0.0f, 0.0f });
     _cameraPivot.AddComponent<WorldTransform>();
 
@@ -311,7 +311,7 @@ PlayerCamera::PlayerCamera(Player* player) : _player{ player }
         _camera.AddComponent<RigidBody>(ShapeSphere{ 0.01f }, ObjectLayers::CAMERA, RigidBody::MotionType::Kinematic);
     rb.isSensor = true;
 
-    _camera.AddScript<PlayerSpringCameraScript>(_cameraPivot, _3rdPersVirtCamera, _camera, _player);
+    _camera.AddScript<PlayerSpringCameraScript>(_cameraPivot, _3rdPersVirtCamera, _camera, _playerController);
 
     _cameraBodyID = _camera.GetComponent<RigidBody>().runtimeBodyID;
     _bodyInter = Physics::Get().body_interface;

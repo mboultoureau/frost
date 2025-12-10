@@ -6,22 +6,32 @@ namespace GameLogic
 {
     enum class VehicleType
     {
-        BIKE = 0,
+        MOTO = 0,
         BOAT = 1,
-        PLANE = 2
+        PLANE = 2,
+        COUNT
     };
 
     class Vehicle
     {
     public:
-        Vehicle(Frost::GameObject _player, Frost::GameObject vehicle) : _player(_player), _vehicle(vehicle) {}
+        Vehicle(Frost::GameObject player);
         virtual ~Vehicle() = default;
 
         virtual void Show() {}
         virtual void Hide() {}
 
+        virtual void OnPreFixedUpdate(float fixedDeltaTime) {}
+        virtual void OnFixedUpdate(float fixedDeltaTime) {}
+
+        virtual void OnBrake(bool brake) {}
+        virtual void OnSpecialAction(bool special) {}
+        virtual void OnMove(float right, float forward) {}
+
     protected:
         Frost::GameObject _player;
+        Frost::GameObject _playerController;
+        Frost::GameObject _camera;
         Frost::GameObject _vehicle;
     };
 } // namespace GameLogic

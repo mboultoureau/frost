@@ -176,6 +176,7 @@ namespace GameLogic
 
     void SplashScreen::OnStartButtonPress()
     {
+        /*
         auto player1Prefab = GetGameObject().GetScene()->FindGameObjectByName("Player1");
         FT_ASSERT(player1Prefab.IsValid(), "Player1 is invalid");
 
@@ -187,9 +188,11 @@ namespace GameLogic
         std::vector<PlayerData> initialPlayers = {
             PlayerData{ .playerObject = player1, .lapsCompleted = 0 },
         };
-        GameState::Get().Initialize(0, initialPlayers);
+        */
+        // GameState::Get().Initialize(0, initialPlayers);
 
-        GameState::Get().SetPlayerLaps(player1, 0);
+        // GameState::Get().SetPlayerLaps(player1, 0);
+
         EventManager::Emit<Frost::UnPauseEvent>();
         HideMenu();
     }
