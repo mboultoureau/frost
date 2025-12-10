@@ -1,91 +1,112 @@
 Scene: Island
 Entities:
-  - Entity: 35
-    Meta:
-      Name: Entity
-    Transform:
-      Position: [0, -21.040157, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [19.968914, 22.55633, 16.523438]
-    StaticMesh:
-      Type: 1
-      Params:
-        Size: 1
-        Segments: [1, 1, 1]
-        Bevel: 0
-    RigidBody:
-      MotionType: 0
-      IsSensor: true
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      ObjectLayer: 6
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 0
-      ShapeParams:
-        HalfExtent: [0.5, 0.5, 0.5]
-        ConvexRadius: 0.05
-    Scriptable:
-      Scripts:
-        - Water
-    Parent: -1
-  - Entity: 13
+  - Entity: 11
     Meta:
       Name: Water
     Transform:
-      Position: [1.4181576, -33.524746, -218.55959]
+      Position: [-3.2973256, -38.511524, -185.19609]
       Rotation: [0, 0, 0, 1]
-      Scale: [79.70814, 7.90135, 357.6126]
+      Scale: [69.04762, 18.837606, 289.9067]
     Prefab:
       AssetPath: assets\Prefabs\Water\Water.prefab
     Parent: -1
-  - Entity: 12
-    Meta:
-      Name: Portal
-    Transform:
-      Position: [15.163338, -28.959198, -241.6422]
-      Rotation: [0, 0.39288422, 0, 0.91958797]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\Prefabs\Portal\Portal.prefab
-    Parent: -1
-  - Entity: 11
-    Meta:
-      Name: Portal
-    Transform:
-      Position: [-30.63802, -28.959198, -159.50381]
-      Rotation: [0, 0.39288422, 0, 0.91958797]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\Prefabs\Portal\Portal.prefab
-    Parent: -1
   - Entity: 10
     Meta:
-      Name: TempName
+      Name: Portal
     Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
+      Position: [-28.36694, -28.959198, -320.15674]
+      Rotation: [0, 0.39288422, 0, 0.91958797]
       Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
   - Entity: 9
     Meta:
-      Name: TempName
+      Name: Island
     Transform:
-      Position: [0, 0, 0]
+      Position: [-11.880974, -26.710802, -121.39388]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\Island\Island.prefab
     Parent: -1
   - Entity: 8
+    Meta:
+      Name: LevelCamera
+    Transform:
+      Position: [2.9430332, 0, 3.363802]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Camera:
+      ProjectionType: 0
+      PerspectiveFOV: 60
+      OrthographicSize: 10
+      NearClip: 0.1
+      FarClip: 1000
+      Priority: 0
+      FrustumCulling: true
+      FrustumPadding: 1
+      ClearOnRender: true
+      BackgroundColor: [0.1, 0.1, 0.1, 1]
+      Viewport: [0, 0, 1, 1]
+      RenderToTexture: false
+    Parent: -1
+  - Entity: 7
+    Meta:
+      Name: Sun
+    Transform:
+      Position: [11.992254, 11.5, 0]
+      Rotation: [0, -0.100188054, 0, 0.99496853]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 0
+      Color: [1, 1, 1]
+      Intensity: 1
+      Params:
+        CastShadows: true
+        ShadowBias: 0.005
+    Parent: -1
+  - Entity: 6
+    Meta:
+      Name: PauseScreen
+    Transform:
+      Position: [7.134501, 3.1288216, -2.7343512]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\PauseScreen.prefab
+    Parent: -1
+  - Entity: 5
+    Meta:
+      Name: SplashScreen
+    Transform:
+      Position: [-3.1881971, 2.385097, -0.52147484]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\SplashScreen.prefab
+    Parent: -1
+  - Entity: 4
+    Meta:
+      Name: VictoryScreen
+    Transform:
+      Position: [-4.2199335, 2.538681, 0.07664871]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\VictoryScreen.prefab
+    Parent: -1
+  - Entity: 3
+    Meta:
+      Name: Player1
+    Transform:
+      Position: [0, 0, -12.334486]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Player\Player.prefab
+    Parent: -1
+  - Entity: 2
     Meta:
       Name: PitLane
     Transform:
@@ -121,97 +142,21 @@ Entities:
         HalfExtent: [0.5, 0.5, 0.5]
         ConvexRadius: 0.05
     Parent: -1
-  - Entity: 7
-    Meta:
-      Name: Player1
-    Transform:
-      Position: [0, 0, -12.334486]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\Player\Player.prefab
-    Parent: -1
-  - Entity: 6
-    Meta:
-      Name: VictoryScreen
-    Transform:
-      Position: [-4.2199335, 2.538681, 0.07664871]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\HUD\VictoryScreen.prefab
-    Parent: -1
-  - Entity: 5
-    Meta:
-      Name: SplashScreen
-    Transform:
-      Position: [-3.1881971, 2.385097, -0.52147484]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\HUD\SplashScreen.prefab
-    Parent: -1
-  - Entity: 4
-    Meta:
-      Name: PauseScreen
-    Transform:
-      Position: [7.134501, 3.1288216, -2.7343512]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\HUD\PauseScreen.prefab
-    Parent: -1
-  - Entity: 3
-    Meta:
-      Name: Sun
-    Transform:
-      Position: [11.992254, 11.5, 0]
-      Rotation: [0, -0.100188054, 0, 0.99496853]
-      Scale: [1, 1, 1]
-    Light:
-      Type: 0
-      Color: [1, 1, 1]
-      Intensity: 1
-      Params:
-        CastShadows: true
-        ShadowBias: 0.005
-    Parent: -1
-  - Entity: 2
-    Meta:
-      Name: LevelCamera
-    Transform:
-      Position: [2.9430332, 0, 3.363802]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Camera:
-      ProjectionType: 0
-      PerspectiveFOV: 60
-      OrthographicSize: 10
-      NearClip: 0.1
-      FarClip: 1000
-      Priority: 0
-      FrustumCulling: true
-      FrustumPadding: 1
-      ClearOnRender: true
-      BackgroundColor: [0.1, 0.1, 0.1, 1]
-      Viewport: [0, 0, 1, 1]
-      RenderToTexture: false
-    Parent: -1
   - Entity: 1
     Meta:
-      Name: Island
+      Name: Portal
     Transform:
-      Position: [-11.880974, -26.710802, -121.39388]
-      Rotation: [0, 0, 0, 1]
+      Position: [-30.63802, -28.959198, -159.50381]
+      Rotation: [0, 0.39288422, 0, 0.91958797]
       Scale: [1, 1, 1]
     Prefab:
-      AssetPath: assets\Prefabs\Island\Island.prefab
+      AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
   - Entity: 0
     Meta:
       Name: Portal
     Transform:
-      Position: [-28.36694, -28.959198, -320.15674]
+      Position: [15.163338, -28.959198, -241.6422]
       Rotation: [0, 0.39288422, 0, 0.91958797]
       Scale: [1, 1, 1]
     Prefab:

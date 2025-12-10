@@ -49,7 +49,7 @@ namespace GameLogic
         const float cBoatFriction = 0.5f;
 
         const float cForwardAcceleration = 20.0f;
-        const float cSteerAcceleration = 15.0f;
+        const float cSteerAcceleration = 7.5f;
         const float cBoatBrakeStrength = 2.0f;
 
         // Effects constants

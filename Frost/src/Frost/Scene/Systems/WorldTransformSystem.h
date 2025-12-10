@@ -10,7 +10,7 @@ namespace Frost
     {
     public:
         WorldTransformSystem();
-        void Update(Scene& scene, float deltaTime) override;
+        void PreFixedUpdate(Scene& scene, float deltaTime) override;
 
     private:
         void _UpdateHierarchy(entt::registry& registry,
