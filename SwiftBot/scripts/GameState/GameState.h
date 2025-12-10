@@ -16,6 +16,7 @@ namespace GameLogic
         VehicleType currentVehicle = VehicleType::MOTO;
         bool forceSpecificCameraPos = false;
         int checkpointNumber = 0;
+        bool isInWater = false;
     };
 
     class GameState
@@ -33,6 +34,7 @@ namespace GameLogic
         static void Shutdown();
 
         bool IsInitialized() const { return _initialized; }
+        bool IsPlayer(Frost::GameObject playerObject) const;
 
         bool Finished() const;
 

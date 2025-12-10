@@ -27,13 +27,24 @@ namespace GameLogic
         void OnUpdate(float deltaTime) override;
         void OnCollisionEnter(Frost::BodyOnContactParameters params, float deltaTime) override;
         void OnCollisionStay(Frost::BodyOnContactParameters params, float deltaTime) override;
+        void OnCollisionExit(std::pair<Frost::GameObject::Id, Frost::GameObject::Id> params, float deltaTime) override;
 
     private:
+        JPH::RVec3 GetWaterSurfacePosition(JPH::RVec3Arg inXZPosition) const;
+
         WaterMaterialParameters _shaderParams;
         float _maxWaterHeight = 2.0f;
         float _minWaterHeight = 0.0f;
         float _waveFrequency = 1.0f;
         float _waveLength = .1f;
         float _waveAmplitude = 0.2f;
+
+        static constexpr float cBoatBuoyancy = 1.2f;
+        static constexpr float cBoatLinearDrag = 0.05f;
+        static constexpr float cBoatAngularDrag = 0.7f;
+
+        static constexpr float cDefaultBuoyancy = 1.5f;
+        static constexpr float cDefaultLinearDrag = 0.5f;
+        static constexpr float cDefaultAngularDrag = 0.1f;
     };
 } // namespace GameLogic
