@@ -1,5 +1,54 @@
 Scene: Island
 Entities:
+  - Entity: 35
+    Meta:
+      Name: Entity
+    Transform:
+      Position: [0, -21.040157, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [19.968914, 22.55633, 16.523438]
+    StaticMesh:
+      Type: 1
+      Params:
+        Size: 1
+        Segments: [1, 1, 1]
+        Bevel: 0
+    RigidBody:
+      MotionType: 0
+      IsSensor: true
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 6
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [0.5, 0.5, 0.5]
+        ConvexRadius: 0.05
+    Scriptable:
+      Scripts:
+        - Water
+    Parent: -1
+  - Entity: 13
+    Meta:
+      Name: Water
+    Transform:
+      Position: [1.4181576, -33.524746, -218.55959]
+      Rotation: [0, 0, 0, 1]
+      Scale: [79.70814, 7.90135, 357.6126]
+    Prefab:
+      AssetPath: assets\Prefabs\Water\Water.prefab
+    Parent: -1
   - Entity: 12
     Meta:
       Name: Portal

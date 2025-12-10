@@ -1,5 +1,6 @@
 #include "Boat.h"
 #include "Physics/PhysicLayer.h"
+#include "GameState/GameState.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
@@ -96,6 +97,10 @@ namespace GameLogic
     void Boat::_ProcessPhysics(float fixedDeltaTime)
     {
         if (!_isBodyValid || !_playerController.HasComponent<RigidBody>())
+            return;
+
+        const auto& playerData = GameState::Get().GetPlayerData(_player);
+        if (!playerData.isInWater)
             return;
 
         auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
