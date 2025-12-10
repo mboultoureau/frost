@@ -135,8 +135,8 @@ namespace Frost
     void Scene::_InitializeSystems()
     {
         _systems.push_back(std::make_unique<ScriptableSystem>());
-        _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<WorldTransformSystem>());
+        _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<RendererSystem>());
         _systems.push_back(std::make_unique<UISystem>());
 

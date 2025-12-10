@@ -25,8 +25,6 @@ namespace Frost
     private:
         void _CreateBodyForEntity(Scene& scene, entt::entity entity);
         void _DestroyBodyForEntity(Scene& scene, entt::entity entity);
-        void _OnCreateBody(entt::registry& registry, entt::entity entity);
-        void _OnDestroyBody(entt::registry& registry, entt::entity entity);
 
         void _SynchronizeTransforms(Scene& scene);
 
