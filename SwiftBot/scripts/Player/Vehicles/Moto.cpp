@@ -12,6 +12,8 @@
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 
+#include "GameState/GameState.h"
+
 #undef min
 #undef max
 
@@ -272,7 +274,13 @@ namespace GameLogic
         Vec3 newGravityDir = Vec3::sZero();
         bool gravityOverridden = false;
 
-        bool sOverrideGravity = true;
+        bool sOverrideGravity = false;
+
+        if (!GameState::Get().GetPlayerData(_playerController).isInAntiGravity)
+        {
+            sOverrideGravity = true;
+        }
+
         if (sOverrideGravity)
         {
             SphereShape sphere(0.5f);

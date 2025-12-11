@@ -17,6 +17,10 @@ namespace GameLogic
         bool forceSpecificCameraPos = false;
         int checkpointNumber = 0;
         bool isInWater = false;
+        bool isInToon = false;
+        bool isInAntiGravity = false;
+        bool isInGrass = false;
+        bool isInHandWritting = false;
     };
 
     class GameState
