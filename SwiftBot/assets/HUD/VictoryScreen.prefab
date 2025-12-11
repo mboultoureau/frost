@@ -8,3 +8,6 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
+    Scriptable:
+      Scripts:
+        - VictoryScreen
