@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Utils/Math/Vector.h"
+
 #include <string>
 
 namespace Frost
 {
-    class DebugUtils
+    class FROST_API DebugUtils
     {
     public:
         static bool DrawComponentHeader(const char* name, bool* outRemoved = nullptr);

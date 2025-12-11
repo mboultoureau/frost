@@ -66,10 +66,10 @@ namespace Frost
 
     void DebugLayer::OnUpdate(float deltaTime)
     {
-        //        if (ImGui::IsKeyPressed(ImGuiKey_F1))
-        //        {
-        //            _displayDebug = !_displayDebug;
-        //        }
+        if (ImGui::IsKeyPressed(ImGuiKey_F1))
+        {
+            _displayDebug = !_displayDebug;
+        }
 
         _displayDebug = true;
 

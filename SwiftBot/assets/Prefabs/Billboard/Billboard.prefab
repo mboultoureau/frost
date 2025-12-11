@@ -9,11 +9,10 @@ Entities:
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     StaticMesh:
-      Type: 1
+      Type: 3
       Params:
-        Size: 1
-        Segments: [1, 1, 1]
-        Bevel: 0
+        Width: 1
+        Depth: 1
     Scriptable:
       Scripts:
-        - BillboardScript
+        - Billboard

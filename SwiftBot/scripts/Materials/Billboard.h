@@ -1,17 +1,23 @@
 #pragma once
 
 #include <Frost.h>
+#include <DirectXMath.h>
 
 namespace GameLogic
 {
+    struct alignas(16) BillboardMaterialParameters
+    {
+        float BillboardSize;
+        float Padding[3];
+    };
 
-    class BillboardScript : public Frost::Scripting::Script
+    class Billboard : public Frost::Scripting::Script
     {
     public:
-        BillboardScript() = default;
-
+        void OnCreate() override;
         void OnUpdate(float deltaTime) override;
 
-        void OnCreate() override;
+    private:
+        BillboardMaterialParameters _params;
     };
 } // namespace GameLogic

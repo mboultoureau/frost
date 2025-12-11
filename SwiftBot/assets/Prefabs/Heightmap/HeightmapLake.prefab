@@ -1,0 +1,23 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: HeightmapLake
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 5
+      Params:
+        TexturePath: assets/Prefabs/Heightmap/heightmap_lake.png
+        Width: 10
+        Depth: 10
+        MinHeight: 0
+        MaxHeight: 2
+        SegmentWidth: 512
+        SegmentDepth: 512
+    Scriptable:
+      Scripts:
+        - Terrain

@@ -85,6 +85,7 @@ namespace GameLogic
 
     void Water::OnCollisionEnter(Frost::BodyOnContactParameters params, float deltaTime)
     {
+        /*
         auto bodyId1 = params.inBody1.GetID();
         auto bodyId2 = params.inBody2.GetID();
 
@@ -101,6 +102,7 @@ namespace GameLogic
         {
             GameState::Get().GetPlayerData(playerObject.GetParent()).isInWater = true;
         }
+        */
     }
 
     void Water::OnCollisionStay(Frost::BodyOnContactParameters params, float deltaTime)
@@ -121,6 +123,11 @@ namespace GameLogic
 
         auto entityHandle = static_cast<entt::entity>(userData);
         GameObject playerObject(entityHandle, GetScene());
+
+        if (playerObject.IsValid() && GameState::Get().IsPlayer(playerObject.GetParent()))
+        {
+            GameState::Get().GetPlayerData(playerObject.GetParent()).isInWater = true;
+        }
 
         if (!playerObject.IsValid() || !GameState::Get().IsPlayer(playerObject.GetParent()))
             return;

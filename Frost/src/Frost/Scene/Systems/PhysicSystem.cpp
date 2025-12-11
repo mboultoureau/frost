@@ -160,6 +160,9 @@ namespace Frost
     {
         _scene = &scene;
 
+        auto& registry = scene.GetRegistry();
+        // registry.on_destroy<Component::RigidBody>().connect<&PhysicSystem::_OnDestroyBody>(*this);
+
         auto view = scene.GetRegistry().view<RigidBody>();
         for (auto entity : view)
         {
@@ -169,11 +172,19 @@ namespace Frost
 
     void PhysicSystem::OnDetach(Scene& scene)
     {
+        auto& registry = scene.GetRegistry();
+        // registry.on_destroy<Component::RigidBody>().disconnect<&PhysicSystem::_OnDestroyBody>(*this);
+
         auto view = scene.GetRegistry().view<RigidBody>();
         for (auto entity : view)
         {
             _DestroyBodyForEntity(scene, entity);
         }
+    }
+
+    void PhysicSystem::_OnDestroyBody(entt::registry& registry, entt::entity entity)
+    {
+        _DestroyBodyForEntity(*_scene, entity);
     }
 
     void PhysicSystem::FixedUpdate(Scene& scene, float fixedDeltaTime)

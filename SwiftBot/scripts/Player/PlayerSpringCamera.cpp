@@ -29,13 +29,6 @@ namespace GameLogic
 
     void PlayerSpringCamera::OnCreate()
     {
-        // Set parent transform to 0, 0, 0
-        auto _parent = GetGameObject().GetParent();
-        if (_parent.IsValid())
-        {
-            _parent.AddComponent<Transform>();
-        }
-
         // Get camera game objects
         _player = GetGameObject();
         _playerController = GetGameObject().GetChildByName("PlayerController");

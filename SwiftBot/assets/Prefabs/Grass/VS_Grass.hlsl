@@ -8,8 +8,9 @@ VSOutput main(VSInput input)
     
     output.position = input.position;
     output.worldPos = world;
-    output.normal = input.normal;
+    output.normal = normalize(mul((float3x3) WorldMatrix, input.normal));
     output.tangent = input.tangent;
+    output.uv = input.uv;
     
     return output;
 }

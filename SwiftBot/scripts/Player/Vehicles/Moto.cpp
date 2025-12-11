@@ -228,6 +228,7 @@ namespace GameLogic
 
         if (_playerController.HasComponent<RigidBody>())
         {
+            Physics::RemoveAndDestroyBody(_playerController.GetComponent<RigidBody>().runtimeBodyID);
             _playerController.RemoveComponent<RigidBody>();
         }
 
@@ -396,7 +397,7 @@ namespace GameLogic
 
     void Moto::OnMove(float right, float forward)
     {
-        _rightInput = right;
+        _rightInput = -right;
         _forwardInput = forward;
     }
 
