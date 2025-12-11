@@ -16,7 +16,7 @@ namespace GameLogic
 
     void AntiGravity::OnUpdate(float deltaTime) {}
 
-    void AntiGravity::OnCollisionEnter(Frost::BodyOnContactParameters params, float deltaTime)
+    void AntiGravity::OnCollisionStay(Frost::BodyOnContactParameters params, float deltaTime)
     {
         auto bodyId1 = params.inBody1.GetID();
         auto bodyId2 = params.inBody2.GetID();
