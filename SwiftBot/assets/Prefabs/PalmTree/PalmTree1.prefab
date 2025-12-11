@@ -3,15 +3,31 @@ Entities:
   - LocalID: 0
     ParentID: -1
     Meta:
-      Name: island1
+      Name: PalmTree
     Transform:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
-      Scale: [10, 10, 10]
+      Scale: [1, 1, 1]
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: Mesh
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [0.01, 0.01, 0.01]
     StaticMesh:
       Type: 0
       Params:
-        Path: assets/Prefabs/Island/islandV3.glb
+        Path: assets/Prefabs/PalmTree/PalmTree1.glb
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: RigidBody
+    Transform:
+      Position: [0.9885769, 9.841709, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
     RigidBody:
       MotionType: 0
       IsSensor: false
@@ -30,6 +46,7 @@ Entities:
       LockRotationX: false
       LockRotationY: false
       LockRotationZ: false
-      ShapeType: 4
+      ShapeType: 0
       ShapeParams:
-        Path: assets\Prefabs\Island\islandV3.glb
+        HalfExtent: [6.1, 10.9, 8.1]
+        ConvexRadius: 0.05

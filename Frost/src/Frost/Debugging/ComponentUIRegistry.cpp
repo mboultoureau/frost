@@ -26,6 +26,8 @@ namespace Frost
 {
     using namespace Component;
 
+    std::unordered_map<std::type_index, ComponentUIRegistry::DrawCallback> ComponentUIRegistry::_drawers;
+
     static entt::entity s_TransformLastEntity = entt::null;
     static Math::Vector3 s_TransformEulerCache = { 0.0f, 0.0f, 0.0f };
 
@@ -43,6 +45,20 @@ namespace Frost
         {
             drawer(scene, e, ctx);
         }
+    }
+
+    void ComponentUIRegistry::DrawByType(std::type_index type, Scene* scene, entt::entity e, const UIContext& ctx)
+    {
+        auto it = _drawers.find(type);
+        if (it != _drawers.end())
+        {
+            it->second(scene, e, ctx);
+        }
+    }
+
+    void ComponentUIRegistry::RegisterByType(std::type_index type, DrawCallback callback)
+    {
+        _drawers[type] = callback;
     }
 
     void ComponentUIRegistry::InitEngineComponents()

@@ -45,11 +45,9 @@ InitializeRegistry()
     // Water
     _scriptRegistry["Water"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Water()); };
     // Billboard
-    _scriptRegistry["BillboardScript"] = []()
-    { return static_cast<Frost::Scripting::Script*>(new GameLogic::BillboardScript()); };
+    _scriptRegistry["Billboard"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Billboard()); };
     // Grass
-    _scriptRegistry["GrassScript"] = []()
-    { return static_cast<Frost::Scripting::Script*>(new GameLogic::GrassScript()); };
+    _scriptRegistry["Grass"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Grass()); };
 
     // Checkpoint
     _scriptRegistry["CheckpointScript"] = []()

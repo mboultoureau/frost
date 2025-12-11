@@ -23,6 +23,7 @@ namespace Frost
         void NotifyRigidBodyUpdate(Scene& scene, GameObject entity);
 
     private:
+        void _OnDestroyBody(entt::registry& registry, entt::entity entity);
         void _CreateBodyForEntity(Scene& scene, entt::entity entity);
         void _DestroyBodyForEntity(Scene& scene, entt::entity entity);
 
