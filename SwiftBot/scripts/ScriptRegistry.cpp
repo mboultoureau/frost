@@ -11,6 +11,11 @@
 #include "Materials/Billboard.h"
 #include "Materials/Grass.h"
 
+#include "Layer/Antigravity.h"
+#include "Layer/GrassLayer.h"
+#include "Layer/HandWritting.h"
+#include "Layer/Toon.h"
+
 #include "CheckPoint/Checkpoint.h"
 
 #include "Looping/Looping.h"
@@ -46,6 +51,19 @@ InitializeRegistry()
     _scriptRegistry["Water"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Water()); };
     _scriptRegistry["Billboard"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Billboard()); };
     _scriptRegistry["Grass"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Grass()); };
+
+    // Layers
+    // Antigravity
+    _scriptRegistry["Antigravity"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::AntiGravity()); };
+    // GrassLayer
+    _scriptRegistry["GrassLayer"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::GrassLayer()); };
+    // HandWritting
+    _scriptRegistry["HandWritting"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::HandWritting()); };
+    // Toon
+    _scriptRegistry["Toon"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Toon()); };
 
     // Looping
     _scriptRegistry["Looping"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Looping()); };
