@@ -16,6 +16,7 @@ namespace GameLogic
         VehicleType currentVehicle = VehicleType::MOTO;
         bool forceSpecificCameraPos = false;
         int checkpointNumber = 0;
+        bool isCameraInWater = false;
         bool isInWater = false;
         bool isInToon = false;
         bool isInAntiGravity = false;

@@ -32,7 +32,7 @@ project:
         broadphase_id: 3
       - name: CAMERA
         id: 4
-        broadphase_id: 0
+        broadphase_id: 1
       - name: PLAYER
         id: 5
         broadphase_id: 1
@@ -114,7 +114,7 @@ project:
       - true
       - true
       - false
-      - false
+      - true
       - false
       - false
       - false
@@ -124,32 +124,32 @@ project:
       - false
       - true
       - true
-      - false
-      - false
       - true
       - true
       - true
       - true
-      - false
-      - false
-      - false
-      - false
-      - false
       - true
-      - false
-      - false
-      - false
+      - true
+      - true
       - false
       - false
       - false
       - false
       - true
+      - false
+      - false
+      - false
+      - false
+      - true
+      - false
+      - false
+      - true
       - true
       - false
       - false
       - false
       - false
-      - false
+      - true
       - false
       - false
       - false

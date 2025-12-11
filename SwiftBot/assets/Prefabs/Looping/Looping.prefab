@@ -7,7 +7,7 @@ Entities:
     Transform:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
+      Scale: [1.2486489, 1.2486489, 1.2486489]
     RigidBody:
       MotionType: 0
       IsSensor: true
@@ -31,39 +31,6 @@ Entities:
         HalfExtent: [0.8, 0.5, 0.5]
         ConvexRadius: 0.05
   - LocalID: 1
-    ParentID: 0
-    Meta:
-      Name: Collider
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    RigidBody:
-      MotionType: 0
-      IsSensor: true
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      ObjectLayer: 6
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 0
-      ShapeParams:
-        HalfExtent: [1, 1, 1]
-        ConvexRadius: 0.05
-    Scriptable:
-      Scripts:
-        - Antigravity
-  - LocalID: 2
     ParentID: 0
     Meta:
       Name: Mesh
@@ -99,3 +66,36 @@ Entities:
     Scriptable:
       Scripts:
         - Looping
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: Collider
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    RigidBody:
+      MotionType: 0
+      IsSensor: true
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 6
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [1, 1, 1]
+        ConvexRadius: 0.05
+    Scriptable:
+      Scripts:
+        - Antigravity

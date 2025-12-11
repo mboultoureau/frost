@@ -1,0 +1,22 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: RoadSpline
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: road
+    Transform:
+      Position: [-0.5445083, 0, -9.610682]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 0.7378807]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/Road/Roadspline/road.glb

@@ -61,7 +61,7 @@ namespace GameLogic
         auto& camComponent = _camera.GetComponent<Camera>();
         camComponent.postEffects.push_back(std::make_shared<ToonEffect>());
         camComponent.postEffects.push_back(std::make_shared<FogEffect>());
-        camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
+        // camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
         camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
 
         _radialBlur = camComponent.GetEffect<RadialBlurEffect>().get();
@@ -71,21 +71,21 @@ namespace GameLogic
     void PlayerSpringCamera::OnFixedUpdate(float fixedDeltaTime)
     {
         auto& camComponent = _camera.GetComponent<Camera>();
-        if (!GameState::Get().GetPlayerData(_player.GetParent()).isInToon)
-        {
-            camComponent.GetEffect<ToonEffect>()->SetEnabled(false);
-        }
-        else
+        if (GameState::Get().GetPlayerData(_player).isInToon)
         {
             camComponent.GetEffect<ToonEffect>()->SetEnabled(true);
         }
-        if (!GameState::Get().GetPlayerData(_player.GetParent()).isInWater)
+        else
         {
             camComponent.GetEffect<ToonEffect>()->SetEnabled(false);
         }
+        if (GameState::Get().GetPlayerData(_player).isCameraInWater)
+        {
+            camComponent.GetEffect<FogEffect>()->SetEnabled(true);
+        }
         else
         {
-            camComponent.GetEffect<ToonEffect>()->SetEnabled(true);
+            camComponent.GetEffect<FogEffect>()->SetEnabled(false);
         }
 
         if (!GameState::Get().IsInitialized())
