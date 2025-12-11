@@ -1,14 +1,14 @@
 #pragma once
 
 #include <Frost.h>
-#include "../GameState/GameState.h"
+#include "GameState/GameState.h"
 
 namespace GameLogic
 {
-    class CheckpointScript : public Frost::Scripting::Script
+    class Checkpoint : public Frost::Scripting::Script
     {
     public:
-        CheckpointScript() = default;
+        Checkpoint() = default;
 
         int _checkpointID = 0;
 

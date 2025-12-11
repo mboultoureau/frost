@@ -37,6 +37,7 @@ namespace Frost::Component
 
         std::shared_ptr<Model>& GetModel() { return _model; }
         const std::shared_ptr<Model>& GetModel() const { return _model; }
+        void SetModel(const std::shared_ptr<Model>& newModel) { _model = newModel; }
 
         MeshConfig& GetMeshConfig() { return _config; }
         const MeshConfig& GetMeshConfig() const { return _config; }

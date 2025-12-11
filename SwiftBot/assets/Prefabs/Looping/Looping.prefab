@@ -3,29 +3,33 @@ Entities:
   - LocalID: 0
     ParentID: -1
     Meta:
-      Name: Checkpoint
+      Name: Looping
     Transform:
-      Position: [0, 0, 0]
+      Position: [0.078416824, 0.11762583, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
   - LocalID: 1
     ParentID: 0
     Meta:
-      Name: Trigger
+      Name: Mesh
     Transform:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/Looping/looping.glb
     RigidBody:
       MotionType: 0
-      IsSensor: true
+      IsSensor: false
       AllowSleeping: true
       Friction: 0.2
       Restitution: 0
       LinearDamping: 0.05
       AngularDamping: 0.05
       GravityFactor: 1
-      ObjectLayer: 8
+      ObjectLayer: 0
       OverrideMassProperties: 0
       Mass: 1
       LockPositionX: false
@@ -34,10 +38,9 @@ Entities:
       LockRotationX: false
       LockRotationY: false
       LockRotationZ: false
-      ShapeType: 0
+      ShapeType: 4
       ShapeParams:
-        HalfExtent: [27.9, 14.6, 0.6]
-        ConvexRadius: 0.05
+        Path: assets\Prefabs\Looping\looping.glb
     Scriptable:
       Scripts:
-        - Checkpoint
+        - Looping

@@ -9,6 +9,7 @@ namespace GameLogic
     public:
         void OnCreate() override;
         void OnDestroy() override;
+        void OnUpdate(float deltaTime) override;
 
     private:
         const std::string WIN_PATH = "assets/HUD/victoryScreen.png";

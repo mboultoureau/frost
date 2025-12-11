@@ -38,29 +38,32 @@ project:
         broadphase_id: 1
       - name: WATER
         id: 6
-        broadphase_id: 0
+        broadphase_id: 3
       - name: PORTAL
         id: 7
+        broadphase_id: 3
+      - name: CHECKPOINT
+        id: 8
         broadphase_id: 3
     broadphase_matrix:
       - false
       - true
       - true
-      - false
-      - false
-      - true
-      - true
-      - true
       - true
       - false
       - true
       - true
+      - true
+      - true
       - false
-      - false
-      - false
+      - true
+      - true
       - false
       - true
       - false
+      - true
+      - true
+      - true
       - true
       - false
       - false
@@ -98,6 +101,17 @@ project:
       - false
       - false
       - true
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - true
       - true
       - false
       - false
@@ -108,29 +122,42 @@ project:
       - true
       - true
       - false
-      - false
-      - false
-      - true
-      - false
-      - false
-      - true
-      - false
       - true
       - true
       - false
       - false
-      - false
-      - false
-      - false
+      - true
+      - true
+      - true
       - true
       - false
       - false
       - false
       - false
       - false
+      - true
+      - false
+      - false
+      - false
+      - false
+      - false
       - false
       - false
       - true
+      - true
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
       - false
       - false
     object_broadphase_matrix:
@@ -168,6 +195,11 @@ project:
       - true
       - false
       - true
+      - false
+      - false
+      - true
+      - false
+      - false
       - false
       - false
       - true

@@ -3,7 +3,7 @@ Entities:
   - LocalID: 0
     ParentID: -1
     Meta:
-      Name: Checkpoint
+      Name: Road
     Transform:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
@@ -11,21 +11,21 @@ Entities:
   - LocalID: 1
     ParentID: 0
     Meta:
-      Name: Trigger
+      Name: RigidBody
     Transform:
-      Position: [0, 0, 0]
+      Position: [0, -0.08995676, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     RigidBody:
       MotionType: 0
-      IsSensor: true
+      IsSensor: false
       AllowSleeping: true
       Friction: 0.2
       Restitution: 0
       LinearDamping: 0.05
       AngularDamping: 0.05
       GravityFactor: 1
-      ObjectLayer: 8
+      ObjectLayer: 0
       OverrideMassProperties: 0
       Mass: 1
       LockPositionX: false
@@ -36,8 +36,17 @@ Entities:
       LockRotationZ: false
       ShapeType: 0
       ShapeParams:
-        HalfExtent: [27.9, 14.6, 0.6]
+        HalfExtent: [1.05, 0.1, 1.55]
         ConvexRadius: 0.05
-    Scriptable:
-      Scripts:
-        - Checkpoint
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: Road
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [1, -0, -0, -6.229855e-08]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/Road/Road.glb

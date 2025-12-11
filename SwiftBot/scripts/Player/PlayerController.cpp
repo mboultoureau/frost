@@ -29,7 +29,7 @@ namespace GameLogic
         std::vector<PlayerData> initialPlayers = {
             PlayerData{ .playerObject = GetGameObject(), .lapsCompleted = 0 },
         };
-        GameState::Get().Initialize(0, initialPlayers);
+        GameState::Get().Initialize(1, initialPlayers);
         GameState::Get().SetPlayerLaps(GetGameObject(), 0);
 
         _SetVehicle(VehicleType::MOTO);
