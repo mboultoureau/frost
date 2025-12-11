@@ -23,7 +23,7 @@ namespace Frost
         GameObject(entt::entity handle, Scene* scene);
 
         template<typename T, typename... Args>
-        T& AddComponent(Args&&... args)
+        decltype(auto) AddComponent(Args&&... args)
         {
             return _registry->emplace_or_replace<T>(_entityHandle, std::forward<Args>(args)...);
         }

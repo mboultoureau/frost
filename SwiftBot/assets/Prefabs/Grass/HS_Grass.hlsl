@@ -32,8 +32,5 @@ HSConstantData HS_PatchConstants(InputPatch<HSOutput, 3> patch, uint PatchID : S
 [patchconstantfunc("HS_PatchConstants")]
 HSOutput main(InputPatch<HSOutput, 3> patch, uint cpID : SV_OutputControlPointID)
 {
-    // Pass-through control point
     return patch[cpID];
 }
-
-

@@ -4,17 +4,9 @@ Entities:
     Meta:
       Name: SplashScreen
     Transform:
-      Position: [0, 0, 0]
+      Position: [-16.712545, 0, 24.64017]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
-    UIElement:
-      IsEnabled: true
-      Priority: 0
-      Viewport: [0, 0, 1, 1]
-      Rotation: 0
-      Color: [1, 1, 1, 1]
-      ContentType: 0
-      ContentParams:
-        TexturePath: assets\Scenes\MainMenu\game_title.png
-        Filter: 1
-    Parent: 4294967295
+    Prefab:
+      AssetPath: assets\HUD\SplashScreen.prefab
+    Parent: -1
