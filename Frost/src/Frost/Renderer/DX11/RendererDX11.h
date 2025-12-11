@@ -30,6 +30,7 @@ namespace Frost
         ID3D11RasterizerState* GetSolidRasterizerState() const { return _solidRasterizerState.Get(); }
         ID3D11RasterizerState* GetWireframeRasterizerState() const { return _wireframeRasterizerState.Get(); }
         ID3D11RasterizerState* GetCullNoneRasterizerState() const { return _cullNoneRasterizerState.Get(); }
+        ID3D11RasterizerState* GetCullBackRasterizerState() const { return _cullBackRasterizerState.Get(); }
         ID3D11BlendState* GetBlendState(BlendMode mode) const;
         ID3D11DepthStencilState* GetDepthStencilState(DepthMode mode) const;
 
@@ -44,6 +45,8 @@ namespace Frost
         Microsoft::WRL::ComPtr<ID3D11RasterizerState> _solidRasterizerState;
         Microsoft::WRL::ComPtr<ID3D11RasterizerState> _wireframeRasterizerState;
         Microsoft::WRL::ComPtr<ID3D11RasterizerState> _cullNoneRasterizerState;
+        Microsoft::WRL::ComPtr<ID3D11RasterizerState> _cullBackRasterizerState;
+        Microsoft::WRL::ComPtr<ID3D11RasterizerState> _cullFrontRasterizerState;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilState> _depthStateReadWrite;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilState> _depthStateReadOnly;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilState> _depthStateNone;

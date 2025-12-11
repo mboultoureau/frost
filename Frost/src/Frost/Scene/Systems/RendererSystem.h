@@ -14,6 +14,7 @@
 
 #include <entt/entt.hpp>
 #include <memory>
+#include <Frost/Renderer/Pipeline/ShadowPipeline.h>
 #include <unordered_map>
 
 namespace Frost
@@ -51,6 +52,7 @@ namespace Frost
 
     private:
         DeferredRenderingPipeline _deferredRendering;
+        ShadowPipeline _shadowPipeline;
         SkyboxPipeline _skyboxPipeline;
 
         std::shared_ptr<Texture> _source;

@@ -43,18 +43,18 @@ MainLayer::OnAttach()
 
     _sun = std::make_unique<Sun>();
 
-    _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 }, _gamestate);
-    _checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
-    _checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
-    _checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
-    _checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });
+    /* _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 }, _gamestate);
+     _checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
+     _checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
+     _checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
+     _checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });*/
 
     _grass = std::make_unique<Grass>(Vector3(-360, 67, -85), EulerAngles(180_deg, 0_deg, 0_deg), Vector3(1, 1, 1));
 
     auto boost =
         std::make_shared<Boost>(Vector3{ -385, 69, -32 }, EulerAngles(), Vector3(2, 2, 2), Vector3(0, 1, 0), 15000.0f);
     // link 1 / 2
-    _checkPoint1->AddChild(_checkPoint2);
+    /* _checkPoint1->AddChild(_checkPoint2);
     _checkPoint2->AddParent(_checkPoint1);
     // link 1 / 3
     _checkPoint1->AddChild(_checkPoint3);
@@ -62,9 +62,9 @@ MainLayer::OnAttach()
 
     // DEBUG
     // link 2 / 1
-    /*	_checkPoint2->AddChild(_checkPoint1);
+        _checkPoint2->AddChild(_checkPoint1);
         _checkPoint1->AddParent(_checkPoint2);
-    */
+
     // link 2 / 4
     _checkPoint2->AddChild(_checkPoint4);
     _checkPoint4->AddParent(_checkPoint2);
@@ -81,6 +81,8 @@ MainLayer::OnAttach()
     _checkPoint1->AddParent(_checkPoint5);
 
     _checkPoint1->ActivatePhysics();
+    */
+    logo = HUD_Logo();
 
     // LevelCamera levelCamera;
     auto _sky = std::make_unique<Sky>();
