@@ -52,6 +52,12 @@ namespace Frost
             case RasterizerMode::SolidCullNone:
                 _context->RSSetState(renderer->GetCullNoneRasterizerState());
                 break;
+            case RasterizerMode::SolidCullBack:
+                _context->RSSetState(renderer->GetCullBackRasterizerState());
+                break;
+            case RasterizerMode::SolidCullFront:
+                _context->RSSetState(renderer->GetCullBackRasterizerState());
+                break;
         }
     }
 
