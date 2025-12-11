@@ -1,4 +1,4 @@
-#include "GeneratedPhysicsLayers.h"
+﻿#include "GeneratedPhysicsLayers.h"
 #include <cassert>
 
 GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()
@@ -9,8 +9,9 @@ GameBroadPhaseLayerInterface::GameBroadPhaseLayerInterface()
     mObjectToBroadPhase[ObjectLayers::SENSOR] = BroadPhaseLayers::SENSOR;
     mObjectToBroadPhase[ObjectLayers::CAMERA] = BroadPhaseLayers::NON_MOVING;
     mObjectToBroadPhase[ObjectLayers::PLAYER] = BroadPhaseLayers::MOVING;
-    mObjectToBroadPhase[ObjectLayers::WATER] = BroadPhaseLayers::NON_MOVING;
+    mObjectToBroadPhase[ObjectLayers::WATER] = BroadPhaseLayers::SENSOR;
     mObjectToBroadPhase[ObjectLayers::PORTAL] = BroadPhaseLayers::SENSOR;
+    mObjectToBroadPhase[ObjectLayers::CHECKPOINT] = BroadPhaseLayers::SENSOR;
 }
 
 JPH::uint
@@ -60,28 +61,30 @@ GameObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer inObject1, JPH::Object
         case ObjectLayers::MOVING:
             return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING ||
                    inObject2 == ObjectLayers::DEBRIS || inObject2 == ObjectLayers::SENSOR ||
-                   inObject2 == ObjectLayers::CAMERA || inObject2 == ObjectLayers::PLAYER;
+                   inObject2 == ObjectLayers::CAMERA || inObject2 == ObjectLayers::PLAYER ||
+                   inObject2 == ObjectLayers::PORTAL || inObject2 == ObjectLayers::CHECKPOINT;
         case ObjectLayers::DEBRIS:
             return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING ||
-                   inObject2 == ObjectLayers::DEBRIS || inObject2 == ObjectLayers::SENSOR ||
-                   inObject2 == ObjectLayers::PLAYER;
+                   inObject2 == ObjectLayers::SENSOR || inObject2 == ObjectLayers::PLAYER;
         case ObjectLayers::SENSOR:
             return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING ||
-                   inObject2 == ObjectLayers::DEBRIS || inObject2 == ObjectLayers::CAMERA ||
-                   inObject2 == ObjectLayers::PLAYER;
+                   inObject2 == ObjectLayers::DEBRIS || inObject2 == ObjectLayers::CHECKPOINT;
         case ObjectLayers::CAMERA:
             return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING ||
-                   inObject2 == ObjectLayers::SENSOR || inObject2 == ObjectLayers::CAMERA ||
-                   inObject2 == ObjectLayers::PLAYER;
+                   inObject2 == ObjectLayers::PORTAL || inObject2 == ObjectLayers::CHECKPOINT;
         case ObjectLayers::PLAYER:
             return inObject2 == ObjectLayers::NON_MOVING || inObject2 == ObjectLayers::MOVING ||
-                   inObject2 == ObjectLayers::DEBRIS || inObject2 == ObjectLayers::SENSOR ||
-                   inObject2 == ObjectLayers::CAMERA || inObject2 == ObjectLayers::WATER ||
-                   inObject2 == ObjectLayers::PORTAL;
+                   inObject2 == ObjectLayers::DEBRIS || inObject2 == ObjectLayers::PLAYER ||
+                   inObject2 == ObjectLayers::WATER || inObject2 == ObjectLayers::PORTAL ||
+                   inObject2 == ObjectLayers::CHECKPOINT;
         case ObjectLayers::WATER:
             return inObject2 == ObjectLayers::PLAYER;
         case ObjectLayers::PORTAL:
-            return inObject2 == ObjectLayers::PLAYER;
+            return inObject2 == ObjectLayers::MOVING || inObject2 == ObjectLayers::CAMERA ||
+                   inObject2 == ObjectLayers::PLAYER;
+        case ObjectLayers::CHECKPOINT:
+            return inObject2 == ObjectLayers::MOVING || inObject2 == ObjectLayers::SENSOR ||
+                   inObject2 == ObjectLayers::CAMERA || inObject2 == ObjectLayers::PLAYER;
         default:
             return false;
     }
@@ -114,6 +117,8 @@ GameObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer inLayer1, JPH:
             return inLayer2 == BroadPhaseLayers::NON_MOVING || inLayer2 == BroadPhaseLayers::MOVING ||
                    inLayer2 == BroadPhaseLayers::SENSOR;
         case ObjectLayers::PORTAL:
+            return inLayer2 == BroadPhaseLayers::MOVING;
+        case ObjectLayers::CHECKPOINT:
             return inLayer2 == BroadPhaseLayers::MOVING;
         default:
             return false;

@@ -12,10 +12,10 @@ Entities:
       Type: 5
       Params:
         TexturePath: assets/Prefabs/Heightmap/heightmap_lake.png
-        Width: 10
-        Depth: 10
+        Width: 332
+        Depth: 188
         MinHeight: 0
-        MaxHeight: 2
+        MaxHeight: 66
         SegmentWidth: 512
         SegmentDepth: 512
     Scriptable:

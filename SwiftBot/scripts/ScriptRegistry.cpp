@@ -11,7 +11,9 @@
 #include "Materials/Billboard.h"
 #include "Materials/Grass.h"
 
-#include "CheckPoint/CheckpointScript.h"
+#include "CheckPoint/Checkpoint.h"
+
+#include "Looping/Looping.h"
 
 #include "Player/PlayerController.h"
 #include "Player/PlayerSpringCamera.h"
@@ -40,22 +42,17 @@ InitializeRegistry()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::VictoryScreen()); };
 
     // Materials
-    // Terrain
     _scriptRegistry["Terrain"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Terrain()); };
-    // Water
     _scriptRegistry["Water"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Water()); };
-    // Billboard
     _scriptRegistry["Billboard"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Billboard()); };
-    // Grass
     _scriptRegistry["Grass"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Grass()); };
 
-    // Checkpoint
-    _scriptRegistry["CheckpointScript"] = []()
-    { return static_cast<Frost::Scripting::Script*>(new GameLogic::CheckpointScript()); };
+    // Looping
+    _scriptRegistry["Looping"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Looping()); };
 
     // Checkpoint
-    _scriptRegistry["CheckpointScript"] = []()
-    { return static_cast<Frost::Scripting::Script*>(new GameLogic::CheckpointScript()); };
+    _scriptRegistry["Checkpoint"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::Checkpoint()); };
 
     // Player
     _scriptRegistry["PlayerController"] = []()

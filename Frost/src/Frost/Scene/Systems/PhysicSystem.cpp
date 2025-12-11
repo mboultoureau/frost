@@ -95,7 +95,7 @@ namespace Frost
                         for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
                         {
                             const aiVector3D& pos = mesh->mVertices[v];
-                            vertices.push_back({ pos.x, pos.y, pos.z });
+                            vertices.push_back({ pos.x, pos.y, -pos.z });
                         }
 
                         for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
@@ -105,8 +105,8 @@ namespace Frost
                             {
                                 JPH::IndexedTriangle triangle;
                                 triangle.mIdx[0] = vertexStartIdx + face.mIndices[0];
-                                triangle.mIdx[1] = vertexStartIdx + face.mIndices[1];
-                                triangle.mIdx[2] = vertexStartIdx + face.mIndices[2];
+                                triangle.mIdx[1] = vertexStartIdx + face.mIndices[2];
+                                triangle.mIdx[2] = vertexStartIdx + face.mIndices[1];
                                 triangle.mMaterialIndex = 0;
                                 triangles.push_back(triangle);
                             }

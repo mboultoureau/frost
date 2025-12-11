@@ -14,7 +14,8 @@ namespace GameLogic::ObjectLayers
     static constexpr JPH::ObjectLayer PLAYER = 5;
     static constexpr JPH::ObjectLayer WATER = 6;
     static constexpr JPH::ObjectLayer PORTAL = 7;
-    static constexpr JPH::uint NUM_LAYERS = 8;
+    static constexpr JPH::ObjectLayer CHECKPOINT = 8;
+    static constexpr JPH::uint NUM_LAYERS = 9;
 } // namespace GameLogic::ObjectLayers
 
 namespace GameLogic::BroadPhaseLayers

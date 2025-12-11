@@ -565,6 +565,9 @@ namespace Frost
         _commandList->ClearDepthStencil(depthPtr, true, 1.0f, false, 0);
 
         _commandList->SetShader(_shadowVertexShader.get());
+        _commandList->UnbindShader(ShaderType::Geometry);
+        _commandList->UnbindShader(ShaderType::Hull);
+        _commandList->UnbindShader(ShaderType::Domain);
         _commandList->UnbindShader(ShaderType::Pixel);
 
         _commandList->SetViewport(0, 0, _shadowResolution, _shadowResolution, 0.f, 1.f);
@@ -634,6 +637,9 @@ namespace Frost
         _commandList->ClearDepthStencil(depthPtr, true, 1.0f, false, 0);
 
         _commandList->SetShader(_shadowVertexShader.get());
+        _commandList->UnbindShader(ShaderType::Geometry);
+        _commandList->UnbindShader(ShaderType::Hull);
+        _commandList->UnbindShader(ShaderType::Domain);
         _commandList->UnbindShader(ShaderType::Pixel);
 
         _commandList->SetViewport(0, 0, _shadowResolution, _shadowResolution, 0.0f, 1.0f);
@@ -745,6 +751,9 @@ namespace Frost
                                        const Math::Matrix4x4& worldMatrix,
                                        const Math::Matrix4x4& _currentLightViewProj)
     {
+        if (!staticMesh.GetModel()->IsLoaded())
+            return;
+
         VS_ShadowConstants vsData;
         vsData.World = LoadMatrix(Math::Matrix4x4::CreateTranspose(worldMatrix));
         vsData.LightViewProj = LoadMatrix(Math::Matrix4x4::CreateTranspose(_currentLightViewProj));
@@ -754,6 +763,9 @@ namespace Frost
 
         cmd->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
         cmd->SetShader(_shadowVertexShader.get());
+        _commandList->UnbindShader(ShaderType::Geometry);
+        _commandList->UnbindShader(ShaderType::Hull);
+        _commandList->UnbindShader(ShaderType::Domain);
         cmd->UnbindShader(ShaderType::Pixel);
         cmd->SetInputLayout(_shadowInputLayout.get());
         cmd->SetRasterizerState(RasterizerMode::SolidCullBack);
