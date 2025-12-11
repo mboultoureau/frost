@@ -455,12 +455,6 @@ namespace Frost
                     if (auto* dir = std::get_if<LightDirectional>(&light.config))
                     {
                         ImGui::Text("Directional Parameters");
-                        ImGui::Checkbox("Cast Shadows", &dir->castShadows);
-                        if (dir->castShadows)
-                        {
-                            ImGui::DragFloat("Shadow Bias", &dir->shadowBias, 0.001f, 0.0f, 1.0f, "%.4f");
-                        }
-
                         ImGui::TextDisabled("Rotation is controlled by the Transform component.");
                     }
                     else if (auto* point = std::get_if<LightPoint>(&light.config))

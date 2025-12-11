@@ -57,6 +57,20 @@ namespace Frost
         return D3D11_TEXTURE_ADDRESS_WRAP;
     }
 
+    D3D11_COMPARISON_FUNC
+    ToD3D11ComparisonFunction(ComparisonFunction comparisonFunction)
+    {
+        switch (comparisonFunction)
+        {
+            case ComparisonFunction::NEVER:
+                return D3D11_COMPARISON_NEVER;
+            case ComparisonFunction::LESS_EQUAL:
+                return D3D11_COMPARISON_LESS_EQUAL;
+        }
+        FT_ENGINE_ASSERT(false, "Unsupported address mode specified.");
+        return D3D11_COMPARISON_NEVER;
+    }
+
     SamplerDX11::SamplerDX11(const SamplerConfig& config) : _config(config)
     {
         RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
@@ -70,7 +84,7 @@ namespace Frost
         desc.AddressW = ToD3D11AddressMode(_config.addressW);
         desc.MipLODBias = _config.mipLODBias;
         desc.MaxAnisotropy = _config.maxAnisotropy;
-        desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+        desc.ComparisonFunc = ToD3D11ComparisonFunction(_config.comparisonFunction);
         desc.BorderColor[0] = _config.borderColor[0];
         desc.BorderColor[1] = _config.borderColor[1];
         desc.BorderColor[2] = _config.borderColor[2];
