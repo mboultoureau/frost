@@ -38,7 +38,8 @@ namespace Frost
                                    float deltaTime,
                                    const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
                                    const std::shared_ptr<Texture>& skybox,
-                                   float overrideAspectRatio);
+                                   float overrideAspectRatio,
+                                   entt::entity exitPortalFrameEntity = entt::null);
 
         void _ApplyPostProcessing(CommandList* commandList,
                                   Texture* sourceTexture,

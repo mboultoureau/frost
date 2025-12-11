@@ -49,6 +49,8 @@ namespace Frost::Component
 
         std::vector<VirtualCamera*> hiddenFromCameras;
 
+        bool overrideFrustumCulling = false;
+
     private:
         void _Generate();
 

@@ -9,6 +9,7 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Frost/Scene/Components/RelativeView.h>
+#include <iostream>
 
 using namespace Frost;
 
@@ -38,9 +39,42 @@ PortalScript::OnInitialize()
     auto& rb = _gameObject.AddComponent<RigidBody>(rbComp);
 }
 
+float
+PortalScript::CalculatePortalFOV(const Math::Vector3& cameraPos,
+                                 const Math::Vector3& portalPos,
+                                 const Math::Vector3& portalScale,
+                                 bool isVertical) // true pour FOV vertical, false pour horizontal
+{
+    // Distance de la caméra au portail
+    float distance = Math::Length(cameraPos - portalPos);
+
+    // Taille du portail (approximative, ajustez selon votre mesh)
+    // Supposons que le portail fait 2 unités de base * scale
+    float portalSize = 1000.0f * (isVertical ? portalScale.y : portalScale.x);
+
+    // Calculer l'angle
+    float angle = 2.0f * std::atan(portalSize / (2.0f * distance));
+
+    return angle; // En radians
+}
+
 void
 PortalScript::OnUpdate(float deltaTime)
 {
+    auto& scene = Game::GetScene();
+    auto mainLayer = Game::GetMainLayer();
+    auto player = mainLayer->GetPlayer();
+    auto playerCamera = player->GetCamera();
+    auto playerCameraTransform = scene.GetComponent<WorldTransform>(playerCamera->GetCameraId());
+    auto portal1Transform = scene.GetComponent<WorldTransform>(GetGameObject());
+    // Calculer le FOV basé sur la distance
+    float verticalFOV =
+        CalculatePortalFOV(playerCameraTransform->position, portal1Transform->position, portal1Transform->scale, true);
+
+    // Appliquer à la caméra virtuelle
+    auto virtualCam = scene.GetComponent<VirtualCamera>(parentPortal->_cameraObject);
+    // virtualCam->perspectiveFOV = verticalFOV;
+
     UpdateChromaticAberrationEffect();
 
     if (_materialLinkPending && linkedPortal)
@@ -311,6 +345,11 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
     auto& mesh = _frameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal.fbx" }, true);
 
     mesh.hiddenFromCameras.push_back(&camera);
+    mesh.overrideFrustumCulling = true;
+    camera.portalEntity = _frameObject.GetId();
+
+    // std::cout << "Portal mesh triangle count: " << (mesh.GetModel()->GetMeshes()[0].GetIndexCount() / 3) <<
+    // std::endl;
 }
 
 void

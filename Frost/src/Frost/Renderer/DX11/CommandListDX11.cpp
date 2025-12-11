@@ -330,4 +330,165 @@ namespace Frost
     {
         _context->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
     }
+
+    D3D11_STENCIL_OP CommandListDX11::ConvertStencilOp(StencilOp op)
+    {
+        switch (op)
+        {
+            case StencilOp::Keep:
+                return D3D11_STENCIL_OP_KEEP;
+            case StencilOp::Zero:
+                return D3D11_STENCIL_OP_ZERO;
+            case StencilOp::Replace:
+                return D3D11_STENCIL_OP_REPLACE;
+            case StencilOp::IncrementSaturate:
+                return D3D11_STENCIL_OP_INCR_SAT;
+            case StencilOp::DecrementSaturate:
+                return D3D11_STENCIL_OP_DECR_SAT;
+            case StencilOp::Invert:
+                return D3D11_STENCIL_OP_INVERT;
+            case StencilOp::Increment:
+                return D3D11_STENCIL_OP_INCR;
+            case StencilOp::Decrement:
+                return D3D11_STENCIL_OP_DECR;
+            default:
+                return D3D11_STENCIL_OP_KEEP;
+        }
+    }
+
+    D3D11_COMPARISON_FUNC CommandListDX11::ConvertCompareFunc(CompareFunction func)
+    {
+        switch (func)
+        {
+            case CompareFunction::Never:
+                return D3D11_COMPARISON_NEVER;
+            case CompareFunction::Less:
+                return D3D11_COMPARISON_LESS;
+            case CompareFunction::Equal:
+                return D3D11_COMPARISON_EQUAL;
+            case CompareFunction::LessEqual:
+                return D3D11_COMPARISON_LESS_EQUAL;
+            case CompareFunction::Greater:
+                return D3D11_COMPARISON_GREATER;
+            case CompareFunction::NotEqual:
+                return D3D11_COMPARISON_NOT_EQUAL;
+            case CompareFunction::GreaterEqual:
+                return D3D11_COMPARISON_GREATER_EQUAL;
+            case CompareFunction::Always:
+                return D3D11_COMPARISON_ALWAYS;
+            default:
+                return D3D11_COMPARISON_ALWAYS;
+        }
+    }
+
+    void CommandListDX11::SetDepthStencilStateCustom(bool depthEnable,
+                                                     bool depthWrite,
+                                                     CompareFunction depthFunc,
+                                                     bool stencilEnable,
+                                                     CompareFunction stencilFunc,
+                                                     StencilOp stencilFailOp,
+                                                     StencilOp depthFailOp,
+                                                     StencilOp passOp,
+                                                     uint8_t stencilRef,
+                                                     uint8_t stencilReadMask,
+                                                     uint8_t stencilWriteMask)
+    {
+        // Créer une clé de hash unique pour cacher l'état
+        size_t key = 0;
+        key ^= std::hash<bool>{}(depthEnable) << 0;
+        key ^= std::hash<bool>{}(depthWrite) << 1;
+        key ^= std::hash<int>{}(static_cast<int>(depthFunc)) << 2;
+        key ^= std::hash<bool>{}(stencilEnable) << 3;
+        key ^= std::hash<int>{}(static_cast<int>(stencilFunc)) << 4;
+        key ^= std::hash<int>{}(static_cast<int>(stencilFailOp)) << 5;
+        key ^= std::hash<int>{}(static_cast<int>(depthFailOp)) << 6;
+        key ^= std::hash<int>{}(static_cast<int>(passOp)) << 7;
+        key ^= std::hash<uint8_t>{}(stencilReadMask) << 8;
+        key ^= std::hash<uint8_t>{}(stencilWriteMask) << 9;
+
+        // Chercher dans le cache
+        auto it = _depthStencilCache.find(key);
+        ID3D11DepthStencilState* state = nullptr;
+
+        if (it != _depthStencilCache.end())
+        {
+            state = it->second.Get();
+        }
+        else
+        {
+            // Créer un nouvel état
+            D3D11_DEPTH_STENCIL_DESC desc = {};
+            desc.DepthEnable = depthEnable;
+            desc.DepthWriteMask = depthWrite ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+            desc.DepthFunc = ConvertCompareFunc(depthFunc);
+            desc.StencilEnable = stencilEnable;
+            desc.StencilReadMask = stencilReadMask;
+            desc.StencilWriteMask = stencilWriteMask;
+
+            desc.FrontFace.StencilFunc = ConvertCompareFunc(stencilFunc);
+            desc.FrontFace.StencilFailOp = ConvertStencilOp(stencilFailOp);
+            desc.FrontFace.StencilDepthFailOp = ConvertStencilOp(depthFailOp);
+            desc.FrontFace.StencilPassOp = ConvertStencilOp(passOp);
+
+            desc.BackFace = desc.FrontFace;
+
+            Microsoft::WRL::ComPtr<ID3D11DepthStencilState> newState;
+            RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
+            ID3D11Device1* device = renderer->GetDevice();
+            HRESULT hr = device->CreateDepthStencilState(&desc, &newState);
+            if (SUCCEEDED(hr))
+            {
+                _depthStencilCache[key] = newState;
+                state = newState.Get();
+            }
+        }
+
+        if (state)
+        {
+            _context->OMSetDepthStencilState(state, stencilRef);
+        }
+    }
+
+    void CommandListDX11::SetColorWriteMask(bool r, bool g, bool b, bool a)
+    {
+        UINT8 mask = 0;
+        if (r)
+            mask |= D3D11_COLOR_WRITE_ENABLE_RED;
+        if (g)
+            mask |= D3D11_COLOR_WRITE_ENABLE_GREEN;
+        if (b)
+            mask |= D3D11_COLOR_WRITE_ENABLE_BLUE;
+        if (a)
+            mask |= D3D11_COLOR_WRITE_ENABLE_ALPHA;
+
+        // Chercher dans le cache
+        auto it = _blendCache.find(mask);
+        ID3D11BlendState* state = nullptr;
+
+        if (it != _blendCache.end())
+        {
+            state = it->second.Get();
+        }
+        else
+        {
+            D3D11_BLEND_DESC desc = {};
+            desc.RenderTarget[0].BlendEnable = FALSE;
+            desc.RenderTarget[0].RenderTargetWriteMask = mask;
+
+            Microsoft::WRL::ComPtr<ID3D11BlendState> newState;
+            RendererDX11* renderer = static_cast<RendererDX11*>(RendererAPI::GetRenderer());
+            ID3D11Device1* device = renderer->GetDevice();
+            HRESULT hr = device->CreateBlendState(&desc, &newState);
+            if (SUCCEEDED(hr))
+            {
+                _blendCache[mask] = newState;
+                state = newState.Get();
+            }
+        }
+
+        if (state)
+        {
+            _context->OMSetBlendState(state, nullptr, 0xFFFFFFFF);
+        }
+    }
 } // namespace Frost

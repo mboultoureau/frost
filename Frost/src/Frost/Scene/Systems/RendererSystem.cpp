@@ -9,6 +9,7 @@
 #include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Renderer/Pipeline/JoltDebugRenderingPipeline.h"
+#include <iostream>
 
 using namespace Frost::Component;
 
@@ -117,7 +118,13 @@ namespace Frost
                     }
                 }
 
-                _RenderSceneToTexture(scene, virtualCamData, deltaTime, allLights, skyboxTexture, aspectRatioToUse);
+                _RenderSceneToTexture(scene,
+                                      virtualCamData,
+                                      deltaTime,
+                                      allLights,
+                                      skyboxTexture,
+                                      aspectRatioToUse,
+                                      virtualCam.portalEntity);
                 virtualCameraTargets[virtualCamData.entity] = virtualCam.GetRenderTarget();
 
                 if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
@@ -189,7 +196,8 @@ namespace Frost
                         if (staticMesh.GetModel())
                         {
                             Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                            if (!camera.frustumCulling || _IsVisible(staticMesh, worldMatrix))
+                            if (!camera.frustumCulling || staticMesh.overrideFrustumCulling ||
+                                _IsVisible(staticMesh, worldMatrix))
                             {
                                 _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
                             }
@@ -321,8 +329,10 @@ namespace Frost
         float deltaTime,
         const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
         const std::shared_ptr<Texture>& skybox,
-        float overrideAspectRatio)
+        float overrideAspectRatio,
+        entt::entity exitPortalFrameEntity) // Portail à utiliser pour le masque
     {
+
         const VirtualCamera& camera = static_cast<const VirtualCamera&>(*camData.camera);
         const WorldTransform& cameraTransform = *camData.transform;
         Texture* renderTarget = camera.GetRenderTarget().get();
@@ -330,14 +340,12 @@ namespace Frost
             return;
 
         auto meshView = scene.ViewActive<StaticMesh, WorldTransform>();
-
         float targetWidth = static_cast<float>(renderTarget->GetWidth());
         float targetHeight = static_cast<float>(renderTarget->GetHeight());
         if (targetWidth == 0 || targetHeight == 0)
             return;
 
         Viewport renderViewport = { 0.0f, 0.0f, targetWidth, targetHeight };
-
         _deferredRendering.OnResize(static_cast<uint32_t>(targetWidth), static_cast<uint32_t>(targetHeight));
 
         float aspectRatio = (renderViewport.height > 0) ? (renderViewport.width / renderViewport.height) : 1.0f;
@@ -352,26 +360,104 @@ namespace Frost
         CommandList* commandList = _deferredRendering.GetCommandList();
         commandList->BeginRecording();
 
+        commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), true, 1.0f, true, 0);
+
+        // === ÉTAPE 1 : Rendre le masque du portail dans le stencil ===
+        if (scene.GetRegistry().valid(exitPortalFrameEntity))
+        {
+            // IMPORTANT : Binder un render target dummy + le depth/stencil
+            Texture* dummyRT = _deferredRendering.GetAlbedoTexture(); // N'importe quel RT
+            commandList->SetRenderTargets(1, &dummyRT, _deferredRendering.GetDepthStencilTexture());
+
+            // Viewport
+            commandList->SetViewport(0, 0, targetWidth, targetHeight, 0.0f, 1.0f);
+
+            // Désactiver l'écriture couleur
+            commandList->SetColorWriteMask(false, false, false, false);
+            commandList->SetDepthStencilStateCustom(false, // depthEnable
+                                                    false, // depthWrite
+                                                    CompareFunction::Always,
+                                                    true, // stencilEnable
+                                                    CompareFunction::Always,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Replace,
+                                                    1,
+                                                    0xFF,
+                                                    0xFF);
+
+            if (scene.GetRegistry().all_of<StaticMesh, WorldTransform>(exitPortalFrameEntity))
+            {
+                const auto& portalMesh = scene.GetRegistry().get<StaticMesh>(exitPortalFrameEntity);
+                const auto& portalTransform = scene.GetRegistry().get<WorldTransform>(exitPortalFrameEntity);
+
+                if (portalMesh.GetModel())
+                {
+                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(portalTransform);
+                    _deferredRendering.SubmitModelStencilOnly(
+                        *portalMesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
+                }
+            }
+
+            // Réactiver l'écriture couleur
+            commandList->SetColorWriteMask(true, true, true, true);
+        }
+
+        // === ÉTAPE 2 : BeginFrame (va re-binder les render targets) ===
         _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, renderViewport);
 
+        // === ÉTAPE 3 : Configurer le stencil pour le GBuffer pass ===
+        if (scene.GetRegistry().valid(exitPortalFrameEntity))
+        {
+            commandList->SetDepthStencilStateCustom(true,                   // depthEnable
+                                                    true,                   // depthWrite
+                                                    CompareFunction::Less,  // depthFunc
+                                                    true,                   // stencilEnable
+                                                    CompareFunction::Equal, // REMIS À Equal : rendre où stencil == 1
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    1, // stencilRef
+                                                    0xFF,
+                                                    0x00);
+        }
+
+        // === ÉTAPE 4 : Rendre la géométrie ===
         meshView.each(
-            [&](const StaticMesh& staticMesh, const WorldTransform& meshTransform)
+            [&](const entt::entity entity, const StaticMesh& staticMesh, const WorldTransform& meshTransform)
             {
+                if (entity == exitPortalFrameEntity)
+                    return;
+
                 if (staticMesh.GetModel())
                 {
-                    if (std::find(staticMesh.hiddenFromCameras.begin(), staticMesh.hiddenFromCameras.end(), &camera) ==
-                        staticMesh.hiddenFromCameras.end())
-                    {
-                        Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                        _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
-                    }
+                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
+                    _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
                 }
             });
 
-        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget);
+        // === ÉTAPE 5 : EndFrame SANS stencil (la géométrie est déjà masquée dans le GBuffer) ===
+        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget, false);
 
+        // === ÉTAPE 6 : Skybox (optionnel, avec ou sans stencil) ===
         if (skybox)
         {
+            if (scene.GetRegistry().valid(exitPortalFrameEntity))
+            {
+                // Activer le stencil test pour la skybox aussi
+                commandList->SetDepthStencilStateCustom(true,  // depthEnable
+                                                        false, // depthWrite (skybox n'écrit pas le depth)
+                                                        CompareFunction::LessEqual, // depthFunc
+                                                        true,                       // stencilEnable
+                                                        CompareFunction::Equal,     // Rendre où stencil == 1
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        1,
+                                                        0xFF,
+                                                        0x00);
+            }
+
             _skyboxPipeline.Render(commandList,
                                    renderTarget,
                                    _deferredRendering.GetDepthStencilTexture(),

@@ -25,5 +25,6 @@ namespace Frost::Component
         std::shared_ptr<Texture> renderTarget;
 
         bool useScreenSpaceAspectRatio = false;
+        entt::entity portalEntity;
     };
 } // namespace Frost::Component

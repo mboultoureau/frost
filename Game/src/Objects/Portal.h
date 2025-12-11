@@ -22,6 +22,10 @@ class PortalScript : public Script
 public:
     PortalScript(GameObject playerId, PortalType type, Portal* linkedPortal, Portal* parent);
     void OnInitialize() override;
+    float CalculatePortalFOV(const Math::Vector3& cameraPos,
+                             const Math::Vector3& portalPos,
+                             const Math::Vector3& portalScale,
+                             bool isVertical);
     void OnUpdate(float deltaTime) override;
     void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
     void WarpPlayer();
@@ -34,7 +38,7 @@ public:
     Portal* parentPortal;
 
     const std::chrono::milliseconds _chromaticAberrationDuration = 2000ms;
-    const float _chromaticAberrationFactor = 0.1f;
+    const float _chromaticAberrationFactor = 0.0f;
     Timer _chromaticAberrationTimer;
     bool _inChromaticEffect = false;
 

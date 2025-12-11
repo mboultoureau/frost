@@ -28,6 +28,7 @@
 #endif
 
 #include <array>
+#include <iostream>
 
 namespace Frost
 {
@@ -217,6 +218,14 @@ namespace Frost
             .usage = BufferUsage::CONSTANT_BUFFER, .size = 256, .dynamic = true, .debugName = "DS_CustomMaterial" });
 
         _CreateDefaultTextures();
+
+        ShaderDesc vsDesc = { .type = ShaderType::Vertex,
+                              .filePath = "../Frost/resources/shaders/StencilWriteVS.hlsl" };
+
+        ShaderDesc psDesc = { .type = ShaderType::Pixel, .filePath = "../Frost/resources/shaders/StencilWritePS.hlsl" };
+
+        _vsStencil = Shader::Create(vsDesc);
+        _psStencil = Shader::Create(psDesc);
     }
 
     void DeferredRenderingPipeline::Shutdown()
@@ -601,7 +610,8 @@ namespace Frost
         const Component::WorldTransform& cameraTransform,
         const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
         const Viewport& viewport,
-        Texture* overrideFinalLitTarget)
+        Texture* overrideFinalLitTarget,
+        bool preserveStencil)
     {
         if (!_albedoTexture)
             return;
@@ -673,7 +683,29 @@ namespace Frost
         _lightConstantsBuffer->UpdateData(_commandList.get(), &lightData, sizeof(LightConstants));
 
         Texture* finalTarget = overrideFinalLitTarget ? overrideFinalLitTarget : _finalLitTexture.get();
-        _commandList->SetRenderTargets(1, &finalTarget, nullptr);
+
+        // MODIFICATION ICI : Binder le depth/stencil si on veut préserver le stencil
+        if (preserveStencil)
+        {
+            _commandList->SetRenderTargets(1, &finalTarget, _depthStencilTexture.get());
+
+            // Configurer le stencil pour la lighting pass
+            _commandList->SetDepthStencilStateCustom(false, // depthEnable (pas besoin pour fullscreen quad)
+                                                     false, // depthWrite
+                                                     CompareFunction::Always, // depthFunc
+                                                     true,                    // stencilEnable
+                                                     CompareFunction::Equal,  // ne lighter que où stencil == 1
+                                                     StencilOp::Keep,
+                                                     StencilOp::Keep,
+                                                     StencilOp::Keep,
+                                                     1, // stencilRef
+                                                     0xFF,
+                                                     0x00);
+        }
+        else
+        {
+            _commandList->SetRenderTargets(1, &finalTarget, nullptr);
+        }
 
         _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
 
@@ -703,5 +735,71 @@ namespace Frost
                                      static_cast<int>(viewport.y),
                                      static_cast<int>(viewport.x + viewport.width),
                                      static_cast<int>(viewport.y + viewport.height));
+    }
+
+    void DeferredRenderingPipeline::SubmitModelStencilOnly(const Model& model,
+                                                           const Math::Matrix4x4& worldMatrix,
+                                                           const Math::Matrix4x4& viewMatrix,
+                                                           const Math::Matrix4x4& projectionMatrix)
+    {
+        // std::cout << "=== SubmitModelStencilOnly ===" << std::endl;
+
+        // std::cout << "VS valid: " << (_vsStencil != nullptr) << std::endl;
+        // std::cout << "PS valid: " << (_psStencil != nullptr) << std::endl;
+
+        // Unbind autres shaders
+        _commandList->UnbindShader(ShaderType::Geometry);
+        _commandList->UnbindShader(ShaderType::Hull);
+        _commandList->UnbindShader(ShaderType::Domain);
+
+        // Vérifier le SetShader
+        // std::cout << "Setting shaders..." << std::endl;
+        _commandList->SetShader(_vsStencil.get());
+        _commandList->SetShader(_psStencil.get());
+
+        // Get or create input layout
+        // std::cout << "Getting input layout..." << std::endl;
+        InputLayout* stencilLayout = _GetOrCreateInputLayout(_vsStencil.get());
+        // std::cout << "Input layout: " << (stencilLayout != nullptr) << std::endl;
+        _commandList->SetInputLayout(stencilLayout);
+
+        // Update buffers
+        // std::cout << "Updating constant buffers..." << std::endl;
+        VS_PerFrameConstants perFrame{};
+        perFrame.ViewMatrix = Math::Matrix4x4::CreateTranspose(viewMatrix);
+        perFrame.ProjectionMatrix = Math::Matrix4x4::CreateTranspose(projectionMatrix);
+        _vsPerFrameConstants->UpdateData(_commandList.get(), &perFrame, sizeof(VS_PerFrameConstants));
+
+        VS_PerObjectConstants perObject{};
+        perObject.World = Math::Matrix4x4::CreateTranspose(worldMatrix);
+        _vsPerObjectConstants->UpdateData(_commandList.get(), &perObject, sizeof(VS_PerObjectConstants));
+
+        _commandList->SetConstantBuffer(_vsPerFrameConstants.get(), 0);
+        _commandList->SetConstantBuffer(_vsPerObjectConstants.get(), 1);
+
+        // Rendre les meshes
+        const auto& meshes = model.GetMeshes();
+        // std::cout << "Mesh count: " << meshes.size() << std::endl;
+
+        for (const auto& mesh : meshes)
+        {
+            if (!mesh.enabled)
+            {
+                // std::cout << "  Mesh disabled" << std::endl;
+                continue;
+            }
+
+            // std::cout << "  Rendering mesh: " << mesh.GetIndexCount() << " indices, "
+            //           << "stride: " << mesh.GetVertexStride() << std::endl;
+
+            _commandList->SetVertexBuffer(mesh.GetVertexBuffer(), mesh.GetVertexStride(), 0);
+            _commandList->SetIndexBuffer(mesh.GetIndexBuffer(), 0);
+            _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+            _commandList->DrawIndexed(mesh.GetIndexCount(), 0, 0);
+
+            // std::cout << "  DrawIndexed called" << std::endl;
+        }
+
+        // std::cout << "=== End SubmitModelStencilOnly ===" << std::endl;
     }
 } // namespace Frost

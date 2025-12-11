@@ -35,6 +35,30 @@ namespace Frost
         SolidCullNone
     };
 
+    enum class StencilOp
+    {
+        Keep,
+        Zero,
+        Replace,
+        IncrementSaturate,
+        DecrementSaturate,
+        Invert,
+        Increment,
+        Decrement
+    };
+
+    enum class CompareFunction
+    {
+        Never,
+        Less,
+        Equal,
+        LessEqual,
+        Greater,
+        NotEqual,
+        GreaterEqual,
+        Always
+    };
+
     class CommandList
     {
     public:
@@ -76,5 +100,18 @@ namespace Frost
         virtual void DrawIndexed(uint32_t indexCount, uint32_t startIndexLocation, uint32_t baseVertexLocation) = 0;
 
         virtual void* GetNativeRenderContext() = 0;
+        virtual void SetDepthStencilStateCustom(bool depthEnable,
+                                                bool depthWrite,
+                                                CompareFunction depthFunc,
+                                                bool stencilEnable,
+                                                CompareFunction stencilFunc,
+                                                StencilOp stencilFailOp,
+                                                StencilOp depthFailOp,
+                                                StencilOp passOp,
+                                                uint8_t stencilRef,
+                                                uint8_t stencilReadMask,
+                                                uint8_t stencilWriteMask) = 0;
+
+        virtual void SetColorWriteMask(bool r, bool g, bool b, bool a) = 0;
     };
 } // namespace Frost

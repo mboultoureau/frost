@@ -43,7 +43,15 @@ namespace Frost
                       const Component::WorldTransform& cameraTransform,
                       const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
                       const Viewport& viewport,
-                      Texture* overrideFinalLitTarget = nullptr);
+                      Texture* overrideFinalLitTarget = nullptr,
+                      bool preserveStencil = false);
+
+        void SubmitModelStencilOnly(const Model& model,
+                                    const Math::Matrix4x4& worldMatrix,
+                                    const Math::Matrix4x4& viewMatrix,
+                                    const Math::Matrix4x4& projectionMatrix);
+
+        Texture* GetAlbedoTexture() const { return _albedoTexture.get(); }
 
         Texture* GetNormalTexture() const { return _normalTexture.get(); }
         Texture* GetMaterialTexture() const { return _depthStencilTexture.get(); }
@@ -93,6 +101,10 @@ namespace Frost
         std::unordered_map<Shader*, std::unique_ptr<InputLayout>> _inputLayoutCache;
 
         std::unique_ptr<CommandList> _commandList;
+
+        std::shared_ptr<Shader> _psStencil;
+        std::shared_ptr<Shader> _vsStencil;
+        std::shared_ptr<Buffer> _stencilTransformBuffer;
 
         bool _enabled = true;
         uint32_t _currentWidth = 0;

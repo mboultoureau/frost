@@ -5,6 +5,7 @@
 
 #include <d3d11_1.h>
 #include <wrl/client.h>
+#include <map>
 
 namespace Frost
 {
@@ -55,5 +56,30 @@ namespace Frost
     private:
         Microsoft::WRL::ComPtr<ID3D11DeviceContext1> _context;
         Microsoft::WRL::ComPtr<ID3D11CommandList> _commandList;
+
+        // ID3D11Device* _device;
+
+        // Cache pour éviter de recréer les états
+        std::map<size_t, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>> _depthStencilCache;
+        std::map<UINT8, Microsoft::WRL::ComPtr<ID3D11BlendState>> _blendCache;
+
+    public:
+        void SetDepthStencilStateCustom(bool depthEnable,
+                                        bool depthWrite,
+                                        CompareFunction depthFunc,
+                                        bool stencilEnable,
+                                        CompareFunction stencilFunc,
+                                        StencilOp stencilFailOp,
+                                        StencilOp depthFailOp,
+                                        StencilOp passOp,
+                                        uint8_t stencilRef,
+                                        uint8_t stencilReadMask,
+                                        uint8_t stencilWriteMask) override;
+
+        void SetColorWriteMask(bool r, bool g, bool b, bool a) override;
+
+    private:
+        static D3D11_STENCIL_OP ConvertStencilOp(StencilOp op);
+        static D3D11_COMPARISON_FUNC ConvertCompareFunc(CompareFunction func);
     };
 } // namespace Frost
