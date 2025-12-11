@@ -243,6 +243,18 @@ namespace GameLogic
         if (!_controller || !_constraint)
             return;
 
+        auto& playerData = GameState::Get().GetPlayerData(_playerController.GetParent());
+        bool isInGrass = playerData.isInGrass;
+
+        float engineMultiplier = 1.0f;
+        float frictionMultiplier = 1.0f;
+
+        if (isInGrass)
+        {
+            engineMultiplier = 0.7f;
+            frictionMultiplier = 0.5f;
+        }
+
         _ProcessBikeInput(fixedDeltaTime);
 
         auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
