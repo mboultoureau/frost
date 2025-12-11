@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
@@ -42,14 +42,14 @@ private:
     JPH::BroadPhaseLayer mObjectToBroadPhase[ObjectLayers::NUM_LAYERS];
 };
 
-// Classe dï¿½terminant si deux Object Layers peuvent entrer en collision
+// Classe déterminant si deux Object Layers peuvent entrer en collision
 class GameObjectLayerPairFilter : public JPH::ObjectLayerPairFilter
 {
 public:
     virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override;
 };
 
-// Classe dï¿½terminant si un Object Layer entre en collision avec un BroadPhase Layer
+// Classe déterminant si un Object Layer entre en collision avec un BroadPhase Layer
 class GameObjectVsBroadPhaseLayerFilter : public JPH::ObjectVsBroadPhaseLayerFilter
 {
 public:

@@ -27,7 +27,7 @@ namespace Frost
 
     private:
         Math::Vector2 _center = { 0.5f, 0.5f };
-        float _strength = 0.05f;
+        float _strength = 0.01f;
         int _sampleCount = 15;
 
     private:

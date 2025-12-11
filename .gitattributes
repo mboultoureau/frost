@@ -27,8 +27,8 @@
 *.ico filter=lfs diff=lfs merge=lfs -text
 *.prefab filter=lfs diff=lfs merge=lfs -text
 *.scene filter=lfs diff=lfs merge=lfs -text
-* !text !filter !merge !diff
 *.tif filter=lfs diff=lfs merge=lfs -text
+* !text !filter !merge !diff
 *.cpp !text !filter !merge !diff
 *.h !text !filter !merge !diff
 *.py !text !filter !merge !diff

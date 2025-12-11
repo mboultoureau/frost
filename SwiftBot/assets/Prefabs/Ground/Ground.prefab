@@ -3,31 +3,16 @@ Entities:
   - LocalID: 0
     ParentID: -1
     Meta:
-      Name: Road
+      Name: Ground
     Transform:
-      Position: [0, 0, 0]
+      Position: [0, 62.908035, -42.961422]
       Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-  - LocalID: 1
-    ParentID: 0
-    Meta:
-      Name: Road
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [1, -0, -0, -6.229855e-08]
-      Scale: [1, 1, 1]
+      Scale: [45, 15, 394.18848]
     StaticMesh:
-      Type: 0
+      Type: 3
       Params:
-        Path: assets/Prefabs/Road/Road.glb
-  - LocalID: 2
-    ParentID: 0
-    Meta:
-      Name: RigidBody
-    Transform:
-      Position: [0, -0.08995676, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
+        Width: 1
+        Depth: 1
     RigidBody:
       MotionType: 0
       IsSensor: false
@@ -48,5 +33,5 @@ Entities:
       LockRotationZ: false
       ShapeType: 0
       ShapeParams:
-        HalfExtent: [1.05, 0.1, 1.55]
+        HalfExtent: [0.5, 0.01, 0.6]
         ConvexRadius: 0.05

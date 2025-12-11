@@ -83,34 +83,29 @@ namespace GameLogic
                      inXZPosition.GetZ());
     }
 
-    void Water::OnCollisionEnter(Frost::BodyOnContactParameters params, float deltaTime)
-    {
-        /*
-        auto bodyId1 = params.inBody1.GetID();
-        auto bodyId2 = params.inBody2.GetID();
-
-        auto otherBodyId = (GetGameObject().GetComponent<RigidBody>().runtimeBodyID == bodyId1) ? bodyId2 : bodyId1;
-
-        uint64_t userData = Physics::GetBodyInterface().GetUserData(otherBodyId);
-        if (userData == 0)
-            return;
-
-        auto entityHandle = static_cast<entt::entity>(userData);
-        GameObject playerObject(entityHandle, GetScene());
-
-        if (playerObject.IsValid() && GameState::Get().IsPlayer(playerObject.GetParent()))
-        {
-            GameState::Get().GetPlayerData(playerObject.GetParent()).isInWater = true;
-        }
-        */
-    }
-
     void Water::OnCollisionStay(Frost::BodyOnContactParameters params, float deltaTime)
     {
+        // Camera collision
         auto waterBodyId = GetGameObject().GetComponent<RigidBody>().runtimeBodyID;
         auto otherBodyId = (waterBodyId == params.inBody1.GetID()) ? params.inBody2.GetID() : params.inBody1.GetID();
-
         auto otherLayer = Physics::GetBodyInterface().GetObjectLayer(otherBodyId);
+
+        if (otherLayer == ObjectLayers::CAMERA)
+        {
+            uint64_t userData = Physics::GetBodyInterface().GetUserData(otherBodyId);
+            if (userData == 0)
+                return;
+
+            auto entityHandle = static_cast<entt::entity>(userData);
+            GameObject playerObject(entityHandle, GetScene());
+
+            if (playerObject.IsValid() && GameState::Get().IsPlayer(playerObject.GetParent()))
+            {
+                GameState::Get().GetPlayerData(playerObject.GetParent()).isCameraInWater = true;
+            }
+        }
+
+        // Player collision
 
         if (otherLayer != ObjectLayers::PLAYER)
         {
@@ -176,6 +171,18 @@ namespace GameLogic
     {
         auto waterHandle = GetGameObject().GetHandle();
         auto otherHandle = (params.first == waterHandle) ? params.second : params.first;
+        auto objectLayer = Physics::GetBodyInterface().GetObjectLayer(
+            GetScene()->GetRegistry().get<RigidBody>(otherHandle).runtimeBodyID);
+
+        if (objectLayer == ObjectLayers::CAMERA)
+        {
+            GameObject cameraObject = GetScene()->GetGameObjectFromId(otherHandle);
+            if (cameraObject.IsValid() && GameState::Get().IsPlayer(cameraObject.GetParent()))
+            {
+                GameState::Get().GetPlayerData(cameraObject.GetParent()).isCameraInWater = false;
+            }
+            return;
+        }
 
         GameObject otherObject = GetScene()->GetGameObjectFromId(otherHandle);
         if (otherObject.IsValid() && GameState::Get().IsPlayer(otherObject.GetParent()))
