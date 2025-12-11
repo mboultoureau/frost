@@ -134,7 +134,7 @@ namespace Frost
 
         void DrawFinalLitTexture(std::shared_ptr<Texture> luminanceTexture, const Viewport& viewport);
 
-        int _shadowResolution = 4096;
+        int _shadowResolution = 2048;
         float _orthoSize = 512;
         int _currentWidth = 0;
         int _currentHeight = 0;

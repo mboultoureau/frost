@@ -15,88 +15,6 @@ Entities:
   - LocalID: 1
     ParentID: 0
     Meta:
-      Name: PlayerController
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    RigidBody:
-      MotionType: 0
-      IsSensor: false
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      ObjectLayer: 1
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 0
-      ShapeParams:
-        HalfExtent: [0.5, 0.5, 0.5]
-        ConvexRadius: 0.05
-  - LocalID: 2
-    ParentID: 1
-    Meta:
-      Name: Plane
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 1, -0, -6.229855e-08]
-      Scale: [0.40063772, 0.40063772, 0.40063772]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Player/RedPlane.glb
-  - LocalID: 3
-    ParentID: 1
-    Meta:
-      Name: CameraPivot
-    Transform:
-      Position: [0, 5.412658, -9.150726]
-      Rotation: [0.38268343, 0, 0, 0.9238795]
-      Scale: [1, 1, 1]
-  - LocalID: 4
-    ParentID: 3
-    Meta:
-      Name: DesiredCameraLocation
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-  - LocalID: 5
-    ParentID: 1
-    Meta:
-      Name: Boat
-    Transform:
-      Position: [0.8221662, 0, 0]
-      Rotation: [0, 1, -0, -6.229855e-08]
-      Scale: [0.3628482, 0.36284783, 0.36284783]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Player/Boat.glb
-  - LocalID: 6
-    ParentID: 1
-    Meta:
-      Name: Moto
-    Transform:
-      Position: [0, 0, 0.07711053]
-      Rotation: [0, 1, -0, -6.229855e-08]
-      Scale: [1, 1, 1]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Player/Moto.glb
-  - LocalID: 7
-    ParentID: 0
-    Meta:
       Name: Camera
     Transform:
       Position: [0, 2.8096209, -0.8628111]
@@ -147,3 +65,85 @@ Entities:
       BackgroundColor: [0.1, 0.1, 0.1, 1]
       Viewport: [0, 0, 1, 1]
       RenderToTexture: false
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: PlayerController
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 5
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [0.5, 0.5, 0.5]
+        ConvexRadius: 0.05
+  - LocalID: 3
+    ParentID: 2
+    Meta:
+      Name: Moto
+    Transform:
+      Position: [0, 0, 0.07711053]
+      Rotation: [0, 1, -0, -6.229855e-08]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/Moto.glb
+  - LocalID: 4
+    ParentID: 2
+    Meta:
+      Name: Boat
+    Transform:
+      Position: [0.8221662, 0, 0]
+      Rotation: [0, 1, -0, -6.229855e-08]
+      Scale: [0.3628482, 0.36284783, 0.36284783]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/Boat.glb
+  - LocalID: 5
+    ParentID: 2
+    Meta:
+      Name: CameraPivot
+    Transform:
+      Position: [0, 5.412658, -9.150726]
+      Rotation: [0.38268343, 0, 0, 0.9238795]
+      Scale: [1, 1, 1]
+  - LocalID: 6
+    ParentID: 5
+    Meta:
+      Name: DesiredCameraLocation
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 7
+    ParentID: 2
+    Meta:
+      Name: Plane
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 1, -0, -6.229855e-08]
+      Scale: [0.40063772, 0.40063772, 0.40063772]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Player/RedPlane.glb

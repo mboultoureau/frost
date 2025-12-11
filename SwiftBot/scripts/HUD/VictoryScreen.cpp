@@ -1,4 +1,5 @@
-#include "VictoryScreen.h"
+#include "HUD/VictoryScreen.h"
+#include "GameState/GameState.h"
 #include "Frost/Event/Events/PauseMenu/ResetEvent.h"
 #include "Frost/Event/Events/PauseMenu/PauseEvent.h"
 
@@ -13,6 +14,8 @@ namespace GameLogic
 
         victoryImageId = scene->CreateGameObject("Victory Screen Image");
         restartButtonId = scene->CreateGameObject("Restart Button");
+        victoryImageId.AddComponent<Disabled>();
+        restartButtonId.AddComponent<Disabled>();
 
         // Victoire Image (HUDImage dans MainLayer)
         Viewport viewportImage;
@@ -62,6 +65,15 @@ namespace GameLogic
         auto scene = GetGameObject().GetScene();
         scene->DestroyGameObject(victoryImageId);
         scene->DestroyGameObject(restartButtonId);
+    }
+
+    void VictoryScreen::OnUpdate(float deltaTime)
+    {
+        if (GameState::Get().IsInitialized() && GameState::Get().Finished())
+        {
+            victoryImageId.RemoveComponent<Disabled>();
+            restartButtonId.RemoveComponent<Disabled>();
+        }
     }
 
     void VictoryScreen::OnRestartButtonPress()

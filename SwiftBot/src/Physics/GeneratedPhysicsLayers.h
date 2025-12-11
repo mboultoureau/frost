@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
@@ -14,7 +14,8 @@ namespace ObjectLayers
     static constexpr JPH::ObjectLayer PLAYER = 5;
     static constexpr JPH::ObjectLayer WATER = 6;
     static constexpr JPH::ObjectLayer PORTAL = 7;
-    static constexpr JPH::uint NUM_LAYERS = 8;
+    static constexpr JPH::ObjectLayer CHECKPOINT = 8;
+    static constexpr JPH::uint NUM_LAYERS = 9;
 } // namespace ObjectLayers
 
 namespace BroadPhaseLayers
@@ -41,14 +42,14 @@ private:
     JPH::BroadPhaseLayer mObjectToBroadPhase[ObjectLayers::NUM_LAYERS];
 };
 
-// Classe déterminant si deux Object Layers peuvent entrer en collision
+// Classe dï¿½terminant si deux Object Layers peuvent entrer en collision
 class GameObjectLayerPairFilter : public JPH::ObjectLayerPairFilter
 {
 public:
     virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override;
 };
 
-// Classe déterminant si un Object Layer entre en collision avec un BroadPhase Layer
+// Classe dï¿½terminant si un Object Layer entre en collision avec un BroadPhase Layer
 class GameObjectVsBroadPhaseLayerFilter : public JPH::ObjectVsBroadPhaseLayerFilter
 {
 public:
