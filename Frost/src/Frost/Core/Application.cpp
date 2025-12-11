@@ -51,10 +51,7 @@ namespace Frost
     void Application::Setup()
     {
         Physics::InitPhysics(_physicsConfig, _physicsConfigured);
-
-#ifdef FT_DEBUG
         Frost::ComponentUIRegistry::InitEngineComponents();
-#endif
     }
 
     Application::~Application()

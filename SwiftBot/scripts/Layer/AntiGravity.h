@@ -11,7 +11,7 @@ namespace GameLogic
         void OnCreate() override;
         void OnUpdate(float deltaTime) override;
 
-        void OnCollisionEnter(Frost::BodyOnContactParameters params, float deltaTime) override;
+        void OnCollisionStay(Frost::BodyOnContactParameters params, float deltaTime) override;
         void OnCollisionExit(std::pair<Frost::GameObject::Id, Frost::GameObject::Id> params, float deltaTime) override;
     };
 } // namespace GameLogic
