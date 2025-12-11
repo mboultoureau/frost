@@ -276,7 +276,7 @@ namespace GameLogic
 
         bool sOverrideGravity = false;
 
-        if (!GameState::Get().GetPlayerData(_playerController).isInAntiGravity)
+        if (GameState::Get().GetPlayerData(_playerController.GetParent()).isInAntiGravity)
         {
             sOverrideGravity = true;
         }

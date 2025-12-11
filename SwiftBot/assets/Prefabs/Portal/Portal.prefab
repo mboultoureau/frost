@@ -66,9 +66,9 @@ Entities:
       Scale: [1, 1, 1]
     Light:
       Type: 2
-      Color: [0.28205013, 0, 0.6504425]
+      Color: [0.65565044, 0, 0.8141593]
       Intensity: 5
       Params:
-        Range: 16.1
+        Range: 16
         InnerAngle: 19.999992
-        OuterAngle: 87.49999
+        OuterAngle: 87.51999

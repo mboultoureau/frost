@@ -15,7 +15,6 @@
 #include "Layer/GrassLayer.h"
 #include "Layer/HandWritting.h"
 #include "Layer/Toon.h"
-
 #include "CheckPoint/Checkpoint.h"
 
 #include "Looping/Looping.h"
