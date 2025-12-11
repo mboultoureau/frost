@@ -379,8 +379,6 @@ namespace Frost
 
                 if (auto* d = std::get_if<LightDirectional>(&light.config))
                 {
-                    out << YAML::Key << "CastShadows" << YAML::Value << d->castShadows;
-                    out << YAML::Key << "ShadowBias" << YAML::Value << d->shadowBias;
                 }
                 else if (auto* p = std::get_if<LightPoint>(&light.config))
                 {
@@ -414,10 +412,6 @@ namespace Frost
                     case LightType::Directional:
                     {
                         LightDirectional d;
-                        if (params["CastShadows"])
-                            d.castShadows = params["CastShadows"].as<bool>();
-                        if (params["ShadowBias"])
-                            d.shadowBias = params["ShadowBias"].as<float>();
                         light.config = d;
                         break;
                     }
@@ -462,8 +456,6 @@ namespace Frost
 
                 if (auto* d = std::get_if<LightDirectional>(&light.config))
                 {
-                    out.write((char*)&d->castShadows, sizeof(bool));
-                    out.write((char*)&d->shadowBias, sizeof(float));
                 }
                 else if (auto* p = std::get_if<LightPoint>(&light.config))
                 {
@@ -494,8 +486,6 @@ namespace Frost
                     case LightType::Directional:
                     {
                         LightDirectional d;
-                        in.read((char*)&d.castShadows, sizeof(bool));
-                        in.read((char*)&d.shadowBias, sizeof(float));
                         light.config = d;
                         break;
                     }

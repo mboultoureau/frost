@@ -130,6 +130,8 @@ namespace Frost
                 (mainRenderViewport.height > 0) ? (mainRenderViewport.width / mainRenderViewport.height) : 1.0f;
             _deferredRendering.OnResize(static_cast<uint32_t>(mainRenderViewport.width),
                                         static_cast<uint32_t>(mainRenderViewport.height));
+            _shadowPipeline.OnResize(static_cast<uint32_t>(mainRenderViewport.width),
+                                     static_cast<uint32_t>(mainRenderViewport.height));
 
             Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
             Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, mainCameraAspectRatio);
@@ -178,13 +180,15 @@ namespace Frost
                         }
                     });
 
-                _deferredRendering.EndFrame(camera, cameraTransform, allLights, mainRenderViewport);
+                _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
+                _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+                _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
 
                 if (skyboxTexture)
                 {
                     _skyboxPipeline.Render(commandList,
-                                           _deferredRendering.GetFinalLitTexture(),
-                                           _deferredRendering.GetDepthStencilTexture(),
+                                           _shadowPipeline.GetFinalLitTexture(),
+                                           _deferredRendering.GetDepthStencilTexture().get(),
                                            skyboxTexture.get(),
                                            camera,
                                            cameraTransform);
@@ -194,10 +198,12 @@ namespace Frost
             {
                 _deferredRendering.BeginFrame(
                     camera, cameraTransform, viewMatrix, projectionMatrix, mainRenderViewport);
-                _deferredRendering.EndFrame(camera, cameraTransform, {}, mainRenderViewport);
+                _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
+                _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+                _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
             }
 
-            Texture* sceneTexture = _deferredRendering.GetFinalLitTexture();
+            Texture* sceneTexture = _shadowPipeline.GetFinalLitTexture();
             _ApplyPostProcessing(commandList, sceneTexture, finalRenderTarget, camera, deltaTime);
 
 #ifdef FT_DEBUG
@@ -208,7 +214,7 @@ namespace Frost
                                           viewProjectionMatrix,
                                           camera,
                                           finalRenderTarget,
-                                          _deferredRendering.GetDepthStencilTexture());
+                                          _deferredRendering.GetDepthStencilTexture().get());
             }
 #endif
 
@@ -281,9 +287,9 @@ namespace Frost
                 destination = (i == postProcessingPasses.size() - 1)
                                   ? destinationTarget
                                   : ((i % 2 == 0) ? _destination.get() : _source.get());
-                postProcessingPasses[i]->SetNormalTexture(_deferredRendering.GetNormalTexture());
-                postProcessingPasses[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture());
-                postProcessingPasses[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture());
+                postProcessingPasses[i]->SetNormalTexture(_deferredRendering.GetNormalTexture().get());
+                postProcessingPasses[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture().get());
+                postProcessingPasses[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture().get());
                 postProcessingPasses[i]->OnPostRender(deltaTime, commandList, source, destination);
                 source = destination;
             }
@@ -322,6 +328,7 @@ namespace Frost
         Viewport renderViewport = { 0.0f, 0.0f, targetWidth, targetHeight };
 
         _deferredRendering.OnResize(static_cast<uint32_t>(targetWidth), static_cast<uint32_t>(targetHeight));
+        _shadowPipeline.OnResize(static_cast<uint32_t>(targetWidth), static_cast<uint32_t>(targetHeight));
 
         float aspectRatio = (renderViewport.height > 0) ? (renderViewport.width / renderViewport.height) : 1.0f;
         if (overrideAspectRatio > 0.0f)
@@ -347,7 +354,9 @@ namespace Frost
                 }
             });
 
-        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget.get());
+        _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
+        _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+        _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
 
         std::shared_ptr<Texture> skyboxTexture = nullptr;
         if (scene.GetRegistry().all_of<Skybox>(camData.entity))
@@ -360,7 +369,7 @@ namespace Frost
         {
             _skyboxPipeline.Render(commandList,
                                    renderTarget.get(),
-                                   _deferredRendering.GetDepthStencilTexture(),
+                                   _deferredRendering.GetDepthStencilTexture().get(),
                                    skyboxTexture.get(),
                                    camera,
                                    cameraTransform);

@@ -379,6 +379,16 @@ namespace Frost
         rasterDesc.CullMode = D3D11_CULL_NONE;
         hr = _device->CreateRasterizerState(&rasterDesc, &_cullNoneRasterizerState);
         FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create cull-none rasterizer state!");
+
+        rasterDesc.FillMode = D3D11_FILL_SOLID;
+        rasterDesc.CullMode = D3D11_CULL_BACK;
+        hr = _device->CreateRasterizerState(&rasterDesc, &_cullBackRasterizerState);
+        FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create cull-back rasterizer state!");
+
+        rasterDesc.FillMode = D3D11_FILL_SOLID;
+        rasterDesc.CullMode = D3D11_CULL_FRONT;
+        hr = _device->CreateRasterizerState(&rasterDesc, &_cullFrontRasterizerState);
+        FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create cull-back rasterizer state!");
     }
 
     void RendererDX11::_CreateBlendStates()

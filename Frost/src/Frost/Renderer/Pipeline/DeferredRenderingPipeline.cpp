@@ -28,59 +28,9 @@
 #endif
 
 #include <array>
-
+using namespace Frost::Math;
 namespace Frost
 {
-    // Lighting shader
-    constexpr int MAX_DIRECTIONAL_LIGHTS = 2;
-    constexpr int MAX_POINT_LIGHTS = 100;
-    constexpr int MAX_SPOT_LIGHTS = 50;
-
-    struct alignas(16) LightConstants
-    {
-        Math::Vector3 CameraPosition;
-        float Padding0;
-
-        struct alignas(16) DirectionalLightData
-        {
-            Math::Vector3 Direction;
-            float Padding1;
-            Math::Vector3 Color;
-            float Intensity;
-        };
-
-        struct alignas(16) PointLightData
-        {
-            Math::Vector3 Position;
-            float Radius;
-            Math::Vector3 Color;
-            float Intensity;
-            float Falloff;
-            float Padding2[3];
-        };
-
-        struct alignas(16) SpotLightData
-        {
-            Math::Vector3 Position;
-            float Range;
-            Math::Vector3 Direction;
-            float Intensity;
-            Math::Vector3 Color;
-            float InnerConeCos; // cos(angle)
-            float OuterConeCos; // cos(angle)
-            float Padding3[3];
-        };
-
-        DirectionalLightData DirectionalLights[MAX_DIRECTIONAL_LIGHTS];
-        PointLightData PointLights[MAX_POINT_LIGHTS];
-        SpotLightData SpotLights[MAX_SPOT_LIGHTS];
-
-        int NumDirectionalLights;
-        int NumPointLights;
-        int NumSpotLights;
-        float Padding4;
-    };
-
     // GBuffer shaders
     struct alignas(16) VS_PerFrameConstants
     {
@@ -142,15 +92,6 @@ namespace Frost
         _gBufferVertexShader = Shader::Create(gBufferVSDesc);
         _gBufferPixelShader = Shader::Create(gBufferPSDesc);
 
-        ShaderDesc lightingVSDesc = { .type = ShaderType::Vertex,
-                                      .debugName = "VS_Lighting",
-                                      .filePath = "../Frost/resources/shaders/VS_Lighting.hlsl" };
-        ShaderDesc lightingPSDesc = { .type = ShaderType::Pixel,
-                                      .debugName = "PS_Lighting",
-                                      .filePath = "../Frost/resources/shaders/PS_Lighting.hlsl" };
-        _lightingVertexShader = Shader::Create(lightingVSDesc);
-        _lightingPixelShader = Shader::Create(lightingPSDesc);
-
         const uint32_t gBufferVertexStride = sizeof(Vertex);
         InputLayout::VertexAttributeArray gBufferAttributes = {
             { .name = "POSITION",
@@ -183,7 +124,6 @@ namespace Frost
               .isInstanced = false },
         };
         _gBufferInputLayout = std::make_unique<InputLayoutDX11>(gBufferAttributes, *_gBufferVertexShader);
-        _lightingInputLayout = nullptr;
 
         SamplerConfig materialSamplerConfig = { .filter = Filter::MIN_MAG_MIP_LINEAR,
                                                 .addressU = AddressMode::WRAP,
@@ -205,10 +145,6 @@ namespace Frost
                                                                      .size = sizeof(VS_PerObjectConstants),
                                                                      .dynamic = true,
                                                                      .debugName = "DS_VS_PerObject" });
-        _lightConstantsBuffer = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER,
-                                                                     .size = sizeof(LightConstants),
-                                                                     .dynamic = true,
-                                                                     .debugName = "DS_LightConstants" });
         _psMaterialConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER,
                                                                     .size = sizeof(PS_MaterialConstants),
                                                                     .dynamic = true,
@@ -223,23 +159,17 @@ namespace Frost
 
     void DeferredRenderingPipeline::Shutdown()
     {
-        _lightConstantsBuffer.reset();
         _vsPerObjectConstants.reset();
         _vsPerFrameConstants.reset();
         _psMaterialConstants.reset();
 
         _gBufferSampler.reset();
         _materialSampler.reset();
-
-        _lightingInputLayout.reset();
         _gBufferInputLayout.reset();
 
-        _lightingPixelShader.reset();
-        _lightingVertexShader.reset();
         _gBufferPixelShader.reset();
         _gBufferVertexShader.reset();
 
-        _finalLitTexture.reset();
         _depthStencilTexture.reset();
         _materialTexture.reset();
         _worldPositionTexture.reset();
@@ -253,6 +183,9 @@ namespace Frost
         _defaultAOTexture.reset();
 
         _commandList.reset();
+
+        _inputLayoutCache.clear();
+        _customMaterialConstantBuffer.reset();
     }
 
     void DeferredRenderingPipeline::OnWindowResize(WindowResizeEvent& e)
@@ -350,23 +283,23 @@ namespace Frost
         _worldPositionTexture.reset();
         _materialTexture.reset();
         _depthStencilTexture.reset();
-        _finalLitTexture.reset();
+        //_finalLitTexture.reset();
 
         TextureConfig textureConfig = {
             .width = width, .height = height, .isRenderTarget = true, .isShaderResource = true, .hasMipmaps = false
         };
 
         textureConfig.format = Format::RGBA8_UNORM;
-        _albedoTexture = std::make_unique<TextureDX11>(textureConfig);
+        _albedoTexture = std::make_shared<TextureDX11>(textureConfig);
 
         textureConfig.format = Format::RGBA16_FLOAT;
-        _normalTexture = std::make_unique<TextureDX11>(textureConfig);
+        _normalTexture = std::make_shared<TextureDX11>(textureConfig);
 
         textureConfig.format = Format::RGBA32_FLOAT;
-        _worldPositionTexture = std::make_unique<TextureDX11>(textureConfig);
+        _worldPositionTexture = std::make_shared<TextureDX11>(textureConfig);
 
         textureConfig.format = Format::RGBA8_UNORM;
-        _materialTexture = std::make_unique<TextureDX11>(textureConfig);
+        _materialTexture = std::make_shared<TextureDX11>(textureConfig);
 
         TextureConfig depthConfig = { .format = Format::R24G8_TYPELESS,
                                       .width = width,
@@ -374,15 +307,7 @@ namespace Frost
                                       .isRenderTarget = true,
                                       .isShaderResource = true,
                                       .hasMipmaps = false };
-        _depthStencilTexture = std::make_unique<TextureDX11>(depthConfig);
-
-        TextureConfig litConfig = { .format = Format::RGBA8_UNORM,
-                                    .width = width,
-                                    .height = height,
-                                    .isRenderTarget = true,
-                                    .isShaderResource = true,
-                                    .hasMipmaps = false };
-        _finalLitTexture = std::make_unique<TextureDX11>(litConfig);
+        _depthStencilTexture = std::make_shared<TextureDX11>(depthConfig);
     }
 
     void DeferredRenderingPipeline::BeginFrame(const Component::Camera& camera,
@@ -598,114 +523,5 @@ namespace Frost
             _commandList->SetIndexBuffer(mesh.GetIndexBuffer(), 0);
             _commandList->DrawIndexed(mesh.GetIndexCount(), 0, 0);
         }
-    }
-
-    void DeferredRenderingPipeline::EndFrame(
-        const Component::Camera& camera,
-        const Component::WorldTransform& cameraTransform,
-        const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
-        const Viewport& viewport,
-        Texture* overrideFinalLitTarget)
-    {
-        if (!_albedoTexture)
-            return;
-        if (!_enabled)
-            return;
-
-        LightConstants lightData = {};
-        lightData.CameraPosition = cameraTransform.position;
-        lightData.NumDirectionalLights = 0;
-        lightData.NumPointLights = 0;
-        lightData.NumSpotLights = 0;
-
-        for (const auto& lightPair : lights)
-        {
-            const auto& lightComponent = lightPair.first;
-            const auto& lightTransform = lightPair.second;
-
-            switch (lightComponent.GetType())
-            {
-                case Component::LightType::Directional:
-                {
-                    if (lightData.NumDirectionalLights < MAX_DIRECTIONAL_LIGHTS)
-                    {
-                        const auto& config = std::get<Component::LightDirectional>(lightComponent.config);
-
-                        auto& data = lightData.DirectionalLights[lightData.NumDirectionalLights++];
-                        data.Direction = lightTransform.GetForward();
-                        data.Color = lightComponent.color;
-                        data.Intensity = lightComponent.intensity;
-                    }
-                    break;
-                }
-                case Component::LightType::Point:
-                {
-                    if (lightData.NumPointLights < MAX_POINT_LIGHTS)
-                    {
-                        const auto& config = std::get<Component::LightPoint>(lightComponent.config);
-
-                        auto& data = lightData.PointLights[lightData.NumPointLights++];
-                        data.Position = lightTransform.position;
-                        data.Radius = config.radius;
-                        data.Color = lightComponent.color;
-                        data.Intensity = lightComponent.intensity;
-                        data.Falloff = config.falloff;
-                    }
-                    break;
-                }
-                case Component::LightType::Spot:
-                {
-                    if (lightData.NumSpotLights < MAX_SPOT_LIGHTS)
-                    {
-                        const auto& config = std::get<Component::LightSpot>(lightComponent.config);
-
-                        auto& data = lightData.SpotLights[lightData.NumSpotLights++];
-                        data.Position = lightTransform.position;
-                        data.Range = config.range;
-                        data.Direction = lightTransform.GetForward();
-                        data.Color = lightComponent.color;
-                        data.Intensity = lightComponent.intensity;
-
-                        data.InnerConeCos = std::cos(config.innerConeAngle.value());
-                        data.OuterConeCos = std::cos(config.outerConeAngle.value());
-                    }
-                    break;
-                }
-            }
-        }
-
-        _lightConstantsBuffer->UpdateData(_commandList.get(), &lightData, sizeof(LightConstants));
-
-        Texture* finalTarget = overrideFinalLitTarget ? overrideFinalLitTarget : _finalLitTexture.get();
-        _commandList->SetRenderTargets(1, &finalTarget, nullptr);
-
-        _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
-
-        _commandList->UnbindShader(ShaderType::Geometry);
-        _commandList->UnbindShader(ShaderType::Hull);
-        _commandList->UnbindShader(ShaderType::Domain);
-        _commandList->SetShader(_lightingVertexShader.get());
-        _commandList->SetShader(_lightingPixelShader.get());
-        _commandList->SetInputLayout(nullptr);
-
-        _commandList->SetTexture(_albedoTexture.get(), 0);
-        _commandList->SetTexture(_normalTexture.get(), 1);
-        _commandList->SetTexture(_worldPositionTexture.get(), 2);
-        _commandList->SetTexture(_materialTexture.get(), 3);
-        _commandList->SetSampler(_gBufferSampler.get(), 0);
-
-        _commandList->SetConstantBuffer(_lightConstantsBuffer.get(), 0);
-
-        _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-        _commandList->Draw(3, 0);
-
-#ifdef FT_DEBUG
-        _commandList->SetRasterizerState(RasterizerMode::Solid);
-#endif
-
-        _commandList->SetScissorRect(static_cast<int>(viewport.x),
-                                     static_cast<int>(viewport.y),
-                                     static_cast<int>(viewport.x + viewport.width),
-                                     static_cast<int>(viewport.y + viewport.height));
     }
 } // namespace Frost
