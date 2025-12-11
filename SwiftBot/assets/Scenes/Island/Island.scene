@@ -1,118 +1,92 @@
 Scene: Island
 Entities:
-  - Entity: 11
+  - Entity: 92
     Meta:
-      Name: Water
+      Name: Billboard
     Transform:
-      Position: [-3.2973256, -38.511524, -185.19609]
+      Position: [-4.256679, -18.456358, 0.92985725]
       Rotation: [0, 0, 0, 1]
-      Scale: [69.04762, 18.837606, 289.9067]
+      Scale: [1, 1, 1]
     Prefab:
-      AssetPath: assets\Prefabs\Water\Water.prefab
+      AssetPath: assets\Prefabs\Billboard\Billboard.prefab
     Parent: -1
-  - Entity: 10
+  - Entity: 26
     Meta:
-      Name: Portal
+      Name: FishingBoat
     Transform:
-      Position: [-28.36694, -28.959198, -320.15674]
-      Rotation: [0, 0.39288422, 0, 0.91958797]
+      Position: [63.027023, -27.377464, -242.01486]
+      Rotation: [0, -0.9442678, 0, 0.32917818]
+      Scale: [2.041747, 2.041747, 2.041747]
+    Prefab:
+      AssetPath: assets\Prefabs\FishingBoat\FishingBoat.prefab
+    Parent: -1
+  - Entity: 25
+    Meta:
+      Name: PalmTree2
+    Transform:
+      Position: [77.48981, -18.39338, -116.69429]
+      Rotation: [0, -0.99252963, 0, 0.122003764]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
+    Parent: -1
+  - Entity: 24
+    Meta:
+      Name: PalmTree1
+    Transform:
+      Position: [-52.179398, -30.93134, -330.69275]
+      Rotation: [0, -0.96423864, 0, 0.2650353]
+      Scale: [2, 2, 2]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
+    Parent: -1
+  - Entity: 23
+    Meta:
+      Name: PortalLake1_IN
+    Transform:
+      Position: [-37.672092, -28.959202, -82.24359]
+      Rotation: [0, -0.39681184, 0, 0.9178999]
       Scale: [1, 1, 1]
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 9
+  - Entity: 22
     Meta:
-      Name: Island
+      Name: PortalLake2_OUT
     Transform:
-      Position: [-11.880974, -26.710802, -121.39388]
-      Rotation: [0, 0, 0, 1]
+      Position: [-45.228943, -28.959198, -295.33755]
+      Rotation: [0, -0.97492707, 0, 0.22252461]
       Scale: [1, 1, 1]
     Prefab:
-      AssetPath: assets\Prefabs\Island\Island.prefab
+      AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 8
+  - Entity: 21
     Meta:
-      Name: LevelCamera
+      Name: island1
     Transform:
-      Position: [2.9430332, 0, 3.363802]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Camera:
-      ProjectionType: 0
-      PerspectiveFOV: 60
-      OrthographicSize: 10
-      NearClip: 0.1
-      FarClip: 1000
-      Priority: 0
-      FrustumCulling: true
-      FrustumPadding: 1
-      ClearOnRender: true
-      BackgroundColor: [0.1, 0.1, 0.1, 1]
-      Viewport: [0, 0, 1, 1]
-      RenderToTexture: false
+      Position: [4.765127, -27.377464, -225.65474]
+      Rotation: [0, -0.78212255, 0, 0.62312454]
+      Scale: [0.96800065, 0.96800065, 0.96800065]
+    Prefab:
+      AssetPath: assets\Prefabs\Island\island1.prefab
     Parent: -1
-  - Entity: 7
+  - Entity: 20
     Meta:
-      Name: Sun
+      Name: PortalLake2_IN
     Transform:
-      Position: [11.992254, 11.5, 0]
-      Rotation: [0, -0.100188054, 0, 0.99496853]
-      Scale: [1, 1, 1]
-    Light:
-      Type: 0
-      Color: [1, 1, 1]
-      Intensity: 1
-      Params:
-        CastShadows: true
-        ShadowBias: 0.005
-    Parent: -1
-  - Entity: 6
-    Meta:
-      Name: PauseScreen
-    Transform:
-      Position: [7.134501, 3.1288216, -2.7343512]
-      Rotation: [0, 0, 0, 1]
+      Position: [-59.45373, -28.9592, -241.59795]
+      Rotation: [0, 0.8401325, 0, 0.5423814]
       Scale: [1, 1, 1]
     Prefab:
-      AssetPath: assets\HUD\PauseScreen.prefab
+      AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 5
-    Meta:
-      Name: SplashScreen
-    Transform:
-      Position: [-3.1881971, 2.385097, -0.52147484]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\HUD\SplashScreen.prefab
-    Parent: -1
-  - Entity: 4
-    Meta:
-      Name: VictoryScreen
-    Transform:
-      Position: [-4.2199335, 2.538681, 0.07664871]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\HUD\VictoryScreen.prefab
-    Parent: -1
-  - Entity: 3
-    Meta:
-      Name: Player1
-    Transform:
-      Position: [0, 0, -12.334486]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\Player\Player.prefab
-    Parent: -1
-  - Entity: 2
+  - Entity: 19
     Meta:
       Name: PitLane
     Transform:
-      Position: [0, -30.155561, 6.651538]
+      Position: [0, -30.155561, 6.9888163]
       Rotation: [0, 0, 0, 1]
-      Scale: [16.379494, 1, 94.60498]
+      Scale: [37.54849, 1, 94.60498]
     StaticMesh:
       Type: 1
       Params:
@@ -142,43 +116,209 @@ Entities:
         HalfExtent: [0.5, 0.5, 0.5]
         ConvexRadius: 0.05
     Parent: -1
-  - Entity: 1
+  - Entity: 18
     Meta:
-      Name: Portal
+      Name: Player1
     Transform:
-      Position: [-30.63802, -28.959198, -159.50381]
-      Rotation: [0, 0.39288422, 0, 0.91958797]
+      Position: [-0.32538986, -27.959677, 45.870255]
+      Rotation: [1, -6.229855e-08, -6.229855e-08, 3.8811088e-15]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Player\Player.prefab
+    Parent: -1
+  - Entity: 17
+    Meta:
+      Name: VictoryScreen
+    Transform:
+      Position: [-4.2199335, 2.538681, 0.07664871]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\VictoryScreen.prefab
+    Parent: -1
+  - Entity: 16
+    Meta:
+      Name: PauseScreen
+    Transform:
+      Position: [7.134501, 3.1288216, -2.7343512]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\PauseScreen.prefab
+    Parent: -1
+  - Entity: 15
+    Meta:
+      Name: Sun
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0.3696438, 0.23911761, -0.09904576, 0.8923991]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 0
+      Color: [1, 1, 1]
+      Intensity: 0.5
+      Params:
+        CastShadows: true
+        ShadowBias: 0.005
+    Parent: -1
+  - Entity: 14
+    Meta:
+      Name: LevelCamera
+    Transform:
+      Position: [2.9430332, 0, 3.363802]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Camera:
+      ProjectionType: 0
+      PerspectiveFOV: 60
+      OrthographicSize: 10
+      NearClip: 0.1
+      FarClip: 1000
+      Priority: 0
+      FrustumCulling: true
+      FrustumPadding: 1
+      ClearOnRender: true
+      BackgroundColor: [0.1, 0.1, 0.1, 1]
+      Viewport: [0, 0, 1, 1]
+      RenderToTexture: false
+    Parent: -1
+  - Entity: 13
+    Meta:
+      Name: PortalLake1_OUT
+    Transform:
+      Position: [50.784134, -28.959198, -147.4502]
+      Rotation: [0, -0.96574676, 0, -0.25948608]
       Scale: [1, 1, 1]
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 0
+  - Entity: 12
     Meta:
-      Name: Portal
+      Name: Water
     Transform:
-      Position: [15.163338, -28.959198, -241.6422]
-      Rotation: [0, 0.39288422, 0, 0.91958797]
-      Scale: [1, 1, 1]
+      Position: [4.900909, -38.511524, -183.86674]
+      Rotation: [0, 0, 0, 1]
+      Scale: [161.86, 18.837606, 289.9067]
     Prefab:
-      AssetPath: assets\Prefabs\Portal\Portal.prefab
+      AssetPath: assets\Prefabs\Water\Water.prefab
     Parent: -1
-  - Entity: 1
+  - Entity: 11
     Meta:
-      Name: Portal
+      Name: Island1
     Transform:
-      Position: [15.163338, -28.959198, -241.6422]
-      Rotation: [0, 0.39288422, 0, 0.91958797]
-      Scale: [1, 1, 1]
-    Prefab:
-      AssetPath: assets\Prefabs\Portal\Portal.prefab
-    Parent: -1
-  - Entity: 0
-    Meta:
-      Name: island1
-    Transform:
-      Position: [-1.1219513, -29.25872, -55.676033]
+      Position: [-10.673853, -27.377464, -131.50485]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     Prefab:
       AssetPath: assets\Prefabs\Island\island1.prefab
+    Parent: -1
+  - Entity: 10
+    Meta:
+      Name: PalmTree1
+    Transform:
+      Position: [81.80018, -30.931335, -61.362686]
+      Rotation: [0, 0, 0, 1]
+      Scale: [2, 2, 2]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
+    Parent: -1
+  - Entity: 9
+    Meta:
+      Name: PalmTree1
+    Transform:
+      Position: [76.73729, -30.93134, -183.64427]
+      Rotation: [0, -0.75262946, 0, 0.6584443]
+      Scale: [2, 2, 2]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
+    Parent: -1
+  - Entity: 8
+    Meta:
+      Name: PalmTree1
+    Transform:
+      Position: [-48.840187, -30.93134, -183.64427]
+      Rotation: [0, -0.96423864, 0, 0.2650353]
+      Scale: [2, 2, 2]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
+    Parent: -1
+  - Entity: 7
+    Meta:
+      Name: HeightmapLake
+    Transform:
+      Position: [13.407045, -80.706314, -189.972]
+      Rotation: [0, -0.6813355, 0, 0.73197126]
+      Scale: [33.2, 33.7, 18.8]
+    Prefab:
+      AssetPath: assets\Prefabs\Heightmap\HeightmapLake.prefab
+    Parent: -1
+  - Entity: 6
+    Meta:
+      Name: PalmTree2
+    Transform:
+      Position: [-57.746258, -18.058775, -34.907166]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
+    Parent: -1
+  - Entity: 5
+    Meta:
+      Name: PalmTree2
+    Transform:
+      Position: [-44.61535, -18.058775, -34.907166]
+      Rotation: [0, -0.6799707, 0, 0.73323923]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
+    Parent: -1
+  - Entity: 4
+    Meta:
+      Name: PalmTree2
+    Transform:
+      Position: [-51.00211, -18.058775, -28.631691]
+      Rotation: [0, -0.6799707, 0, 0.73323923]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
+    Parent: -1
+  - Entity: 3
+    Meta:
+      Name: PalmTree2
+    Transform:
+      Position: [88.59888, -18.39338, -101.347534]
+      Rotation: [0, -0.6799707, 0, 0.73323923]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
+    Parent: -1
+  - Entity: 2
+    Meta:
+      Name: PalmTree2
+    Transform:
+      Position: [84.82872, -18.39338, -88.976234]
+      Rotation: [0, -0.99252963, 0, 0.122003764]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
+    Parent: -1
+  - Entity: 1
+    Meta:
+      Name: FishingBoat
+    Transform:
+      Position: [-35.068123, -27.27238, -253.33499]
+      Rotation: [-0.11095029, -0.16191605, 0.33915177, 0.9200268]
+      Scale: [1.670016, 1.670016, 1.670016]
+    Prefab:
+      AssetPath: assets\Prefabs\FishingBoat\FishingBoat.prefab
+    Parent: -1
+  - Entity: 0
+    Meta:
+      Name: Grass
+    Transform:
+      Position: [6.112132, -28.94019, -2.9147954]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Prefabs\Materials\Grass\Grass.prefab
     Parent: -1

@@ -12,7 +12,24 @@ namespace GameLogic
 {
     void Portal::OnCreate()
     {
-        std::string myName = GetGameObject().GetComponent<Meta>().name;
+        // Check if parent portal exists
+        if (!GetGameObject().GetParent().IsValid())
+        {
+            _canTeleport = false;
+            return;
+        }
+
+        if (!GetGameObject().GetParent().GetParent().IsValid())
+        {
+            _canTeleport = false;
+            return;
+        }
+
+        auto parentPortal = GetGameObject().GetParent().GetParent();
+        auto name = parentPortal.GetComponent<Meta>().name;
+        FT_INFO("Portal parent name: {}", name);
+
+        std::string myName = name;
         std::string suffix_in = "_IN";
         std::string suffix_out = "_OUT";
 
@@ -91,6 +108,9 @@ namespace GameLogic
 
         auto portal1Transform = scene->GetComponent<WorldTransform>(GetGameObject());
         auto portal2Transform = scene->GetComponent<WorldTransform>(_linkedPortal);
+
+        // Portal 2 +5 y relative position
+        portal2Transform->position.y += 5;
 
         auto playerTransform = scene->GetComponent<WorldTransform>(playerController);
         auto playerRb = scene->GetComponent<RigidBody>(playerController);

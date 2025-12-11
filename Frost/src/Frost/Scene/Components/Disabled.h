@@ -6,5 +6,7 @@ namespace Frost::Component
 {
     struct Disabled : public Component
     {
+    public:
+        Disabled() = default;
     };
 } // namespace Frost::Component

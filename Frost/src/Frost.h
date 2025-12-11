@@ -16,11 +16,13 @@
 #include "Frost/Event/Events/PauseMenu/PauseEvent.h"
 #include "Frost/Event/Events/PauseMenu/ResetEvent.h"
 #include "Frost/Event/Events/PauseMenu/UnPauseEvent.h"
+#include "Frost/Event/Events/Scene/LoadLevelEvent.h"
 
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/DebugLayer.h"
 #include "Frost/Debugging/ImGuiSymbols.h"
 #include "Frost/Debugging/Logger.h"
+#include "Frost/Debugging/DebugInterface/DebugUtils.h"
 
 #include "Frost/Input/Input.h"
 

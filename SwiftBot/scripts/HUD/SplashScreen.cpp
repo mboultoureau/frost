@@ -19,8 +19,8 @@ namespace GameLogic
 
         Viewport imageViewport;
         imageViewport.height = 1.0f;
-        imageViewport.width = 0.85f;
-        imageViewport.x = 0.075f;
+        imageViewport.width = 1.0f;
+        imageViewport.x = 0.0f;
         imageViewport.y = 0.0f;
 
         // Title
@@ -132,7 +132,7 @@ namespace GameLogic
                                           .fontSize = 1.1f } });
 
         Viewport viewportText1;
-        viewportText1.x = 0.4f;
+        viewportText1.x = 0.1f;
         viewportText1.y = 0.85f;
         viewportText1.width = 0.5f;
         viewportText1.height = 0.5f;
@@ -149,14 +149,13 @@ namespace GameLogic
                                           .fontSize = 1.1f } });
 
         Viewport viewportText2;
-        viewportText2.x = 0.4f;
+        viewportText2.x = 0.1f;
         viewportText2.y = 0.9f;
         viewportText2.width = 0.5f;
         viewportText2.height = 0.5f;
         creditsText2Element.viewport = viewportText2;
         creditsText2Element.priority = 1;
 
-        EventManager::Emit<Frost::PauseEvent>();
         ShowMenu();
     }
 
@@ -176,24 +175,7 @@ namespace GameLogic
 
     void SplashScreen::OnStartButtonPress()
     {
-        /*
-        auto player1Prefab = GetGameObject().GetScene()->FindGameObjectByName("Player1");
-        FT_ASSERT(player1Prefab.IsValid(), "Player1 is invalid");
-
-        auto player1 = player1Prefab.GetChildByName("Player");
-        FT_ASSERT(player1.IsValid(), "Player1's Player is invalid");
-        // add other players here if needed
-        // numbers of players is determined by splash screen selected by the user
-
-        std::vector<PlayerData> initialPlayers = {
-            PlayerData{ .playerObject = player1, .lapsCompleted = 0 },
-        };
-        */
-        // GameState::Get().Initialize(0, initialPlayers);
-
-        // GameState::Get().SetPlayerLaps(player1, 0);
-
-        EventManager::Emit<Frost::UnPauseEvent>();
+        EventManager::Emit<Frost::LoadLevelEvent>("assets/Scenes/Island/Island.bin");
         HideMenu();
     }
 

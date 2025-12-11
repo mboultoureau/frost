@@ -66,7 +66,10 @@ namespace GameLogic
     {
         _vehicle.SetActive(false);
         if (_playerController.HasComponent<RigidBody>())
+        {
+            Physics::RemoveAndDestroyBody(_playerController.GetComponent<RigidBody>().runtimeBodyID);
             _playerController.RemoveComponent<RigidBody>();
+        }
     }
 
     void Plane::OnMove(float right, float forward)

@@ -10,6 +10,12 @@ namespace GameLogic
 {
     void PlayerController::OnCreate()
     {
+        auto& prefabTransform = GetGameObject().GetParent().GetComponent<Transform>();
+        auto& transform = GetGameObject().GetChildByName("PlayerController").GetComponent<Transform>();
+        transform.position = prefabTransform.position;
+        transform.rotation = prefabTransform.rotation;
+
+        prefabTransform = Transform();
 
         _InitializeHUD();
 

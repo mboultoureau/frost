@@ -1,7 +1,10 @@
+
 cbuffer PerFrame : register(b0)
 {
     matrix ViewMatrix;
     matrix ProjectionMatrix;
+    float3 CameraPosition;
+    float PaddingFrame;
 }
 
 cbuffer PerObject : register(b1)
@@ -15,29 +18,25 @@ cbuffer MaterialParams : register(b3)
     float4 BottomColor;
     
     float Time;
-    
     float BladeWidth;
     float BladeWidthRandom;
     float BladeHeight;
-    float BladeHeightRandom;
     
+    float BladeHeightRandom;
     float BladeForward;
     float BladeCurve;
     float BendRotationRandom;
     
     float TessellationFactor;
-    
     float WindStrength;
-    
-    float3 CameraPosition;
-    
-    float3 padding;
+    float2 PaddingMat;
 }
 
 struct VSInput
 {
     float3 position : POSITION;
     float3 normal : NORMAL;
+    float2 uv : TEXCOORD;
     float4 tangent : TANGENT;
 };
 
@@ -47,14 +46,7 @@ struct VSOutput
     float3 worldPos : WORLDPOS;
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
-};
-
-struct GSOutput
-{
-    float4 position : SV_POSITION;
-    float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
-    float3 worldPos : TEXCOORD1;
+    float2 uv : TEXCOORD;
 };
 
 struct HSOutput
@@ -63,6 +55,7 @@ struct HSOutput
     float3 worldPos : WORLDPOS;
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
+    float2 uv : TEXCOORD;
 };
 
 struct HSConstantData
@@ -77,15 +70,22 @@ struct DSOutput
     float3 worldPos : WORLDPOS;
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
+    float2 uv : TEXCOORD;
 };
 
-// Remplace rand() d'Unity
+struct GSOutput
+{
+    float4 position : SV_POSITION;
+    float3 normal : NORMAL;
+    float2 uv : TEXCOORD0;
+    float3 worldPos : TEXCOORD1;
+};
+
 float rand(float3 seed)
 {
     return frac(sin(dot(seed, float3(12.9898, 78.233, 45.164))) * 43758.5453);
 }
 
-// Remplace AngleAxis3x3 d'Unity
 float3x3 AngleAxis3x3(float angle, float3 axis)
 {
     float c, s;

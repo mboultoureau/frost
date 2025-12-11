@@ -71,6 +71,7 @@ namespace GameLogic
 
         if (_playerController.HasComponent<RigidBody>())
         {
+            Physics::RemoveAndDestroyBody(_playerController.GetComponent<RigidBody>().runtimeBodyID);
             _playerController.RemoveComponent<RigidBody>();
         }
         _isBodyValid = false;

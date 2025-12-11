@@ -1,4 +1,4 @@
-#include "Editor/UI/Scene/SceneView.h"
+﻿#include "Editor/UI/Scene/SceneView.h"
 
 #include "Frost/Asset/MeshConfig.h"
 #include "Frost/Scene/Components/Transform.h"
@@ -8,6 +8,7 @@
 #include "Frost/Scene/Components/Prefab.h"
 #include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Debugging/ComponentUIRegistry.h"
+#include "Frost/Debugging/DebugInterface/DebugUtils.h"
 #include "Frost/Scene/Serializers/SerializationSystem.h"
 #include "Frost/Utils/Math/Matrix.h"
 #include "Frost/Utils/Math/Transform.h"
@@ -390,34 +391,44 @@ namespace Editor
             ImGui::Separator();
 
             Frost::UIContext ctx{ !_isReadOnly, ImGui::GetIO().DeltaTime };
+
             Frost::ComponentUIRegistry::Draw<Meta>(_sceneContext, activeSelection, ctx);
             Frost::ComponentUIRegistry::Draw<Transform>(_sceneContext, activeSelection, ctx);
 
-            ImGui::Separator();
-            ImGui::Dummy(ImVec2(0.0f, 10.0f));
-
-            if (ImGui::Button("Open Prefab Asset"))
+            if (Frost::DebugUtils::DrawComponentHeader("Prefab", nullptr))
             {
-                EditorLayer::Get().OpenPrefab(prefabComponent.assetPath);
-            }
-
-            if (ImGui::Button("Unpack Prefab"))
-            {
-                auto transform = activeSelection.GetComponent<Transform>();
-                auto parent = activeSelection.GetParent();
-                std::string name = activeSelection.GetComponent<Meta>().name;
-
-                _sceneContext->DestroyGameObject(activeSelection);
-                _ClearSelection();
-
-                auto newRoot = Frost::PrefabSerializer::Instantiate(_sceneContext, prefabComponent.assetPath);
-                if (newRoot)
+                if (ImGui::Button("Open Prefab Asset"))
                 {
-                    newRoot.SetParent(parent);
-                    newRoot.GetComponent<Transform>() = transform;
-                    newRoot.GetComponent<Meta>().name = name;
-                    _AddToSelection(newRoot);
+                    EditorLayer::Get().OpenPrefab(prefabComponent.assetPath);
                 }
+
+                if (ImGui::Button("Unpack Prefab"))
+                {
+                    auto transform = activeSelection.GetComponent<Transform>();
+                    auto parent = activeSelection.GetParent();
+                    std::string name = activeSelection.GetComponent<Meta>().name;
+                    bool wasEnabled = !activeSelection.HasComponent<Disabled>();
+
+                    _sceneContext->DestroyGameObject(activeSelection);
+                    _ClearSelection();
+
+                    auto newRoot = Frost::PrefabSerializer::Instantiate(_sceneContext, prefabComponent.assetPath);
+                    if (newRoot)
+                    {
+                        newRoot.SetParent(parent);
+                        newRoot.GetComponent<Transform>() = transform;
+                        newRoot.GetComponent<Meta>().name = name;
+
+                        if (wasEnabled)
+                            newRoot.RemoveComponent<Disabled>();
+                        else if (!newRoot.HasComponent<Disabled>())
+                            newRoot.AddComponent<Disabled>();
+
+                        _AddToSelection(newRoot);
+                    }
+                }
+
+                ImGui::TreePop();
             }
 
             return;

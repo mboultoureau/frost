@@ -8,38 +8,10 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
+    Scriptable:
+      Scripts:
+        []
   - LocalID: 1
-    ParentID: 0
-    Meta:
-      Name: Trigger
-    Transform:
-      Position: [0, 5.116079, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    RigidBody:
-      MotionType: 0
-      IsSensor: false
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      ObjectLayer: 0
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 3
-      ShapeParams:
-        HalfHeight: 5.25
-        Radius: 6.45
-        ConvexRadius: 0.05
-  - LocalID: 2
     ParentID: 0
     Meta:
       Name: Mesh
@@ -51,16 +23,24 @@ Entities:
       Type: 0
       Params:
         Path: assets/Prefabs/Portal/portal.glb
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: Trigger
+    Transform:
+      Position: [0, 4.171105, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 9.270784, 12.196728]
     RigidBody:
       MotionType: 0
-      IsSensor: false
+      IsSensor: true
       AllowSleeping: true
       Friction: 0.2
       Restitution: 0
       LinearDamping: 0.05
       AngularDamping: 0.05
       GravityFactor: 1
-      ObjectLayer: 0
+      ObjectLayer: 7
       OverrideMassProperties: 0
       Mass: 1
       LockPositionX: false
@@ -69,6 +49,10 @@ Entities:
       LockRotationX: false
       LockRotationY: false
       LockRotationZ: false
-      ShapeType: 4
+      ShapeType: 0
       ShapeParams:
-        Path: assets\Prefabs\Portal\portal.glb
+        HalfExtent: [0.5, 0.5, 0.5]
+        ConvexRadius: 0.05
+    Scriptable:
+      Scripts:
+        - Portal

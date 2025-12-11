@@ -39,6 +39,9 @@ project:
       - name: WATER
         id: 6
         broadphase_id: 0
+      - name: PORTAL
+        id: 7
+        broadphase_id: 3
     broadphase_matrix:
       - false
       - true
@@ -73,34 +76,9 @@ project:
       - true
       - true
       - false
-      - true
-      - false
-      - true
-      - true
-      - true
-      - true
-      - false
-      - true
-      - true
-      - true
-      - true
-      - true
-      - true
-      - false
-      - true
-      - true
-      - true
-      - false
-      - false
       - false
       - false
       - true
-      - true
-      - false
-      - false
-      - false
-      - false
-      - false
       - true
       - true
       - true
@@ -108,12 +86,52 @@ project:
       - false
       - false
       - true
+      - true
+      - true
+      - true
+      - false
+      - true
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - true
+      - true
+      - false
+      - false
+      - false
+      - false
+      - false
+      - true
+      - true
+      - true
+      - false
       - false
       - false
       - true
       - false
       - false
       - true
+      - false
+      - true
+      - true
+      - false
+      - false
+      - false
+      - false
+      - false
+      - true
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - true
+      - false
       - false
     object_broadphase_matrix:
       - false
@@ -150,4 +168,9 @@ project:
       - true
       - false
       - true
+      - false
+      - false
+      - true
+      - false
+      - false
       - false
