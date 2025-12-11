@@ -10,6 +10,7 @@
 #include "Materials/Water.h"
 #include "Materials/Billboard.h"
 #include "Materials/Grass.h"
+#include "Materials/Boost.h"
 
 #include "Layer/Antigravity.h"
 #include "Layer/GrassLayer.h"
@@ -50,6 +51,7 @@ InitializeRegistry()
     _scriptRegistry["Water"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Water()); };
     _scriptRegistry["Billboard"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Billboard()); };
     _scriptRegistry["Grass"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Grass()); };
+    _scriptRegistry["Boost"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Boost()); };
 
     // Layers
     // Antigravity
