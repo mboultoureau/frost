@@ -15,7 +15,8 @@ namespace GameLogic
         void _UpdateTPCam(float fixedDeltaTime);
         void _UpdateSpringCam(float fixedDeltaTime);
         void _UpdateSpringCamRotation(const JPH::Vec3& pos, float fixedDeltaTime);
-        JPH::Quat _LookAtQuaternion(const JPH::Vec3& cameraPos, const JPH::Vec3& targetPos);
+
+        JPH::Quat _LookAtQuaternion(const JPH::Vec3& cameraPos, const JPH::Vec3& targetPos, const JPH::Vec3& up);
 
     private:
         Frost::GameObject _player;
@@ -42,8 +43,11 @@ namespace GameLogic
         const float _mouseSensitivity = 0.003f;
 
         float _stiffness = 15.0f;
-        float _playerCullingDistance = 5.0f;
+        float _playerCullingDistance = 2.0f;
         float _defaultThirdPersonCameraDistance = -10.0f;
-        float _thirdPersonCamVelocityToDistance = -0.0005f;
+        float _thirdPersonCamVelocityToDistance = -0.005f;
+        float _baseThirdPersonDistance = -6.5f;
+
+        float _rotationSmoothingSpeed = 5.0f;
     };
 } // namespace GameLogic

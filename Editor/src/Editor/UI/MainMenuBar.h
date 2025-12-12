@@ -16,8 +16,10 @@ namespace Editor
     private:
         void _RenderFileMenu();
         void _RenderEditMenu();
+        void _RenderBuildMenu();
 
         void _RenderProjectName();
+        void _CompileAllAssets();
 
     private:
         const ProjectInfo& _projectInfo;
