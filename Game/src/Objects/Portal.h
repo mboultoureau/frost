@@ -21,7 +21,7 @@ class Portal;
 class PortalScript : public Script
 {
 public:
-    PortalScript(GameObject playerId, PortalType type, Portal* linkedPortal, Portal* parent);
+    PortalScript(PortalType type, Portal* linkedPortal, Portal* parent);
     void OnInitialize() override;
     float CalculatePortalFOV(const Math::Vector3& cameraPos,
                              const Math::Vector3& portalPos,
@@ -31,7 +31,7 @@ public:
     void OnCollisionEnter(BodyOnContactParameters params, float deltaTime) override;
     void WarpPlayer();
 
-    GameObject playerId;
+    // GameObject playerId;
 
     PortalType portalType;
 
@@ -62,5 +62,8 @@ public:
     std::shared_ptr<Texture> _renderTarget;
 
 private:
-    Player* _player;
+    float skyFogMinDepth = 0.9975f;
+    float skyFogStrength = .85f;
+    Vector3 skyFogColor = { 0.7f, 0.7f, 0.8f };
+    // Player* _player;
 };

@@ -43,6 +43,12 @@ namespace Frost
                                    entt::entity exitPortalFrameEntity = entt::null,
                                    entt::entity entryPortalFrameEntity = entt::null);
 
+        void _ApplyVirtualCameraPostProcessing(CommandList* commandList,
+                                               Texture* sourceTexture,
+                                               Texture* destinationTarget,
+                                               const Component::VirtualCamera& camera,
+                                               float deltaTime);
+
         void _ApplyPostProcessing(CommandList* commandList,
                                   Texture* sourceTexture,
                                   Texture* destinationTarget,
@@ -50,6 +56,11 @@ namespace Frost
                                   float deltaTime);
 
         bool _IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix);
+
+        void _RenderScreenProjectedTexturesOnTarget(Scene& scene,
+                                                    const RenderCameraData& camData,
+                                                    const Viewport& viewport,
+                                                    Texture* targetTexture);
 
         void _RenderScreenProjectedTextures(Scene& scene, const RenderCameraData& camData, const Viewport& viewport);
 
@@ -61,6 +72,9 @@ namespace Frost
 
         std::shared_ptr<Texture> _source;
         std::shared_ptr<Texture> _destination;
+
+        std::shared_ptr<Texture> _portalPostProcessSource;
+        std::shared_ptr<Texture> _portalPostProcessDestination;
 
         std::shared_ptr<Texture> _externalRenderTarget = nullptr;
         uint32_t _viewportWidth = 0;

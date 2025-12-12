@@ -9,7 +9,6 @@
 #include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Renderer/Pipeline/JoltDebugRenderingPipeline.h"
-#include <iostream>
 #include <Frost/Renderer/Sampler.h>
 #include <Frost/Renderer/DX11/SamplerDX11.h>
 
@@ -206,8 +205,16 @@ namespace Frost
                 _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, mainRenderViewport);
 
                 meshView.each(
-                    [&](const StaticMesh& staticMesh, const WorldTransform& meshTransform)
+                    [&](const entt::entity entity, const StaticMesh& staticMesh, const WorldTransform& meshTransform)
                     {
+                        // AJOUT : Skip les objets avec ScreenProjectedTexture si hideGeometry est true
+                        if (scene.GetRegistry().all_of<ScreenProjectedTexture>(entity))
+                        {
+                            const auto& projTex = scene.GetRegistry().get<ScreenProjectedTexture>(entity);
+                            if (projTex.hideGeometry)
+                                return; // Ne pas rendre ce mesh normalement
+                        }
+
                         if (staticMesh.GetModel())
                         {
                             Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
@@ -221,8 +228,7 @@ namespace Frost
 
                 _deferredRendering.EndFrame(camera, cameraTransform, allLights, mainRenderViewport);
 
-                _RenderScreenProjectedTextures(scene, camData, mainRenderViewport);
-
+                // === RENDRE LA SKYBOX PRINCIPALE AVANT LES PORTAILS ===
                 if (skyboxTexture)
                 {
                     Texture* finalTarget = _deferredRendering.GetFinalLitTexture();
@@ -244,6 +250,9 @@ namespace Frost
 
             Texture* sceneTexture = _deferredRendering.GetFinalLitTexture();
             _ApplyPostProcessing(commandList, sceneTexture, finalRenderTarget, camera, deltaTime);
+
+            // === PUIS RENDRE LES PORTAILS PAR-DESSUS ===
+            _RenderScreenProjectedTexturesOnTarget(scene, camData, mainRenderViewport, finalRenderTarget);
 
 #ifdef FT_DEBUG
             if (Debug::PhysicsConfig::display && joltDebugRenderer)
@@ -288,6 +297,92 @@ namespace Frost
         return renderModel;
     }
 
+    void RendererSystem::_RenderScreenProjectedTexturesOnTarget(Scene& scene,
+                                                                const RenderCameraData& camData,
+                                                                const Viewport& viewport,
+                                                                Texture* targetTexture)
+    {
+        auto view = scene.ViewActive<ScreenProjectedTexture, StaticMesh, WorldTransform>();
+        if (view.size_hint() == 0)
+            return;
+
+        CommandList* commandList = _deferredRendering.GetCommandList();
+
+        // Bind la target finale (après post-process)
+        commandList->SetRenderTargets(1, &targetTexture, _deferredRendering.GetDepthStencilTexture());
+        commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
+
+        Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(*camData.transform);
+        Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(*camData.camera, viewport.width / viewport.height);
+
+        view.each(
+            [&](const entt::entity entity,
+                const ScreenProjectedTexture& projectedTex,
+                const StaticMesh& mesh,
+                const WorldTransform& transform)
+            {
+                if (!projectedTex.enabled || !projectedTex.texture)
+                    return;
+
+                // Clear stencil
+                commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), false, 1.0f, true, 0);
+
+                // Écrire le mesh dans le stencil
+                commandList->SetColorWriteMask(false, false, false, false);
+                commandList->SetDepthStencilStateCustom(true,
+                                                        false,
+                                                        CompareFunction::LessEqual,
+                                                        true,
+                                                        CompareFunction::Always,
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        StencilOp::Replace,
+                                                        1,
+                                                        0xFF,
+                                                        0xFF);
+
+                if (mesh.GetModel())
+                {
+                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(transform);
+                    _deferredRendering.SubmitModelStencilOnly(
+                        *mesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
+                }
+
+                // Rendre la texture avec stencil test
+                commandList->SetColorWriteMask(true, true, true, true);
+                commandList->SetDepthStencilStateCustom(false,
+                                                        false,
+                                                        CompareFunction::Always,
+                                                        true,
+                                                        CompareFunction::Equal,
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        1,
+                                                        0xFF,
+                                                        0x00);
+
+                commandList->SetBlendState(BlendMode::None);
+                _RenderFullscreenQuad(commandList, projectedTex.texture.get());
+            });
+
+        // Restaurer les états
+        commandList->SetDepthStencilStateCustom(true,
+                                                true,
+                                                CompareFunction::Less,
+                                                false,
+                                                CompareFunction::Always,
+                                                StencilOp::Keep,
+                                                StencilOp::Keep,
+                                                StencilOp::Keep,
+                                                0,
+                                                0xFF,
+                                                0xFF);
+
+        commandList->SetColorWriteMask(true, true, true, true);
+        commandList->SetBlendState(BlendMode::None);
+    }
+
     void RendererSystem::_RenderScreenProjectedTextures(Scene& scene,
                                                         const RenderCameraData& camData,
                                                         const Viewport& viewport)
@@ -298,16 +393,13 @@ namespace Frost
 
         CommandList* commandList = _deferredRendering.GetCommandList();
 
-        // AJOUT : Binder explicitement le render target final
         Texture* finalTarget = _deferredRendering.GetFinalLitTexture();
         commandList->SetRenderTargets(1, &finalTarget, _deferredRendering.GetDepthStencilTexture());
         commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
 
-        // View et projection de la caméra principale
         Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(*camData.transform);
         Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(*camData.camera, viewport.width / viewport.height);
 
-        // Pour chaque objet avec une texture projetée
         view.each(
             [&](const entt::entity entity,
                 const ScreenProjectedTexture& projectedTex,
@@ -318,28 +410,22 @@ namespace Frost
                     return;
 
                 // === ÉTAPE 1 : Clear du stencil ===
-                commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(),
-                                               false,
-                                               1.0f, // Ne pas clear la depth
-                                               true,
-                                               0); // Clear le stencil à 0
+                commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), false, 1.0f, true, 0);
 
                 // === ÉTAPE 2 : Écrire le mesh dans le stencil ===
                 commandList->SetColorWriteMask(false, false, false, false);
-                commandList->SetDepthStencilStateCustom(
-                    true,                       // depthEnable : tester la depth
-                    false,                      // depthWrite : ne pas écrire
-                    CompareFunction::LessEqual, // Ne marquer que ce qui est visible
-                    true,                       // stencilEnable
-                    CompareFunction::Always,    // Toujours écrire dans le stencil si depth pass
-                    StencilOp::Keep,            // stencilFailOp
-                    StencilOp::Keep,            // depthFailOp
-                    StencilOp::Replace,         // passOp : écrire 1 si visible
-                    1,                          // stencilRef
-                    0xFF,
-                    0xFF);
+                commandList->SetDepthStencilStateCustom(true,                       // depthEnable : tester la depth
+                                                        false,                      // depthWrite : ne pas écrire
+                                                        CompareFunction::LessEqual, // Ne marquer que ce qui est visible
+                                                        true,                       // stencilEnable
+                                                        CompareFunction::Always,    // Toujours écrire si depth pass
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        StencilOp::Replace, // Écrire 1
+                                                        1,
+                                                        0xFF,
+                                                        0xFF);
 
-                // Rendre le mesh pour marquer le stencil
                 if (mesh.GetModel())
                 {
                     Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(transform);
@@ -347,35 +433,31 @@ namespace Frost
                         *mesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
                 }
 
-                // === ÉTAPE 3 : Rendre la texture en fullscreen avec test stencil ===
+                // === ÉTAPE 3 : Rendre la texture en fullscreen ===
                 commandList->SetColorWriteMask(true, true, true, true);
-                commandList->SetDepthStencilStateCustom(
-                    true,                       // depthEnable : ACTIVÉ pour éviter de rendre devant les objets proches
-                    false,                      // depthWrite : ne pas écrire
-                    CompareFunction::LessEqual, // CHANGÉ : LessEqual au lieu de Always
-                    true,                       // stencilEnable
-                    CompareFunction::Equal,
-                    StencilOp::Keep,
-                    StencilOp::Keep,
-                    StencilOp::Keep,
-                    1,
-                    0xFF,
-                    0x00);
+                commandList->SetDepthStencilStateCustom(false,                   // depthEnable : DÉSACTIVÉ !
+                                                        false,                   // depthWrite
+                                                        CompareFunction::Always, // Pas de test depth
+                                                        true,                    // stencilEnable
+                                                        CompareFunction::Equal,  // Seulement où stencil == 1
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        StencilOp::Keep,
+                                                        1,
+                                                        0xFF,
+                                                        0x00);
 
-                // Blend pour superposer la texture
-                commandList->SetBlendState(BlendMode::Alpha);
+                // Pas de blend - on écrase complètement
+                commandList->SetBlendState(BlendMode::None);
 
                 _RenderFullscreenQuad(commandList, projectedTex.texture.get());
-
-                // Restaurer le blend
-                commandList->SetBlendState(BlendMode::None);
             });
 
-        // IMPORTANT : Restaurer COMPLÈTEMENT les états par défaut
-        commandList->SetDepthStencilStateCustom(true,                  // depthEnable
-                                                true,                  // depthWrite
-                                                CompareFunction::Less, // depthFunc
-                                                false,                 // stencilEnable - DÉSACTIVÉ
+        // Restaurer les états
+        commandList->SetDepthStencilStateCustom(true,
+                                                true,
+                                                CompareFunction::Less,
+                                                false,
                                                 CompareFunction::Always,
                                                 StencilOp::Keep,
                                                 StencilOp::Keep,
@@ -384,8 +466,8 @@ namespace Frost
                                                 0xFF,
                                                 0xFF);
 
-        // AJOUT : S'assurer que le color write mask est correct
         commandList->SetColorWriteMask(true, true, true, true);
+        commandList->SetBlendState(BlendMode::None);
     }
 
     void RendererSystem::_RenderFullscreenQuad(CommandList* commandList, Texture* texture)
@@ -579,24 +661,21 @@ namespace Frost
         // === ÉTAPE 5 : EndFrame SANS stencil (la géométrie est déjà masquée dans le GBuffer) ===
         _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget, false);
 
-        // === ÉTAPE 6 : Skybox (optionnel, avec ou sans stencil) ===
+        // === ÉTAPE 6 : Skybox - SANS stencil pour remplir toute la texture ===
         if (skybox)
         {
-            if (scene.GetRegistry().valid(exitPortalFrameEntity))
-            {
-                // Activer le stencil test pour la skybox aussi
-                commandList->SetDepthStencilStateCustom(true,  // depthEnable
-                                                        false, // depthWrite (skybox n'écrit pas le depth)
-                                                        CompareFunction::LessEqual, // depthFunc
-                                                        true,                       // stencilEnable
-                                                        CompareFunction::Equal,     // Rendre où stencil == 1
-                                                        StencilOp::Keep,
-                                                        StencilOp::Keep,
-                                                        StencilOp::Keep,
-                                                        1,
-                                                        0xFF,
-                                                        0x00);
-            }
+            // Désactiver le stencil pour la skybox
+            commandList->SetDepthStencilStateCustom(true,  // depthEnable
+                                                    false, // depthWrite (skybox n'écrit pas le depth)
+                                                    CompareFunction::LessEqual, // depthFunc
+                                                    false,                      // stencilEnable - DÉSACTIVÉ
+                                                    CompareFunction::Always,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    0,
+                                                    0xFF,
+                                                    0xFF);
 
             _skyboxPipeline.Render(commandList,
                                    renderTarget,
@@ -606,7 +685,75 @@ namespace Frost
                                    cameraTransform);
         }
 
+        // === ÉTAPE 7 : Appliquer les post-effets de la caméra virtuelle ===
+        if (!camera.postEffects.empty())
+        {
+            // Créer une texture temporaire pour les post-effets du portail
+            uint32_t rtWidth = renderTarget->GetWidth();
+            uint32_t rtHeight = renderTarget->GetHeight();
+
+            // Réutiliser ou créer des textures temporaires
+            if (!_portalPostProcessSource || _portalPostProcessSource->GetWidth() != rtWidth ||
+                _portalPostProcessSource->GetHeight() != rtHeight)
+            {
+                TextureConfig ppConfig = { .format = renderTarget->GetFormat(),
+                                           .width = rtWidth,
+                                           .height = rtHeight,
+                                           .isRenderTarget = true,
+                                           .isShaderResource = true };
+                _portalPostProcessSource = Texture::Create(ppConfig);
+                _portalPostProcessDestination = Texture::Create(ppConfig);
+            }
+
+            // Copier le rendu actuel dans la source
+            commandList->CopyResource(_portalPostProcessSource.get(), renderTarget);
+
+            // Appliquer les post-effets
+            _ApplyVirtualCameraPostProcessing(
+                commandList, _portalPostProcessSource.get(), renderTarget, camera, deltaTime);
+        }
+
         commandList->EndRecording();
         commandList->Execute();
+    }
+
+    void RendererSystem::_ApplyVirtualCameraPostProcessing(CommandList* commandList,
+                                                           Texture* sourceTexture,
+                                                           Texture* destinationTarget,
+                                                           const VirtualCamera& camera,
+                                                           float deltaTime)
+    {
+        std::vector<std::shared_ptr<PostEffect>> activeEffects;
+        for (const auto& effect : camera.postEffects)
+        {
+            if (effect && effect->IsEnabled() && effect->IsPostProcessingPass())
+            {
+                activeEffects.push_back(effect);
+            }
+        }
+
+        if (activeEffects.empty())
+            return;
+
+        Texture* source = sourceTexture;
+        Texture* destination = nullptr;
+
+        for (size_t i = 0; i < activeEffects.size(); ++i)
+        {
+            // La dernière passe va sur la destination finale
+            destination = (i == activeEffects.size() - 1)
+                              ? destinationTarget
+                              : ((i % 2 == 0) ? _portalPostProcessDestination.get() : _portalPostProcessSource.get());
+
+            // Configurer les textures pour le post-effet
+            activeEffects[i]->SetNormalTexture(_deferredRendering.GetNormalTexture());
+            activeEffects[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture());
+            activeEffects[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture());
+
+            // Appliquer l'effet
+            activeEffects[i]->OnPostRender(deltaTime, commandList, source, destination);
+
+            source = destination;
+        }
     }
 } // namespace Frost

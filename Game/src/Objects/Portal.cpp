@@ -9,12 +9,11 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Frost/Scene/Components/RelativeView.h>
-#include <iostream>
 
 using namespace Frost;
 
-PortalScript::PortalScript(GameObject playerId, PortalType type, Portal* linkedPortal, Portal* parent) :
-    playerId(playerId), linkedPortal(linkedPortal), portalType(type), parentPortal(parent)
+PortalScript::PortalScript(PortalType type, Portal* linkedPortal, Portal* parent) :
+    linkedPortal(linkedPortal), portalType(type), parentPortal(parent)
 {
     _materialLinkPending = true;
 
@@ -104,8 +103,8 @@ PortalScript::WarpPlayer()
     auto mainLayer = Game::GetMainLayer();
     auto player = mainLayer->GetPlayer();
 
-    auto playerTransform = scene.GetComponent<WorldTransform>(playerId);
-    auto playerRb = scene.GetComponent<RigidBody>(playerId);
+    auto playerTransform = scene.GetComponent<WorldTransform>(player->GetPlayerID());
+    auto playerRb = scene.GetComponent<RigidBody>(player->GetPlayerID());
     auto playerBodyId = playerRb->runtimeBodyID;
     auto bodyInter = Physics::Get().body_interface;
 
@@ -259,7 +258,7 @@ PortalScript::UpdateCameraPos()
     auto mainLayer = Game::GetMainLayer();
     auto player = mainLayer->GetPlayer();
 
-    auto playerTransform = scene.GetComponent<WorldTransform>(playerId);
+    auto playerTransform = scene.GetComponent<WorldTransform>(player->GetPlayerID());
 
     auto& playerCamera = player->GetCamera()->GetCameraId();
 
@@ -322,7 +321,7 @@ PortalScript::UpdateCameraPos()
 }
 
 Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* player) :
-    _player{ player }, _portal{ Game::GetScene().CreateGameObject("Portal") }
+    _portal{ Game::GetScene().CreateGameObject("Portal") }
 {
     Game::GetScene().AddComponent<Transform>(_portal, position, rotation, scale);
     Game::GetScene().AddComponent<WorldTransform>(_portal);
@@ -349,7 +348,8 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
     mesh.hiddenFromCameras.push_back(&camera);
     mesh.overrideFrustumCulling = true;
     camera.portalEntity = _frameObject.GetId();
-
+    camera.postEffects.push_back(std::make_shared<FogEffect>());
+    camera.GetEffect<FogEffect>()->SetFog(skyFogMinDepth, skyFogStrength, skyFogColor);
     // std::cout << "Portal mesh triangle count: " << (mesh.GetModel()->GetMeshes()[0].GetIndexCount() / 3) <<
     // std::endl;
 }
@@ -359,5 +359,5 @@ Portal::SetupPortal(PortalType type, Portal* otherPortal)
 {
     auto camera = Game::GetScene().GetComponent<VirtualCamera>(_cameraObject);
     camera->linkedPortalEntity = otherPortal->_frameObject.GetId();
-    Game::GetScene().AddScript<PortalScript>(_portal, _player->GetPlayerID(), type, otherPortal, this);
+    Game::GetScene().AddScript<PortalScript>(_portal, type, otherPortal, this);
 }

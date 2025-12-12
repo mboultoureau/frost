@@ -28,7 +28,6 @@
 #endif
 
 #include <array>
-#include <iostream>
 
 namespace Frost
 {
