@@ -19,6 +19,11 @@ namespace GameLogic
         resetButtonId = scene->CreateGameObject("Reset Button");
         menuButtonId = scene->CreateGameObject("Menu Button");
 
+        auto ambientLight = scene->CreateGameObject("Ambient Light");
+        auto& light = ambientLight.AddComponent<Light>(LightAmbiant{});
+        light.intensity = 0.15f;
+        light.color = Math::Color3(182.0f / 255.0f, 205.0f / 255.0f, 248.0f / 255.0f);
+
         float buttonHeight = 0.25f;
         float buttonWidth = 0.2f;
         float logoHeight = 0.3f;
