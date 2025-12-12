@@ -64,6 +64,7 @@ namespace GameLogic
         camComponent.postEffects.push_back(std::make_shared<FogEffect>());
         camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
         camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
+        camComponent.postEffects.push_back(std::make_shared<ColorCorrectionEffect>());
 
         _radialBlur = camComponent.GetEffect<RadialBlurEffect>().get();
         _screenShake = camComponent.GetEffect<ScreenShakeEffect>().get();

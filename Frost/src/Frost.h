@@ -49,6 +49,7 @@
 #include "Frost/Renderer/PostEffect/RadialBlurEffect.h"
 #include "Frost/Renderer/PostEffect/ToonEffect.h"
 #include "Frost/Renderer/PostEffect/ScreenShakeEffect.h"
+#include "Frost/Renderer/PostEffect/ColorCorrectionEffect.h"
 #include "Frost/Renderer/RendererAPI.h"
 
 #include "Frost/Scripting/Script.h"
