@@ -27,12 +27,13 @@ namespace GameLogic
         waveMat.customPixelShader = ps;
         waveMat.backFaceCulling = true;
 
+        const auto& transform = GetGameObject().GetComponent<Transform>();
+
         _shaderParams.Time = 0.0f;
         _shaderParams.Amplitude = _waveAmplitude * 2;
         _shaderParams.Frequency = _waveFrequency;
-        _shaderParams.Direction = _direction;
 
-        _impulse *= 1000;
+        _impulse *= 10000;
 
         std::vector<uint8_t> paramData(sizeof(BoostMaterialParameters));
         memcpy(paramData.data(), &_shaderParams, sizeof(BoostMaterialParameters));
@@ -40,8 +41,6 @@ namespace GameLogic
 
         auto& staticMesh = GetGameObject().GetComponent<StaticMesh>();
         staticMesh.GetModel()->GetMaterials()[0] = std::move(waveMat);
-
-        const auto& transform = GetGameObject().GetComponent<Transform>();
     }
 
     void Boost::OnUpdate(float deltaTime)
@@ -90,7 +89,8 @@ namespace GameLogic
         Body& body = body_lock.GetBody();
         if (body.IsActive())
         {
-            body.AddForce(_impulse * Math::vector_cast<Vec3>(_direction));
+            const auto& transform = GetGameObject().GetComponent<Transform>();
+            body.AddForce(_impulse * Math::vector_cast<Vec3>(transform.GetForward()));
         }
     }
 } // namespace GameLogic
