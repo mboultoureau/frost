@@ -49,7 +49,10 @@ float4 main(PS_Input input) : SV_TARGET
         float atten = 1.0f - (dist / Radius);
         atten *= atten;
         float3 lightCol = Color * Intensity * atten;
-        float shadowFactor = SampleShadowPCF(worldPos, ShadowResolution);
+        float2 shadowUV;
+        float depth;
+        bool isInCascad = IsInCascadeView(worldPos, shadowUV, depth);
+        float shadowFactor = SampleCascadedShadowPCF(worldPos, normal, Position, LightDirection, ShadowResolution, shadowUV, depth);
         currentLight += CalculateBlinnPhong(lightDir, viewDir, normal, lightCol, metal, rough) * shadowFactor;
     }
 
