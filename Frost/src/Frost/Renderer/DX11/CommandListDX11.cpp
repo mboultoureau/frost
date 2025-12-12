@@ -393,7 +393,7 @@ namespace Frost
                                                      uint8_t stencilReadMask,
                                                      uint8_t stencilWriteMask)
     {
-        // Créer une clé de hash unique pour cacher l'état
+        // Creer une cle de hash unique pour cacher l'etat
         size_t key = 0;
         key ^= std::hash<bool>{}(depthEnable) << 0;
         key ^= std::hash<bool>{}(depthWrite) << 1;
@@ -416,7 +416,7 @@ namespace Frost
         }
         else
         {
-            // Créer un nouvel état
+            // Creer un nouvel etat
             D3D11_DEPTH_STENCIL_DESC desc = {};
             desc.DepthEnable = depthEnable;
             desc.DepthWriteMask = depthWrite ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;

@@ -124,7 +124,7 @@ namespace Frost
                         Math::Matrix4x4 matRel = matPlayer * Math::Matrix4x4::Invert(matRef);
                         Math::Matrix4x4 matNew = matRel * relativeView.modifier * matOut;
 
-                        // Modifier temporairement la transformation de la caméra virtuelle
+                        // Modifier temporairement la transformation de la camera virtuelle
                         auto& camTransform = scene.GetRegistry().get<WorldTransform>(virtualCamData.entity);
                         Math::DecomposeTransform(
                             matNew, camTransform.position, camTransform.rotation, camTransform.scale);*/
@@ -327,7 +327,7 @@ namespace Frost
                 // Clear stencil
                 commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), false, 1.0f, true, 0);
 
-                // Écrire le mesh dans le stencil
+                // ecrire le mesh dans le stencil
                 commandList->SetColorWriteMask(false, false, false, false);
                 commandList->SetDepthStencilStateCustom(true,
                                                         false,
@@ -366,7 +366,7 @@ namespace Frost
                 _RenderFullscreenQuad(commandList, projectedTex.texture.get());
             });
 
-        // Restaurer les états
+        // Restaurer les etats
         commandList->SetDepthStencilStateCustom(true,
                                                 true,
                                                 CompareFunction::Less,
@@ -409,19 +409,19 @@ namespace Frost
                 if (!projectedTex.enabled || !projectedTex.texture)
                     return;
 
-                // === ÉTAPE 1 : Clear du stencil ===
+                // === eTAPE 1 : Clear du stencil ===
                 commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), false, 1.0f, true, 0);
 
-                // === ÉTAPE 2 : Écrire le mesh dans le stencil ===
+                // === eTAPE 2 : ecrire le mesh dans le stencil ===
                 commandList->SetColorWriteMask(false, false, false, false);
                 commandList->SetDepthStencilStateCustom(true,                       // depthEnable : tester la depth
-                                                        false,                      // depthWrite : ne pas écrire
+                                                        false,                      // depthWrite : ne pas ecrire
                                                         CompareFunction::LessEqual, // Ne marquer que ce qui est visible
                                                         true,                       // stencilEnable
-                                                        CompareFunction::Always,    // Toujours écrire si depth pass
+                                                        CompareFunction::Always,    // Toujours ecrire si depth pass
                                                         StencilOp::Keep,
                                                         StencilOp::Keep,
-                                                        StencilOp::Replace, // Écrire 1
+                                                        StencilOp::Replace, // ecrire 1
                                                         1,
                                                         0xFF,
                                                         0xFF);
@@ -433,9 +433,9 @@ namespace Frost
                         *mesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
                 }
 
-                // === ÉTAPE 3 : Rendre la texture en fullscreen ===
+                // === eTAPE 3 : Rendre la texture en fullscreen ===
                 commandList->SetColorWriteMask(true, true, true, true);
-                commandList->SetDepthStencilStateCustom(false,                   // depthEnable : DÉSACTIVÉ !
+                commandList->SetDepthStencilStateCustom(false,                   // depthEnable : DeSACTIVe !
                                                         false,                   // depthWrite
                                                         CompareFunction::Always, // Pas de test depth
                                                         true,                    // stencilEnable
@@ -447,13 +447,13 @@ namespace Frost
                                                         0xFF,
                                                         0x00);
 
-                // Pas de blend - on écrase complètement
+                // Pas de blend - on ecrase complètement
                 commandList->SetBlendState(BlendMode::None);
 
                 _RenderFullscreenQuad(commandList, projectedTex.texture.get());
             });
 
-        // Restaurer les états
+        // Restaurer les etats
         commandList->SetDepthStencilStateCustom(true,
                                                 true,
                                                 CompareFunction::Less,
@@ -473,7 +473,7 @@ namespace Frost
     void RendererSystem::_RenderFullscreenQuad(CommandList* commandList, Texture* texture)
     {
         // Utilisez un shader simple qui rend une texture en fullscreen
-        // Vous devrez créer ce shader s'il n'existe pas déjà
+        // Vous devrez creer ce shader s'il n'existe pas deja
 
         commandList->UnbindShader(ShaderType::Geometry);
         commandList->UnbindShader(ShaderType::Hull);
@@ -484,7 +484,7 @@ namespace Frost
         commandList->SetSampler(_sampler.get(), 0);
         commandList->SetInputLayout(nullptr);
         commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-        commandList->Draw(3, 0); // Triangle qui couvre l'écran
+        commandList->Draw(3, 0); // Triangle qui couvre l'ecran
     }
 
     void RendererSystem::_ApplyPostProcessing(CommandList* commandList,
@@ -550,7 +550,7 @@ namespace Frost
         const std::shared_ptr<Texture>& skybox,
         float overrideAspectRatio,
         entt::entity exitPortalFrameEntity,
-        entt::entity entryPortalFrameEntity) // Portail à utiliser pour le masque
+        entt::entity entryPortalFrameEntity) // Portail a utiliser pour le masque
     {
         // if (entryPortalFrameEntity == entt::null)
         //     return;
@@ -584,7 +584,7 @@ namespace Frost
 
         commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), true, 1.0f, true, 0);
 
-        // === ÉTAPE 1 : Rendre le masque du portail dans le stencil ===
+        // === eTAPE 1 : Rendre le masque du portail dans le stencil ===
         if (scene.GetRegistry().valid(exitPortalFrameEntity))
         {
             // IMPORTANT : Binder un render target dummy + le depth/stencil
@@ -594,7 +594,7 @@ namespace Frost
             // Viewport
             commandList->SetViewport(0, 0, targetWidth, targetHeight, 0.0f, 1.0f);
 
-            // Désactiver l'écriture couleur
+            // Desactiver l'ecriture couleur
             commandList->SetColorWriteMask(false, false, false, false);
             commandList->SetDepthStencilStateCustom(false, // depthEnable
                                                     false, // depthWrite
@@ -621,21 +621,21 @@ namespace Frost
                 }
             }
 
-            // Réactiver l'écriture couleur
+            // Reactiver l'ecriture couleur
             commandList->SetColorWriteMask(true, true, true, true);
         }
 
-        // === ÉTAPE 2 : BeginFrame (va re-binder les render targets) ===
+        // === eTAPE 2 : BeginFrame (va re-binder les render targets) ===
         _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, renderViewport);
         //_deferredRendering.BeginFrame(camera, viewMatrix, obliqueProjection, renderViewport);
-        // === ÉTAPE 3 : Configurer le stencil pour le GBuffer pass ===
+        // === eTAPE 3 : Configurer le stencil pour le GBuffer pass ===
         if (scene.GetRegistry().valid(exitPortalFrameEntity))
         {
             commandList->SetDepthStencilStateCustom(true,                   // depthEnable
                                                     true,                   // depthWrite
                                                     CompareFunction::Less,  // depthFunc
                                                     true,                   // stencilEnable
-                                                    CompareFunction::Equal, // REMIS À Equal : rendre où stencil == 1
+                                                    CompareFunction::Equal, // REMIS a Equal : rendre où stencil == 1
                                                     StencilOp::Keep,
                                                     StencilOp::Keep,
                                                     StencilOp::Keep,
@@ -658,13 +658,13 @@ namespace Frost
                 }
             });
 
-        // === ÉTAPE 5 : EndFrame SANS stencil ===
+        // === eTAPE 5 : EndFrame SANS stencil ===
         _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget);
 
-        // === ÉTAPE 6 : Skybox - SANS stencil pour remplir toute la texture ===
+        // === eTAPE 6 : Skybox - SANS stencil pour remplir toute la texture ===
         if (skybox)
         {
-            // Désactiver le stencil pour la skybox
+            // Desactiver le stencil pour la skybox
             commandList->SetDepthStencilStateCustom(true,  // depthEnable
                                                     false, // depthWrite (skybox n'ecrit pas le depth)
                                                     CompareFunction::LessEqual, // depthFunc
@@ -685,14 +685,14 @@ namespace Frost
                                    cameraTransform);
         }
 
-        // === ÉTAPE 7 : Appliquer les post-effets de la caméra virtuelle ===
+        // === eTAPE 7 : Appliquer les post-effets de la camera virtuelle ===
         if (!camera.postEffects.empty())
         {
-            // Créer une texture temporaire pour les post-effets du portail
+            // Creer une texture temporaire pour les post-effets du portail
             uint32_t rtWidth = renderTarget->GetWidth();
             uint32_t rtHeight = renderTarget->GetHeight();
 
-            // Réutiliser ou créer des textures temporaires
+            // Reutiliser ou creer des textures temporaires
             if (!_portalPostProcessSource || _portalPostProcessSource->GetWidth() != rtWidth ||
                 _portalPostProcessSource->GetHeight() != rtHeight)
             {

@@ -59,7 +59,7 @@ namespace Frost
 
         // ID3D11Device* _device;
 
-        // Cache pour éviter de recréer les états
+        // Cache pour eviter de recreer les etats
         std::map<size_t, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>> _depthStencilCache;
         std::map<UINT8, Microsoft::WRL::ComPtr<ID3D11BlendState>> _blendCache;
 

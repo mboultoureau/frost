@@ -728,7 +728,7 @@ namespace Frost
         _commandList->UnbindShader(ShaderType::Hull);
         _commandList->UnbindShader(ShaderType::Domain);
 
-        // Vérifier le SetShader
+        // Verifier le SetShader
         // std::cout << "Setting shaders..." << std::endl;
         _commandList->SetShader(_vsStencil.get());
         _commandList->SetShader(_psStencil.get());
