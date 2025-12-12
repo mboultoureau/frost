@@ -292,7 +292,7 @@ namespace Frost
                 renderModel = true;
             }
 
-            mesh.enabled = renderMesh;
+            // mesh.enabled = renderMesh;
         }
         return renderModel;
     }
