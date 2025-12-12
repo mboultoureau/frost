@@ -44,7 +44,7 @@ namespace Frost
         }
     }
 
-    bool Frustum::IsInside(const BoundingBox& box)
+    bool Frustum::IsInside(const BoundingBox& box) const
     {
 
         // 8 coins du cube

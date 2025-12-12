@@ -46,43 +46,46 @@ Entities:
     Meta:
       Name: Light
     Transform:
-      Position: [-2.3901453, 3.2700846, -9.191023]
+      Position: [-2.3901453, 2.42, -9.191023]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     Light:
-      Type: 1
+      Type: 2
       Color: [1, 0, 0]
-      Intensity: 1
+      Intensity: 6
       Params:
-        Radius: 2.7
-        Falloff: 1
+        Range: 20
+        InnerAngle: 49.999992
+        OuterAngle: 60
   - LocalID: 3
     ParentID: 0
     Meta:
       Name: Light
     Transform:
-      Position: [-2.3110073, 3.27, -4.8108697]
-      Rotation: [0, 0, 0, 1]
+      Position: [-2.3110073, 2.42, -4.8108697]
+      Rotation: [0, 0, 0.7071067, 0.7071068]
       Scale: [1, 1, 1]
     Light:
-      Type: 1
+      Type: 2
       Color: [1, 0, 0]
-      Intensity: 1
+      Intensity: 6
       Params:
-        Radius: 2
-        Falloff: 1
+        Range: 20
+        InnerAngle: 49.999992
+        OuterAngle: 60
   - LocalID: 4
     ParentID: 0
     Meta:
       Name: Light
     Transform:
-      Position: [-2.3110073, 3.27, 3.128099]
-      Rotation: [0, 0, 0, 1]
+      Position: [-2.3110073, 2.42, 3.128099]
+      Rotation: [0, 0, 0.7071067, 0.7071068]
       Scale: [1, 1, 1]
     Light:
-      Type: 1
+      Type: 2
       Color: [1, 0, 0]
-      Intensity: 1
+      Intensity: 6
       Params:
-        Radius: 2
-        Falloff: 1
+        Range: 20
+        InnerAngle: 49.999992
+        OuterAngle: 60

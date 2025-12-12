@@ -3,158 +3,127 @@
 #define BLADE_SEGMENTS 3
 #define PI 3.14159265359
 
-GSOutput GenerateGrassVertex(float3 vertexPosition, float width, float height,
-                            float forward, float2 uv, float3x3 transformMatrix)
+// Matrice pour aligner un vecteur "Up" (0,1,0) vers une targetNormal
+float3x3 AlignToNormal(float3 targetNormal)
 {
-    GSOutput output;
+    float3 up = float3(0, 1, 0);
+    if (abs(dot(up, targetNormal)) > 0.999)
+        return float3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
     
-    // Position en tangent space
-    float3 tangentPoint = float3(width, forward, height);
-    
-    // Transformation vers world space
-    float3 localPosition = vertexPosition + mul(tangentPoint, transformMatrix);
-    
-    float4 worldPos = mul(float4(localPosition, 1.0), WorldMatrix);
-    output.worldPos = worldPos.xyz;
-    output.position = mul(worldPos, mul(ViewMatrix, ProjectionMatrix));
-    
-    // Normal en tangent space puis world space
-    float3 tangentNormal = normalize(float3(0, -1, forward));
-    float3 localNormal = mul(tangentNormal, transformMatrix);
-    output.normal = normalize(mul(float4(localNormal, 0.0), WorldMatrix).xyz);
-    
-    output.uv = uv;
-    
-    return output;
+    float3 axis = normalize(cross(up, targetNormal));
+    float angle = acos(dot(up, targetNormal));
+    return AngleAxis3x3(angle, axis);
 }
 
 [maxvertexcount(3 * (BLADE_SEGMENTS * 2 + 1))]
 void main(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
 {
-    // Générer un blade d'herbe pour chaque vertex du triangle
+    // On génère l'herbe pour chaque vertex du triangle tessellé
     for (int i = 0; i < 3; i++)
     {
-        float3 pos = input[i].position;
-        float3 vNormal = input[i].normal;
-        float4 vTangent = input[i].tangent;
-        float3 vBinormal = cross(vNormal, vTangent.xyz) * vTangent.w;
-    
-        // Construction de la matrice tangent-to-local
-        float3x3 tangentToLocal = float3x3(
-            vTangent.x, vBinormal.x, vNormal.x,
-            vTangent.y, vBinormal.y, vNormal.y,
-            vTangent.z, vBinormal.z, vNormal.z
-        );
-    
-        // Rotation aléatoire autour de la normale (axe vertical de la surface)
-        float3x3 facingRotationMatrix = AngleAxis3x3(
-            rand(pos) * 2.0 * PI,
-            normalize(mul(float4(vNormal, 0.0), WorldMatrix).xyz)
-        );
-    
-        // Courbure aléatoire vers l'avant (en tangent space)
-        float3x3 bendRotationMatrix = AngleAxis3x3(
-            rand(pos.zzx) * BendRotationRandom * PI * 0.4,
-            float3(-1, 0, 0)
+        float3 rootPos = input[i].worldPos;
+        float3 geomNormal = normalize(input[i].normal);
+        
+        // --- 1. BASE MATRIX (TANGENT SPACE) ---
+        // On construit une base orthonormée locale sur la surface
+        float3 up = geomNormal;
+        
+        // ASTUCE : Si la géométrie est à l'envers, 'up' pointe vers le bas.
+        // Assure-toi que tes normales Mesh sont correctes. 
+        // Sinon force : up = float3(0, 1, 0);
+        
+        float3 tangent = normalize(input[i].tangent.xyz);
+        float3 binormal = normalize(cross(up, tangent) * input[i].tangent.w);
+        
+        // Matrice Tangent -> World (Y est UP)
+        float3x3 tangentToWorld = float3x3(
+            tangent.x, up.x, binormal.x,
+            tangent.y, up.y, binormal.y,
+            tangent.z, up.z, binormal.z
         );
         
-        // Calcul du vent
-        float wind1 = sin(Time * 1.4 + pos.x * 0.3 + pos.z * 0.5) * 0.6;
-        float wind2 = sin(Time * 2.2 + pos.x * 1.1) * 0.25;
-        float wind = (wind1 + wind2) * WindStrength;
+        // --- 2. RANDOM SEED ---
+        float randVal = rand(rootPos.xyz);
         
-        float3x3 windRotation = AngleAxis3x3(wind, float3(0, 0, 1));
+        // --- 3. ROTATION (Facing) ---
+        // Rotation aléatoire autour de l'axe Y (Haut) du brin
+        float3x3 facingRot = AngleAxis3x3(randVal * PI * 2.0, float3(0, 1, 0));
+        
+        // --- 4. VENT ---
+        float windOsc = sin(Time * WindStrength + rootPos.x) * 0.5 + 0.5; // 0 à 1
+        float3x3 windRot = AngleAxis3x3(windOsc * 0.5, float3(1, 0, 0)); // Penche sur X
+        
+        // --- 5. BENDING STATIC ---
+        float3x3 bendRot = AngleAxis3x3(rand(rootPos.zyx) * 0.5, float3(1, 0, 0));
 
-        float3x3 transformationMatrix = tangentToLocal;
-    
-        // Dimensions aléatoires
-        float height = (rand(pos.zyx) * 2.0 - 1.0) * BladeHeightRandom + BladeHeight;
-        float width = (rand(pos.xzy) * 2.0 - 1.0) * BladeWidthRandom + BladeWidth;
-        float forward = rand(pos.yyz) * BladeForward;
-    
-        // Génération des segments
+        // Dimensions
+        float h = BladeHeight + (randVal * 2.0 - 1.0) * 0.2; // Variation hauteur
+        float w = BladeWidth + (rand(rootPos.xzy) * 2.0 - 1.0) * 0.05;
+        
+        // MATRICE FINALE POUR CE BRIN
+        // On applique Facing, puis on convertit en World
+        float3x3 baseTransform = mul(tangentToWorld, facingRot);
+
+        // --- GÉNÉRATION ---
         for (int j = 0; j < BLADE_SEGMENTS; j++)
         {
-            float t = j / (float) BLADE_SEGMENTS;
-            float segmentHeight = height * t;
-            float segmentWidth = width * (1.0 - t);
-            float segmentForward = pow(t, BladeCurve) * forward;
-        
-            // Générer les deux vertices du segment
-            float3 tangentLeft = float3(segmentWidth, segmentForward, segmentHeight);
-            float3 tangentRight = float3(-segmentWidth, segmentForward, segmentHeight);
+            float t = (float) j / BLADE_SEGMENTS;
+            float tNext = (float) (j + 1) / BLADE_SEGMENTS;
             
-            float3 localLeft = mul(tangentLeft, transformationMatrix);
-            float3 localRight = mul(tangentRight, transformationMatrix);
+            float currentW = w * (1.0 - t);
+            float nextW = w * (1.0 - tNext);
             
-            // Appliquer la rotation "facing" en world space
-            float3 worldLeft = mul(float4(localLeft, 0.0), WorldMatrix).xyz;
-            float3 worldRight = mul(float4(localRight, 0.0), WorldMatrix).xyz;
+            float currentH = h * t;
+            float nextH = h * tNext;
             
-            worldLeft = mul(worldLeft, facingRotationMatrix);
-            worldRight = mul(worldRight, facingRotationMatrix);
+            // Calcul de la courbure (offset sur Z local)
+            float currentCurve = pow(t, BladeCurve) * BladeForward;
+            float nextCurve = pow(tNext, BladeCurve) * BladeForward;
             
-            // Reconstruire les outputs
-            GSOutput outLeft, outRight;
+            // Positions LOCALES (Blade Space : Y=Haut, X=Largeur, Z=Profondeur)
+            // Note le signe : X pour gauche/droite, Y pour hauteur, Z pour courbe
+            float3 p1 = float3(-currentW, currentH, currentCurve);
+            float3 p2 = float3(currentW, currentH, currentCurve);
+            float3 p3 = float3(-nextW, nextH, nextCurve);
+            float3 p4 = float3(nextW, nextH, nextCurve);
             
-            outLeft.worldPos = mul(float4(pos, 1.0), WorldMatrix).xyz + worldLeft;
-            outLeft.position = mul(float4(outLeft.worldPos, 1.0), mul(ViewMatrix, ProjectionMatrix));
-            outLeft.uv = float2(0, t);
+            // Transformation vers World Space
+            // On applique le vent/bend sur la matrice ou sur les coordonnées locales
+            // Pour faire simple : appliquons le vent comme une rotation locale
             
-            outRight.worldPos = mul(float4(pos, 1.0), WorldMatrix).xyz + worldRight;
-            outRight.position = mul(float4(outRight.worldPos, 1.0), mul(ViewMatrix, ProjectionMatrix));
-            outRight.uv = float2(1, t);
+            // World Positions
+            float3 wP1 = rootPos + mul(p1, baseTransform);
+            float3 wP2 = rootPos + mul(p2, baseTransform);
+            float3 wP3 = rootPos + mul(p3, baseTransform);
+            float3 wP4 = rootPos + mul(p4, baseTransform);
             
-            // Calcul des normales
-            float3 tangentNormal = normalize(float3(0, -1, segmentForward));
-            float3 localNormal = mul(tangentNormal, transformationMatrix);
-            float3 worldNormal = normalize(mul(float4(localNormal, 0.0), WorldMatrix).xyz);
-            worldNormal = mul(worldNormal, facingRotationMatrix);
+            // Output Triangle Strip (2 triangles pour faire un quad)
+            GSOutput v1, v2;
             
-            worldNormal = normalize(lerp(worldNormal, vNormal, 0.3));
-            
-            // Orienter la normale vers la caméra pour éclairage bidirectionnel
-            float3 viewDir = normalize(CameraPosition - outLeft.worldPos);
-            if (dot(worldNormal, viewDir) < 0)
-            {
-                worldNormal = -worldNormal;
-            }
-            
-            outLeft.normal = worldNormal;
-            outRight.normal = worldNormal;
-            
-            triStream.Append(outLeft);
-            triStream.Append(outRight);
-            
-            transformationMatrix = mul(mul(tangentToLocal, windRotation), bendRotationMatrix);
-        }
-    
-        // Vertex au sommet
-        float3 tangentTip = float3(0, forward, height);
-        float3 localTip = mul(tangentTip, transformationMatrix);
-        float3 worldTip = mul(float4(localTip, 0.0), WorldMatrix).xyz;
-        worldTip = mul(worldTip, facingRotationMatrix);
-        
-        GSOutput outTip;
-        outTip.worldPos = mul(float4(pos, 1.0), WorldMatrix).xyz + worldTip;
-        outTip.position = mul(float4(outTip.worldPos, 1.0), mul(ViewMatrix, ProjectionMatrix));
-        outTip.uv = float2(0.5, 1);
-        
-        float3 tangentNormal = normalize(float3(0, -1, forward));
-        float3 localNormal = mul(tangentNormal, transformationMatrix);
-        float3 worldNormal = normalize(mul(float4(localNormal, 0.0), WorldMatrix).xyz);
-        outTip.normal = mul(worldNormal, facingRotationMatrix);
-        
-        outTip.normal = normalize(lerp(outTip.normal, vNormal, 0.3));
-        
-        // Orienter la normale du sommet vers la caméra
-        float3 viewDir = normalize(CameraPosition - outTip.worldPos);
-        if (dot(outTip.normal, viewDir) < 0)
-        {
-            outTip.normal = -outTip.normal;
+            // Vertex 1 (Gauche bas)
+            v1.worldPos = wP1;
+            v1.position = mul(float4(v1.worldPos, 1.0), mul(ViewMatrix, ProjectionMatrix));
+            v1.uv = float2(0, t);
+            v1.normal = geomNormal; // Simplifié pour debug éclairage
+            triStream.Append(v1);
+
+            // Vertex 2 (Droite bas)
+            v2.worldPos = wP2;
+            v2.position = mul(float4(v2.worldPos, 1.0), mul(ViewMatrix, ProjectionMatrix));
+            v2.uv = float2(1, t);
+            v2.normal = geomNormal;
+            triStream.Append(v2);
         }
         
-        triStream.Append(outTip);
+        // TIP VERTEX
+        GSOutput vTip;
+        float3 pTip = float3(0, h, pow(1.0, BladeCurve) * BladeForward);
+        vTip.worldPos = rootPos + mul(pTip, baseTransform);
+        vTip.position = mul(float4(vTip.worldPos, 1.0), mul(ViewMatrix, ProjectionMatrix));
+        vTip.uv = float2(0.5, 1);
+        vTip.normal = geomNormal;
+        
+        triStream.Append(vTip);
         triStream.RestartStrip();
     }
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Frost/Renderer/Pipeline.h"
 #include "Frost/Scene/Components/Camera.h"
@@ -8,6 +8,7 @@
 #include "Frost/Core/Core.h"
 #include "Frost/Utils/Math/Matrix.h"
 #include "Frost/Scene/Components/StaticMesh.h"
+#include "Frost/Renderer/Frustum.h"
 
 #include <memory>
 #include <unordered_map>
@@ -37,6 +38,7 @@ namespace Frost
     {
         std::unique_ptr<Texture> shadowTexture;
         Math::Matrix4x4 lightViewProj;
+        Frustum lightFrustum; // Cache du frustum pour éviter de le recalculer
     };
 
     struct DirectionalShadowData : public ShadowData
@@ -113,10 +115,12 @@ namespace Frost
                                            const Component::WorldTransform& cameraTransform,
                                            const Component::WorldTransform& sunTransform);
 
+        // Optimisation : Ajout du paramètre Frustum
         void DrawDepthOnly(CommandList* cmd,
                            const Component::StaticMesh& staticMesh,
                            const Math::Matrix4x4& worldMatrix,
-                           const Math::Matrix4x4& _currentLightViewProj);
+                           const Math::Matrix4x4& _currentLightViewProj,
+                           const Frustum& lightFrustum);
 
         void SubmitLight(const Component::Camera& camera,
                          const Component::WorldTransform& cameraTransform,
@@ -134,7 +138,7 @@ namespace Frost
 
         void DrawFinalLitTexture(std::shared_ptr<Texture> luminanceTexture, const Viewport& viewport);
 
-        int _shadowResolution = 2048;
+        int _shadowResolution = 2048; // Peut être réduit à 1024 si besoin de perf
         float _orthoSize = 512;
         int _currentWidth = 0;
         int _currentHeight = 0;

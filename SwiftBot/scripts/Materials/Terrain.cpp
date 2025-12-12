@@ -39,6 +39,12 @@ namespace GameLogic
         material.albedo = { 1.0f, 1.0f, 1.0f, 1.0f };
         material.uvTiling = { 100, 100 };
 
+        if (GetGameObject().HasComponent<StaticMesh>() == false)
+        {
+            FT_ENGINE_ERROR("Terrain script: StaticMesh component missing on GameObject.");
+            return;
+        }
+
         auto& staticMesh = GetGameObject().GetComponent<StaticMesh>();
         staticMesh.GetModel()->GetMaterials()[0] = std::move(material);
 

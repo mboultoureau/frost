@@ -38,7 +38,7 @@ namespace GameLogic
         _shaderParams.TopAmplitude = _waveAmplitude * 2;
         _shaderParams.TopFrequency = _waveFrequency;
         _shaderParams.TopWaveLength = _waveLength;
-        _shaderParams.TessellationFactor = 32.0f;
+        _shaderParams.TessellationFactor = 16.0f;
         _shaderParams.BevelSize = 0.0001f;
 
         std::vector<uint8_t> paramData(sizeof(WaterMaterialParameters));

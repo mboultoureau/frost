@@ -5,6 +5,8 @@
 #include "HUD/PauseScreen.h"
 #include "HUD/SplashScreen.h"
 #include "HUD/VictoryScreen.h"
+#include "HUD/Speedometer.h"
+#include "HUD/Timer.h"
 
 #include "Materials/Terrain.h"
 #include "Materials/Water.h"
@@ -34,17 +36,15 @@ void
 InitializeRegistry()
 {
     // HUD
-    // Pause Screen
     _scriptRegistry["PauseScreen"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::PauseScreen()); };
-
-    // Splash Screen
     _scriptRegistry["SplashScreen"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::SplashScreen()); };
-
-    // Victory Screen
     _scriptRegistry["VictoryScreen"] = []()
     { return static_cast<Frost::Scripting::Script*>(new GameLogic::VictoryScreen()); };
+    _scriptRegistry["Speedometer"] = []()
+    { return static_cast<Frost::Scripting::Script*>(new GameLogic::Speedometer()); };
+    _scriptRegistry["Timer"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Timer()); };
 
     // Materials
     _scriptRegistry["Terrain"] = []() { return static_cast<Frost::Scripting::Script*>(new GameLogic::Terrain()); };
