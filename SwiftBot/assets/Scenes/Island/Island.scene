@@ -1,6 +1,56 @@
 Scene: Island
 Entities:
+  - Entity: 240
+    Meta:
+      Name: Grass
+    Transform:
+      Position: [188.38097, -0.077534676, 526.9317]
+      Rotation: [0, 0, 0, 1]
+      Scale: [30.344696, 15, 70.08771]
+    Prefab:
+      AssetPath: assets\Prefabs\Grass\Grass.prefab
+    Parent: -1
+  - Entity: 238
+    Meta:
+      Name: Grass
+    Transform:
+      Position: [254.48396, -0.077534676, 526.9317]
+      Rotation: [0, 0, 0, 1]
+      Scale: [30.344696, 15, 86.651276]
+    Prefab:
+      AssetPath: assets\Prefabs\Grass\Grass.prefab
+    Parent: -1
+  - Entity: 76
+    Meta:
+      Name: Grass
+    Transform:
+      Position: [267.65317, -0.077534676, 613.91815]
+      Rotation: [0, 0, 0, 1]
+      Scale: [30.344696, 15, 86.651276]
+    Prefab:
+      AssetPath: assets\Prefabs\Grass\Grass.prefab
+    Parent: -1
+  - Entity: 75
+    Meta:
+      Name: Timer
+    Transform:
+      Position: [-19.899273, 0, -13.993358]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\Timer.prefab
+    Parent: -1
   - Entity: 74
+    Meta:
+      Name: VictoryScreen
+    Transform:
+      Position: [-27.625612, 0, -25.446781]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\VictoryScreen.prefab
+    Parent: -1
+  - Entity: 73
     Meta:
       Name: New Entity
     Transform:
@@ -29,8 +79,8 @@ Entities:
       ShapeParams:
         HalfExtent: [370.9, 1506.2, 336.1]
         ConvexRadius: 0.05
-    Parent: 73
-  - Entity: 73
+    Parent: 72
+  - Entity: 72
     Meta:
       Name: tower1
     Transform:
@@ -42,7 +92,7 @@ Entities:
       Params:
         Path: assets/Prefabs/Buildings/tower1.fbx
     Parent: -1
-  - Entity: 72
+  - Entity: 71
     Meta:
       Name: New Entity
     Transform:
@@ -71,8 +121,8 @@ Entities:
       ShapeParams:
         HalfExtent: [370.9, 1506.2, 336.1]
         ConvexRadius: 0.05
-    Parent: 71
-  - Entity: 71
+    Parent: 70
+  - Entity: 70
     Meta:
       Name: tower1
     Transform:
@@ -84,7 +134,7 @@ Entities:
       Params:
         Path: assets/Prefabs/Buildings/tower1.fbx
     Parent: -1
-  - Entity: 70
+  - Entity: 69
     Meta:
       Name: obj
     Transform:
@@ -119,7 +169,7 @@ Entities:
         Radius: 4.6
         ConvexRadius: 0.05
     Parent: -1
-  - Entity: 69
+  - Entity: 68
     Meta:
       Name: obj
     Transform:
@@ -154,7 +204,7 @@ Entities:
         Radius: 4.6
         ConvexRadius: 0.05
     Parent: -1
-  - Entity: 68
+  - Entity: 67
     Meta:
       Name: New Entity
     Transform:
@@ -183,8 +233,8 @@ Entities:
       ShapeParams:
         HalfExtent: [58.3, 158, 21.6]
         ConvexRadius: 0.05
-    Parent: 23
-  - Entity: 67
+    Parent: 24
+  - Entity: 66
     Meta:
       Name: PortalRoadAir_OUT
     Transform:
@@ -194,17 +244,17 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 66
+  - Entity: 65
     Meta:
       Name: Grass
     Transform:
-      Position: [173.6628, -0.077534676, 687.1737]
+      Position: [190.34138, -0.077534676, 597.20746]
       Rotation: [0, 0, 0, 1]
-      Scale: [15, 15, 92.085396]
+      Scale: [30.344696, 15, 70.08771]
     Prefab:
       AssetPath: assets\Prefabs\Grass\Grass.prefab
     Parent: -1
-  - Entity: 65
+  - Entity: 64
     Meta:
       Name: RoadSpline2
     Transform:
@@ -214,7 +264,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 64
+  - Entity: 63
     Meta:
       Name: RoadSpline1
     Transform:
@@ -224,7 +274,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 63
+  - Entity: 62
     Meta:
       Name: PortalRoadAir_IN
     Transform:
@@ -234,7 +284,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 62
+  - Entity: 61
     Meta:
       Name: PauseScreen
     Transform:
@@ -244,17 +294,17 @@ Entities:
     Prefab:
       AssetPath: assets\HUD\PauseScreen.prefab
     Parent: -1
-  - Entity: 61
+  - Entity: 60
     Meta:
       Name: Player
     Transform:
-      Position: [10.767919, -26.322975, -6.5485973]
+      Position: [-2.4349966, -26.322975, 14.987549]
       Rotation: [0, -0.99935037, 0, 0.036039174]
       Scale: [1, 1, 1]
     Prefab:
       AssetPath: assets\Player\Player.prefab
     Parent: -1
-  - Entity: 60
+  - Entity: 59
     Meta:
       Name: Sun
     Transform:
@@ -268,7 +318,7 @@ Entities:
       Params:
         {}
     Parent: -1
-  - Entity: 59
+  - Entity: 58
     Meta:
       Name: PortalRoad_IN
     Transform:
@@ -278,7 +328,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 58
+  - Entity: 57
     Meta:
       Name: PortalLooping_IN
     Transform:
@@ -288,7 +338,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 57
+  - Entity: 56
     Meta:
       Name: Road
     Transform:
@@ -298,7 +348,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Road.prefab
     Parent: -1
-  - Entity: 56
+  - Entity: 55
     Meta:
       Name: Checkpoint_2
     Transform:
@@ -308,7 +358,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Checkpoint\Checkpoint.prefab
     Parent: -1
-  - Entity: 55
+  - Entity: 54
     Meta:
       Name: Checkpoint_1
     Transform:
@@ -318,7 +368,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Checkpoint\Checkpoint.prefab
     Parent: -1
-  - Entity: 54
+  - Entity: 53
     Meta:
       Name: Looping
     Transform:
@@ -328,7 +378,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Looping\Looping.prefab
     Parent: -1
-  - Entity: 53
+  - Entity: 52
     Meta:
       Name: FishingBoat
     Transform:
@@ -338,7 +388,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\FishingBoat\FishingBoat.prefab
     Parent: -1
-  - Entity: 52
+  - Entity: 51
     Meta:
       Name: PalmTree2
     Transform:
@@ -348,7 +398,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
     Parent: -1
-  - Entity: 51
+  - Entity: 50
     Meta:
       Name: PalmTree2
     Transform:
@@ -358,7 +408,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
     Parent: -1
-  - Entity: 50
+  - Entity: 49
     Meta:
       Name: PalmTree2
     Transform:
@@ -368,7 +418,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
     Parent: -1
-  - Entity: 49
+  - Entity: 48
     Meta:
       Name: PalmTree2
     Transform:
@@ -378,7 +428,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
     Parent: -1
-  - Entity: 48
+  - Entity: 47
     Meta:
       Name: PalmTree2
     Transform:
@@ -388,7 +438,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree2.prefab
     Parent: -1
-  - Entity: 47
+  - Entity: 46
     Meta:
       Name: HeightmapLake
     Transform:
@@ -398,7 +448,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Heightmap\HeightmapLake.prefab
     Parent: -1
-  - Entity: 46
+  - Entity: 45
     Meta:
       Name: PalmTree1
     Transform:
@@ -408,7 +458,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
     Parent: -1
-  - Entity: 45
+  - Entity: 44
     Meta:
       Name: PalmTree1
     Transform:
@@ -418,7 +468,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
     Parent: -1
-  - Entity: 44
+  - Entity: 43
     Meta:
       Name: PalmTree1
     Transform:
@@ -428,7 +478,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
     Parent: -1
-  - Entity: 43
+  - Entity: 42
     Meta:
       Name: Island1
     Transform:
@@ -438,7 +488,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Island\island1.prefab
     Parent: -1
-  - Entity: 42
+  - Entity: 41
     Meta:
       Name: Water
     Transform:
@@ -448,7 +498,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Water\Water.prefab
     Parent: -1
-  - Entity: 41
+  - Entity: 40
     Meta:
       Name: PortalLake1_OUT
     Transform:
@@ -458,7 +508,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 40
+  - Entity: 39
     Meta:
       Name: LevelCamera
     Transform:
@@ -467,16 +517,6 @@ Entities:
       Scale: [2, 2, 2]
     Prefab:
       AssetPath: assets\Prefabs\PalmTree\PalmTree1.prefab
-    Parent: -1
-  - Entity: 39
-    Meta:
-      Name: VictoryScreen
-    Transform:
-      Position: [4.765127, -27.377464, -225.65474]
-      Rotation: [0, -0.78212255, 0, 0.62312454]
-      Scale: [0.96800065, 0.96800065, 0.96800065]
-    Prefab:
-      AssetPath: assets\Prefabs\Island\island1.prefab
     Parent: -1
   - Entity: 38
     Meta:
@@ -580,25 +620,15 @@ Entities:
     Parent: -1
   - Entity: 28
     Meta:
-      Name: Boost
-    Transform:
-      Position: [30.050121, -16.548788, -6.0345087]
-      Rotation: [0, 0, 0.6558255, 0.7549125]
-      Scale: [20, 20, 20]
-    Prefab:
-      AssetPath: assets\Prefabs\Boost\Boost.prefab
-    Parent: -1
-  - Entity: 27
-    Meta:
       Name: PortalLooping_OUT
     Transform:
-      Position: [-907.99316, -90.37285, 18.22863]
+      Position: [-907.99316, -80.901985, 18.22863]
       Rotation: [0, 0.67623335, 0, 0.7366875]
       Scale: [4, 4, 4]
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 26
+  - Entity: 27
     Meta:
       Name: PortalEnd_OUT
     Transform:
@@ -608,17 +638,17 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 25
+  - Entity: 26
     Meta:
       Name: PortalRoad_OUT
     Transform:
-      Position: [225.63089, -0.5205097, 688.43866]
+      Position: [225.63089, 4.1830425, 706.29706]
       Rotation: [0, -0.70026946, 0, 0.71387863]
       Scale: [1, 1, 1]
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 24
+  - Entity: 25
     Meta:
       Name: RoadSpline3
     Transform:
@@ -628,7 +658,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 23
+  - Entity: 24
     Meta:
       Name: high_rise_building
     Transform:
@@ -640,7 +670,7 @@ Entities:
       Params:
         Path: assets/Prefabs/Buildings/high_rise_building.glb
     Parent: -1
-  - Entity: 22
+  - Entity: 23
     Meta:
       Name: obj
     Transform:
@@ -675,7 +705,7 @@ Entities:
         Radius: 4.6
         ConvexRadius: 0.05
     Parent: -1
-  - Entity: 21
+  - Entity: 22
     Meta:
       Name: tower1
     Transform:
@@ -687,7 +717,7 @@ Entities:
       Params:
         Path: assets/Prefabs/Buildings/tower1.fbx
     Parent: -1
-  - Entity: 20
+  - Entity: 21
     Meta:
       Name: RoadSpline4
     Transform:
@@ -697,7 +727,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 19
+  - Entity: 20
     Meta:
       Name: RoadSpline5
     Transform:
@@ -707,27 +737,27 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 18
+  - Entity: 19
     Meta:
       Name: PortalEnd_IN
     Transform:
-      Position: [215.04137, 0.09727049, 89.42285]
-      Rotation: [0, 0.83001226, 0, 0.5577451]
+      Position: [215.04137, 0.09727049, 81.7946]
+      Rotation: [0, 0.68373466, 0, 0.7297307]
       Scale: [1, 1, 1]
     Prefab:
       AssetPath: assets\Prefabs\Portal\Portal.prefab
     Parent: -1
-  - Entity: 17
+  - Entity: 18
     Meta:
       Name: Grass2
     Transform:
-      Position: [229.17465, 0.07477379, 704.0678]
+      Position: [227.79979, 0.07477379, 705.2059]
       Rotation: [0, 0, 0, 1]
-      Scale: [47.0267, 15, 60.00442]
+      Scale: [106.68551, 15, 143.12578]
     Prefab:
       AssetPath: assets\Prefabs\Grass\Grass.prefab
     Parent: -1
-  - Entity: 16
+  - Entity: 17
     Meta:
       Name: Ground
     Transform:
@@ -737,7 +767,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Ground\Ground.prefab
     Parent: -1
-  - Entity: 15
+  - Entity: 16
     Meta:
       Name: FishingBoat
     Transform:
@@ -747,7 +777,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\FishingBoat\FishingBoat.prefab
     Parent: -1
-  - Entity: 14
+  - Entity: 15
     Meta:
       Name: HeightmapLake2
     Transform:
@@ -757,7 +787,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Heightmap\HeightmapLake.prefab
     Parent: -1
-  - Entity: 13
+  - Entity: 14
     Meta:
       Name: obj
     Transform:
@@ -792,7 +822,7 @@ Entities:
         Radius: 4.6
         ConvexRadius: 0
     Parent: -1
-  - Entity: 12
+  - Entity: 13
     Meta:
       Name: high_rise_building
     Transform:
@@ -804,7 +834,7 @@ Entities:
       Params:
         Path: assets/Prefabs/Buildings/high_rise_building.glb
     Parent: -1
-  - Entity: 11
+  - Entity: 12
     Meta:
       Name: RoadSpline3
     Transform:
@@ -814,7 +844,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 10
+  - Entity: 11
     Meta:
       Name: RoadSpline3
     Transform:
@@ -824,7 +854,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 9
+  - Entity: 10
     Meta:
       Name: RoadSpline3
     Transform:
@@ -834,7 +864,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 8
+  - Entity: 9
     Meta:
       Name: RoadSpline3
     Transform:
@@ -844,7 +874,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 7
+  - Entity: 8
     Meta:
       Name: RoadSpline1
     Transform:
@@ -854,7 +884,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 6
+  - Entity: 7
     Meta:
       Name: RoadSpline1
     Transform:
@@ -864,7 +894,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 5
+  - Entity: 6
     Meta:
       Name: RoadSpline1
     Transform:
@@ -874,7 +904,7 @@ Entities:
     Prefab:
       AssetPath: assets\Prefabs\Road\Roadspline\RoadSpline.prefab
     Parent: -1
-  - Entity: 4
+  - Entity: 5
     Meta:
       Name: New Entity
     Transform:
@@ -903,8 +933,8 @@ Entities:
       ShapeParams:
         HalfExtent: [17.7, 90.8, 12.6]
         ConvexRadius: 0.05
-    Parent: 12
-  - Entity: 3
+    Parent: 13
+  - Entity: 4
     Meta:
       Name: New Entity
     Transform:
@@ -933,8 +963,8 @@ Entities:
       ShapeParams:
         HalfExtent: [19.8, 140.2, 16.9]
         ConvexRadius: 0.05
-    Parent: 12
-  - Entity: 2
+    Parent: 13
+  - Entity: 3
     Meta:
       Name: New Entity
     Transform:
@@ -963,23 +993,23 @@ Entities:
       ShapeParams:
         HalfExtent: [370.9, 1506.2, 336.1]
         ConvexRadius: 0.05
-    Parent: 21
-  - Entity: 1
+    Parent: 22
+  - Entity: 2
     Meta:
       Name: LoopingLight
     Transform:
-      Position: [-948.6242, 101.83432, 196.84204]
+      Position: [-12625.1875, 101.83432, 1097.5912]
       Rotation: [0, 0, 0, 1]
       Scale: [1, 1, 1]
     Light:
       Type: 1
       Color: [0.9159292, 0.6569814, 0.14590023]
-      Intensity: 7.5
+      Intensity: 18.7
       Params:
-        Radius: 10.7
-        Falloff: 1
+        Radius: 37.1
+        Falloff: 4.7
     Parent: -1
-  - Entity: 0
+  - Entity: 1
     Meta:
       Name: Tunnel
     Transform:
@@ -988,4 +1018,14 @@ Entities:
       Scale: [13.463198, 13.463198, 13.463198]
     Prefab:
       AssetPath: assets\Prefabs\Tunnel\Tunnel.prefab
+    Parent: -1
+  - Entity: 0
+    Meta:
+      Name: Speedometer
+    Transform:
+      Position: [-3.895461, 3.8009167, -0.84559345]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\Speedometer.prefab
     Parent: -1
