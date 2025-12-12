@@ -8,6 +8,7 @@
 #include "Frost/Scene/Components/RelativeView.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Renderer/Pipeline/JoltDebugRenderingPipeline.h"
+#include "Frost/Renderer/Frustum.h"
 
 using namespace Frost::Component;
 
@@ -58,6 +59,7 @@ namespace Frost
         std::sort(mainCameras.begin(), mainCameras.end(), sortCam);
 
         const float mainAspectRatio = (currentHeight > 0) ? (currentWidth / currentHeight) : 1.0f;
+
         for (const auto& camData : renderTargetCameras)
         {
             const auto& config = camData.camera->renderTargetConfig.value();
@@ -137,6 +139,66 @@ namespace Frost
             Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, mainCameraAspectRatio);
             Math::Matrix4x4 viewProjectionMatrix = viewMatrix * projectionMatrix;
 
+            if (camera.frustumCulling)
+            {
+                DirectX::XMMATRIX viewProj = Math::LoadMatrix(viewMatrix) * Math::LoadMatrix(projectionMatrix);
+                _frustum.Extract(viewProj, camera.frustumPadding);
+            }
+
+            // Light Culling
+            std::vector<std::pair<Component::Light, Component::WorldTransform>> visibleLights;
+            visibleLights.reserve(lightView.size_hint());
+
+            lightView.each(
+                [&](const Component::Light& light, const Component::WorldTransform& transform)
+                {
+                    bool isVisible = false;
+                    switch (light.GetType())
+                    {
+                        case Component::LightType::Directional:
+                        case Component::LightType::Ambiant:
+                            isVisible = true;
+                            break;
+                        case Component::LightType::Point:
+                        {
+                            auto* cfg = std::get_if<Component::LightPoint>(&light.config);
+                            BoundingBox lightBox;
+                            float r = cfg->radius;
+                            lightBox.min = { transform.position.x - r,
+                                             transform.position.y - r,
+                                             transform.position.z - r };
+                            lightBox.max = { transform.position.x + r,
+                                             transform.position.y + r,
+                                             transform.position.z + r };
+
+                            if (!camera.frustumCulling || _frustum.IsInside(lightBox))
+                                isVisible = true;
+                            break;
+                        }
+                        case Component::LightType::Spot:
+                        {
+                            auto* cfg = std::get_if<Component::LightSpot>(&light.config);
+                            BoundingBox lightBox;
+                            float r = cfg->range;
+                            lightBox.min = { transform.position.x - r,
+                                             transform.position.y - r,
+                                             transform.position.z - r };
+                            lightBox.max = { transform.position.x + r,
+                                             transform.position.y + r,
+                                             transform.position.z + r };
+
+                            if (!camera.frustumCulling || _frustum.IsInside(lightBox))
+                                isVisible = true;
+                            break;
+                        }
+                    }
+
+                    if (isVisible)
+                    {
+                        visibleLights.emplace_back(light, transform);
+                    }
+                });
+
             CommandList* commandList = _deferredRendering.GetCommandList();
             commandList->BeginRecording();
 
@@ -149,12 +211,6 @@ namespace Frost
 
             if (Debug::RendererConfig::display)
             {
-                if (camera.frustumCulling)
-                {
-                    DirectX::XMMATRIX viewProj = Math::LoadMatrix(viewMatrix) * Math::LoadMatrix(projectionMatrix);
-                    _frustum.Extract(viewProj, camera.frustumPadding);
-                }
-
                 // Apply post-processing effects pre-render
                 for (auto& effect : camera.postEffects)
                 {
@@ -181,7 +237,8 @@ namespace Frost
                     });
 
                 _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
-                _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+
+                _shadowPipeline.ShadowPass(visibleLights, camera, cameraTransform, camera.viewport);
                 _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
 
                 if (skyboxTexture)
@@ -199,7 +256,7 @@ namespace Frost
                 _deferredRendering.BeginFrame(
                     camera, cameraTransform, viewMatrix, projectionMatrix, mainRenderViewport);
                 _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
-                _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+                _shadowPipeline.ShadowPass(visibleLights, camera, cameraTransform, camera.viewport);
                 _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
             }
 
@@ -339,6 +396,58 @@ namespace Frost
         Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
         Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, aspectRatio);
 
+        // --- CULLING : Calcul du Frustum LOCAL ---
+        Frustum localFrustum;
+        if (camera.frustumCulling)
+        {
+            DirectX::XMMATRIX viewProj = Math::LoadMatrix(viewMatrix) * Math::LoadMatrix(projectionMatrix);
+            localFrustum.Extract(viewProj, camera.frustumPadding);
+        }
+
+        // --- CULLING : Filtrage des lumières pour cette caméra ---
+        std::vector<std::pair<Component::Light, Component::WorldTransform>> visibleLights;
+        auto lightView = scene.ViewActive<Light, WorldTransform>();
+
+        visibleLights.reserve(lightView.size_hint());
+        lightView.each(
+            [&](const Component::Light& light, const Component::WorldTransform& transform)
+            {
+                bool isVisible = false;
+                switch (light.GetType())
+                {
+                    case Component::LightType::Directional:
+                    case Component::LightType::Ambiant:
+                        isVisible = true;
+                        break;
+                    case Component::LightType::Point:
+                    {
+                        auto* cfg = std::get_if<Component::LightPoint>(&light.config);
+                        BoundingBox lightBox;
+                        float r = cfg->radius;
+                        lightBox.min = { transform.position.x - r, transform.position.y - r, transform.position.z - r };
+                        lightBox.max = { transform.position.x + r, transform.position.y + r, transform.position.z + r };
+
+                        if (!camera.frustumCulling || localFrustum.IsInside(lightBox))
+                            isVisible = true;
+                        break;
+                    }
+                    case Component::LightType::Spot:
+                    {
+                        auto* cfg = std::get_if<Component::LightSpot>(&light.config);
+                        BoundingBox lightBox;
+                        float r = cfg->range;
+                        lightBox.min = { transform.position.x - r, transform.position.y - r, transform.position.z - r };
+                        lightBox.max = { transform.position.x + r, transform.position.y + r, transform.position.z + r };
+
+                        if (!camera.frustumCulling || localFrustum.IsInside(lightBox))
+                            isVisible = true;
+                        break;
+                    }
+                }
+                if (isVisible)
+                    visibleLights.emplace_back(light, transform);
+            });
+
         CommandList* commandList = _deferredRendering.GetCommandList();
         commandList->BeginRecording();
 
@@ -355,7 +464,8 @@ namespace Frost
             });
 
         _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
-        _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+
+        _shadowPipeline.ShadowPass(visibleLights, camera, cameraTransform, camera.viewport);
         _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
 
         std::shared_ptr<Texture> skyboxTexture = nullptr;

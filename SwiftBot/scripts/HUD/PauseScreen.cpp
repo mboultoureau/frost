@@ -17,6 +17,7 @@ namespace GameLogic
         pauseLogoId = scene->CreateGameObject("Pause Logo");
         resumeButtonId = scene->CreateGameObject("Resume Button");
         resetButtonId = scene->CreateGameObject("Reset Button");
+        menuButtonId = scene->CreateGameObject("Menu Button");
 
         float buttonHeight = 0.25f;
         float buttonWidth = 0.2f;
@@ -28,6 +29,7 @@ namespace GameLogic
         Viewport textViewport = { centerlogoX, 0.0f, buttonWidth, logoHeight };
         Viewport resumeViewport = { centerbuttonX, textViewport.y + logoHeight, buttonWidth, buttonHeight };
         Viewport resetViewport = { centerbuttonX, resumeViewport.y + buttonHeight, buttonWidth, buttonHeight };
+        Viewport menuViewport = { 0.4, 0.8, 0.2, 0.25 };
 
         // Pause Logo
         TextureConfig logoConfig = { .textureType = TextureType::HUD, .path = pausePath };
@@ -74,6 +76,25 @@ namespace GameLogic
         resetElement.viewport = resetViewport;
         resetElement.priority = 1;
 
+        // Exit Button
+        TextureConfig exitIdleConfig = { .textureType = TextureType::HUD, .path = idleMenuPath };
+        auto exitIdleTexture = Texture::Create(exitIdleConfig);
+        TextureConfig exitHoverConfig = { .textureType = TextureType::HUD, .path = hoverMenuPath };
+        auto exitHoverTexture = Texture::Create(exitHoverConfig);
+        TextureConfig exitPressedConfig = { .textureType = TextureType::HUD, .path = pressedMenuPath };
+        auto exitPressedTexture = Texture::Create(exitPressedConfig);
+
+        auto& exitElement = menuButtonId.AddComponent<UIElement>(
+            UIElement{ .content = UIButton{ .idleTexture = exitIdleTexture,
+                                            .hoverTexture = exitHoverTexture,
+                                            .pressedTexture = exitPressedTexture,
+                                            .idleTextureFilepath = idleMenuPath,
+                                            .hoverTextureFilepath = hoverMenuPath,
+                                            .pressedTextureFilepath = pressedMenuPath,
+                                            .onClick = [this]() { OnMenuButtonPress(); } } });
+        exitElement.viewport = menuViewport;
+        exitElement.priority = 1;
+
         HideMenu();
     }
 
@@ -83,6 +104,7 @@ namespace GameLogic
         scene->DestroyGameObject(pauseLogoId);
         scene->DestroyGameObject(resumeButtonId);
         scene->DestroyGameObject(resetButtonId);
+        scene->DestroyGameObject(menuButtonId);
     }
 
     void PauseScreen::OnUpdate(float deltaTime)
@@ -129,6 +151,7 @@ namespace GameLogic
         pauseLogoId.SetActive(true);
         resumeButtonId.SetActive(true);
         resetButtonId.SetActive(true);
+        menuButtonId.SetActive(true);
     }
 
     void PauseScreen::HideMenu()
@@ -136,6 +159,7 @@ namespace GameLogic
         pauseLogoId.SetActive(false);
         resumeButtonId.SetActive(false);
         resetButtonId.SetActive(false);
+        menuButtonId.SetActive(false);
     }
 
     void PauseScreen::OnUnpauseButtonPress()
@@ -149,5 +173,10 @@ namespace GameLogic
     {
         EventManager::Emit<Frost::ResetEvent>();
         _resetButtonReleased = false;
+    }
+
+    void PauseScreen::OnMenuButtonPress()
+    {
+        EventManager::Emit<Frost::LoadLevelEvent>("assets/Scenes/MainMenu/MainMenu.bin");
     }
 } // namespace GameLogic

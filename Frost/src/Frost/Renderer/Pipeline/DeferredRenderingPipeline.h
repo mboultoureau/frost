@@ -6,6 +6,7 @@
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Utils/Math/Matrix.h"
+#include "Frost/Renderer/Frustum.h"
 
 #include <memory>
 #include <unordered_map>

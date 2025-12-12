@@ -12,7 +12,7 @@ Entities:
       Type: 1
       Params:
         Size: 1
-        Segments: [32, 32, 32]
+        Segments: [4, 1, 4]
         Bevel: 0
     RigidBody:
       MotionType: 0

@@ -383,9 +383,13 @@ namespace Frost
 
         _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
 
+        Frustum frustum{};
+        DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
+
         for (const auto& mesh : model.GetMeshes())
         {
-            if (!mesh.enabled)
+            BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
+            if (!frustum.IsInside(worldBox))
             {
                 continue;
             }

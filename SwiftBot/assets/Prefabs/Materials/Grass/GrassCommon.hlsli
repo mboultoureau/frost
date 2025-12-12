@@ -2,6 +2,8 @@ cbuffer PerFrame : register(b0)
 {
     matrix ViewMatrix;
     matrix ProjectionMatrix;
+    float3 CameraPosition;
+    float Padding2;
 }
 
 cbuffer PerObject : register(b1)
@@ -15,23 +17,19 @@ cbuffer MaterialParams : register(b3)
     float4 BottomColor;
     
     float Time;
-    
     float BladeWidth;
-    float BladeWidthRandom;
     float BladeHeight;
-    float BladeHeightRandom;
+    float GrassDensity;
     
     float BladeForward;
     float BladeCurve;
     float BendRotationRandom;
+    float LodNear;
     
-    float TessellationFactor;
-    
+    float LodFar;
     float WindStrength;
-    
-    float3 CameraPosition;
-    
-    float3 padding;
+    float ParentScale;
+    float Padding;
 }
 
 struct VSInput

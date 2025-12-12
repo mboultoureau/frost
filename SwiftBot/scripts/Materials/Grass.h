@@ -12,17 +12,18 @@ namespace GameLogic
 
         float Time;
         float BladeWidth;
-        float BladeWidthRandom;
         float BladeHeight;
+        float GrassDensity;
 
-        float BladeHeightRandom;
         float BladeForward;
         float BladeCurve;
         float BendRotationRandom;
+        float LodNear;
 
-        float TessellationFactor;
+        float LodFar;
         float WindStrength;
-        float Padding[2];
+        float ParentScale;
+        float Padding;
     };
 
     class Grass : public Frost::Scripting::Script

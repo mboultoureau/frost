@@ -3,7 +3,7 @@
 HS_ConstantData HS_PatchConstants(InputPatch<HS_Input, 3> patch, uint PatchID : SV_PrimitiveID)
 {
     HS_ConstantData pc;
-
+    
     float3 patchCenter = (patch[0].WorldPos + patch[1].WorldPos + patch[2].WorldPos) / 3.0f;
     
     float dist = distance(CameraPosition, patchCenter);

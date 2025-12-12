@@ -25,11 +25,17 @@ namespace GameLogic
         const std::string pressedResetPath = "assets/HUD/reload-press.png";
         Frost::GameObject resetButtonId;
 
+        const std::string idleMenuPath = "assets/HUD/menu-idle.png";
+        const std::string hoverMenuPath = "assets/HUD/menu-hover.png";
+        const std::string pressedMenuPath = "assets/HUD/menu-press.png";
+        Frost::GameObject menuButtonId;
+
         void ProcessInput();
         void ShowMenu();
         void HideMenu();
         void OnUnpauseButtonPress();
         void OnResetButtonPress();
+        void OnMenuButtonPress();
 
         bool _resetButtonReleased = true;
         bool _pauseButtonReleased = true;

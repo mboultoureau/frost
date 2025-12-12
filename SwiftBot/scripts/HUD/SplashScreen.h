@@ -28,17 +28,23 @@ namespace GameLogic
         const std::string hoverBackPath = "assets/HUD/back-hover.png";
         const std::string pressedBackPath = "assets/HUD/back-press.png";
 
+        const std::string idleExitPath = "assets/HUD/exit-idle.png";
+        const std::string hoverExitPath = "assets/HUD/exit-hover.png";
+        const std::string pressedExitPath = "assets/HUD/exit-press.png";
+
         Frost::GameObject creditsText1;
         Frost::GameObject creditsText2;
         Frost::GameObject creditsButtonId;
         Frost::GameObject startButtonId;
         Frost::GameObject backButtonId;
+        Frost::GameObject exitButtonId;
 
         void ShowCredits();
         void HideCredits();
         void ShowMenu();
         void HideMenu();
         void OnStartButtonPress();
+        void OnExitButtonPress();
         void OnCreditsButtonPress();
         void OnBackButtonPress();
     };

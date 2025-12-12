@@ -23,6 +23,7 @@ namespace Frost::Component
         float maxHeight = 2.0f;
         uint32_t segmentsWidth = 64;
         uint32_t segmentsDepth = 64;
+        uint32_t chunkSize = 32;
     };
 
     struct MeshSourceFile

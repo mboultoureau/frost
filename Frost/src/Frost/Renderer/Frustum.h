@@ -15,6 +15,6 @@ namespace Frost
         Plane planes[6];
 
         void Extract(const DirectX::XMMATRIX& viewProj, float margin);
-        bool IsInside(const BoundingBox& box);
+        bool IsInside(const BoundingBox& box) const;
     };
 } // namespace Frost

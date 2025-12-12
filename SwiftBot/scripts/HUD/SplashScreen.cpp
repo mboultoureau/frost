@@ -16,6 +16,7 @@ namespace GameLogic
         backButtonId = scene->CreateGameObject("Back Button");
         creditsText1 = scene->CreateGameObject("Text");
         creditsText2 = scene->CreateGameObject("Text");
+        exitButtonId = scene->CreateGameObject("Exit Button");
 
         Viewport imageViewport;
         imageViewport.height = 1.0f;
@@ -62,10 +63,38 @@ namespace GameLogic
         Viewport buttonPlayViewport;
         buttonPlayViewport.height = 0.25f;
         buttonPlayViewport.width = 0.2f;
-        buttonPlayViewport.x = 0.4f;
-        buttonPlayViewport.y = 0.75f;
+        buttonPlayViewport.x = 0.42f;
+        buttonPlayViewport.y = 0.74f;
 
         startButtonElement.viewport = buttonPlayViewport;
+
+        // Exit button
+        config = { .textureType = TextureType::HUD, .path = idleExitPath };
+        auto exitIdleTexture = Texture::Create(config);
+
+        config = { .textureType = TextureType::HUD, .path = hoverExitPath };
+        auto exitHoverTexture = Texture::Create(config);
+
+        config = { .textureType = TextureType::HUD, .path = pressedExitPath };
+        auto exitPressedTexture = Texture::Create(config);
+
+        auto& exitButtonElement = exitButtonId.AddComponent<UIElement>(
+            UIElement{ .content = UIButton{ .idleTexture = exitIdleTexture,
+                                            .hoverTexture = exitHoverTexture,
+                                            .pressedTexture = exitPressedTexture,
+                                            .idleTextureFilepath = idleExitPath,
+                                            .hoverTextureFilepath = hoverExitPath,
+                                            .pressedTextureFilepath = pressedExitPath,
+                                            .onClick = [this]() { OnExitButtonPress(); } } });
+        exitButtonElement.priority = 1;
+
+        Viewport buttonExitViewport;
+        buttonExitViewport.height = 0.25f;
+        buttonExitViewport.width = 0.2f;
+        buttonExitViewport.x = 0.02f;
+        buttonExitViewport.y = 0.82f;
+
+        exitButtonElement.viewport = buttonExitViewport;
 
         // Credits
         config = { .textureType = TextureType::HUD, .path = idleCreditsPath };
@@ -90,8 +119,8 @@ namespace GameLogic
         Viewport buttonCreditsViewport;
         buttonCreditsViewport.height = 0.25f;
         buttonCreditsViewport.width = 0.18f;
-        buttonCreditsViewport.x = 0.75f;
-        buttonCreditsViewport.y = 0.08f;
+        buttonCreditsViewport.x = 0.82f;
+        buttonCreditsViewport.y = 0.82f;
         creditsElement.viewport = buttonCreditsViewport;
 
         // Back
@@ -168,6 +197,7 @@ namespace GameLogic
         scene->DestroyGameObject(startButtonId);
         scene->DestroyGameObject(creditsButtonId);
         scene->DestroyGameObject(backButtonId);
+        scene->DestroyGameObject(exitButtonId);
 
         scene->DestroyGameObject(creditsText1);
         scene->DestroyGameObject(creditsText2);
@@ -177,6 +207,11 @@ namespace GameLogic
     {
         EventManager::Emit<Frost::LoadLevelEvent>("assets/Scenes/Island/Island.bin");
         HideMenu();
+    }
+
+    void SplashScreen::OnExitButtonPress()
+    {
+        EventManager::Emit<Frost::WindowCloseEvent>();
     }
 
     void SplashScreen::OnBackButtonPress()
@@ -211,6 +246,7 @@ namespace GameLogic
         titleImageId.SetActive(true);
         startButtonId.SetActive(true);
         creditsButtonId.SetActive(true);
+        exitButtonId.SetActive(true);
     }
 
     void SplashScreen::HideMenu()
@@ -218,5 +254,6 @@ namespace GameLogic
         titleImageId.SetActive(false);
         startButtonId.SetActive(false);
         creditsButtonId.SetActive(false);
+        exitButtonId.SetActive(false);
     }
 } // namespace GameLogic

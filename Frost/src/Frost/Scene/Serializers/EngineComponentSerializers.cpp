@@ -170,6 +170,7 @@ namespace Frost
                     out << YAML::Key << "MaxHeight" << YAML::Value << p->maxHeight;
                     out << YAML::Key << "SegmentWidth" << YAML::Value << p->segmentsWidth;
                     out << YAML::Key << "SegmentDepth" << YAML::Value << p->segmentsDepth;
+                    out << YAML::Key << "ChunkSize" << YAML::Value << p->chunkSize;
                 }
 
                 out << YAML::EndMap;
@@ -233,11 +234,9 @@ namespace Frost
                         hm.depth = paramsNode["Depth"].as<float>();
                         hm.minHeight = paramsNode["MinHeight"].as<float>();
                         hm.maxHeight = paramsNode["MaxHeight"].as<float>();
-
-                        if (paramsNode["SegmentWidth"])
-                            hm.segmentsWidth = paramsNode["SegmentWidth"].as<uint32_t>();
-                        if (paramsNode["SegmentDepth"])
-                            hm.segmentsDepth = paramsNode["SegmentDepth"].as<uint32_t>();
+                        hm.segmentsWidth = paramsNode["SegmentWidth"].as<uint32_t>();
+                        hm.segmentsDepth = paramsNode["SegmentDepth"].as<uint32_t>();
+                        hm.chunkSize = paramsNode["ChunkSize"].as<uint32_t>(32);
 
                         mesh.SetMeshConfig(hm);
                         break;
@@ -289,6 +288,7 @@ namespace Frost
                     out.write((char*)&p->maxHeight, sizeof(float));
                     out.write((char*)&p->segmentsWidth, sizeof(uint32_t));
                     out.write((char*)&p->segmentsDepth, sizeof(uint32_t));
+                    out.write((char*)&p->chunkSize, sizeof(uint32_t));
                 }
             },
             // Read Binary
@@ -358,6 +358,7 @@ namespace Frost
                         in.read((char*)&hm.maxHeight, sizeof(float));
                         in.read((char*)&hm.segmentsWidth, sizeof(uint32_t));
                         in.read((char*)&hm.segmentsDepth, sizeof(uint32_t));
+                        in.read((char*)&hm.chunkSize, sizeof(uint32_t));
                         mesh.SetMeshConfig(hm);
                         break;
                     }

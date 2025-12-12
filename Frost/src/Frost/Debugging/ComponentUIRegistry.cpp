@@ -405,6 +405,11 @@ namespace Frost
                             configChanged = true;
                         }
 
+                        if (ImGui::DragInt("Chunk Size", (int*)&p->chunkSize, 1, 8, 256))
+                        {
+                            configChanged = true;
+                        }
+
                         if (ImGui::IsItemHovered())
                             ImGui::SetTooltip("Higher values = more vertices (slower)");
                     }

@@ -2,6 +2,9 @@
 #include "Frost/Asset/ModelFactory.h"
 #include "Frost/Renderer/Shader.h"
 
+#undef max
+#undef min
+
 using namespace Frost;
 using namespace Frost::Component;
 
@@ -35,17 +38,21 @@ namespace GameLogic
         grassMat.topology = Material::Topology::PATCH_3;
         grassMat.backFaceCulling = false;
 
-        _params.Time = 0.0f;
         _params.TopColor = DirectX::XMFLOAT4(0.4f, 0.8f, 0.3f, 1.0f);
         _params.BottomColor = DirectX::XMFLOAT4(0.2f, 0.4f, 0.1f, 1.0f);
+
+        _params.Time = 0.0f;
         _params.BladeWidth = 0.25f;
-        _params.BladeWidthRandom = 0.02f;
         _params.BladeHeight = 1.5f;
-        _params.BladeHeightRandom = 0.3f;
         _params.BladeForward = 0.38f;
+
         _params.BladeCurve = 2.0f;
         _params.BendRotationRandom = 0.2f;
-        _params.TessellationFactor = 32.0f;
+
+        _params.GrassDensity = 50.0f;
+        _params.LodNear = 2.0f;
+        _params.LodFar = 50.0f;
+
         _params.WindStrength = 1.0f;
 
         std::vector<uint8_t> paramData(sizeof(GrassMaterialParameters));
@@ -66,6 +73,15 @@ namespace GameLogic
     {
         _params.Time += deltaTime;
 
+        float currentScale = 1.0f;
+        auto parent = GetGameObject().GetParent();
+        if (parent && parent.HasComponent<Transform>())
+        {
+            auto scale = parent.GetComponent<Transform>().scale;
+            currentScale = std::max(scale.x, scale.z);
+        }
+        _params.ParentScale = currentScale;
+
         if (GetGameObject().HasComponent<StaticMesh>())
         {
             auto& mesh = GetGameObject().GetComponent<StaticMesh>();
@@ -73,7 +89,6 @@ namespace GameLogic
             {
                 std::vector<uint8_t> paramData(sizeof(GrassMaterialParameters));
                 memcpy(paramData.data(), &_params, sizeof(GrassMaterialParameters));
-
                 mesh.GetModel()->GetMaterials()[0].parameters = paramData;
             }
         }

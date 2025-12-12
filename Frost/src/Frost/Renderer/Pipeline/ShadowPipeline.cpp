@@ -43,9 +43,9 @@ namespace Frost
         Math::Vector3 Direction;
         float Intensity;
         Math::Vector3 Color;
-        float CascadeNear; // Add these
+        float CascadeNear;
         Math::Vector3 CameraFwd;
-        float CascadeFar; // Add these
+        float CascadeFar;
         Math::Vector3 LightPosition;
         float Padding[2];
     };
@@ -144,13 +144,12 @@ namespace Frost
         _spotLightVertexShader = Shader::Create(vsDesc);
         _spotLightPixelShader = Shader::Create(psDesc);
 
-        /*--------*/
-
         // Init light
         psDesc = { .type = ShaderType::Pixel,
                    .debugName = "PS_SpotLight",
                    .filePath = "../Frost/resources/shaders/Light/PS_InitLight.hlsl" };
         _initLightPixelShader = Shader::Create(psDesc);
+
         // Final light
         vsDesc = { .type = ShaderType::Vertex,
                    .debugName = "VS_SpotLight",
@@ -167,7 +166,6 @@ namespace Frost
         constexpr size_t maxLightDataSize = std::max(
             { sizeof(DirectionalLightData), sizeof(PointLightData), sizeof(SpotLightData), sizeof(AmbiantLightData) });
 
-        // Shaders
         ShaderDesc vsDesc = { .type = ShaderType::Vertex,
                               .debugName = "VS_Shadow",
                               .filePath = "../Frost/resources/shaders/VS_Shadow.hlsl" };
@@ -179,7 +177,6 @@ namespace Frost
 
         InitLightShaders();
 
-        // Constant Buffer
         auto* renderer = RendererAPI::GetRenderer();
         _vsShadowConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER,
                                                                   .size = sizeof(VS_ShadowConstants),
@@ -191,7 +188,6 @@ namespace Frost
                                                                 .dynamic = true,
                                                                 .debugName = "VS_PS_LightPassBuffer" });
 
-        // Input Layout
         const uint32_t stride = sizeof(Math::Vector3);
         InputLayout::VertexAttributeArray attributes = { { .name = "POSITION",
                                                            .format = Format::RGB32_FLOAT,
@@ -202,7 +198,6 @@ namespace Frost
                                                            .isInstanced = false } };
         _shadowInputLayout = std::make_unique<InputLayoutDX11>(attributes, *_shadowVertexShader);
 
-        // ShadowSampler
         SamplerConfig shadowSamplerConfig = { .filter = Filter::MIN_MAG_MIP_LINEAR,
                                               .addressU = AddressMode::CLAMP,
                                               .addressV = AddressMode::CLAMP,
@@ -210,7 +205,6 @@ namespace Frost
                                               .comparisonFunction = ComparisonFunction::LESS_EQUAL };
         _shadowSampler = std::make_unique<SamplerDX11>(shadowSamplerConfig);
 
-        // gBufferSampler
         SamplerConfig gBufferSamplerConfig = { .filter = Filter::MIN_MAG_MIP_POINT,
                                                .addressU = AddressMode::CLAMP,
                                                .addressV = AddressMode::CLAMP,
@@ -220,36 +214,24 @@ namespace Frost
 
     void ShadowPipeline::Shutdown()
     {
-        // buffers
         _vsShadowConstants.reset();
         _lightPassBuffer.reset();
-
-        // samplers
         _shadowSampler.reset();
         _gBufferSampler.reset();
-
-        // shaders
         _shadowVertexShader.reset();
         _shadowPixelShader.reset();
-
         _pointLightVertexShader.reset();
         _pointLightPixelShader.reset();
-
         _directionalLightVertexShader.reset();
         _directionalLightPixelShader.reset();
-
         _ambiantLightVertexShader.reset();
         _ambiantLightPixelShader.reset();
-
         _spotLightVertexShader.reset();
         _spotLightPixelShader.reset();
-
         _initLightPixelShader.reset();
-
         _finalLightVertexShader.reset();
         _finalLightPixelShader.reset();
 
-        // textures
         for_each(
             _shadowMaps.begin(), _shadowMaps.end(), [](auto& shadowPair) { shadowPair.second.shadowTexture.reset(); });
         _shadowMaps.clear();
@@ -258,11 +240,9 @@ namespace Frost
         _normalTexture.reset();
         _worldPositionTexture.reset();
         _materialTexture.reset();
-
         _luminanceTexture1.reset();
         _luminanceTexture2.reset();
         _finalLitTexture.reset();
-
         _shadowInputLayout.reset();
         _commandList.reset();
     }
@@ -276,7 +256,6 @@ namespace Frost
         _normalTexture.reset();
         _worldPositionTexture.reset();
         _materialTexture.reset();
-
         _luminanceTexture1.reset();
         _luminanceTexture2.reset();
         _finalLitTexture.reset();
@@ -317,7 +296,6 @@ namespace Frost
                                                            sizeof(SpotLightData),
                                                            sizeof(AmbiantLightData) });
 
-            // Constant Buffer
             auto* renderer = RendererAPI::GetRenderer();
             _vsShadowConstants = renderer->CreateBuffer(BufferConfig{ .usage = BufferUsage::CONSTANT_BUFFER,
                                                                       .size = sizeof(VS_ShadowConstants),
@@ -346,7 +324,6 @@ namespace Frost
     void ShadowPipeline::MakePointDirectionalLight(Math::EulerAngles rot,
                                                    std::pair<Component::Light, Component::WorldTransform> lightPair)
     {
-        // front
         std::pair<Component::Light, Component::WorldTransform> newlightPair = { Component::Light(),
                                                                                 Component::WorldTransform() };
         newlightPair.first = lightPair.first;
@@ -387,9 +364,10 @@ namespace Frost
         int i = 0;
         for (; i < lightPairs.size(); i++)
         {
-            // Todo : si point light, générer 6 point lights directionelles
             if (lightPairs[i].first.GetType() == Component::LightType::Point)
             {
+                // Note : Optimisation possible ici -> Ne générer que les faces visibles si on avait un système de
+                // culling avancé
                 MakePointDirectionalLight(Math::EulerAngles(0, 0, 0), lightPairs[i]);
                 MakePointDirectionalLight(Math::EulerAngles(0.0_deg, 0.0_deg, 90.0_deg), lightPairs[i]);
                 MakePointDirectionalLight(Math::EulerAngles(0.0_deg, 0.0_deg, -90.0_deg), lightPairs[i]);
@@ -401,7 +379,6 @@ namespace Frost
             {
                 float dist = camera.farClip - camera.nearClip;
 
-                // Create 3 cascades for directional light
                 MakeScaledDirectionalLight(lightPairs[i],
                                            camera.nearClip,
                                            camera.nearClip + dist * 0.1f,
@@ -424,10 +401,8 @@ namespace Frost
                 _virtualLightPairs.push_back(lightPairs[i]);
         }
 
-        // Now compute shadow maps with UNIQUE IDs for each virtual light
         for (int j = 0; j < _virtualLightPairs.size(); j++)
         {
-            // Use j as the unique ID for each virtual light
             if (_virtualLightPairs[j].first.GetType() == Component::LightType::Directional)
             {
                 ComputeDirectionalShadowMap(LightObject{ j, _virtualLightPairs[j].second, _virtualLightPairs[j].first },
@@ -520,7 +495,6 @@ namespace Frost
         }
         else if (it->second.shadowTexture == nullptr)
         {
-            // Recreate texture if it was deleted
             TextureConfig depthConfig = { .format = Format::R24G8_TYPELESS,
                                           .width = static_cast<uint32_t>(_shadowResolution),
                                           .height = static_cast<uint32_t>(_shadowResolution),
@@ -533,8 +507,6 @@ namespace Frost
         ShadowData& shadowData = it->second;
 
         Vector3 up = Vector3(0, 1, 0);
-
-        // Avoid colinearity
         if (fabs(transform.GetForward().y) > 0.99f)
             up = Vector3(1, 0, 0);
 
@@ -544,21 +516,19 @@ namespace Frost
         if (light.GetType() == Component::LightType::Spot)
         {
             auto* cfg = std::get_if<Component::LightSpot>(&light.config);
-
             lightProj =
                 Math::Matrix4x4::CreatePerspectiveFovLH(cfg->outerConeAngle.value() * 2.f, 1.f, 0.1f, cfg->range);
         }
         else if (light.GetType() == Component::LightType::Point)
         {
             auto* cfg = std::get_if<Component::LightPoint>(&light.config);
-
-            lightProj = Math::Matrix4x4::CreatePerspectiveFovLH(DirectX::XM_PIDIV2, // champ de vision 90° par face
-                                                                1.f,
-                                                                0.1f,
-                                                                cfg->radius);
+            lightProj = Math::Matrix4x4::CreatePerspectiveFovLH(DirectX::XM_PIDIV2, 1.f, 0.1f, cfg->radius);
         }
 
         shadowData.lightViewProj = lightView * lightProj;
+
+        // --- OPTIMISATION : Calcul du Frustum de la Lumière ---
+        shadowData.lightFrustum.Extract(LoadMatrix(shadowData.lightViewProj), 0.0f);
 
         Texture* depthPtr = shadowData.shadowTexture.get();
         _commandList->SetRenderTargets(0, nullptr, depthPtr);
@@ -569,17 +539,20 @@ namespace Frost
         _commandList->UnbindShader(ShaderType::Hull);
         _commandList->UnbindShader(ShaderType::Domain);
         _commandList->UnbindShader(ShaderType::Pixel);
-
         _commandList->SetViewport(0, 0, _shadowResolution, _shadowResolution, 0.f, 1.f);
 
         auto meshView = _scene->ViewActive<Component::StaticMesh, Component::WorldTransform>();
+
+        // On itère sur tous les objets, mais DrawDepthOnly fera le tri fin
         meshView.each(
             [&](const Component::StaticMesh& staticMesh, const Component::WorldTransform& meshTransform)
             {
-                if (staticMesh.GetModel())
+                if (staticMesh.GetModel() && staticMesh.GetModel()->IsLoaded())
                 {
                     Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                    DrawDepthOnly(_commandList.get(), staticMesh, worldMatrix, shadowData.lightViewProj);
+                    // On passe le frustum pour le culling
+                    DrawDepthOnly(
+                        _commandList.get(), staticMesh, worldMatrix, shadowData.lightViewProj, shadowData.lightFrustum);
                 }
             });
     }
@@ -622,15 +595,15 @@ namespace Frost
             Math::Matrix4x4::CreateLookToLH(transform.position, transform.GetForward(), Math::Vector3(0, 1, 0));
 
         float orthoWidth = cfg->range;
-
-        // Use large near/far range to capture all shadow casters
-        // The cascade selection happens in the shader based on camera depth
         float orthoNear = 0.1f;
-        float orthoFar = cfg->range * 10.0f; // Large enough to capture everything
+        float orthoFar = cfg->range * 10.0f;
 
         auto lightProj = Math::Matrix4x4::CreateOrthographicLH(orthoWidth, orthoWidth, orthoNear, orthoFar);
 
         shadowData.lightViewProj = lightView * lightProj;
+
+        // --- OPTIMISATION : Calcul du Frustum Orthographique ---
+        shadowData.lightFrustum.Extract(LoadMatrix(shadowData.lightViewProj), 0.0f);
 
         Texture* depthPtr = shadowData.shadowTexture.get();
         _commandList->SetRenderTargets(0, nullptr, depthPtr);
@@ -641,17 +614,17 @@ namespace Frost
         _commandList->UnbindShader(ShaderType::Hull);
         _commandList->UnbindShader(ShaderType::Domain);
         _commandList->UnbindShader(ShaderType::Pixel);
-
         _commandList->SetViewport(0, 0, _shadowResolution, _shadowResolution, 0.0f, 1.0f);
 
         auto meshView = _scene->ViewActive<Component::StaticMesh, Component::WorldTransform>();
         meshView.each(
             [&](const Component::StaticMesh& staticMesh, const Component::WorldTransform& meshTransform)
             {
-                if (staticMesh.GetModel())
+                if (staticMesh.GetModel() && staticMesh.GetModel()->IsLoaded())
                 {
                     Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                    DrawDepthOnly(_commandList.get(), staticMesh, worldMatrix, shadowData.lightViewProj);
+                    DrawDepthOnly(
+                        _commandList.get(), staticMesh, worldMatrix, shadowData.lightViewProj, shadowData.lightFrustum);
                 }
             });
     }
@@ -664,7 +637,6 @@ namespace Frost
     {
         using namespace JPH;
 
-        // Compute the 8 corners of the camera frustum slice
         float nearHeight = 2.0f * std::tan(cameraFOV / 2.0f) * cameraNear;
         float nearWidth = nearHeight;
         float farHeight = 2.0f * std::tan(cameraFOV / 2.0f) * cameraFar;
@@ -675,23 +647,18 @@ namespace Frost
         Vec3 cameraUp = vector_cast<Vec3>(cameraTransform.GetUp());
         Vec3 cameraPos = vector_cast<Vec3>(cameraTransform.position);
 
-        // 8 frustum corners in world space
         Vec3 nearCenter = cameraPos + cameraForward * cameraNear;
         Vec3 farCenter = cameraPos + cameraForward * cameraFar;
 
-        std::vector<Vec3> frustumCorners = { // Near plane
-                                             nearCenter + cameraUp * (nearHeight / 2) - cameraRight * (nearWidth / 2),
+        std::vector<Vec3> frustumCorners = { nearCenter + cameraUp * (nearHeight / 2) - cameraRight * (nearWidth / 2),
                                              nearCenter + cameraUp * (nearHeight / 2) + cameraRight * (nearWidth / 2),
                                              nearCenter - cameraUp * (nearHeight / 2) - cameraRight * (nearWidth / 2),
                                              nearCenter - cameraUp * (nearHeight / 2) + cameraRight * (nearWidth / 2),
-                                             // Far plane
                                              farCenter + cameraUp * (farHeight / 2) - cameraRight * (farWidth / 2),
                                              farCenter + cameraUp * (farHeight / 2) + cameraRight * (farWidth / 2),
                                              farCenter - cameraUp * (farHeight / 2) - cameraRight * (farWidth / 2),
-                                             farCenter - cameraUp * (farHeight / 2) + cameraRight * (farWidth / 2)
-        };
+                                             farCenter - cameraUp * (farHeight / 2) + cameraRight * (farWidth / 2) };
 
-        // Create light space basis
         Vec3 lightForward = vector_cast<Vec3>(sunTransform.GetForward());
         Vec3 lightUp = Vec3(0, 1, 0);
 
@@ -701,7 +668,6 @@ namespace Frost
         Vec3 lightRight = lightUp.Cross(lightForward).Normalized();
         lightUp = lightForward.Cross(lightRight).Normalized();
 
-        // Transform frustum corners to light space and find bounds
         float minX = FLT_MAX, maxX = -FLT_MAX;
         float minY = FLT_MAX, maxY = -FLT_MAX;
         float minZ = FLT_MAX, maxZ = -FLT_MAX;
@@ -721,23 +687,17 @@ namespace Frost
             maxZ = std::max(maxZ, lightSpaceCorner.GetZ());
         }
 
-        // Compute center in light space
         Vec3 centerLightSpace = Vec3((minX + maxX) / 2.0f, (minY + maxY) / 2.0f, (minZ + maxZ) / 2.0f);
-
-        // Transform back to world space
         Vec3 frustumCenter = lightRight * centerLightSpace.GetX() + lightUp * centerLightSpace.GetY() +
                              lightForward * centerLightSpace.GetZ();
 
-        // Position the light BEHIND the frustum center along the light direction
-        // This ensures consistent positioning regardless of camera orientation
         float depthRange = maxZ - minZ;
-        float shadowDistance = depthRange * 2.0f; // Distance to place light behind frustum
+        float shadowDistance = depthRange * 2.0f;
 
         Vec3 sunPos = frustumCenter - lightForward * shadowDistance;
 
-        // Compute ortho size
         float orthoWidth = std::max(maxX - minX, maxY - minY);
-        orthoWidth *= 1.2f; // Add padding
+        orthoWidth *= 1.2f;
 
         DirectionalParams d;
         d.orthoSize = orthoWidth;
@@ -749,35 +709,56 @@ namespace Frost
     void ShadowPipeline::DrawDepthOnly(CommandList* cmd,
                                        const Component::StaticMesh& staticMesh,
                                        const Math::Matrix4x4& worldMatrix,
-                                       const Math::Matrix4x4& _currentLightViewProj)
+                                       const Math::Matrix4x4& _currentLightViewProj,
+                                       const Frustum& lightFrustum)
     {
         if (!staticMesh.GetModel()->IsLoaded())
             return;
 
-        VS_ShadowConstants vsData;
-        vsData.World = LoadMatrix(Math::Matrix4x4::CreateTranspose(worldMatrix));
-        vsData.LightViewProj = LoadMatrix(Math::Matrix4x4::CreateTranspose(_currentLightViewProj));
-        _vsShadowConstants->UpdateData(cmd, &vsData, sizeof(vsData));
+        bool isFirstDraw = true;
 
-        cmd->SetConstantBuffer(_vsShadowConstants.get(), 0);
+        // 1. Matrice pour le CPU (Calcul de BoundingBox) -> NON TRANSPOSÉE
+        DirectX::XMMATRIX matWorldCPU = LoadMatrix(worldMatrix);
 
-        cmd->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-        cmd->SetShader(_shadowVertexShader.get());
-        _commandList->UnbindShader(ShaderType::Geometry);
-        _commandList->UnbindShader(ShaderType::Hull);
-        _commandList->UnbindShader(ShaderType::Domain);
-        cmd->UnbindShader(ShaderType::Pixel);
-        cmd->SetInputLayout(_shadowInputLayout.get());
-        cmd->SetRasterizerState(RasterizerMode::SolidCullBack);
+        // 2. Matrice pour le GPU (Constant Buffer) -> TRANSPOSÉE
+        DirectX::XMMATRIX matWorldGPU = LoadMatrix(Math::Matrix4x4::CreateTranspose(worldMatrix));
+
+        // Optim: On prépare la matrice ViewProj GPU une seule fois
+        DirectX::XMMATRIX lightViewProjGPU = LoadMatrix(Math::Matrix4x4::CreateTranspose(_currentLightViewProj));
 
         for (const auto& mesh : staticMesh.GetModel()->GetMeshes())
         {
-            // Buffers
-            cmd->SetVertexBuffer(mesh.GetVertexBuffer(), mesh.GetVertexStride(), 0);
-            cmd->SetIndexBuffer(mesh.GetIndexBuffer(), 0);
+            // UTILISER LA MATRICE CPU ICI
+            BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorldCPU);
 
-            // Draw
-            cmd->DrawIndexed(mesh.GetIndexCount(), 0, 0);
+            if (lightFrustum.IsInside(worldBox))
+            {
+                if (isFirstDraw)
+                {
+                    VS_ShadowConstants vsData;
+                    vsData.World = matWorldGPU;
+                    vsData.LightViewProj = lightViewProjGPU;
+
+                    _vsShadowConstants->UpdateData(cmd, &vsData, sizeof(vsData));
+                    cmd->SetConstantBuffer(_vsShadowConstants.get(), 0);
+
+                    // Setup pipeline state (inchangé)
+                    cmd->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+                    cmd->SetShader(_shadowVertexShader.get());
+                    _commandList->UnbindShader(ShaderType::Geometry);
+                    _commandList->UnbindShader(ShaderType::Hull);
+                    _commandList->UnbindShader(ShaderType::Domain);
+                    cmd->UnbindShader(ShaderType::Pixel);
+                    cmd->SetInputLayout(_shadowInputLayout.get());
+                    cmd->SetRasterizerState(RasterizerMode::SolidCullBack);
+
+                    isFirstDraw = false;
+                }
+
+                cmd->SetVertexBuffer(mesh.GetVertexBuffer(), mesh.GetVertexStride(), 0);
+                cmd->SetIndexBuffer(mesh.GetIndexBuffer(), 0);
+                cmd->DrawIndexed(mesh.GetIndexCount(), 0, 0);
+            }
         }
     }
 
@@ -788,7 +769,6 @@ namespace Frost
                                      std::shared_ptr<Texture> source,
                                      const Viewport& viewport)
     {
-
         if (viewport.width == 0 || viewport.height == 0)
         {
             FT_ENGINE_ERROR("Viewport width and height should be > 0");
@@ -828,7 +808,6 @@ namespace Frost
             case Component::LightType::Point:
             {
                 auto* cfg = std::get_if<Component::LightPoint>(&lightObj.light.config);
-                // pointData.Falloff = cfg->falloff;
 
                 auto light = PointLightData();
                 light.CameraPosition = cameraTransform.position;
@@ -854,7 +833,6 @@ namespace Frost
                 light.Color = lightObj.light.color;
                 light.Intensity = lightObj.light.intensity;
                 light.shadowResolution = _shadowResolution;
-
                 light.InnerConeAngle = std::cos(cfg->innerConeAngle.value());
                 light.OuterConeAngle = std::cos(cfg->outerConeAngle.value());
                 light.Radius = cfg->range;
@@ -887,9 +865,8 @@ namespace Frost
         Texture* outPtr = destination.get();
         _commandList->SetRenderTargets(1, &outPtr, nullptr);
 
-        // UPDATE: Send the correct light's view-projection matrix to the shader
         VS_ShadowConstants vsData;
-        vsData.World = DirectX::XMMatrixIdentity(); // Not used in light pass
+        vsData.World = DirectX::XMMatrixIdentity();
         vsData.LightViewProj = LoadMatrix(Math::Matrix4x4::CreateTranspose(shadow.lightViewProj));
         _vsShadowConstants->UpdateData(_commandList.get(), &vsData, sizeof(vsData));
 
