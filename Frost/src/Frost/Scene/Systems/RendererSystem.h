@@ -9,6 +9,7 @@
 #include "Frost/Scene/Components/StaticMesh.h"
 #include "Frost/Scene/Components/VirtualCamera.h"
 #include "Frost/Scene/Components/WorldTransform.h"
+#include "Frost/Scene/Components/ScreenProjectedTexture.h"
 #include "Frost/Renderer/Frustum.h"
 #include "Frost/Scene/ECS/System.h"
 
@@ -39,7 +40,8 @@ namespace Frost
                                    const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
                                    const std::shared_ptr<Texture>& skybox,
                                    float overrideAspectRatio,
-                                   entt::entity exitPortalFrameEntity = entt::null);
+                                   entt::entity exitPortalFrameEntity = entt::null,
+                                   entt::entity entryPortalFrameEntity = entt::null);
 
         void _ApplyPostProcessing(CommandList* commandList,
                                   Texture* sourceTexture,
@@ -48,6 +50,10 @@ namespace Frost
                                   float deltaTime);
 
         bool _IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix);
+
+        void _RenderScreenProjectedTextures(Scene& scene, const RenderCameraData& camData, const Viewport& viewport);
+
+        void _RenderFullscreenQuad(CommandList* commandList, Texture* texture);
 
     private:
         DeferredRenderingPipeline _deferredRendering;
@@ -59,6 +65,10 @@ namespace Frost
         std::shared_ptr<Texture> _externalRenderTarget = nullptr;
         uint32_t _viewportWidth = 0;
         uint32_t _viewportHeight = 0;
+
+        std::shared_ptr<Shader> _psFullScreenQuad;
+        std::shared_ptr<Shader> _vsFullScreenQuad;
+        std::unique_ptr<Sampler> _sampler;
 
         Frustum _frustum;
     };

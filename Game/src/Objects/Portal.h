@@ -3,6 +3,7 @@
 #include "Frost.h"
 #include "Player/Player.h"
 #include <Frost/Scene/Components/Script.h>
+#include <Frost/Scene/Components/ScreenProjectedTexture.h>
 #include <string>
 
 using namespace Frost;

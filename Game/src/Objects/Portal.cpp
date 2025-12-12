@@ -245,7 +245,9 @@ PortalScript::UpdateCameraRenderTarget()
         parentPortal->_renderTarget = Texture::Create(textureConfig);
 
         auto& camera = parentPortal->_cameraObject.GetComponent<VirtualCamera>();
+        auto& screenTexture = parentPortal->_frameObject.AddComponent<ScreenProjectedTexture>();
         camera.SetRenderTarget(parentPortal->_renderTarget);
+        screenTexture.SetRenderTarget(parentPortal->_renderTarget);
         camera.useScreenSpaceAspectRatio = true;
     }
 }
@@ -338,10 +340,10 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
     _renderTarget = AssetManager::LoadAsset("PortalRT_" + std::to_string(static_cast<uint32_t>(_cameraObject.GetId())),
                                             textureConfig);
 
-    camera.SetRenderTarget(_renderTarget);
-
     // Portal frame
     _frameObject = Game::GetScene().CreateGameObject("Portal Frame", _portal);
+    auto& screenTexture = _frameObject.AddComponent<ScreenProjectedTexture>();
+    // camera.SetRenderTarget(_renderTarget);
     auto& mesh = _frameObject.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/portal.fbx" }, true);
 
     mesh.hiddenFromCameras.push_back(&camera);
@@ -355,5 +357,7 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
 void
 Portal::SetupPortal(PortalType type, Portal* otherPortal)
 {
+    auto camera = Game::GetScene().GetComponent<VirtualCamera>(_cameraObject);
+    camera->linkedPortalEntity = otherPortal->_frameObject.GetId();
     Game::GetScene().AddScript<PortalScript>(_portal, _player->GetPlayerID(), type, otherPortal, this);
 }

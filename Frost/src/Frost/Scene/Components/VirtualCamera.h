@@ -26,5 +26,6 @@ namespace Frost::Component
 
         bool useScreenSpaceAspectRatio = false;
         entt::entity portalEntity;
+        entt::entity linkedPortalEntity;
     };
 } // namespace Frost::Component

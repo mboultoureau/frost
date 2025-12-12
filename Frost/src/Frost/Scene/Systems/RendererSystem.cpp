@@ -10,12 +10,26 @@
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Renderer/Pipeline/JoltDebugRenderingPipeline.h"
 #include <iostream>
+#include <Frost/Renderer/Sampler.h>
+#include <Frost/Renderer/DX11/SamplerDX11.h>
 
 using namespace Frost::Component;
 
 namespace Frost
 {
-    RendererSystem::RendererSystem() : _frustum{} {}
+    RendererSystem::RendererSystem() : _frustum{}
+    {
+        ShaderDesc vsDesc = { .type = ShaderType::Vertex,
+                              .filePath = "../Frost/resources/shaders/VS_FullScreenQuad.hlsl" };
+
+        ShaderDesc psDesc = { .type = ShaderType::Pixel,
+                              .filePath = "../Frost/resources/shaders/PS_FullScreenQuad.hlsl" };
+
+        _vsFullScreenQuad = Shader::Create(vsDesc);
+        _psFullScreenQuad = Shader::Create(psDesc);
+
+        _sampler = std::make_unique<SamplerDX11>(SamplerConfig{ .filter = Filter::ANISOTROPIC });
+    }
 
     void RendererSystem::LateUpdate(Scene& scene, float deltaTime)
     {
@@ -124,7 +138,8 @@ namespace Frost
                                       allLights,
                                       skyboxTexture,
                                       aspectRatioToUse,
-                                      virtualCam.portalEntity);
+                                      virtualCam.portalEntity,
+                                      virtualCam.linkedPortalEntity);
                 virtualCameraTargets[virtualCamData.entity] = virtualCam.GetRenderTarget();
 
                 if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
@@ -206,8 +221,13 @@ namespace Frost
 
                 _deferredRendering.EndFrame(camera, cameraTransform, allLights, mainRenderViewport);
 
+                _RenderScreenProjectedTextures(scene, camData, mainRenderViewport);
+
                 if (skyboxTexture)
                 {
+                    Texture* finalTarget = _deferredRendering.GetFinalLitTexture();
+                    commandList->SetRenderTargets(1, &finalTarget, _deferredRendering.GetDepthStencilTexture());
+
                     _skyboxPipeline.Render(commandList,
                                            _deferredRendering.GetFinalLitTexture(),
                                            _deferredRendering.GetDepthStencilTexture(),
@@ -266,6 +286,123 @@ namespace Frost
             mesh.enabled = renderMesh;
         }
         return renderModel;
+    }
+
+    void RendererSystem::_RenderScreenProjectedTextures(Scene& scene,
+                                                        const RenderCameraData& camData,
+                                                        const Viewport& viewport)
+    {
+        auto view = scene.ViewActive<ScreenProjectedTexture, StaticMesh, WorldTransform>();
+        if (view.size_hint() == 0)
+            return;
+
+        CommandList* commandList = _deferredRendering.GetCommandList();
+
+        // AJOUT : Binder explicitement le render target final
+        Texture* finalTarget = _deferredRendering.GetFinalLitTexture();
+        commandList->SetRenderTargets(1, &finalTarget, _deferredRendering.GetDepthStencilTexture());
+        commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
+
+        // View et projection de la caméra principale
+        Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(*camData.transform);
+        Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(*camData.camera, viewport.width / viewport.height);
+
+        // Pour chaque objet avec une texture projetée
+        view.each(
+            [&](const entt::entity entity,
+                const ScreenProjectedTexture& projectedTex,
+                const StaticMesh& mesh,
+                const WorldTransform& transform)
+            {
+                if (!projectedTex.enabled || !projectedTex.texture)
+                    return;
+
+                // === ÉTAPE 1 : Clear du stencil ===
+                commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(),
+                                               false,
+                                               1.0f, // Ne pas clear la depth
+                                               true,
+                                               0); // Clear le stencil à 0
+
+                // === ÉTAPE 2 : Écrire le mesh dans le stencil ===
+                commandList->SetColorWriteMask(false, false, false, false);
+                commandList->SetDepthStencilStateCustom(
+                    true,                       // depthEnable : tester la depth
+                    false,                      // depthWrite : ne pas écrire
+                    CompareFunction::LessEqual, // Ne marquer que ce qui est visible
+                    true,                       // stencilEnable
+                    CompareFunction::Always,    // Toujours écrire dans le stencil si depth pass
+                    StencilOp::Keep,            // stencilFailOp
+                    StencilOp::Keep,            // depthFailOp
+                    StencilOp::Replace,         // passOp : écrire 1 si visible
+                    1,                          // stencilRef
+                    0xFF,
+                    0xFF);
+
+                // Rendre le mesh pour marquer le stencil
+                if (mesh.GetModel())
+                {
+                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(transform);
+                    _deferredRendering.SubmitModelStencilOnly(
+                        *mesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
+                }
+
+                // === ÉTAPE 3 : Rendre la texture en fullscreen avec test stencil ===
+                commandList->SetColorWriteMask(true, true, true, true);
+                commandList->SetDepthStencilStateCustom(
+                    true,                       // depthEnable : ACTIVÉ pour éviter de rendre devant les objets proches
+                    false,                      // depthWrite : ne pas écrire
+                    CompareFunction::LessEqual, // CHANGÉ : LessEqual au lieu de Always
+                    true,                       // stencilEnable
+                    CompareFunction::Equal,
+                    StencilOp::Keep,
+                    StencilOp::Keep,
+                    StencilOp::Keep,
+                    1,
+                    0xFF,
+                    0x00);
+
+                // Blend pour superposer la texture
+                commandList->SetBlendState(BlendMode::Alpha);
+
+                _RenderFullscreenQuad(commandList, projectedTex.texture.get());
+
+                // Restaurer le blend
+                commandList->SetBlendState(BlendMode::None);
+            });
+
+        // IMPORTANT : Restaurer COMPLÈTEMENT les états par défaut
+        commandList->SetDepthStencilStateCustom(true,                  // depthEnable
+                                                true,                  // depthWrite
+                                                CompareFunction::Less, // depthFunc
+                                                false,                 // stencilEnable - DÉSACTIVÉ
+                                                CompareFunction::Always,
+                                                StencilOp::Keep,
+                                                StencilOp::Keep,
+                                                StencilOp::Keep,
+                                                0,
+                                                0xFF,
+                                                0xFF);
+
+        // AJOUT : S'assurer que le color write mask est correct
+        commandList->SetColorWriteMask(true, true, true, true);
+    }
+
+    void RendererSystem::_RenderFullscreenQuad(CommandList* commandList, Texture* texture)
+    {
+        // Utilisez un shader simple qui rend une texture en fullscreen
+        // Vous devrez créer ce shader s'il n'existe pas déjà
+
+        commandList->UnbindShader(ShaderType::Geometry);
+        commandList->UnbindShader(ShaderType::Hull);
+        commandList->UnbindShader(ShaderType::Domain);
+        commandList->SetShader(_vsFullScreenQuad.get());
+        commandList->SetShader(_psFullScreenQuad.get());
+        commandList->SetTexture(texture, 0);
+        commandList->SetSampler(_sampler.get(), 0);
+        commandList->SetInputLayout(nullptr);
+        commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+        commandList->Draw(3, 0); // Triangle qui couvre l'écran
     }
 
     void RendererSystem::_ApplyPostProcessing(CommandList* commandList,
@@ -330,12 +467,15 @@ namespace Frost
         const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
         const std::shared_ptr<Texture>& skybox,
         float overrideAspectRatio,
-        entt::entity exitPortalFrameEntity) // Portail à utiliser pour le masque
+        entt::entity exitPortalFrameEntity,
+        entt::entity entryPortalFrameEntity) // Portail à utiliser pour le masque
     {
+        // if (entryPortalFrameEntity == entt::null)
+        //     return;
 
         const VirtualCamera& camera = static_cast<const VirtualCamera&>(*camData.camera);
         const WorldTransform& cameraTransform = *camData.transform;
-        Texture* renderTarget = camera.GetRenderTarget().get();
+        Texture* renderTarget = scene.GetRegistry().get<ScreenProjectedTexture>(entryPortalFrameEntity).texture.get();
         if (!renderTarget)
             return;
 
@@ -405,7 +545,7 @@ namespace Frost
 
         // === ÉTAPE 2 : BeginFrame (va re-binder les render targets) ===
         _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, renderViewport);
-
+        //_deferredRendering.BeginFrame(camera, viewMatrix, obliqueProjection, renderViewport);
         // === ÉTAPE 3 : Configurer le stencil pour le GBuffer pass ===
         if (scene.GetRegistry().valid(exitPortalFrameEntity))
         {
