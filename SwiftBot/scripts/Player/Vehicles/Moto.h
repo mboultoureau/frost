@@ -26,6 +26,7 @@ namespace GameLogic
 
     private:
         void _ProcessBikeInput(float fixedDeltaTime);
+        void _GiveBoost();
 
     private:
         JPH::VehicleConstraint* _constraint = nullptr;
@@ -34,7 +35,16 @@ namespace GameLogic
         JPH::Vec3 _previousLinearSpeed;
         JPH::Vec3 _previousAngularSpeed;
 
+        // Drift / Boost vars
+        Frost::Timer _specialDriftTimer;
         Frost::Timer _specialDriftCoolDown;
+
+        std::chrono::milliseconds _driftCoolDownDuration = 100ms;
+        float _specialDriftMaxDuration = 1000.0f;
+        float _specialDriftPower = 250.0f;
+        float _speedAtDriftStart = 0.0f;
+
+        float _maxSpeed = 60.0f;
 
         // Controls
         float _forward = 0;

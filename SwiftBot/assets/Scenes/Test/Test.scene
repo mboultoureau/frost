@@ -1,0 +1,61 @@
+Scene: Test
+Entities:
+  - Entity: 1048578
+    Meta:
+      Name: Plane
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [50, 50, 50]
+    StaticMesh:
+      Type: 3
+      Params:
+        Width: 1
+        Depth: 1
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 0
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [0.5, 0.001, 0.5]
+        ConvexRadius: 0.05
+    Parent: -1
+  - Entity: 1
+    Meta:
+      Name: Player
+    Transform:
+      Position: [0, 17.967604, 0]
+      Rotation: [0, 0.70710677, 0, 0.70710677]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Player\Player.prefab
+    Parent: -1
+  - Entity: 0
+    Meta:
+      Name: Sun
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0.3696438, -0.09904576, 0.23911761, 0.8923991]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 0
+      Color: [0.99115044, 0.9542026, 0.91659486]
+      Intensity: 0.6
+      Params:
+        {}
+    Parent: -1

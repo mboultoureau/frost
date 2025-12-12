@@ -22,7 +22,7 @@ class MotoObjectLayerFilter : public JPH::ObjectLayerFilter
 public:
     bool ShouldCollide(JPH::ObjectLayer inLayer) const override
     {
-        return inLayer == GameLogic::ObjectLayers::NON_MOVING; // ignore camera
+        return inLayer == GameLogic::ObjectLayers::NON_MOVING;
     }
 };
 
@@ -363,7 +363,7 @@ namespace GameLogic
         auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
         auto& lockInterface = Physics::GetBodyLockInterface();
         {
-            BodyLockRead lock(lockInterface, bodyId);
+            BodyLockWrite lock(lockInterface, bodyId);
             if (!lock.Succeeded())
                 return;
 
@@ -402,6 +402,13 @@ namespace GameLogic
             radialBlurPostEffect->SetCenter(Vector2(0.5f, 0.5f));
             radialBlurPostEffect->SetStrength(linearSpeedMagnitude * _radialBlurSpeedFactor);
             */
+
+            // Limit speed if not drifting
+            if (linearSpeedMagnitude > _maxSpeed &&
+                _specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() > 100ms)
+            {
+                body.SetLinearVelocity(body.GetLinearVelocity() * (1.0f - fixedDeltaTime));
+            }
         }
     }
 
@@ -410,8 +417,56 @@ namespace GameLogic
         _handBrakeInput = brake;
     }
 
+    void Moto::_GiveBoost()
+    {
+        if (!_controller)
+            return;
+
+        auto time = std::min(static_cast<float>(_specialDriftTimer.GetDurationAs<std::chrono::milliseconds>().count()),
+                             _specialDriftMaxDuration);
+        _specialDriftTimer.Pause();
+
+        auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
+        auto dir = Physics::GetBodyInterface().GetRotation(bodyId) * Vec3(0, 0, 1);
+
+        // Anti max speed factor calculation
+        auto currentVel = Physics::GetBodyInterface().GetLinearVelocity(bodyId);
+        float currentSpeed = currentVel.Length();
+        float antiMaxSpeedFactor = (_maxSpeed > currentSpeed) ? ((_maxSpeed - currentSpeed) / _maxSpeed + 0.1f) : 0.1f;
+
+        Physics::GetBodyInterface().AddForce(bodyId,
+                                             dir * time * _speedAtDriftStart * _specialDriftPower * antiMaxSpeedFactor);
+
+        _specialDriftCoolDown.Start();
+        _specialDriftTimer.Start();
+        _specialDriftTimer.Pause();
+    }
+
     void Moto::OnSpecialAction(bool special)
     {
+        bool canDrift = (_specialDriftCoolDown.GetDurationAs<std::chrono::milliseconds>() >= _driftCoolDownDuration);
+
+        if (_specialInput != special && canDrift)
+        {
+            // On Press: Start Drift
+            if (special)
+            {
+                if (_rightInput != 0)
+                {
+                    _specialDriftTimer.Start();
+                    auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
+                    _speedAtDriftStart = Physics::GetBodyInterface().GetLinearVelocity(bodyId).Length();
+                }
+            }
+            // On Release: End Drift -> Give Boost
+            else
+            {
+                _GiveBoost();
+            }
+        }
+
+        _specialInput = special;
+        // Use special button as handbrake for tighter turns during drift
         _handBrakeInput = special;
     }
 
@@ -439,7 +494,7 @@ namespace GameLogic
 
             _forward = 0.0f;
             _brake = 0.0f;
-            if (_handBrakeInput || _specialInput)
+            if (_handBrakeInput) // Modified: Special Input handled via OnSpecialAction updating _handBrakeInput
                 _brake = 1.0f;
             else if (_forwardInput > 0)
                 _forward = _forwardInput;
