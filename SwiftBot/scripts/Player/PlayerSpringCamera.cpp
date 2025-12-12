@@ -86,7 +86,7 @@ namespace GameLogic
         {
             camComponent.GetEffect<ToonEffect>()->SetEnabled(true);
         }
-        if (!GameState::Get().GetPlayerData(_player).isInWater)
+        if (!GameState::Get().GetPlayerData(_player).isCameraInWater)
         {
             camComponent.GetEffect<FogEffect>()->SetEnabled(false);
         }

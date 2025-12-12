@@ -22,6 +22,7 @@ namespace GameLogic
         bool isInAntiGravity = false;
         bool isInGrass = false;
         bool isInHandWritting = false;
+        bool isAberation = false;
     };
 
     class GameState

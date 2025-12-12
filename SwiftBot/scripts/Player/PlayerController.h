@@ -22,11 +22,19 @@ namespace GameLogic
         Frost::GameObject _hudMiddle;
         Frost::GameObject _hudRight;
 
+        Frost::Timer _chromaticAberrationTimer;
+        bool _isChromaticAberrationActive = true;
+        const float cChromaticAberrationDuration = 10.0f;
+        const float cChromaticAberrationMaxStrength = 0.2f;
+
         size_t _currentIndex = 0;
 
         const std::vector<std::string> _imagePaths = { "assets/Player/bike.png",
                                                        "assets/Player/boat.png",
                                                        "assets/Player/plane.png" };
+
+        Frost::Math::Vector3 _savedLinearVelocity = { 0.0f, 0.0f, 0.0f };
+        bool _transferVelocity = false;
 
         void _ChangeImageRight();
 
@@ -35,8 +43,10 @@ namespace GameLogic
         size_t _GetSelectedIndex() const { return _currentIndex; }
         void _InitializeHUD();
         void _UpdateHUDDisplay();
+        void _ApplyChromaticAberration(float strength);
 
     public:
+        void OnPortalPass();
         void OnCreate() override;
         void OnUpdate(float deltaTime) override;
         void OnFixedUpdate(float fixedDeltaTime) override;

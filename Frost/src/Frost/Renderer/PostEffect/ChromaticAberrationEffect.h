@@ -29,7 +29,7 @@ namespace Frost
         Math::Vector2 _centerRed = { 0.5f, 0.5f };
         Math::Vector2 _centerGreen = { 0.5f, 0.5f };
         Math::Vector2 _centerBlue = { 0.5f, 0.5f };
-        float _strength = 0.05f;
+        float _strength = 0.02f;
 
         // ImGui control
         int _activeCenter = 0;

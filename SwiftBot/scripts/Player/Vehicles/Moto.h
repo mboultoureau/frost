@@ -65,6 +65,9 @@ namespace GameLogic
         float _shakeAngularSpeedDiffThreshold = 0.6f;
         float _shakeSpeedAngleDiffThreshold = 0.6f;
 
+        float _transferredSpeed = 0.0f;
+        float _transferredForwardControl = 0.0f;
+
         // Radial Blur
         float _radialBlurSpeedFactor = 0.001f;
     };

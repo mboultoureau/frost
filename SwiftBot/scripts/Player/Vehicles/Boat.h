@@ -54,6 +54,6 @@ namespace GameLogic
 
         // Effects constants
         const float cScreenShakeSpeedMultiplier = 0.05f;
-        const float cRadialBlurSpeedFactor = 0.02f;
+        const float cRadialBlurSpeedFactor = 0.001f;
     };
 } // namespace GameLogic
