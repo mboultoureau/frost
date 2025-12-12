@@ -6,7 +6,13 @@
 #include "Editor/Events/OpenProjectSettingsEvent.h"
 #include "Editor/Events/NewSceneEvent.h"
 
+#include "Frost/Scene/Scene.h"
+#include "Frost/Scene/SceneSerializer.h"
+#include "Frost/Scene/PrefabSerializer.h"
+#include "Frost/Debugging/Logger.h"
+
 #include <imgui.h>
+#include <filesystem>
 
 using namespace Frost;
 
@@ -20,6 +26,7 @@ namespace Editor
         {
             _RenderFileMenu();
             _RenderEditMenu();
+            _RenderBuildMenu();
             _RenderProjectName();
             ImGui::EndMainMenuBar();
         }
@@ -63,6 +70,18 @@ namespace Editor
         }
     }
 
+    void MainMenuBar::_RenderBuildMenu()
+    {
+        if (ImGui::BeginMenu("Build"))
+        {
+            if (ImGui::MenuItem("Compile All Assets"))
+            {
+                _CompileAllAssets();
+            }
+            ImGui::EndMenu();
+        }
+    }
+
     void MainMenuBar::_RenderProjectName()
     {
         std::string projectName = _projectInfo.GetConfig().name;
@@ -76,5 +95,53 @@ namespace Editor
         }
 
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 1.0f, 1.0f), "%s", projectName.c_str());
+    }
+
+    void MainMenuBar::_CompileAllAssets()
+    {
+        std::filesystem::path projectDir = _projectInfo.GetProjectDir();
+        if (!std::filesystem::exists(projectDir))
+            return;
+
+        FT_ENGINE_INFO("Starting asset compilation...");
+
+        int sceneCount = 0;
+        int prefabCount = 0;
+
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(projectDir))
+        {
+            if (entry.is_directory())
+                continue;
+
+            auto path = entry.path();
+            auto extension = path.extension();
+
+            if (extension == ".scene")
+            {
+                Frost::Scene tempScene;
+                Frost::SceneSerializer serializer(&tempScene);
+                if (serializer.Deserialize(path))
+                {
+                    std::filesystem::path binPath = path;
+                    binPath.replace_extension(".bin");
+                    if (serializer.Serialize(binPath))
+                    {
+                        sceneCount++;
+                    }
+                }
+            }
+            else if (extension == ".prefab")
+            {
+                Frost::Scene tempScene;
+                Frost::GameObject root = Frost::PrefabSerializer::Instantiate(&tempScene, path);
+                if (root)
+                {
+                    Frost::PrefabSerializer::CreatePrefab(root, path);
+                    prefabCount++;
+                }
+            }
+        }
+
+        FT_ENGINE_INFO("Asset compilation finished. Scenes: {0}, Prefabs: {1}", sceneCount, prefabCount);
     }
 } // namespace Editor

@@ -5,6 +5,9 @@
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
 
+#undef min
+#undef max
+
 using namespace JPH;
 using namespace Frost;
 using namespace Frost::Math;
@@ -33,15 +36,20 @@ namespace GameLogic
         _player = GetGameObject();
         _playerController = GetGameObject().GetChildByName("PlayerController");
         _camera = GetGameObject().GetChildByName("Camera");
-        _cameraPivot = _playerController.GetChildByName("CameraPivot");
+
+        _cameraPivot = GetGameObject().GetChildByName("CameraPivot");
+        if (!_cameraPivot.IsValid())
+        {
+            _cameraPivot = _playerController.GetChildByName("CameraPivot");
+        }
+
         _desiredCameraLocation = _cameraPivot.GetChildByName("DesiredCameraLocation");
 
         FT_ASSERT(_player.IsValid(), "PlayerCamera script requires to be attached to the Player GameObject");
         FT_ASSERT(_playerController.IsValid(),
                   "PlayerCamera script requires a child GameObject named 'PlayerController'");
         FT_ASSERT(_camera.IsValid(), "PlayerCamera script requires a child GameObject named 'Camera'");
-        FT_ASSERT(_cameraPivot.IsValid(),
-                  "PlayerCamera script requires a child GameObject named 'CameraPivot' (can be nested)");
+        FT_ASSERT(_cameraPivot.IsValid(), "PlayerCamera script requires a child GameObject named 'CameraPivot'");
         FT_ASSERT(_desiredCameraLocation.IsValid(),
                   "PlayerCamera script requires a child GameObject named 'DesiredCameraLocation' (can be nested)");
 
@@ -50,42 +58,41 @@ namespace GameLogic
         _boat = _playerController.GetChildByName("Boat", true);
         _plane = _playerController.GetChildByName("Plane", true);
 
-        FT_ASSERT(_moto.IsValid(),
-                  "PlayerSpringCamera script requires a child GameObject named 'Bike' (can be nested)");
-        FT_ASSERT(_boat.IsValid(),
-                  "PlayerSpringCamera script requires a child GameObject named 'Boat' (can be nested)");
-        FT_ASSERT(_plane.IsValid(),
-                  "PlayerSpringCamera script requires a child GameObject named 'Plane' (can be nested)");
-
         // Get post effects
         auto& camComponent = _camera.GetComponent<Camera>();
         camComponent.postEffects.push_back(std::make_shared<ToonEffect>());
         camComponent.postEffects.push_back(std::make_shared<FogEffect>());
-        // camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
+        camComponent.postEffects.push_back(std::make_shared<RadialBlurEffect>());
         camComponent.postEffects.push_back(std::make_shared<ScreenShakeEffect>());
 
         _radialBlur = camComponent.GetEffect<RadialBlurEffect>().get();
         _screenShake = camComponent.GetEffect<ScreenShakeEffect>().get();
+
+        if (_desiredCameraLocation.IsValid())
+        {
+            auto& trans = _desiredCameraLocation.GetComponent<Transform>();
+            _baseThirdPersonDistance = trans.position.z;
+        }
     }
 
     void PlayerSpringCamera::OnFixedUpdate(float fixedDeltaTime)
     {
         auto& camComponent = _camera.GetComponent<Camera>();
-        if (GameState::Get().GetPlayerData(_player).isInToon)
-        {
-            camComponent.GetEffect<ToonEffect>()->SetEnabled(true);
-        }
-        else
+        if (!GameState::Get().GetPlayerData(_player).isInToon)
         {
             camComponent.GetEffect<ToonEffect>()->SetEnabled(false);
         }
-        if (GameState::Get().GetPlayerData(_player).isCameraInWater)
+        else
         {
-            camComponent.GetEffect<FogEffect>()->SetEnabled(true);
+            camComponent.GetEffect<ToonEffect>()->SetEnabled(true);
+        }
+        if (!GameState::Get().GetPlayerData(_player).isInWater)
+        {
+            camComponent.GetEffect<FogEffect>()->SetEnabled(false);
         }
         else
         {
-            camComponent.GetEffect<FogEffect>()->SetEnabled(false);
+            camComponent.GetEffect<FogEffect>()->SetEnabled(true);
         }
 
         if (!GameState::Get().IsInitialized())
@@ -154,25 +161,31 @@ namespace GameLogic
         if (!_playerController.HasComponent<RigidBody>())
             return;
 
-        DirectX::XMVECTOR quaternion =
-            DirectX::XMQuaternionRotationRollPitchYaw(_cameraPivotRotationX, _cameraPivotRotationY, 0.0f);
-
-        auto& cameraPivotTransform = _cameraPivot.GetComponent<Transform>();
-        DirectX::XMStoreFloat4(reinterpret_cast<DirectX::XMFLOAT4*>(&cameraPivotTransform.rotation), quaternion);
-
-        // TODO : cam rotation is actually one frame behind cameraPivot rotation
-        auto& cameraPivotWTransform = _cameraPivot.GetComponent<WorldTransform>();
-
-        auto& springCamRB = _camera.GetComponent<RigidBody>();
-        auto& playerWTransform = _playerController.GetComponent<WorldTransform>();
-
+        auto& controllerTrans = _playerController.GetComponent<Transform>();
+        auto& pivotTrans = _cameraPivot.GetComponent<Transform>();
         auto& playerRB = _playerController.GetComponent<RigidBody>();
-        auto& thirdPersonCameraTransform = _desiredCameraLocation.GetComponent<Transform>();
 
+        pivotTrans.position = controllerTrans.position + Vector3(0, 1.5f, 0);
+
+        JPH::Quat playerPhysicsRot = Physics::Get().body_interface->GetRotation(playerRB.runtimeBodyID);
+
+        JPH::Quat mouseRot = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), _cameraPivotRotationY) *
+                             JPH::Quat::sRotation(JPH::Vec3::sAxisX(), _cameraPivotRotationX);
+
+        JPH::Quat targetRot = playerPhysicsRot * mouseRot;
+
+        JPH::Quat currentPivotRot = Math::vector_cast<JPH::Quat>(pivotTrans.rotation);
+
+        JPH::Quat smoothedRot =
+            currentPivotRot.SLERP(targetRot, std::min(1.0f, fixedDeltaTime * _rotationSmoothingSpeed));
+
+        pivotTrans.rotation = Math::vector_cast<Math::Vector4>(smoothedRot);
+
+        auto& thirdPersonCameraTransform = _desiredCameraLocation.GetComponent<Transform>();
         auto velocity = Physics::Get().body_interface->GetLinearVelocity(playerRB.runtimeBodyID);
-        auto speed = velocity.LengthSq();
-        thirdPersonCameraTransform.position.z =
-            _defaultThirdPersonCameraDistance + speed * _thirdPersonCamVelocityToDistance;
+        auto speed = velocity.Length();
+
+        thirdPersonCameraTransform.position.z = _baseThirdPersonDistance + speed * _thirdPersonCamVelocityToDistance;
     }
 
     void PlayerSpringCamera::_UpdateSpringCam(float fixedDeltaTime)
@@ -183,15 +196,16 @@ namespace GameLogic
         auto& playerWTransform = _playerController.GetComponent<WorldTransform>();
         auto& thirdPersonCameraWTransform = _desiredCameraLocation.GetComponent<WorldTransform>();
         auto& springCamRigidBody = _camera.GetComponent<RigidBody>();
+        auto& pivotWTransform = _cameraPivot.GetComponent<WorldTransform>();
 
         JPH::Vec3 cameraPos = Physics::Get().body_interface->GetPosition(springCamRigidBody.runtimeBodyID);
         JPH::Vec3 cameraVelocity = Physics::Get().body_interface->GetLinearVelocity(springCamRigidBody.runtimeBodyID);
+
         auto desiredPos = isThirdPerson ? Math::vector_cast<JPH::Vec3>(thirdPersonCameraWTransform.position)
-                                        : Math::vector_cast<JPH::Vec3>(playerWTransform.position);
+                                        : Math::vector_cast<JPH::Vec3>(pivotWTransform.position);
 
         auto playerPosition = Math::vector_cast<JPH::Vec3>(playerWTransform.position);
 
-        // Active or not renderer according to distance
         bool active = (playerPosition - cameraPos).Length() > _playerCullingDistance;
         auto& playerData = GameState::Get().GetPlayerData(_player);
         switch (playerData.currentVehicle)
@@ -213,8 +227,9 @@ namespace GameLogic
         JPH::Vec3 springForce = displacement * _stiffness;
 
         JPH::BodyID playerBodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
+        springForce *= 1.0f / (1.0f + 0.1f * Physics::GetBodyInterface().GetAngularVelocity(playerBodyId).Length());
+        springForce -= cameraVelocity * 2.0f;
 
-        springForce *= 1 / (1 + Physics::GetBodyInterface().GetAngularVelocity(playerBodyId).Length());
         auto newPos = cameraPos + fixedDeltaTime * springForce;
 
         if (!playerData.forceSpecificCameraPos)
@@ -224,8 +239,9 @@ namespace GameLogic
         if (isThirdPerson)
         {
             JPH::RRayCast ray;
-            ray.mOrigin = playerPosition;
-            ray.mDirection = (newPos - playerPosition) * 1.1f;
+            auto pivotPos = Math::vector_cast<JPH::Vec3>(pivotWTransform.position);
+            ray.mOrigin = pivotPos;
+            ray.mDirection = (newPos - pivotPos) * 1.1f;
             float desiredDistance = ray.mDirection.Length();
 
             RayCastBroadPhaseFilter bpFilter;
@@ -235,7 +251,7 @@ namespace GameLogic
             if (desiredDistance > 0.01 &&
                 Physics::Get().physics_system.GetNarrowPhaseQuery().CastRay(ray, result, bpFilter, objectFilter))
             {
-                cameraPos = ray.GetPointOnRay(result.mFraction * 0.9f);
+                cameraPos = ray.GetPointOnRay(result.mFraction * 0.95f);
                 Physics::Get().body_interface->SetPosition(
                     springCamRigidBody.runtimeBodyID, cameraPos, JPH::EActivation::Activate);
             }
@@ -247,44 +263,44 @@ namespace GameLogic
     void PlayerSpringCamera::_UpdateSpringCamRotation(const JPH::Vec3& pos, float fixedDeltaTime)
     {
         auto& playerData = GameState::Get().GetPlayerData(_player);
-        auto& playerWTransform = _playerController.GetComponent<WorldTransform>();
         auto& springCamRigidBody = _camera.GetComponent<RigidBody>();
-        auto springCamRot = Physics::Get().body_interface->GetRotation(springCamRigidBody.runtimeBodyID);
-        auto newRot = _LookAtQuaternion(
-            pos,
-            Math::vector_cast<JPH::Vec3>(
-                playerWTransform.position) // +Physics::GetBodyInterface().GetLinearVelocity(playerBodyId)
-        );
-        auto rotLerpFactor = 0.75f;
+        auto& playerWTransform = _playerController.GetComponent<WorldTransform>();
+        auto& pivotWTransform = _cameraPivot.GetComponent<WorldTransform>();
+
+        JPH::Quat pivotRot = Math::vector_cast<JPH::Quat>(pivotWTransform.rotation);
+        JPH::Vec3 pivotUp = pivotRot.RotateAxisY();
+        JPH::Vec3 targetPos = Math::vector_cast<JPH::Vec3>(playerWTransform.position) + pivotUp * 1.5f;
+
+        auto newRot = _LookAtQuaternion(pos, targetPos, pivotUp);
+
         if (!playerData.forceSpecificCameraPos)
-            Physics::Get().body_interface->SetRotation(springCamRigidBody.runtimeBodyID,
-                                                       newRot, //(rotLerpFactor * springCamRot + (1 - rotLerpFactor) *
-                                                               // newRot).Normalized(),
-                                                       JPH::EActivation::Activate);
+            Physics::Get().body_interface->SetRotation(
+                springCamRigidBody.runtimeBodyID, newRot, JPH::EActivation::Activate);
 
         playerData.forceSpecificCameraPos = false;
     }
 
-    JPH::Quat PlayerSpringCamera::_LookAtQuaternion(const JPH::Vec3& cameraPos, const JPH::Vec3& targetPos)
+    JPH::Quat PlayerSpringCamera::_LookAtQuaternion(const JPH::Vec3& cameraPos,
+                                                    const JPH::Vec3& targetPos,
+                                                    const JPH::Vec3& up)
     {
         using namespace JPH;
 
-        // Vector from camera to target
         Vec3 forward = (targetPos - cameraPos).Normalized();
 
-        // World up vector
-        Vec3 up = Vec3::sAxisY();
+        if (forward.LengthSq() < 0.001f)
+            return JPH::Quat::sIdentity();
 
-        // Compute right vector
         Vec3 right = up.Cross(forward).Normalized();
 
-        // Recompute true up
+        if (right.LengthSq() < 0.001f)
+        {
+            right = Vec3::sAxisX();
+        }
+
         Vec3 newUp = forward.Cross(right);
 
-        // Build rotation matrix (camera looks along +Z)
         Mat44 rot(Vec4(right, 0), Vec4(newUp, 0), Vec4(forward, 0), Vec4(0, 0, 0, 1));
-
-        // Convert to quaternion
         return rot.GetQuaternion();
     }
 } // namespace GameLogic
