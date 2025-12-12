@@ -10,8 +10,10 @@ VS_Output main(VS_Input vin)
     vout.Normal = normalize(mul((float3x3) WorldMatrix, vin.Normal));
     vout.TexCoord = vin.TexCoord;
 
-    vout.Position = mul(worldPos, ViewMatrix);
-    vout.Position = mul(vout.Position, ProjectionMatrix);
+    float4 viewPos = mul(worldPos, ViewMatrix);
+    vout.Position = mul(viewPos, ProjectionMatrix);
 
+    vout.LocalPos = vin.Position;
+    
     return vout;
 }
