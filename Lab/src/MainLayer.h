@@ -35,7 +35,7 @@ public:
     void OnFixedUpdate(float deltaTime) override;
     void OnAttach() override;
     void OnDetach() override;
-    Player* GetPlayer() const { return _player.get(); };
+    Player* GetPlayer() const { return _playerController.get(); };
 
 private:
     std::unique_ptr<PointLight> _pointLight;
@@ -48,7 +48,7 @@ private:
     std::unique_ptr<OgreNormal> _ogreNormal;
     std::unique_ptr<Text> _text;
     std::unique_ptr<Sun> _sun;
-    std::unique_ptr<Player> _player;
+    std::unique_ptr<Player> _playerController;
     std::unique_ptr<HUD_Logo> _hudLogo;
     std::unique_ptr<HierarchyTest> _hierarchy;
     std::unique_ptr<Sky> _sky;

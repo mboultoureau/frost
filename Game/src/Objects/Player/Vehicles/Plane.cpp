@@ -1,258 +1,224 @@
 #include "Plane.h"
-#include "../../../Game.h"
-#include "../../../MainLayer.h"
-#include "../PlayerCamera.h"
-#include "../../../Physics/PhysicsLayer.h"
+#include "Physics/PhysicLayer.h"
+#include <Frost/Scene/Components/RigidBody.h>
+#include <Frost/Scene/Components/WorldTransform.h>
+#include <Frost/Math/Math.h>
 
-#include "Frost/Scene/Components/RigidBody.h"
-#include "Frost/Scene/Components/WorldTransform.h"
-
-#include <Jolt/Math/Math.h>
-#include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
-#include <Jolt/Physics/Collision/Shape/BoxShape.h>
-#include <Jolt/Physics/Collision/Shape/OffsetCenterOfMassShape.h>
-#include <Jolt/Physics/Collision/Shape/SphereShape.h>
-#include <Jolt/Physics/Collision/ShapeCast.h>
-#include <Jolt/Physics/Vehicle/MotorcycleController.h>
-
-// TODO: remove windows header from polluting all the code
-#undef max
-#undef min
-#include <DirectXMath.h>
-#include <algorithm>
-#include <cmath>
+using namespace JPH;
 using namespace Frost;
-using namespace Frost::Component;
 using namespace Frost::Math;
+using namespace Frost::Component;
 
-Plane::Plane(Player* player, RendererParameters params) : Vehicle(player, params), _currentSpeed(_baseForwardSpeed)
+namespace GameLogic
 {
-    RenderMesh(false);
-
-    // Left light
-    _leftLight = _gameObjectRenderer.GetScene()->CreateGameObject("Left Light", _gameObjectRenderer);
-    _leftLight.AddComponent<Transform>(Vector3{ 250.0f, 0.0, 0.f });
-
-    Light lightComponent1;
-    lightComponent1.color = { 0.57f, 0.98f, 0.0f };
-    lightComponent1.intensity = 3.5f;
-    lightComponent1.config =
-        Frost::Component::LightSpot{ .range = 100.0f, .innerConeAngle = 15.0_deg, .outerConeAngle = 20.0_deg };
-    _leftLight.AddComponent<Light>(lightComponent1);
-
-    // Right light
-    _rightLight = _gameObjectRenderer.GetScene()->CreateGameObject("Right Light", _gameObjectRenderer);
-    _rightLight.AddComponent<Transform>(Vector3{ -250.0f, 0.0f, 0.0f });
-
-    Light lightComponent2;
-    lightComponent2.color = { 0.98, 0.0f, 0.0f };
-    lightComponent2.intensity = 3.5f;
-    lightComponent2.config =
-        Frost::Component::LightSpot{ .range = 100.0f, .innerConeAngle = 15.0_deg, .outerConeAngle = 20.0_deg };
-    _rightLight.AddComponent<Light>(lightComponent2);
-
-    _leftLight.SetActive(false);
-    _rightLight.SetActive(false);
-}
-
-void
-Plane::OnBrake(float deltaTime, bool handBrakeInput)
-{
-}
-
-void
-Plane::OnLeftRightInput(float deltaTime, float leftRightInput)
-{
-    this->_leftRightInput = leftRightInput;
-}
-
-void
-Plane::OnAccelerateInput(float deltaTime, float upDownInput)
-{
-    this->_upDownInput = -upDownInput;
-}
-
-void
-Plane::OnPreFixedUpdate(float deltaTime)
-{
-    using namespace JPH;
-
-    if (_player->IsInWater())
+    static float MoveTowards(float current, float target, float maxDelta)
     {
-        return;
+        float diff = target - current;
+        if (std::abs(diff) <= maxDelta)
+            return target;
+        return current + std::copysign(maxDelta, diff);
     }
 
-    if (_inContinuousCollision)
+    Plane::Plane(GameObject player) : Vehicle(player)
     {
-        return;
+        _vehicle = player.GetChildByName("Plane", true);
+        _currentSpeed = _baseForwardSpeed;
     }
 
-    auto& bodyInterface = Physics::GetBodyInterface();
-
-    UpdateInternalStateFromBody(_justAppeared);
-
-    JPH::Vec3 horizontalVelocity = { bodyInterface.GetLinearVelocity(_bodyId).GetX(),
-                                     0,
-                                     bodyInterface.GetLinearVelocity(_bodyId).GetZ() };
-
-    _currentSpeed = horizontalVelocity.Length();
-
-    // Angles cibles selon les inputs
-    float targetPitch = -_upDownInput * _maxPitchAngle;
-    float targetRoll = -_leftRightInput * _maxRollAngle;
-
-    // Interpolation progressive vers les angles cibles
-    _currentPitch = MoveTowards(_currentPitch, targetPitch, _pitchSpeed * deltaTime);
-    _currentRoll = MoveTowards(_currentRoll, targetRoll, _rollSpeed * deltaTime);
-
-    // Le yaw change proportionnellement au roll actuel
-    _currentYaw -= _currentRoll * _yawFromRoll * deltaTime;
-
-    // Vitesse selon le pitch
-    if (_upDownInput < 0)
+    void Plane::Show()
     {
-        float targetSpeed = _maxForwardSpeed;
-        float speedLerp = 1.0f - std::exp(-_downwardSpeedSmoothing * deltaTime);
-        _currentSpeed += (targetSpeed - _currentSpeed) * speedLerp;
-    }
-    else if (_upDownInput > 0)
-    {
-        float targetSpeed = _minForwardSpeed;
-        float speedLerp = 1.0f - std::exp(-_upwardSpeedSmoothing * deltaTime);
-        _currentSpeed += (targetSpeed - _currentSpeed) * speedLerp;
-    }
-    else
-    {
-        float targetSpeed = _baseForwardSpeed;
-        if (_currentSpeed > targetSpeed)
-        {
-            _currentSpeed = std::max(targetSpeed, _currentSpeed - _noInputDeceleration * deltaTime);
-        }
-        else if (_currentSpeed < targetSpeed)
-        {
-            _currentSpeed = std::min(targetSpeed, _currentSpeed + _noInputDeceleration * deltaTime);
-        }
-    }
-    _currentSpeed = std::clamp(_currentSpeed, _minForwardSpeed, _maxForwardSpeed);
+        _vehicle.SetActive(true);
 
-    // Taux vertical
-    float verticalRate = -_baseSinkRate;
-    if (_upDownInput < 0)
-    {
-        verticalRate = -_diveSinkRate;
-    }
-    else if (_upDownInput > 0)
-    {
-        verticalRate = _currentSpeed - _climbLiftRateOffset;
-    }
+        const auto& transform = _playerController.GetComponent<Transform>();
+        Vec3 pos = Math::vector_cast<Vec3>(transform.position);
+        Quat rot = Math::vector_cast<Quat>(transform.rotation);
 
-    JPH::Quat yawQuat = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), _currentYaw);
-    JPH::Quat pitchQuat = JPH::Quat::sRotation(JPH::Vec3::sAxisX(), _currentPitch);
-    JPH::Quat rollQuat = JPH::Quat::sRotation(JPH::Vec3::sAxisZ(), _currentRoll);
-    JPH::Quat newRotation = yawQuat * pitchQuat * rollQuat;
+        RefConst<Shape> shape = new SphereShape(1.0f);
+        BodyCreationSettings bodySettings(shape, pos, rot, EMotionType::Dynamic, ObjectLayers::PLAYER);
+        bodySettings.mRestitution = 0.5f;
+        bodySettings.mAllowSleeping = false;
+        bodySettings.mFriction = 130.0f;
+        bodySettings.mGravityFactor = 0.2f;
+        bodySettings.mAllowedDOFs =
+            EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ;
 
-    JPH::Vec3 horizontalDir(std::sin(_currentYaw), 0, std::cos(_currentYaw));
-    JPH::Vec3 finalVelocity = horizontalDir * _currentSpeed + JPH::Vec3(0, verticalRate, 0);
+        Body* body = Physics::CreateBody(bodySettings);
+        BodyID bodyId = body->GetID();
+        Physics::AddBody(bodyId, EActivation::Activate);
 
-    bodyInterface.SetRotation(_bodyId, newRotation, JPH::EActivation::Activate);
-    bodyInterface.SetLinearVelocity(_bodyId, finalVelocity);
+        Physics::GetBodyInterface().SetUserData(bodyId, static_cast<JPH::uint64>(_playerController.GetHandle()));
+        auto& rigidBody = _playerController.AddComponent<RigidBody>(bodyId);
+        rigidBody.objectLayer = ObjectLayers::PLAYER;
+        rigidBody.motionType = RigidBody::MotionType::Dynamic;
 
-    _justAppeared = false;
-}
-
-void
-Plane::OnFixedUpdate(float fixedDeltaTime)
-{
-    auto& scene = Game::GetScene();
-    auto mainLayer = Game::GetMainLayer();
-    Player* player = mainLayer->GetPlayer();
-
-    auto playerCamera = player->GetCamera();
-
-    playerCamera->SetRadialBlurStrength(_currentSpeed * _radialBlurSpeedFactor);
-}
-
-void
-Plane::OnLateUpdate(float deltaTime)
-{
-    if (_collisionCoolDownTimer.GetDurationAs<std::chrono::milliseconds>() > _collisionCoolDown)
-    {
-        _collisionCoolDownTimer.Start();
-        _collisionCoolDownTimer.Pause();
+        _justAppeared = true;
         _inContinuousCollision = false;
-    }
-    // FT_INFO(collisionCoolDownTimer.GetDuration().);
-}
 
-void
-Plane::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
-{
-    if (!_inContinuousCollision)
+        // On force une mise � jour imm�diate pour caler le Yaw
+        _UpdateInternalStateFromBody(false);
+    }
+
+    void Plane::Hide()
     {
-        auto& scene = Game::GetScene();
-        auto mainLayer = Game::GetMainLayer();
-        Player* player = mainLayer->GetPlayer();
-
-        auto playerCamera = player->GetCamera();
-
-        playerCamera->Shake(_screenShakeDuration,
-                            _currentSpeed * _screenShakeSpeedMultiplier,
-                            ScreenShakeEffect::AttenuationType::EaseOut);
+        _vehicle.SetActive(false);
+        if (_playerController.HasComponent<RigidBody>())
+            _playerController.RemoveComponent<RigidBody>();
     }
 
-    if (params.inBody1.IsSensor() || params.inBody2.IsSensor())
-        return;
+    void Plane::OnMove(float right, float forward)
+    {
+        _leftRightInput = right;
+        _upDownInput = -forward;
+    }
 
-    _inContinuousCollision = true;
-    _collisionCoolDownTimer.Start();
-}
+    void Plane::OnBrake(bool brake) {}
+    void Plane::OnSpecialAction(bool special) {}
 
-void
-Plane::OnCollisionExit(std::pair<GameObject::Id, GameObject::Id> params, float deltaTime)
-{
-    // inContinuousCollision = false;
-    // FT_INFO("collision exit");
-}
+    void Plane::OnCollisionEnter(const Frost::Math::Vector3& contactNormal)
+    {
+        if (!_inContinuousCollision)
+        {
+            auto& camera = _camera.GetComponent<Camera>();
+            if (auto shake = camera.GetEffect<ScreenShakeEffect>())
+            {
+                shake->Shake(
+                    0.4f, _currentSpeed * _screenShakeSpeedMultiplier, ScreenShakeEffect::AttenuationType::EaseOut);
+            }
+        }
 
-JPH::BodyID
-Plane::Appear()
-{
-    using namespace JPH;
-    RenderMesh(true);
+        _inContinuousCollision = true;
+        _collisionCoolDownTimer.Start();
+    }
 
-    _leftLight.SetActive(true);
-    _rightLight.SetActive(true);
+    void Plane::OnPreFixedUpdate(float fixedDeltaTime)
+    {
+        if (!_playerController.HasComponent<RigidBody>())
+            return;
 
-    _player->SetIsInWater(false);
-    auto wTransform = _scene->GetComponent<Transform>(_player->GetPlayerID());
-    auto joltPos = Math::vector_cast<Vec3>(wTransform->position);
-    auto joltRot = Math::vector_cast<Quat>(wTransform->rotation);
+        if (_inContinuousCollision)
+        {
+            if (_collisionCoolDownTimer.GetDuration() > _collisionCoolDownDuration)
+            {
+                _inContinuousCollision = false;
+                _UpdateInternalStateFromBody(true);
+            }
+            else
+            {
+                return;
+            }
+        }
 
-    JPH::ShapeRefC shape = new JPH::SphereShape(1.0f);
+        auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
+        auto& bodyInterface = Physics::GetBodyInterface();
 
-    BodyCreationSettings bodySettings(shape, joltPos, joltRot, EMotionType::Dynamic, ObjectLayers::PLAYER);
-    bodySettings.mRestitution = .5f;
-    bodySettings.mAllowSleeping = false;
-    bodySettings.mFriction = 130.f;
-    bodySettings.mGravityFactor = 0.2f;
-    bodySettings.mAllowedDOFs = EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ;
-    _bodyId = Physics::CreateAndAddBody(bodySettings, _player->GetPlayerID(), EActivation::Activate);
+        if (_justAppeared)
+            _UpdateInternalStateFromBody(false);
 
-    _inContinuousCollision = false;
-    _justAppeared = true;
-    return _bodyId;
-}
+        // --- Flight Model ---
+        JPH::Vec3 vel = bodyInterface.GetLinearVelocity(bodyId);
+        JPH::Vec3 horizontalVel = { vel.GetX(), 0, vel.GetZ() };
 
-void
-Plane::Disappear()
-{
-    if (!_player->GetPlayerID().IsValid())
-        return;
+        // On r�cup�re la vitesse. Si on vient de spawner, on s'assure d'avoir la vitesse de base
+        _currentSpeed = horizontalVel.Length();
+        if (_justAppeared && _currentSpeed < 1.0f)
+            _currentSpeed = _baseForwardSpeed;
 
-    using namespace JPH;
-    RenderMesh(false);
+        float targetPitch = -_upDownInput * _maxPitchAngle;
+        float targetRoll = -_leftRightInput * _maxRollAngle;
 
-    if (_player->GetPlayerID().HasComponent<RigidBody>())
-        _player->GetPlayerID().RemoveComponent<RigidBody>();
-}
+        _currentPitch = MoveTowards(_currentPitch, targetPitch, _pitchSpeed * fixedDeltaTime);
+        _currentRoll = MoveTowards(_currentRoll, targetRoll, _rollSpeed * fixedDeltaTime);
+
+        // Note: Inversion possible ici aussi selon le sens de rotation voulu
+        _currentYaw -= _currentRoll * _yawFromRoll * fixedDeltaTime;
+
+        // Gestion de la vitesse (W = piqu� = acc�l�ration)
+        if (_upDownInput < 0)
+        {
+            float targetSpeed = _maxForwardSpeed;
+            float speedLerp = 1.0f - std::exp(-_downwardSpeedSmoothing * fixedDeltaTime);
+            _currentSpeed += (targetSpeed - _currentSpeed) * speedLerp;
+        }
+        else if (_upDownInput > 0)
+        {
+            float targetSpeed = _minForwardSpeed;
+            float speedLerp = 1.0f - std::exp(-_upwardSpeedSmoothing * fixedDeltaTime);
+            _currentSpeed += (targetSpeed - _currentSpeed) * speedLerp;
+        }
+        else
+        {
+            float targetSpeed = _baseForwardSpeed;
+            if (_currentSpeed > targetSpeed)
+                _currentSpeed = std::max(targetSpeed, _currentSpeed - _noInputDeceleration * fixedDeltaTime);
+            else if (_currentSpeed < targetSpeed)
+                _currentSpeed = std::min(targetSpeed, _currentSpeed + _noInputDeceleration * fixedDeltaTime);
+        }
+        _currentSpeed = std::clamp(_currentSpeed, _minForwardSpeed, _maxForwardSpeed);
+
+        float verticalRate = -_baseSinkRate;
+        if (_upDownInput < 0)
+            verticalRate = -_diveSinkRate;
+        else if (_upDownInput > 0)
+            verticalRate = (_currentSpeed / _maxForwardSpeed) * _climbLiftRateOffset;
+
+        // Construction de la rotation
+        // FIX : On ajoute JPH_PI (180�) au Yaw pour retourner la logique physique
+        Quat yawQuat = Quat::sRotation(Vec3::sAxisY(), _currentYaw + JPH::JPH_PI);
+        Quat pitchQuat = Quat::sRotation(Vec3::sAxisX(), _currentPitch);
+        Quat rollQuat = Quat::sRotation(Vec3::sAxisZ(), _currentRoll);
+        Quat newRotation = yawQuat * pitchQuat * rollQuat;
+
+        // Calcul du vecteur direction bas� sur la rotation calcul�e
+        // On prend l'axe Z de la rotation finale pour �tre s�r d'aller "tout droit"
+        Vec3 forwardDir = newRotation.RotateAxisZ();
+
+        // Application de la vitesse
+        Vec3 finalVelocity = forwardDir * _currentSpeed + Vec3(0, verticalRate, 0);
+
+        bodyInterface.SetRotation(bodyId, newRotation, EActivation::Activate);
+        bodyInterface.SetLinearVelocity(bodyId, finalVelocity);
+
+        _justAppeared = false;
+    }
+
+    void Plane::_UpdateInternalStateFromBody(bool accountForVelocity)
+    {
+        if (!_playerController.HasComponent<RigidBody>())
+            return;
+        auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
+        auto& bodyInterface = Physics::GetBodyInterface();
+
+        Quat rot = bodyInterface.GetRotation(bodyId);
+        Vec3 speed = bodyInterface.GetLinearVelocity(bodyId);
+        Vec3 fwd;
+
+        if (accountForVelocity && speed.Length() > _speedAcknowledgementThreshold)
+            fwd = speed.NormalizedOr(rot.RotateAxisZ());
+        else
+            fwd = rot.RotateAxisZ();
+
+        // Calcul du Yaw standard
+        _currentYaw = std::atan2(fwd.GetX(), fwd.GetZ());
+
+        // FIX : Si on d�tecte qu'on est invers� par rapport au mod�le, on compense ici aussi
+        // Si l'avion part en arri�re, c'est que l'avant physique est l'arri�re visuel.
+        // On d�cale de 180� (PI) pour s'aligner.
+        _currentYaw += JPH::JPH_PI;
+
+        Vec3 up = rot.RotateAxisY();
+        _currentPitch = std::asin(-fwd.GetY());
+
+        Vec3 right = rot.RotateAxisX();
+        _currentRoll = std::atan2(right.GetY(), up.GetY());
+    }
+
+    void Plane::OnFixedUpdate(float fixedDeltaTime)
+    {
+        if (!_playerController.HasComponent<RigidBody>())
+            return;
+
+        auto& camera = _camera.GetComponent<Camera>();
+        if (auto radialBlur = camera.GetEffect<RadialBlurEffect>())
+            radialBlur->SetStrength(_currentSpeed * _radialBlurSpeedFactor);
+    }
+} // namespace GameLogic

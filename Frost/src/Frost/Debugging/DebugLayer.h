@@ -1,17 +1,21 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Core/Layer.h"
 #include "Frost/Debugging/DebugInterface/DebugPanel.h"
 #include "Frost/Scene/Scene.h"
+#include "Frost/Utils/NoCopy.h"
 
+#include <memory>
 #include <vector>
 
 namespace Frost
 {
-    class DebugLayer : public Layer
+    class FROST_API DebugLayer : public Layer, NoCopy
     {
     public:
         DebugLayer();
+        virtual ~DebugLayer() = default;
 
         void OnAttach() override;
         void OnDetach() override;

@@ -1,6 +1,6 @@
 ﻿#include "Editor/ProjectHubLayer.h"
 #include "Editor/EditorApp.h"
-#include "Editor/Project/ProjectOpenEvent.h"
+#include "Editor/Events/ProjectOpenEvent.h"
 #include "Editor/UI/EditorTheme.h"
 #include "Editor/Utils/PlatformUtils.h"
 #include "Frost.h"
@@ -30,7 +30,15 @@ namespace Editor
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+
+        // Attach context to Frost
         ImGuiIO& io = ImGui::GetIO();
+        ImGuiMemAllocFunc allocFunc;
+        ImGuiMemFreeFunc freeFunc;
+        void* userData;
+        ImGui::GetAllocatorFunctions(&allocFunc, &freeFunc, &userData);
+        Frost::SyncImGuiContext(ImGui::GetCurrentContext(), allocFunc, freeFunc, userData);
+
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 

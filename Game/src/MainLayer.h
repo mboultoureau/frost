@@ -36,7 +36,7 @@ public:
     void OnDetach() override;
     void OnPressedButton();
     GameState GetGameState() { return _gamestate; }
-    Player* GetPlayer() const { return _player.get(); };
+    Player* GetPlayer() const { return _playerController.get(); };
 
 private:
     bool OnGamePaused(Frost::PauseEvent& e);
@@ -51,7 +51,7 @@ private:
     std::unique_ptr<Water> _water;
     std::unique_ptr<Water> _sndWater;
     std::unique_ptr<Sun> _sun;
-    std::unique_ptr<Player> _player;
+    std::unique_ptr<Player> _playerController;
     std::shared_ptr<Portal> _portal1;
     std::shared_ptr<Portal> _portal2;
     std::shared_ptr<Portal> _portal3;

@@ -1,0 +1,52 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: FishingBoat
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: Mesh
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/FishingBoat/FishingBoat.glb
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: RigidBody
+    Transform:
+      Position: [0, 3.3834105, 0.9537988]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 0
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [3.8, 5.1, 7]
+        ConvexRadius: 0.05

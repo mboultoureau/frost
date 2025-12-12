@@ -14,7 +14,7 @@ using namespace Frost::Component;
 
 namespace Frost
 {
-    Scene::Scene(std::string&& name) : _name{ std::move(name) }
+    Scene::Scene(std::string name) : _name{ name }
     {
         _registry.on_destroy<Component::Relationship>().connect<&Scene::_OnRelationshipDestroyed>(this);
         _InitializeSystems();
@@ -58,6 +58,16 @@ namespace Frost
 
     void Scene::DestroyGameObject(GameObject gameObject)
     {
+        if (!gameObject.IsValid())
+            return;
+
+        gameObject.DestroyAllChildren();
+
+        if (gameObject.GetParent())
+        {
+            gameObject.SetParent({});
+        }
+
         _registry.destroy(gameObject.GetHandle());
     }
 
@@ -89,11 +99,44 @@ namespace Frost
         return newRoot;
     }
 
+    std::vector<GameObject> Scene::FindGameObjectsByName(const std::string& name)
+    {
+        std::vector<GameObject> results;
+        auto view = _registry.view<Component::Meta>();
+
+        for (auto entity : view)
+        {
+            const auto& meta = view.get<Component::Meta>(entity);
+            if (meta.name == name)
+            {
+                results.emplace_back(entity, this);
+            }
+        }
+
+        return results;
+    }
+
+    GameObject Scene::FindGameObjectByName(const std::string& name)
+    {
+        auto view = _registry.view<Component::Meta>();
+
+        for (auto entity : view)
+        {
+            const auto& meta = view.get<Component::Meta>(entity);
+            if (meta.name == name)
+            {
+                return GameObject(entity, this);
+            }
+        }
+
+        return GameObject();
+    }
+
     void Scene::_InitializeSystems()
     {
         _systems.push_back(std::make_unique<ScriptableSystem>());
-        _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<WorldTransformSystem>());
+        _systems.push_back(std::make_unique<PhysicSystem>());
         _systems.push_back(std::make_unique<RendererSystem>());
         _systems.push_back(std::make_unique<UISystem>());
 

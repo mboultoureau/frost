@@ -12,8 +12,7 @@ cbuffer PerObject : register(b1)
 cbuffer MaterialParams : register(b3)
 {
     float Time;
-    float3 PlayerPosition; 
-    
+    float3 Padding1;
     float TopAmplitude;
     float TopFrequency;
     float TopWaveLength;

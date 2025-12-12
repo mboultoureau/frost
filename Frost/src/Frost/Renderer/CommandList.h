@@ -32,7 +32,9 @@ namespace Frost
     {
         Solid,
         Wireframe,
-        SolidCullNone
+        SolidCullNone,
+        SolidCullBack,
+        SolidCullFront
     };
 
     enum class StencilOp

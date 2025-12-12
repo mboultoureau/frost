@@ -1,0 +1,88 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: Tunnel
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: TunnelEgout
+    Transform:
+      Position: [-2.4039917, 2.2161863, -0.18957996]
+      Rotation: [0, 0, 0, 1]
+      Scale: [0.09, 0.09, 0.1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/Tunnel/TunnelEgout.glb
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 0
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 4
+      ShapeParams:
+        Path: assets\Prefabs\Tunnel\TunnelEgout.glb
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: Light
+    Transform:
+      Position: [-2.3901453, 3.2700846, -9.191023]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 1
+      Color: [1, 0, 0]
+      Intensity: 1
+      Params:
+        Radius: 2.7
+        Falloff: 1
+  - LocalID: 3
+    ParentID: 0
+    Meta:
+      Name: Light
+    Transform:
+      Position: [-2.3110073, 3.27, -4.8108697]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 1
+      Color: [1, 0, 0]
+      Intensity: 1
+      Params:
+        Radius: 2
+        Falloff: 1
+  - LocalID: 4
+    ParentID: 0
+    Meta:
+      Name: Light
+    Transform:
+      Position: [-2.3110073, 3.27, 3.128099]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 1
+      Color: [1, 0, 0]
+      Intensity: 1
+      Params:
+        Radius: 2
+        Falloff: 1

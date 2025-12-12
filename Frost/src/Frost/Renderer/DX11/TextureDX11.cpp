@@ -148,8 +148,8 @@ namespace Frost
             else
             {
 
-                data = stbi_load_from_memory(_config.fileData.data(),
-                                             static_cast<int>(_config.fileData.size()),
+                data = stbi_load_from_memory(config.fileData.data(),
+                                             static_cast<int>(config.fileData.size()),
                                              &width,
                                              &height,
                                              &channels,
@@ -474,20 +474,22 @@ namespace Frost
 
     void TextureDX11::UploadGPU()
     {
-        if (GetStatus() == AssetStatus::Loaded)
+        if (GetStatus() == AssetStatus::Loaded || GetStatus() == AssetStatus::Failed)
+        {
+            _ReleaseCPUData();
             return;
-
-        if (GetStatus() == AssetStatus::Failed)
-            return;
+        }
 
         if (_cpuData.empty() && _cpuCubemapData.empty() && !_config.isRenderTarget && !_config.path.empty())
         {
+            _ReleaseCPUData();
             SetStatus(AssetStatus::Failed);
             return;
         }
 
         if (_config.width == 0 || _config.height == 0)
         {
+            _ReleaseCPUData();
             SetStatus(AssetStatus::Failed);
             return;
         }
@@ -500,6 +502,7 @@ namespace Frost
         {
             if (_cpuCubemapData.empty() || _cpuCubemapData[0].empty())
             {
+                _ReleaseCPUData();
                 SetStatus(AssetStatus::Failed);
                 return;
             }
@@ -529,6 +532,7 @@ namespace Frost
             {
                 FT_ENGINE_ERROR("D3D11 Create Cubemap Failed");
                 SetStatus(AssetStatus::Failed);
+                _ReleaseCPUData();
                 return;
             }
 
@@ -543,6 +547,7 @@ namespace Frost
 
             _cpuCubemapData.clear();
             _mmFile.reset();
+            _ReleaseCPUData();
             SetStatus(AssetStatus::Loaded);
             return;
         }
@@ -633,6 +638,7 @@ namespace Frost
         {
             FT_ENGINE_ERROR("Failed to create DX11 Texture: {} (Format: {})", _config.debugName, (int)dxgiFormat);
             SetStatus(AssetStatus::Failed);
+            _ReleaseCPUData();
             return;
         }
 
@@ -646,7 +652,10 @@ namespace Frost
 
             hr = device->CreateShaderResourceView(_texture.Get(), &srvDesc, _srv.GetAddressOf());
             if (FAILED(hr))
+            {
                 FT_ENGINE_ERROR("Failed to create SRV for {}", _config.debugName);
+                _ReleaseCPUData();
+            }
         }
 
         // Render Target View
@@ -665,7 +674,10 @@ namespace Frost
 
             hr = device->CreateDepthStencilView(_texture.Get(), &dsvDesc, _dsv.GetAddressOf());
             if (FAILED(hr))
+            {
                 FT_ENGINE_ERROR("Failed to create DSV for {}", _config.debugName);
+                _ReleaseCPUData();
+            }
         }
 
         if (generateMips && _srv)
@@ -673,11 +685,30 @@ namespace Frost
             context->GenerateMips(_srv.Get());
         }
 
-        _cpuData.clear();
-        _cpuData.shrink_to_fit();
-        _mmFile.reset();
-
+        _ReleaseCPUData();
         SetStatus(AssetStatus::Loaded);
+    }
+
+    void TextureDX11::_ReleaseCPUData()
+    {
+        if (!_cpuData.empty())
+        {
+            _cpuData.clear();
+            _cpuData.shrink_to_fit();
+        }
+
+        if (!_cpuCubemapData.empty())
+        {
+            _cpuCubemapData.clear();
+        }
+
+        if (!_config.fileData.empty())
+        {
+            _config.fileData.clear();
+            _config.fileData.shrink_to_fit();
+        }
+
+        _mmFile.reset();
     }
 
     void TextureDX11::Bind(Slot slot) const

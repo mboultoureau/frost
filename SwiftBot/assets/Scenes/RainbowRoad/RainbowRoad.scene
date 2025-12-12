@@ -1,0 +1,118 @@
+Scene: RainbowRoad
+Entities:
+  - Entity: 9
+    Meta:
+      Name: Boost
+    Transform:
+      Position: [-10.600149, -11.258126, -0.44605303]
+      Rotation: [0, 0, -0.6378414, 0.7701677]
+      Scale: [10, 10, 10]
+    Prefab:
+      AssetPath: assets\Prefabs\Boost\Boost.prefab
+    Parent: -1
+  - Entity: 8
+    Meta:
+      Name: PauseScreen
+    Transform:
+      Position: [-1.8431911, 0, -2.4065137]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\PauseScreen.prefab
+    Parent: -1
+  - Entity: 7
+    Meta:
+      Name: Sun
+    Transform:
+      Position: [0, 0, 8.1]
+      Rotation: [0.3696438, -0.09904576, 0.23911761, 0.8923991]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 0
+      Color: [1, 1, 1]
+      Intensity: 0.7
+      Params:
+        {}
+    Parent: -1
+  - Entity: 6
+    Meta:
+      Name: LevelCamera
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Skybox:
+      Type: 1
+      Intensity: 1
+      Params:
+        Faces:
+          - assets/Scenes/RainbowRoad/Skybox/right.png
+          - assets/Scenes/RainbowRoad/Skybox/left.png
+          - assets/Scenes/RainbowRoad/Skybox/top.png
+          - assets/Scenes/RainbowRoad/Skybox/bottom.png
+          - assets/Scenes/RainbowRoad/Skybox/front.png
+          - assets/Scenes/RainbowRoad/Skybox/back.png
+    Camera:
+      ProjectionType: 0
+      PerspectiveFOV: 60
+      OrthographicSize: 10
+      NearClip: 0.1
+      FarClip: 1000
+      Priority: 0
+      FrustumCulling: true
+      FrustumPadding: 1
+      ClearOnRender: true
+      BackgroundColor: [0.1, 0.1, 0.1, 1]
+      Viewport: [0, 0, 1, 1]
+      RenderToTexture: false
+    Parent: -1
+  - Entity: 5
+    Meta:
+      Name: cat
+    Transform:
+      Position: [0, 0, 2]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Scenes\RainbowRoad\Samples\cat.prefab
+    Parent: -1
+  - Entity: 4
+    Meta:
+      Name: Terrain
+    Transform:
+      Position: [2, -46.81077, 8]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Scenes\RainbowRoad\Terrain\Terrain.prefab
+    Parent: -1
+  - Entity: 2
+    Meta:
+      Name: Player1
+    Transform:
+      Position: [5.8567452, 0.45585728, 4.8872547]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\Player\Player.prefab
+    Parent: -1
+  - Entity: 1
+    Meta:
+      Name: SplashScreen
+    Transform:
+      Position: [-1.566119, 1.1920929e-07, -4.2393036]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\SplashScreen.prefab
+    Parent: -1
+  - Entity: 0
+    Meta:
+      Name: VictoryScreen
+    Transform:
+      Position: [-3.044776, 0, -0.538332]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\VictoryScreen.prefab
+    Parent: -1

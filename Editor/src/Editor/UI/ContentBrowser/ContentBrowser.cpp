@@ -16,6 +16,7 @@
 #include <Windows.h>
 #include <shellapi.h>
 #include <imgui_internal.h>
+#include <Frost/Scene/SceneSerializer.h>
 
 using namespace Frost;
 using namespace Frost::Component;
@@ -396,6 +397,10 @@ namespace Editor
                         {
                             editorLayer->OpenPrefab(file.Path);
                         }
+                        else if ((file.Extension == ".scene" || file.Extension == ".yaml") && editorLayer)
+                        {
+                            editorLayer->OpenScene(file.Path);
+                        }
                         else if (_IsModelFormat(file.Extension) && editorLayer)
                         {
                             editorLayer->OpenMeshPreview(file.Path);
@@ -462,6 +467,12 @@ namespace Editor
         if (ImGui::BeginPopupContextWindow("ContentBrowserGlobalCtx",
                                            ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
+            if (ImGui::MenuItem("Create Scene"))
+            {
+                _showCreateScenePopup = true;
+                memset(_newSceneNameBuffer, 0, sizeof(_newSceneNameBuffer));
+                strcpy_s(_newSceneNameBuffer, "NewScene");
+            }
             if (ImGui::MenuItem("Create Prefab"))
             {
                 _showCreatePrefabPopup = true;
@@ -485,6 +496,40 @@ namespace Editor
     // Actions and Modals
     void ContentBrowser::_RenderModals()
     {
+        // Scene
+        if (_showCreateScenePopup)
+        {
+            ImGui::OpenPopup("Create New Scene");
+        }
+
+        if (ImGui::BeginPopupModal("Create New Scene", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Enter Scene Name:");
+            if (ImGui::IsWindowAppearing())
+            {
+                ImGui::SetKeyboardFocusHere();
+            }
+            bool enter = ImGui::InputText(
+                "##scene", _newSceneNameBuffer, sizeof(_newSceneNameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+            ImGui::Separator();
+
+            if (ImGui::Button("Create") || enter)
+            {
+                if (strlen(_newSceneNameBuffer) > 0)
+                    _CreateScene(_newSceneNameBuffer);
+                _showCreateScenePopup = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel"))
+            {
+                _showCreateScenePopup = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         // Prefab
         if (_showCreatePrefabPopup)
         {
@@ -757,6 +802,22 @@ namespace Editor
     {
         return std::find(MESH_FILE_EXTENSIONS.begin(), MESH_FILE_EXTENSIONS.end(), extension) !=
                MESH_FILE_EXTENSIONS.end();
+    }
+
+    void ContentBrowser::_CreateScene(const std::string& name)
+    {
+        Frost::Scene tempScene(name);
+
+        std::filesystem::path path = _currentDirectory / name;
+        if (path.extension() != ".scene")
+        {
+            path.replace_extension(".scene");
+        }
+
+        Frost::SceneSerializer serializer(&tempScene);
+        serializer.Serialize(path);
+
+        _RefreshAssetList();
     }
 
 } // namespace Editor

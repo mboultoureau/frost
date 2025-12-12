@@ -1,0 +1,40 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: Boost
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 0.5]
+    StaticMesh:
+      Type: 3
+      Params:
+        Width: 1
+        Depth: 0.5
+    RigidBody:
+      MotionType: 0
+      IsSensor: true
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 0
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [0.5, 0.1, 0.3]
+        ConvexRadius: 0.05
+    Scriptable:
+      Scripts:
+        - Boost

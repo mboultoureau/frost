@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/System.h"
-#include "Frost/Scene/Components/Script.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Scene.h"
 
@@ -9,7 +9,7 @@
 
 namespace Frost
 {
-    class PhysicSystem : public System
+    class FROST_API PhysicSystem : public System
     {
     public:
         PhysicSystem() = default;
@@ -23,10 +23,9 @@ namespace Frost
         void NotifyRigidBodyUpdate(Scene& scene, GameObject entity);
 
     private:
+        void _OnDestroyBody(entt::registry& registry, entt::entity entity);
         void _CreateBodyForEntity(Scene& scene, entt::entity entity);
         void _DestroyBodyForEntity(Scene& scene, entt::entity entity);
-        void _OnCreateBody(entt::registry& registry, entt::entity entity);
-        void _OnDestroyBody(entt::registry& registry, entt::entity entity);
 
         void _SynchronizeTransforms(Scene& scene);
 

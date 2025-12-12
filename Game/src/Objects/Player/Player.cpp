@@ -34,21 +34,6 @@ using namespace Frost::Component;
 
 Player::Player()
 {
-    _players.push_back(this);
-    _scene = &Game::GetScene();
-
-    // Create Player Game Object -------------
-    _playerId = _scene->CreateGameObject("Player");
-    _playerId.AddComponent<Transform>(
-        Vector3{ -14.0f, 70.0f, 85.0f }, EulerAngles{ 0.0f, 180.0_deg, 0.0f }, Vector3{ 1.0f, 1.0f, 1.0f });
-    _playerId.AddComponent<WorldTransform>();
-
-    // Create TransitionModelRenderer -----------
-    transitionRenderer = _scene->CreateGameObject("Transition Model renderer", _playerId);
-    transitionRenderer.AddComponent<Transform>(
-        Vector3{ 0.0f, 0, 0.0f }, EulerAngles{ 0.0f, 0.0f, 0.0f }, Vector3{ 2.0f, 2.0f, 2.0f });
-    transitionRenderer.AddComponent<WorldTransform>();
-    transitionRenderer.AddComponent<StaticMesh>(MeshSourceFile{ "./resources/meshes/sphere.fbx" });
 
     // Create Selection Images
     _imageManager = new Frost::SelectedImageManager();

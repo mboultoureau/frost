@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Renderer/PostEffect.h"
 #include "Frost/Utils/Math/Vector.h"
 #include "Frost/Renderer/Shader.h"
@@ -38,7 +39,7 @@ namespace Frost
         DirectX::XMFLOAT2 texelSize;
     };
 
-    class ToonEffect : public PostEffect
+    class FROST_API ToonEffect : public PostEffect
     {
     public:
         ToonEffect();

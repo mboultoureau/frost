@@ -1,4 +1,4 @@
-#include "Application.h"
+#include "Frost/Core/Application.h"
 
 #include "Frost/Core/Windows/WindowWin.h"
 #include "Frost/Event/EventManager.h"
@@ -10,6 +10,8 @@
 #include "Frost/Physics/Physics.h"
 #include "Frost/Input/Input.h"
 #include "Frost/Debugging/ComponentUIRegistry.h"
+#include "Frost/Scripting/ScriptingEngine.h"
+#include "Frost/Scene/Serializers/EngineComponentSerializer.h"
 
 #include <cassert>
 #include <iostream>
@@ -17,32 +19,39 @@
 namespace Frost
 {
     Application* Application::_singleton = nullptr;
+    std::filesystem::path Application::_projectDirectory = ".";
 
-    Application::Application(const ApplicationEntryPoint& entryPoint) :
-        _hInstance{ entryPoint.hInstance }, _running{ true }
+    Application::Application(const ApplicationSpecification& entryPoint) : _running{ true }
     {
         FT_ENGINE_ASSERT(!_singleton, "Application already exists!");
         _singleton = this;
 
 #ifdef FT_PLATFORM_WINDOWS
-        _window = std::make_unique<WindowWin>(entryPoint.title);
+        _window = std::make_unique<WindowWin>(entryPoint);
         _renderer = std::make_unique<RendererDX11>();
 
         RendererAPI::SetRenderer(_renderer.get());
+
+        FT_ENGINE_INFO("Initializing App...");
+
 #else
 #error "Platform not supported!"
 #endif
-
         _closeEventHandlerId = EventManager::Subscribe<WindowCloseEvent>(FROST_BIND_EVENT_FN(_OnWindowClose));
+
+        if (!entryPoint.scriptPath.empty())
+        {
+            Scripting::ScriptingEngine::LoadScriptingDLL(entryPoint.scriptPath.string());
+        }
+
+        // Register engine component serializers
+        EngineComponentSerializer::RegisterEngineComponents();
     }
 
     void Application::Setup()
     {
         Physics::InitPhysics(_physicsConfig, _physicsConfigured);
-
-#ifdef FT_DEBUG
         Frost::ComponentUIRegistry::InitEngineComponents();
-#endif
     }
 
     Application::~Application()
@@ -146,6 +155,7 @@ namespace Frost
                 }
 
                 RendererAPI::EndFrame();
+                Input::Reset();
             }
         }
     }
@@ -160,5 +170,15 @@ namespace Frost
     {
         _running = false;
         return true;
+    }
+
+    void Application::SetProjectDirectory(const std::filesystem::path& path)
+    {
+        _projectDirectory = path;
+    }
+
+    const std::filesystem::path& Application::GetProjectDirectory()
+    {
+        return _projectDirectory;
     }
 } // namespace Frost

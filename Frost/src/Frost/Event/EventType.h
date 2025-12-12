@@ -22,6 +22,7 @@ namespace Frost
         GamePaused,
         GameUnpaused,
         GameReset,
+        LoadLevel,
         AppCustom,
         _COUNT
     };

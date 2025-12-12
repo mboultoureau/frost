@@ -17,7 +17,7 @@ HS_ConstantData HS_PatchConstants(InputPatch<HS_Input, 3> patch, uint PatchID : 
     camPos.y = -dot(row1, trans);
     camPos.z = -dot(row2, trans);
 
-    float dist = distance(PlayerPosition, patchCenter); 
+    float dist = distance(camPos, patchCenter);
 
     float NearDist = 10.0f;
     float FarDist = 100.0f;

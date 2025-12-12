@@ -7,12 +7,44 @@
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Utils/Math/Transform.h"
+#include "Frost/Scene/SceneSerializer.h"
+#include "Frost/Debugging/Logger.h"
 
 namespace Editor
 {
     using namespace Frost;
     using namespace Frost::Math;
     using namespace Frost::Component;
+
+    bool SceneView::_IsSelected(const Frost::GameObject& go) const
+    {
+        for (const auto& item : _selection)
+        {
+            if (item.GetHandle() == go.GetHandle())
+                return true;
+        }
+        return false;
+    }
+
+    void SceneView::_AddToSelection(const Frost::GameObject& go)
+    {
+        if (!_IsSelected(go))
+            _selection.push_back(go);
+    }
+
+    void SceneView::_RemoveFromSelection(const Frost::GameObject& go)
+    {
+        _selection.erase(std::remove_if(_selection.begin(),
+                                        _selection.end(),
+                                        [&](const Frost::GameObject& item)
+                                        { return item.GetHandle() == go.GetHandle(); }),
+                         _selection.end());
+    }
+
+    void SceneView::_ClearSelection()
+    {
+        _selection.clear();
+    }
 
     SceneView::SceneView(const std::string& title, Frost::Scene* existingScene) :
         _title(title),
@@ -95,6 +127,25 @@ namespace Editor
         _FocusCameraOnEntity(camTrans, bounds);
     }
 
+    SceneView::SceneView(const std::filesystem::path& scenePath, SceneTag) : _assetPath(scenePath), _isPrefabView(false)
+    {
+        _title = "Scene: " + scenePath.stem().string();
+        _localScene = std::make_unique<Frost::Scene>("Scene Editor");
+        _sceneContext = _localScene.get();
+        _gizmo = std::make_unique<Gizmo>(_sceneContext);
+
+        if (std::filesystem::exists(_assetPath))
+        {
+            SceneSerializer serializer(_sceneContext);
+            if (!serializer.Deserialize(_assetPath))
+            {
+                FT_ENGINE_ERROR("Failed to load scene for editing: {0}", _assetPath.string());
+            }
+        }
+
+        _Init();
+    }
+
     void SceneView::_Init()
     {
         _ResizeViewportFramebuffer(1280, 720);
@@ -108,12 +159,12 @@ namespace Editor
         cam.farClip = 1000.0f;
         cam.nearClip = 0.1f;
 
-        _editorSkybox = _sceneContext->CreateGameObject("__EDITOR__Skybox");
-        _editorSkybox.AddComponent<Skybox>("./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png");
+        _editorCamera.AddComponent<Skybox>(
+            SkyboxSourceCubemap{ "./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png" });
 
         _editorLight = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
         auto& lightTransform = _editorLight.AddComponent<Transform>();
-        _editorLight.AddComponent<Light>();
+        _editorLight.AddComponent<Light>(LightDirectional{});
         lightTransform.position = { 0.0f, 5.0f, -5.0f };
         lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
 

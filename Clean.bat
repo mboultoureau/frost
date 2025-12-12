@@ -6,7 +6,7 @@ setlocal
 :: ==============================================================================
 
 :: Directories to remove from the root
-set "ROOT_DIRS_TO_CLEAN=CMakeFiles x64 Debug Release vendor .vs"
+set "ROOT_DIRS_TO_CLEAN=check-format.dir CMakeFiles format.dir x64 Debug Release vendor .vs"
 
 :: File extensions or names to remove from the root
 set "ROOT_FILES_TO_CLEAN=*.sln *.slnx *.vcxproj *.vcxproj.user *.vcxproj.filters CMakeCache.txt cmake_install.cmake Makefile"
@@ -15,7 +15,7 @@ set "ROOT_FILES_TO_CLEAN=*.sln *.slnx *.vcxproj *.vcxproj.user *.vcxproj.filters
 set "CMAKE_DIRS_TO_CLEAN=ZERO_CHECK.dir INSTALL.dir ALL_BUILD.dir"
 
 :: Sub-projects to iterate through
-set "PROJECT_SUBDIRS=Frost Lab Game Editor"
+set "PROJECT_SUBDIRS=Frost Lab Game Editor SwiftBot"
 
 :: Directories to remove inside sub-projects
 set "SUB_DIRS_TO_CLEAN=bin CMakeFiles Debug Release x64"

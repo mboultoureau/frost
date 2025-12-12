@@ -29,12 +29,19 @@ namespace Frost
         MIRROR_ONCE
     };
 
+    enum class ComparisonFunction
+    {
+        NEVER,
+        LESS_EQUAL,
+    };
+
     struct SamplerConfig
     {
         Filter filter = Filter::MIN_MAG_MIP_LINEAR;
         AddressMode addressU = AddressMode::WRAP;
         AddressMode addressV = AddressMode::WRAP;
         AddressMode addressW = AddressMode::WRAP;
+        ComparisonFunction comparisonFunction = ComparisonFunction::NEVER;
         float mipLODBias = 0.0f;
         uint32_t maxAnisotropy = 1;
         float borderColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };

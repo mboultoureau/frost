@@ -45,10 +45,10 @@ namespace Frost
 
         ShaderDesc vsDesc = { .type = ShaderType::Vertex,
                               .debugName = "VS_HUD",
-                              .filePath = "../Frost/resources/shaders/VS_HUD.hlsl" };
+                              .filePath = "../Frost/resources/shaders/HUD/VS_HUD.hlsl" };
         ShaderDesc psDesc = { .type = ShaderType::Pixel,
                               .debugName = "PS_HUD",
-                              .filePath = "../Frost/resources/shaders/PS_HUD.hlsl" };
+                              .filePath = "../Frost/resources/shaders/HUD/PS_HUD.hlsl" };
         _vertexShader = Shader::Create(vsDesc);
         _pixelShader = Shader::Create(psDesc);
 
@@ -124,33 +124,29 @@ namespace Frost
         _commandList->SetConstantBuffer(_constantBuffer.get(), 0);
     }
 
-    void HUDRenderingPipeline::Submit(const Component::HUDImage& image)
+    void HUDRenderingPipeline::Submit(const Component::UIElement& element, const Component::UIImage& image)
     {
-        float windowWidth = static_cast<float>(Application::GetWindow()->GetWidth());
-        float windowHeight = static_cast<float>(Application::GetWindow()->GetHeight());
+        if (!image.texture)
+            return;
 
         HUDShaderParameters params = {};
-        params.viewport[0] = image.viewport.x;
-        params.viewport[1] = image.viewport.y;
-        params.viewport[2] = image.viewport.width;
-        params.viewport[3] = image.viewport.height;
+        params.viewport[0] = element.viewport.x;
+        params.viewport[1] = element.viewport.y;
+        params.viewport[2] = element.viewport.width;
+        params.viewport[3] = element.viewport.height;
 
-        params.rotation = image.rotation;
+        params.color[0] = element.color.r;
+        params.color[1] = element.color.g;
+        params.color[2] = element.color.b;
+        params.color[3] = element.color.a;
 
-        params.padding[0] = 0.0f;
-        params.padding[1] = 0.0f;
-        params.padding[2] = 0.0f;
+        params.rotation = element.rotation;
 
         _constantBuffer->UpdateData(_commandList.get(), &params, sizeof(params));
 
-        SetFilter(image.textureFilter);
+        SetFilter(image.filter);
         _commandList->SetTexture(image.texture.get(), 0);
         _commandList->DrawIndexed(_indexCount, 0, 0);
-    }
-
-    void HUDRenderingPipeline::Submit(const Component::UIButton& button)
-    {
-        Submit(static_cast<const Component::HUDImage&>(button));
     }
 
     void HUDRenderingPipeline::EndFrame()

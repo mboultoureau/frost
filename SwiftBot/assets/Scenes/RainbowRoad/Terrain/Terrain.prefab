@@ -1,0 +1,23 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: TerrainPrefab
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 5
+      Params:
+        TexturePath: assets/Scenes/RainbowRoad/Terrain/heightmap.png
+        Width: 500
+        Depth: 500
+        MinHeight: 0
+        MaxHeight: 10.6
+        SegmentWidth: 64
+        SegmentDepth: 64
+    Scriptable:
+      Scripts:
+        - Terrain

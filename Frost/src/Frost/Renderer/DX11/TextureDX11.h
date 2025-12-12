@@ -43,6 +43,7 @@ namespace Frost
 
     private:
         void _CreateCubemapCPU();
+        void _ReleaseCPUData();
 
         Microsoft::WRL::ComPtr<ID3D11Texture2D> _texture;
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> _srv;

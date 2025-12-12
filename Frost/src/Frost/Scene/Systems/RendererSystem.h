@@ -7,14 +7,16 @@
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/Light.h"
 #include "Frost/Scene/Components/StaticMesh.h"
-#include "Frost/Scene/Components/VirtualCamera.h"
 #include "Frost/Scene/Components/WorldTransform.h"
 #include "Frost/Scene/Components/ScreenProjectedTexture.h"
+#include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Renderer/Frustum.h"
 #include "Frost/Scene/ECS/System.h"
 
 #include <entt/entt.hpp>
 #include <memory>
+#include <Frost/Renderer/Pipeline/ShadowPipeline.h>
+#include <unordered_map>
 
 namespace Frost
 {
@@ -66,6 +68,7 @@ namespace Frost
 
     private:
         DeferredRenderingPipeline _deferredRendering;
+        ShadowPipeline _shadowPipeline;
         SkyboxPipeline _skyboxPipeline;
 
         std::shared_ptr<Texture> _source;
@@ -75,6 +78,11 @@ namespace Frost
         std::shared_ptr<Texture> _portalPostProcessDestination;
 
         std::shared_ptr<Texture> _externalRenderTarget = nullptr;
+        std::shared_ptr<Texture> _GetOrCreateSkyboxTexture(const Component::Skybox& skybox);
+
+        std::unordered_map<std::string, std::shared_ptr<Texture>> _skyboxTextureCache;
+        std::unordered_map<entt::entity, std::shared_ptr<Texture>> _renderTargetCache;
+
         uint32_t _viewportWidth = 0;
         uint32_t _viewportHeight = 0;
 

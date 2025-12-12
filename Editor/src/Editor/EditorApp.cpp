@@ -2,6 +2,8 @@
 
 #include "Frost/Core/EntryPoint.h"
 #include "Frost/Core/Layer.h"
+#include "Frost/Scripting/ScriptingEngine.h"
+#include "Frost/Physics/Physics.h"
 
 using namespace Frost;
 
@@ -9,7 +11,7 @@ namespace Editor
 {
     EditorApp* EditorApp::_singleton = nullptr;
 
-    EditorApp::EditorApp(Frost::ApplicationEntryPoint entryPoint) : Frost::Application(entryPoint)
+    EditorApp::EditorApp(Frost::ApplicationSpecification entryPoint) : Frost::Application(entryPoint)
     {
         FT_ENGINE_ASSERT(!_singleton, "EditorApp already exists!");
         _singleton = this;
@@ -57,8 +59,28 @@ namespace Editor
         FT_ENGINE_INFO(
             "Project '{0}' loaded from path: {1}", _projectInfo.GetConfig().name, _projectInfo.GetProjectFilePath());
 
+        const auto& config = _projectInfo.GetConfig();
+
+        std::vector<Frost::PhysicsLayerInfo> engineLayers;
+        engineLayers.reserve(config.objectLayers.size());
+
+        for (const auto& layer : config.objectLayers)
+        {
+            engineLayers.push_back({ layer.name, layer.layerId });
+        }
+
+        Frost::Physics::SetLayerNames(engineLayers);
+
         PopLayer(_projectHubLayer);
         _projectHubLayer = nullptr;
+
+        if (!config.scriptingModule.empty())
+        {
+            std::filesystem::path projectDir = _projectInfo.GetProjectDir();
+            std::filesystem::path dllPath = projectDir / config.scriptingModule;
+
+            Frost::Scripting::ScriptingEngine::GetInstance().LoadScriptingDLL(dllPath.string());
+        }
 
         Frost::Application::SetProjectDirectory(_projectInfo.GetProjectDir());
         _editorLayer = PushLayer<Editor::EditorLayer>();
@@ -75,11 +97,14 @@ namespace Editor
         }
 
         _projectInfo.Clear();
+        Frost::Physics::SetLayerNames({});
 
         if (!_projectHubLayer)
         {
             _projectHubLayer = PushLayer<Editor::ProjectHubLayer>();
         }
+
+        Frost::Scripting::ScriptingEngine::GetInstance().UnloadScriptingDLL();
 
         Frost::Application::SetProjectDirectory(".");
         FT_ENGINE_INFO("Project closed. Returning to Project Hub.");
@@ -89,8 +114,13 @@ namespace Editor
 } // namespace Editor
 
 Frost::Application*
-Frost::CreateApplication(ApplicationEntryPoint entryPoint)
+Frost::CreateApplication(ApplicationSpecification entryPoint)
 {
-    entryPoint.title = Window::WindowTitle{ L"Editor" };
+    entryPoint.title = L"Editor";
+    entryPoint.windowWidth = 1280;
+    entryPoint.windowHeight = 720;
+    entryPoint.iconPath = "resources/editor/icons/editor.ico";
+    entryPoint.consoleIconPath = "resources/editor/icons/terminal.ico";
+
     return new Editor::EditorApp(entryPoint);
 }

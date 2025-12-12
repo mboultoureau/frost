@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Frost/Asset/Asset.h"
 #include "Frost/Asset/Texture.h"
+#include "Frost/Core/Core.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/Logger.h"
 
@@ -14,65 +15,62 @@
 
 namespace Frost
 {
-    class AssetManager
+    class FROST_API AssetManager
     {
     public:
         static void Shutdown();
         static void Update();
         static void PruneUnused();
 
-        // Generic asset loading function
         template<typename T, typename... Args>
         static std::shared_ptr<T> LoadAsset(const Asset::Path& path, Args&&... args)
             requires(!std::is_same_v<T, Texture>)
         {
             static_assert(std::is_base_of<Asset, T>::value, "T must be derived from Frost::Asset");
 
-            // Check if asset is already loaded
+            std::shared_ptr<Asset> existingAsset = FindAsset(path);
+            if (existingAsset)
             {
-                std::unique_lock lock(_mutex);
-                auto it = _loadedAssets.find(path);
-                if (it != _loadedAssets.end())
-                {
-                    return std::static_pointer_cast<T>(it->second);
-                }
+                return std::static_pointer_cast<T>(existingAsset);
             }
 
-            std::shared_ptr<T> asset = std::make_shared<T>();
+            std::shared_ptr<T> newAsset = std::make_shared<T>();
+            QueueLoad(path, newAsset, std::forward<Args>(args)...);
 
-            {
-                std::unique_lock lock(_mutex);
-                _loadedAssets[path] = asset;
-            }
+            return newAsset;
+        }
 
-            // Load new asset
+        static std::shared_ptr<Texture> LoadAsset(const Asset::Path& path, TextureConfig& config);
+
+    private:
+        static std::shared_ptr<Asset> FindAsset(const Asset::Path& path);
+        static void RegisterAsset(const Asset::Path& path, std::shared_ptr<Asset> asset);
+
+        static void AddToUploadQueue(std::function<void()>&& job);
+
+        template<typename T, typename... Args>
+        static void QueueLoad(const Asset::Path& path, std::shared_ptr<T> asset, Args&&... args)
+        {
+            RegisterAsset(path, asset);
+
             std::thread(
                 [asset, path, args...]() mutable
                 {
                     try
                     {
-                        // Load asset data on CPU
                         asset->SetStatus(AssetStatus::Loading);
                         asset->LoadCPU(path, std::forward<Args>(args)...);
 
-                        // Queue GPU upload
-                        std::lock_guard queueLock(_queueMutex);
-                        _uploadQueue.emplace_back([asset]() { asset->UploadGPU(); });
+                        AddToUploadQueue([asset]() { asset->UploadGPU(); });
                     }
                     catch (const std::exception& e)
                     {
                         asset->SetStatus(AssetStatus::Failed);
                         FT_ENGINE_ERROR("Async load exception '{}': {}", path, e.what());
-                        return;
                     }
                 })
                 .detach();
-
-            return asset;
         }
-
-        // Specialized function to get already loaded asset
-        static std::shared_ptr<Texture> LoadAsset(const Asset::Path& path, TextureConfig& config);
 
     private:
         static std::mutex _mutex;
@@ -81,7 +79,6 @@ namespace Frost
         static std::mutex _queueMutex;
         static std::deque<std::function<void()>> _uploadQueue;
 
-        // 5ms budget per frame
         static constexpr int _timeBudget = 5;
     };
 } // namespace Frost

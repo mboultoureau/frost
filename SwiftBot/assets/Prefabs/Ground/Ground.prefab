@@ -1,0 +1,37 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: Ground
+    Transform:
+      Position: [0, 62.908035, -42.961422]
+      Rotation: [0, 0, 0, 1]
+      Scale: [45, 15, 394.18848]
+    StaticMesh:
+      Type: 3
+      Params:
+        Width: 1
+        Depth: 1
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 0
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [0.5, 0.01, 0.6]
+        ConvexRadius: 0.05

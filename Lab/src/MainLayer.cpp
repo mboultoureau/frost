@@ -22,7 +22,7 @@ MainLayer::OnAttach()
     _ogreNormal = std::make_unique<OgreNormal>();
     //_text = std::make_unique<Text>();
     //_plane = std::make_unique<Plane>();
-    _player = std::make_unique<Player>();
+    _playerController = std::make_unique<Player>();
     //_hierarchy = std::make_unique<HierarchyTest>();
     // auto _rain = std::make_unique<BallRain>();
     //_hudLogo = std::make_unique<HUD_Logo>();

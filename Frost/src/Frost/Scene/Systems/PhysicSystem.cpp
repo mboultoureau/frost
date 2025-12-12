@@ -1,8 +1,8 @@
 #include "Frost/Scene/Systems/PhysicSystem.h"
-#include "Frost/Scene/Components/Script.h"
 #include "Frost/Scene/Components/RigidBody.h"
-#include "Frost/Scene/Components/RelationShip.h"
+#include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Physics/Physics.h"
+#include "Frost/Scripting/Script.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Utils/Math/Matrix.h"
@@ -12,20 +12,156 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 using namespace Frost::Component;
 
 namespace Frost
 {
+    static JPH::Ref<JPH::Shape> CreateJoltShape(const Component::CollisionShapeConfig& config,
+                                                const Math::Vector3& scale)
+    {
+        JPH::ShapeSettings::ShapeResult result;
+
+        JPH::Vec3 s = { abs(scale.x), abs(scale.y), abs(scale.z) };
+
+        float minScale = 0.001f;
+        if (s.GetX() < minScale)
+            s.SetX(minScale);
+        if (s.GetY() < minScale)
+            s.SetY(minScale);
+        if (s.GetZ() < minScale)
+            s.SetZ(minScale);
+
+        if (std::holds_alternative<ShapeBox>(config))
+        {
+            const auto& box = std::get<ShapeBox>(config);
+            result = JPH::BoxShapeSettings({ box.halfExtent.x, box.halfExtent.y, box.halfExtent.z }, box.convexRadius)
+                         .Create();
+        }
+        else if (std::holds_alternative<ShapeSphere>(config))
+        {
+            const auto& sphere = std::get<ShapeSphere>(config);
+            result = JPH::SphereShapeSettings(sphere.radius).Create();
+        }
+        else if (std::holds_alternative<ShapeCapsule>(config))
+        {
+            const auto& capsule = std::get<ShapeCapsule>(config);
+            result = JPH::CapsuleShapeSettings(capsule.halfHeight, capsule.radius).Create();
+        }
+        else if (std::holds_alternative<ShapeCylinder>(config))
+        {
+            const auto& cylinder = std::get<ShapeCylinder>(config);
+            result = JPH::CylinderShapeSettings(cylinder.halfHeight, cylinder.radius, cylinder.convexRadius).Create();
+        }
+        else if (std::holds_alternative<ShapeMesh>(config))
+        {
+            const auto& meshConfig = std::get<ShapeMesh>(config);
+
+            if (meshConfig.path.empty())
+            {
+                result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+            }
+            else
+            {
+                Assimp::Importer importer;
+                const aiScene* scene = importer.ReadFile(
+                    meshConfig.path.c_str(),
+                    aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals |
+                        aiProcess_OptimizeMeshes | aiProcess_RemoveRedundantMaterials | aiProcess_PreTransformVertices);
+
+                if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+                {
+                    result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+                }
+
+                else
+                {
+                    JPH::VertexList vertices;
+                    JPH::IndexedTriangleList triangles;
+
+                    for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
+                    {
+                        const aiMesh* mesh = scene->mMeshes[i];
+
+                        uint32_t vertexStartIdx = (uint32_t)vertices.size();
+
+                        for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
+                        {
+                            const aiVector3D& pos = mesh->mVertices[v];
+                            vertices.push_back({ pos.x, pos.y, -pos.z });
+                        }
+
+                        for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
+                        {
+                            const aiFace& face = mesh->mFaces[f];
+                            if (face.mNumIndices == 3)
+                            {
+                                JPH::IndexedTriangle triangle;
+                                triangle.mIdx[0] = vertexStartIdx + face.mIndices[0];
+                                triangle.mIdx[1] = vertexStartIdx + face.mIndices[2];
+                                triangle.mIdx[2] = vertexStartIdx + face.mIndices[1];
+                                triangle.mMaterialIndex = 0;
+                                triangles.push_back(triangle);
+                            }
+                        }
+                    }
+
+                    if (vertices.empty() || triangles.empty())
+                    {
+                        result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+                    }
+                    else
+                    {
+                        JPH::MeshShapeSettings settings(vertices, triangles);
+                        result = settings.Create();
+
+                        if (result.HasError())
+                        {
+                            result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            result = JPH::BoxShapeSettings({ 0.5f, 0.5f, 0.5f }, 0.05f).Create();
+        }
+
+        if (result.HasError())
+        {
+            return nullptr;
+        }
+
+        if (s.IsClose(JPH::Vec3::sReplicate(1.0f), 1.0e-5f))
+        {
+            return result.Get();
+        }
+        else
+        {
+            JPH::ScaledShapeSettings scaledShapeSettings(result.Get(), s);
+            JPH::ShapeSettings::ShapeResult scaledResult = scaledShapeSettings.Create();
+            if (scaledResult.HasError())
+            {
+                return nullptr;
+            }
+            return scaledResult.Get();
+        }
+    }
+
     void PhysicSystem::OnAttach(Scene& scene)
     {
         _scene = &scene;
 
-        // Subscribe to changes
         auto& registry = scene.GetRegistry();
-        registry.on_construct<Component::RigidBody>().connect<&PhysicSystem::_OnCreateBody>(*this);
-        registry.on_destroy<Component::RigidBody>().connect<&PhysicSystem::_OnDestroyBody>(*this);
+        // registry.on_destroy<Component::RigidBody>().connect<&PhysicSystem::_OnDestroyBody>(*this);
 
         auto view = scene.GetRegistry().view<RigidBody>();
         for (auto entity : view)
@@ -36,10 +172,8 @@ namespace Frost
 
     void PhysicSystem::OnDetach(Scene& scene)
     {
-        // Unsubscribe to changes
         auto& registry = scene.GetRegistry();
-        registry.on_construct<Component::RigidBody>().disconnect<&PhysicSystem::_OnCreateBody>(*this);
-        registry.on_destroy<Component::RigidBody>().disconnect<&PhysicSystem::_OnDestroyBody>(*this);
+        // registry.on_destroy<Component::RigidBody>().disconnect<&PhysicSystem::_OnDestroyBody>(*this);
 
         auto view = scene.GetRegistry().view<RigidBody>();
         for (auto entity : view)
@@ -48,8 +182,25 @@ namespace Frost
         }
     }
 
+    void PhysicSystem::_OnDestroyBody(entt::registry& registry, entt::entity entity)
+    {
+        _DestroyBodyForEntity(*_scene, entity);
+    }
+
     void PhysicSystem::FixedUpdate(Scene& scene, float fixedDeltaTime)
     {
+        {
+            auto view = scene.GetRegistry().view<RigidBody, WorldTransform>();
+            view.each(
+                [&](entt::entity entity, RigidBody& rb, WorldTransform& worldTransform)
+                {
+                    if (rb.runtimeBodyID.IsInvalid())
+                    {
+                        _CreateBodyForEntity(scene, entity);
+                    }
+                });
+        }
+
         Physics::Get().UpdatePhysics(fixedDeltaTime);
 
         _SynchronizeTransforms(scene);
@@ -73,54 +224,72 @@ namespace Frost
         if (!scene.GetRegistry().valid(entity.GetHandle()))
             return;
 
-        _DestroyBodyForEntity(scene, entity.GetHandle());
+        auto& registry = scene.GetRegistry();
+        if (!registry.all_of<Component::RigidBody, Component::Transform, Component::WorldTransform>(entity.GetHandle()))
+            return;
+
+        auto& rb = registry.get<Component::RigidBody>(entity.GetHandle());
+
+        if (!rb.runtimeBodyID.IsInvalid())
+        {
+            _DestroyBodyForEntity(scene, entity.GetHandle());
+        }
+
         _CreateBodyForEntity(scene, entity.GetHandle());
+
+        /*
+        if (rb.runtimeBodyID.IsInvalid())
+        {
+            _CreateBodyForEntity(scene, entity.GetHandle());
+            return;
+        }
+
+
+        JPH::BodyInterface& bodyInterface = Physics::GetBodyInterface();
+
+        bodyInterface.SetPositionAndRotation(rb.runtimeBodyID,
+                                             Math::vector_cast<JPH::RVec3>(transform.position),
+                                             Math::vector_cast<JPH::Quat>(transform.rotation),
+                                             JPH::EActivation::DontActivate);
+
+        JPH::Ref<JPH::Shape> newShape = CreateJoltShape(rb.shape, transform.scale);
+
+        if (newShape)
+        {
+            bodyInterface.SetShape(rb.runtimeBodyID, newShape, true, JPH::EActivation::DontActivate);
+        }
+
+        bodyInterface.SetMotionType(
+            rb.runtimeBodyID, static_cast<JPH::EMotionType>(rb.motionType), JPH::EActivation::DontActivate);
+        bodyInterface.SetFriction(rb.runtimeBodyID, rb.friction);
+        bodyInterface.SetRestitution(rb.runtimeBodyID, rb.restitution);
+        */
     }
 
     void PhysicSystem::_CreateBodyForEntity(Scene& scene, entt::entity entity)
     {
         auto& registry = scene.GetRegistry();
-        if (!registry.all_of<Component::RigidBody, Component::Transform>(entity))
+        if (!registry.all_of<Component::RigidBody, Component::WorldTransform>(entity))
             return;
 
         auto& rb = registry.get<Component::RigidBody>(entity);
-        auto& transform = registry.get<Component::Transform>(entity);
+        auto& worldTransform = registry.get<Component::WorldTransform>(entity);
         auto& body_interface = Physics::GetBodyInterface();
 
         if (!rb.runtimeBodyID.IsInvalid())
+            return;
+
+        JPH::Ref<JPH::Shape> finalShape = CreateJoltShape(rb.shape, worldTransform.scale);
+
+        if (!finalShape)
         {
+            FT_ENGINE_ERROR("PhysicSystem: Failed to create shape for entity {0}", (uint32_t)entity);
             return;
         }
 
-        JPH::Ref<JPH::ShapeSettings> shapeSettings;
-        std::visit(
-            [&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, Component::ShapeBox>)
-                    shapeSettings =
-                        new JPH::BoxShapeSettings(Math::vector_cast<JPH::Vec3>(arg.halfExtent), arg.convexRadius);
-                else if constexpr (std::is_same_v<T, Component::ShapeSphere>)
-                    shapeSettings = new JPH::SphereShapeSettings(arg.radius);
-                else if constexpr (std::is_same_v<T, Component::ShapeCapsule>)
-                    shapeSettings = new JPH::CapsuleShapeSettings(arg.halfHeight, arg.radius);
-                else if constexpr (std::is_same_v<T, Component::ShapeCylinder>)
-                    shapeSettings = new JPH::CylinderShapeSettings(arg.halfHeight, arg.radius, arg.convexRadius);
-            },
-            rb.shape);
-
-        JPH::Shape::ShapeResult shapeResult = shapeSettings->Create();
-        if (shapeResult.HasError())
-        {
-            FT_ENGINE_ERROR("PhysicSystem: Failed to create shape for entity {0}: {1}",
-                            (uint32_t)entity,
-                            shapeResult.GetError().c_str());
-            return;
-        }
-
-        JPH::BodyCreationSettings bodySettings(shapeResult.Get(),
-                                               Math::vector_cast<JPH::RVec3>(transform.position),
-                                               Math::vector_cast<JPH::Quat>(transform.rotation),
+        JPH::BodyCreationSettings bodySettings(finalShape,
+                                               Math::vector_cast<JPH::RVec3>(worldTransform.position),
+                                               Math::vector_cast<JPH::Quat>(worldTransform.rotation),
                                                static_cast<JPH::EMotionType>(rb.motionType),
                                                rb.objectLayer);
 
@@ -184,37 +353,61 @@ namespace Frost
         rb.runtimeBodyID = JPH::BodyID();
     }
 
-    void PhysicSystem::_OnCreateBody(entt::registry& registry, entt::entity entity)
-    {
-        _CreateBodyForEntity(*_scene, entity);
-    }
-
-    void PhysicSystem::_OnDestroyBody(entt::registry& registry, entt::entity entity)
-    {
-        _DestroyBodyForEntity(*_scene, entity);
-    }
-
     void PhysicSystem::_SynchronizeTransforms(Scene& scene)
     {
         auto& registry = scene.GetRegistry();
         auto& body_interface = Physics::GetBodyInterface();
 
-        auto view = registry.view<Component::RigidBody, Component::Transform>();
+        auto view = registry.view<Component::RigidBody, Component::Transform, Component::WorldTransform>();
 
         view.each(
-            [&](auto entity, Component::RigidBody& rb, Component::Transform& transform)
+            [&](auto entity,
+                Component::RigidBody& rb,
+                Component::Transform& localTransform,
+                Component::WorldTransform& worldTransform)
             {
-                if (rb.runtimeBodyID.IsInvalid())
+                if (rb.runtimeBodyID.IsInvalid() || !body_interface.IsActive(rb.runtimeBodyID))
                     return;
 
-                auto jBodyPos = Physics::Get().body_interface->GetPosition(rb.runtimeBodyID);
-                auto jBodyRot = Physics::Get().body_interface->GetRotation(rb.runtimeBodyID);
+                auto jBodyPos = body_interface.GetPosition(rb.runtimeBodyID);
+                auto jBodyRot = body_interface.GetRotation(rb.runtimeBodyID);
 
-                transform.position = Math::vector_cast<Math::Vector3>(jBodyPos);
-                transform.rotation.x = jBodyRot.GetX();
-                transform.rotation.y = jBodyRot.GetY();
-                transform.rotation.z = jBodyRot.GetZ();
-                transform.rotation.w = jBodyRot.GetW();
+                Math::Vector3 newWorldPosition = Math::vector_cast<Math::Vector3>(jBodyPos);
+                Math::Vector4 newWorldRotation = { jBodyRot.GetX(), jBodyRot.GetY(), jBodyRot.GetZ(), jBodyRot.GetW() };
+
+                auto* relationship = registry.try_get<Component::Relationship>(entity);
+                if (relationship && relationship->parent != entt::null)
+                {
+                    auto* parentWorldTransform = registry.try_get<Component::WorldTransform>(relationship->parent);
+                    if (parentWorldTransform)
+                    {
+                        Math::Matrix4x4 newWorldMat = Math::Matrix4x4::CreateFromQuaternion(newWorldRotation) *
+                                                      Math::Matrix4x4::CreateTranslation(newWorldPosition);
+
+                        Math::Matrix4x4 parentWorldMat = Math::GetTransformMatrix(*parentWorldTransform);
+
+                        DirectX::XMMATRIX parentMatDX = Math::LoadMatrix(parentWorldMat);
+                        DirectX::XMVECTOR det;
+                        DirectX::XMMATRIX parentInverseMatDX = DirectX::XMMatrixInverse(&det, parentMatDX);
+
+                        Math::Matrix4x4 parentInverseMat;
+                        Math::StoreMatrix(&parentInverseMat, parentInverseMatDX);
+
+                        Math::Matrix4x4 newLocalMat = newWorldMat * parentInverseMat;
+
+                        Math::Vector3 newLocalPosition, newLocalScale;
+                        Math::Vector4 newLocalRotation;
+                        Math::DecomposeTransform(newLocalMat, newLocalPosition, newLocalRotation, newLocalScale);
+
+                        localTransform.position = newLocalPosition;
+                        localTransform.rotation = newLocalRotation;
+                    }
+                }
+                else
+                {
+                    localTransform.position = newWorldPosition;
+                    localTransform.rotation = newWorldRotation;
+                }
             });
     }
 
@@ -224,7 +417,7 @@ namespace Frost
         for (const auto& params : physics.bodiesOnAwake)
         {
             entt::entity entity = Physics::GetEntityID(params.inBodyID);
-            _ExecuteOnScripts(scene, entity, [&](Script* script) { script->OnAwake(deltaTime); });
+            _ExecuteOnScripts(scene, entity, [&](Scripting::Script* script) { script->OnAwake(deltaTime); });
         }
         physics.bodiesOnAwake.clear();
     }
@@ -235,7 +428,7 @@ namespace Frost
         for (const auto& params : physics.bodiesOnSleep)
         {
             entt::entity entity = Physics::GetEntityID(params.inBodyID);
-            _ExecuteOnScripts(scene, entity, [&](Script* script) { script->OnSleep(deltaTime); });
+            _ExecuteOnScripts(scene, entity, [&](Scripting::Script* script) { script->OnSleep(deltaTime); });
         }
         physics.bodiesOnSleep.clear();
     }
@@ -249,9 +442,11 @@ namespace Frost
             entt::entity entity1 = Physics::GetEntityID(params.inBody1.GetID());
             entt::entity entity2 = Physics::GetEntityID(params.inBody2.GetID());
 
-            _ExecuteOnScripts(scene, entity1, [&](Script* script) { script->OnCollisionEnter(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity1, [&](Scripting::Script* script) { script->OnCollisionEnter(params, deltaTime); });
 
-            _ExecuteOnScripts(scene, entity2, [&](Script* script) { script->OnCollisionEnter(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity2, [&](Scripting::Script* script) { script->OnCollisionEnter(params, deltaTime); });
         }
         physics.bodiesOnCollisionEnter.clear();
     }
@@ -264,9 +459,11 @@ namespace Frost
             entt::entity entity1 = Physics::GetEntityID(params.inBody1.GetID());
             entt::entity entity2 = Physics::GetEntityID(params.inBody2.GetID());
 
-            _ExecuteOnScripts(scene, entity1, [&](Script* script) { script->OnCollisionStay(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity1, [&](Scripting::Script* script) { script->OnCollisionStay(params, deltaTime); });
 
-            _ExecuteOnScripts(scene, entity2, [&](Script* script) { script->OnCollisionStay(params, deltaTime); });
+            _ExecuteOnScripts(
+                scene, entity2, [&](Scripting::Script* script) { script->OnCollisionStay(params, deltaTime); });
 
             physics.currentFrameBodyIDsOnCollisionStay.emplace(entity1, entity2);
         }
@@ -288,10 +485,10 @@ namespace Frost
                 std::pair<entt::entity, entt::entity> exitParams = { entity1, entity2 };
 
                 _ExecuteOnScripts(
-                    scene, entity1, [&](Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
+                    scene, entity1, [&](Scripting::Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
 
                 _ExecuteOnScripts(
-                    scene, entity2, [&](Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
+                    scene, entity2, [&](Scripting::Script* script) { script->OnCollisionExit(exitParams, deltaTime); });
             }
         }
 

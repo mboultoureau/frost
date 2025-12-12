@@ -40,7 +40,9 @@ namespace Editor
                   GizmoOperation& currentGizmoOp,
                   SceneViewSettings& viewSettings,
                   bool isPrefabView,
-                  const std::function<void()>& onSaveCallback);
+                  const std::function<void()>& onSavePrefabCallback,
+                  const std::function<void()>& onSaveSceneCallback,
+                  const std::function<void()>& onLoadSceneCallback);
 
     private:
         std::shared_ptr<Frost::Texture> _GetIcon(const std::string& name);

@@ -68,8 +68,8 @@ private:
     float _right = 0;
     float _previousForward = 0;
 
-    float _leftRightInput;
-    float _upDownInput;
+    float _rightInput;
+    float _forwardInput;
     bool _handBrakeInput = false;
 
     GameObject _light;

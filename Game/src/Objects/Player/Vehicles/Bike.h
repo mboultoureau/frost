@@ -75,8 +75,8 @@ private:
     float _previousForward = 0;
     float _brake = 0;
 
-    float _leftRightInput = 0;
-    float _upDownInput = 0;
+    float _rightInput = 0;
+    float _forwardInput = 0;
     bool _handBrakeInput = false;
     bool _specialInput = false;
 

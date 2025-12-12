@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Input/Devices/Gamepad.h"
 #include "Frost/Input/Devices/Keyboard.h"
 #include "Frost/Input/Devices/Mouse.h"
@@ -9,7 +10,7 @@
 
 namespace Frost
 {
-    class Input : NoCopy
+    class FROST_API Input : NoCopy
     {
     public:
         static Input& Get();
@@ -18,6 +19,7 @@ namespace Frost
         static Gamepad& GetGamepad(const Gamepad::GamepadId id);
 
         static void Update();
+        static void Reset();
 
     private:
         Input() = default;

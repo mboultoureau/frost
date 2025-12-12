@@ -3,12 +3,13 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/Shape/Shape.h>
 
+#include "Frost/Core/Core.h"
 #include "Frost/Asset/MeshConfig.h"
 #include "Frost/Asset/Texture.h"
 
 namespace Frost
 {
-    class ShapeFactory
+    class FROST_API ShapeFactory
     {
     public:
         static JPH::ShapeRefC CreateHeightField(const Component::MeshSourceHeightMap& config,

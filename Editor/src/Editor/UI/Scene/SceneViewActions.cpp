@@ -8,6 +8,8 @@
 #include "Frost/Scene/Serializers/SerializationSystem.h"
 #include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Utils/Math/Angle.h"
+#include "Frost/Scene/SceneSerializer.h"
+#include "Editor/Utils/FileDialogs.h"
 
 #include <imgui.h>
 
@@ -36,11 +38,47 @@ namespace Editor
         cameraTransform.LookAt(center);
     }
 
+    Frost::GameObject SceneView::_GetPrefabRoot()
+    {
+        if (!_isPrefabView || !_sceneContext)
+        {
+            return Frost::GameObject();
+        }
+
+        auto allEntitiesView = _sceneContext->GetRegistry().view<entt::entity>();
+        for (auto entityID : allEntitiesView)
+        {
+            Frost::GameObject go(entityID, _sceneContext);
+
+            if (auto* meta = go.TryGetComponent<Frost::Component::Meta>();
+                meta && meta->name.rfind("__EDITOR__", 0) == 0)
+            {
+                continue;
+            }
+
+            bool isRoot = true;
+            if (auto* relationship = go.TryGetComponent<Frost::Component::Relationship>())
+            {
+                if (relationship->parent != entt::null)
+                {
+                    isRoot = false;
+                }
+            }
+
+            if (isRoot)
+            {
+                return go;
+            }
+        }
+
+        return _sceneContext->CreateGameObject("Prefab Root");
+    }
+
     void SceneView::_ReparentEntity(entt::entity entityID, entt::entity newParentID)
     {
         Frost::GameObject obj(entityID, _sceneContext);
         Frost::GameObject parentObj =
-            (newParentID != entt::null) ? Frost::GameObject(newParentID, _sceneContext) : Frost::GameObject::InvalidId;
+            (newParentID != entt::null) ? Frost::GameObject(newParentID, _sceneContext) : Frost::GameObject{};
         obj.SetParent(parentObj);
     }
 
@@ -75,6 +113,69 @@ namespace Editor
         {
             FT_ENGINE_ERROR("Cannot save Prefab: It must have exactly ONE root entity. Found: {}", rootCount);
             ImGui::OpenPopup("SaveErrorPopup");
+        }
+    }
+
+    void SceneView::_SaveScene()
+    {
+        if (_isPrefabView || !_sceneContext)
+            return;
+
+        if (_assetPath.empty())
+        {
+            auto filepath = FileDialogs::SaveFile(
+                "Frost Scene (*.scene)\0*.scene\0YAML File (*.yaml)\0*.yaml\0Binary File (*.bin)\0*.bin\0\0");
+
+            if (!filepath)
+                return;
+
+            _assetPath = *filepath;
+        }
+
+        SceneSerializer serializer(_sceneContext);
+        if (serializer.Serialize(_assetPath))
+        {
+            FT_ENGINE_INFO("Scene saved to: {}", _assetPath.string());
+            _title = "Scene: " + _assetPath.stem().string();
+
+            // Also serialize to binary
+            std::filesystem::path binaryPath = _assetPath;
+            binaryPath.replace_extension(".bin");
+            SceneSerializer binarySerializer(_sceneContext);
+            if (binarySerializer.Serialize(binaryPath))
+            {
+                FT_ENGINE_INFO("Scene also saved to binary: {}", binaryPath.string());
+            }
+            else
+            {
+                FT_ENGINE_ERROR("Failed to save scene to binary: {}", binaryPath.string());
+            }
+        }
+        else
+        {
+            FT_ENGINE_ERROR("Failed to save scene to: {}", _assetPath.string());
+        }
+    }
+
+    void SceneView::_LoadScene()
+    {
+        if (_isPrefabView || !_sceneContext)
+            return;
+
+        auto filepath = FileDialogs::OpenFile("Frost Scene (*.scene;*.yaml;*.bin)\0*.scene;*.yaml;*.bin\0\0");
+        if (filepath)
+        {
+            SceneSerializer serializer(_sceneContext);
+            if (serializer.Deserialize(*filepath))
+            {
+                _selection = {};
+                _title = _sceneContext->GetName();
+                FT_ENGINE_INFO("Scene loaded from: {}", *filepath);
+            }
+            else
+            {
+                FT_ENGINE_ERROR("Failed to load scene from: {}", *filepath);
+            }
         }
     }
 } // namespace Editor

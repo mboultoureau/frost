@@ -12,7 +12,7 @@ HS_Input main(VS_Input vin)
     outCP.TexCoord = vin.TexCoord;
 
     // distance to camera (PlayerPosition holds camera pos)
-    outCP.DistToPlayer = distance(outCP.WorldPos, PlayerPosition);
+    outCP.DistToPlayer = distance(outCP.WorldPos, camPos);
 
     return outCP;
 }

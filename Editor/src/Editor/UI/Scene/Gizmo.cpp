@@ -6,6 +6,9 @@
 #include "Frost/Scene/Systems/PhysicSystem.h"
 #include "Frost/Debugging/Logger.h"
 
+#include <DirectXMath.h>
+#include <algorithm>
+
 #undef max
 #undef min
 #include <imgui_internal.h>
@@ -14,6 +17,7 @@ namespace Editor
 {
     using namespace Frost;
     using namespace Frost::Math;
+    using namespace DirectX;
 
     constexpr float GIZMO_BASE_SIZE = 0.2f;
 
@@ -35,8 +39,7 @@ namespace Editor
     Gizmo::Gizmo(Scene* scene) : _scene{ scene } {}
 
     void Gizmo::Update(GizmoOperation operation,
-                       Frost::Component::Transform& targetTransform,
-                       Frost::GameObject& targetGameObject,
+                       const std::vector<Frost::GameObject>& targets,
                        const Frost::Math::Matrix4x4& viewMatrix,
                        const Frost::Math::Matrix4x4& projectionMatrix,
                        const Frost::Math::Vector3& rayOrigin,
@@ -46,19 +49,36 @@ namespace Editor
                        const ImVec2& viewportPos,
                        const ImVec2& viewportSize)
     {
+        if (targets.empty())
+            return;
+
         _currentOperation = operation;
-        _targetTransform = &targetTransform;
-        _targetGameObject = &targetGameObject;
-        _gizmoPosition = _targetTransform->position;
-        _gizmoScreenScale = _GetGizmoScale(cameraPosition, cameraForward);
-        _ownedDuplicatedObject.reset();
+        _targets = targets;
+
+        Vector3 centerSum = { 0, 0, 0 };
+        int transformCount = 0;
+        for (const auto& go : _targets)
+        {
+            if (go.HasComponent<Frost::Component::Transform>())
+            {
+                centerSum += go.GetComponent<Frost::Component::Transform>().position;
+                transformCount++;
+            }
+        }
+
+        if (transformCount > 0)
+            _gizmoPosition = centerSum / (float)transformCount;
+        else
+            return;
 
         Matrix4x4 viewProjection = viewMatrix * projectionMatrix;
 
         if (!_isManipulating)
         {
+            _gizmoScreenScale = _GetGizmoScale(cameraPosition, cameraForward);
             _HandlePicking(rayOrigin, rayDir);
         }
+
         _HandleTransformation(rayOrigin, rayDir);
 
         ImGui::SetNextWindowPos(viewportPos);
@@ -227,10 +247,237 @@ namespace Editor
                 _hoveredAxis = Axis::Z;
             }
 
-            if (IntersectRayCylinder(ray, _gizmoPosition, { 1, 0, 0 }, scaledRadius * 2.0f, 0.1f, t) && t < closest_t)
+            float uniformScaleRadius = GIZMO_SCALE_CUBE_SIZE * _gizmoScreenScale;
+            if (IntersectRaySphere(ray, _gizmoPosition, uniformScaleRadius, t) && t < closest_t)
             {
                 closest_t = t;
                 _hoveredAxis = Axis::Uniform;
+            }
+        }
+    }
+
+    void Gizmo::_HandleTransformation(const Vector3& rayOrigin, const Vector3& rayDir)
+    {
+        auto& mouse = Input::GetMouse();
+
+        if (_hoveredAxis != Axis::None && mouse.IsButtonDown(Mouse::MouseBoutton::Left) && !_isManipulating)
+        {
+            _isManipulating = true;
+            _activeAxis = _hoveredAxis;
+
+            _originalTransforms.clear();
+            for (const auto& go : _targets)
+            {
+                if (go.HasComponent<Frost::Component::Transform>())
+                {
+                    _originalTransforms.push_back(go.GetComponent<Frost::Component::Transform>());
+                }
+                else
+                {
+                    _originalTransforms.push_back(Frost::Component::Transform{});
+                }
+            }
+
+            _pivotStartPos = _gizmoPosition;
+
+            Vector3 planeNormal;
+            if (_currentOperation == GizmoOperation::Rotate)
+            {
+                if (_activeAxis == Axis::X)
+                    planeNormal = { 1, 0, 0 };
+                else if (_activeAxis == Axis::Y)
+                    planeNormal = { 0, 1, 0 };
+                else
+                    planeNormal = { 0, 0, 1 };
+            }
+            else
+            {
+                if (_activeAxis == Axis::Uniform)
+                    planeNormal = Normalize(_gizmoPosition - rayOrigin);
+                else if (_activeAxis >= Axis::X && _activeAxis <= Axis::Z)
+                {
+                    Vector3 axisDir;
+                    if (_activeAxis == Axis::X)
+                        axisDir = { 1, 0, 0 };
+                    else if (_activeAxis == Axis::Y)
+                        axisDir = { 0, 1, 0 };
+                    else
+                        axisDir = { 0, 0, 1 };
+                    planeNormal = Cross(axisDir, rayDir);
+                    planeNormal = Normalize(Cross(planeNormal, axisDir));
+                }
+                else
+                {
+                    if (_activeAxis == Axis::XY)
+                        planeNormal = { 0, 0, 1 };
+                    if (_activeAxis == Axis::XZ)
+                        planeNormal = { 0, 1, 0 };
+                    if (_activeAxis == Axis::YZ)
+                        planeNormal = { 1, 0, 0 };
+                }
+            }
+
+            float t;
+            Ray ray = { rayOrigin, rayDir };
+            if (IntersectRayPlane(ray, _gizmoPosition, planeNormal, t))
+            {
+                _manipulationStartPos = rayOrigin + (rayDir * t);
+            }
+        }
+
+        if (!mouse.IsButtonDown(Mouse::MouseBoutton::Left))
+        {
+            _isManipulating = false;
+            _activeAxis = Axis::None;
+            _originalTransforms.clear();
+        }
+
+        if (_isManipulating)
+        {
+            Vector3 planeNormal;
+            Vector3 axisDir = { 0, 0, 0 };
+
+            if (_currentOperation == GizmoOperation::Rotate)
+            {
+                if (_activeAxis == Axis::X)
+                    planeNormal = { 1, 0, 0 };
+                else if (_activeAxis == Axis::Y)
+                    planeNormal = { 0, 1, 0 };
+                else
+                    planeNormal = { 0, 0, 1 };
+            }
+            else
+            {
+                if (_activeAxis == Axis::Uniform)
+                    planeNormal = Normalize(_gizmoPosition - rayOrigin);
+                else if (_activeAxis >= Axis::X && _activeAxis <= Axis::Z)
+                {
+                    if (_activeAxis == Axis::X)
+                        axisDir = { 1, 0, 0 };
+                    else if (_activeAxis == Axis::Y)
+                        axisDir = { 0, 1, 0 };
+                    else
+                        axisDir = { 0, 0, 1 };
+                    planeNormal = Cross(axisDir, rayDir);
+                    planeNormal = Normalize(Cross(planeNormal, axisDir));
+                }
+                else
+                {
+                    if (_activeAxis == Axis::XY)
+                        planeNormal = { 0, 0, 1 };
+                    if (_activeAxis == Axis::XZ)
+                        planeNormal = { 0, 1, 0 };
+                    if (_activeAxis == Axis::YZ)
+                        planeNormal = { 1, 0, 0 };
+                }
+            }
+
+            Ray ray = { rayOrigin, rayDir };
+            float t;
+            if (IntersectRayPlane(ray, _manipulationStartPos, planeNormal, t))
+            {
+                Vector3 currentIntersection = rayOrigin + (rayDir * t);
+                bool modified = false;
+
+                Vector3 deltaTranslation = { 0, 0, 0 };
+                XMVECTOR deltaRotationQuat = XMQuaternionIdentity();
+                Vector3 deltaScale = { 1, 1, 1 };
+
+                if (_currentOperation == GizmoOperation::Translate)
+                {
+                    Vector3 delta = currentIntersection - _manipulationStartPos;
+                    if (_activeAxis >= Axis::X && _activeAxis <= Axis::Z)
+                        deltaTranslation = axisDir * Dot(delta, axisDir);
+                    else
+                        deltaTranslation = delta;
+
+                    modified = true;
+                }
+                else if (_currentOperation == GizmoOperation::Rotate)
+                {
+                    Vector3 startVec = Normalize(_manipulationStartPos - _pivotStartPos);
+                    Vector3 currentVec = Normalize(currentIntersection - _pivotStartPos);
+
+                    float angle = acosf(std::clamp(Dot(startVec, currentVec), -1.0f, 1.0f));
+                    Vector3 cross = Cross(startVec, currentVec);
+                    if (Dot(planeNormal, cross) < 0)
+                    {
+                        angle = -angle;
+                    }
+
+                    deltaRotationQuat =
+                        XMQuaternionRotationAxis(XMLoadFloat3(reinterpret_cast<const XMFLOAT3*>(&planeNormal)), angle);
+
+                    modified = true;
+                }
+                else if (_currentOperation == GizmoOperation::Scale)
+                {
+                    Vector3 delta = currentIntersection - _manipulationStartPos;
+                    if (_activeAxis == Axis::Uniform)
+                    {
+                        float moveAmount = (delta.x + delta.y + delta.z) * 0.33f;
+                        deltaScale = Vector3{ 1, 1, 1 } + Vector3{ moveAmount, moveAmount, moveAmount };
+                    }
+                    else
+                    {
+                        deltaScale = Vector3{ 1, 1, 1 } + (axisDir * Dot(delta, axisDir));
+                    }
+                    modified = true;
+                }
+
+                if (modified)
+                {
+                    for (size_t i = 0; i < _targets.size(); ++i)
+                    {
+                        if (i >= _originalTransforms.size())
+                            break;
+
+                        auto& go = _targets[i];
+                        if (!go.HasComponent<Frost::Component::Transform>())
+                            continue;
+
+                        auto& currentTransform = go.GetComponent<Frost::Component::Transform>();
+                        const auto& originalTransform = _originalTransforms[i];
+
+                        if (_currentOperation == GizmoOperation::Translate)
+                        {
+                            currentTransform.position = originalTransform.position + deltaTranslation;
+                        }
+                        else if (_currentOperation == GizmoOperation::Rotate)
+                        {
+                            XMVECTOR pos = XMLoadFloat3(reinterpret_cast<const XMFLOAT3*>(&originalTransform.position));
+                            XMVECTOR pivot = XMLoadFloat3(reinterpret_cast<const XMFLOAT3*>(&_pivotStartPos));
+                            XMVECTOR relPos = pos - pivot;
+
+                            XMVECTOR rotatedRelPos = XMVector3Rotate(relPos, deltaRotationQuat);
+
+                            XMStoreFloat3(reinterpret_cast<XMFLOAT3*>(&currentTransform.position),
+                                          pivot + rotatedRelPos);
+
+                            XMVECTOR origRot =
+                                XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(&originalTransform.rotation));
+                            XMVECTOR newRot = XMQuaternionMultiply(deltaRotationQuat, origRot);
+                            XMStoreFloat4(reinterpret_cast<XMFLOAT4*>(&currentTransform.rotation), newRot);
+                        }
+                        else if (_currentOperation == GizmoOperation::Scale)
+                        {
+                            Vector3 relPos = originalTransform.position - _pivotStartPos;
+                            Vector3 scaledRelPos = relPos * deltaScale;
+                            currentTransform.position = _pivotStartPos + scaledRelPos;
+
+                            currentTransform.scale = originalTransform.scale * deltaScale;
+
+                            currentTransform.scale.x = std::max(currentTransform.scale.x, 0.001f);
+                            currentTransform.scale.y = std::max(currentTransform.scale.y, 0.001f);
+                            currentTransform.scale.z = std::max(currentTransform.scale.z, 0.001f);
+                        }
+
+                        if (auto* physicSystem = _scene->GetSystem<PhysicSystem>())
+                        {
+                            physicSystem->NotifyRigidBodyUpdate(*_scene, go);
+                        }
+                    }
+                }
             }
         }
     }
@@ -352,200 +599,9 @@ namespace Editor
             drawList->AddPolyline(points.data(), points.size(), finalColor, false, thickness);
         };
 
-        // Dessine les 3 cercles
         drawCircle(Axis::Y, { 0, 1, 0 }, IM_COL32(50, 255, 50, 255)); // Green
         drawCircle(Axis::X, { 1, 0, 0 }, IM_COL32(255, 50, 50, 255)); // Red
         drawCircle(Axis::Z, { 0, 0, 1 }, IM_COL32(50, 50, 255, 255)); // Blue
-    }
-
-    void Gizmo::_HandleTransformation(const Vector3& rayOrigin, const Vector3& rayDir)
-    {
-        auto& mouse = Input::GetMouse();
-
-        if (_hoveredAxis != Axis::None && mouse.IsButtonDown(Mouse::MouseBoutton::Left) && !_isManipulating)
-        {
-            if (ImGui::IsKeyDown(ImGuiKey_LeftAlt))
-            {
-                GameObject newGameObject = _scene->DuplicateGameObject(*_targetGameObject);
-                if (newGameObject)
-                {
-                    _ownedDuplicatedObject = newGameObject;
-
-                    if (_onTargetDuplicated)
-                        _onTargetDuplicated(newGameObject);
-
-                    _targetGameObject = &(*_ownedDuplicatedObject);
-                    _targetTransform = &_targetGameObject->GetComponent<Frost::Component::Transform>();
-                }
-            }
-
-            _isManipulating = true;
-            _activeAxis = _hoveredAxis;
-            _originalTransform = *_targetTransform;
-
-            Vector3 planeNormal;
-            if (_currentOperation == GizmoOperation::Rotate)
-            {
-                if (_activeAxis == Axis::X)
-                    planeNormal = { 1, 0, 0 };
-                else if (_activeAxis == Axis::Y)
-                    planeNormal = { 0, 1, 0 };
-                else
-                    planeNormal = { 0, 0, 1 }; // Z
-            }
-            else // Translate or Scale
-            {
-                if (_activeAxis == Axis::Uniform)
-                    planeNormal = Normalize(_gizmoPosition - rayOrigin);
-                else if (_activeAxis >= Axis::X && _activeAxis <= Axis::Z)
-                {
-                    Vector3 axisDir;
-                    if (_activeAxis == Axis::X)
-                        axisDir = { 1, 0, 0 };
-                    else if (_activeAxis == Axis::Y)
-                        axisDir = { 0, 1, 0 };
-                    else
-                        axisDir = { 0, 0, 1 };
-                    planeNormal = Cross(axisDir, rayDir);
-                    planeNormal = Normalize(Cross(planeNormal, axisDir));
-                }
-                else // Plans
-                {
-                    if (_activeAxis == Axis::XY)
-                        planeNormal = { 0, 0, 1 };
-                    if (_activeAxis == Axis::XZ)
-                        planeNormal = { 0, 1, 0 };
-                    if (_activeAxis == Axis::YZ)
-                        planeNormal = { 1, 0, 0 };
-                }
-            }
-
-            float t;
-            Ray ray = { rayOrigin, rayDir };
-            if (IntersectRayPlane(ray, _gizmoPosition, planeNormal, t))
-            {
-                _manipulationStartPos = rayOrigin + (rayDir * t);
-            }
-        }
-
-        if (!mouse.IsButtonDown(Mouse::MouseBoutton::Left))
-        {
-            _isManipulating = false;
-            _activeAxis = Axis::None;
-        }
-
-        if (_isManipulating)
-        {
-            Vector3 planeNormal;
-            Vector3 axisDir = { 0, 0, 0 };
-
-            if (_currentOperation == GizmoOperation::Rotate)
-            {
-                if (_activeAxis == Axis::X)
-                    planeNormal = { 1, 0, 0 };
-                else if (_activeAxis == Axis::Y)
-                    planeNormal = { 0, 1, 0 };
-                else
-                    planeNormal = { 0, 0, 1 }; // Z
-            }
-            else
-            {
-                if (_activeAxis == Axis::Uniform)
-                    planeNormal = Normalize(_gizmoPosition - rayOrigin);
-                else if (_activeAxis >= Axis::X && _activeAxis <= Axis::Z)
-                {
-                    if (_activeAxis == Axis::X)
-                        axisDir = { 1, 0, 0 };
-                    else if (_activeAxis == Axis::Y)
-                        axisDir = { 0, 1, 0 };
-                    else
-                        axisDir = { 0, 0, 1 };
-                    planeNormal = Cross(axisDir, rayDir);
-                    planeNormal = Normalize(Cross(planeNormal, axisDir));
-                }
-                else
-                {
-                    if (_activeAxis == Axis::XY)
-                        planeNormal = { 0, 0, 1 };
-                    if (_activeAxis == Axis::XZ)
-                        planeNormal = { 0, 1, 0 };
-                    if (_activeAxis == Axis::YZ)
-                        planeNormal = { 1, 0, 0 };
-                }
-            }
-
-            bool modified = false;
-            Ray ray = { rayOrigin, rayDir };
-            float t;
-            if (IntersectRayPlane(ray, _manipulationStartPos, planeNormal, t))
-            {
-                Vector3 currentIntersection = rayOrigin + (rayDir * t);
-
-                if (_currentOperation == GizmoOperation::Rotate)
-                {
-                    Vector3 startVec = Normalize(_manipulationStartPos - _gizmoPosition);
-                    Vector3 currentVec = Normalize(currentIntersection - _gizmoPosition);
-
-                    float angle = acosf(std::clamp(Dot(startVec, currentVec), -1.0f, 1.0f));
-                    Vector3 cross = Cross(startVec, currentVec);
-                    if (Dot(planeNormal, cross) < 0)
-                    {
-                        angle = -angle;
-                    }
-
-                    using namespace DirectX;
-                    XMVECTOR originalQuat =
-                        XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(&_originalTransform.rotation));
-                    XMVECTOR deltaQuat =
-                        XMQuaternionRotationAxis(XMLoadFloat3(reinterpret_cast<const XMFLOAT3*>(&planeNormal)), angle);
-                    XMVECTOR newQuat = XMQuaternionMultiply(deltaQuat, originalQuat);
-
-                    XMStoreFloat4(reinterpret_cast<XMFLOAT4*>(&_targetTransform->rotation), newQuat);
-                    modified = true;
-                }
-                else // Translate or Scale
-                {
-                    Vector3 delta = currentIntersection - _manipulationStartPos;
-                    if (_currentOperation == GizmoOperation::Translate)
-                    {
-                        if (_activeAxis >= Axis::X && _activeAxis <= Axis::Z)
-                            _targetTransform->position = _originalTransform.position + (axisDir * Dot(delta, axisDir));
-                        else
-                            _targetTransform->position = _originalTransform.position + delta;
-
-                        modified = true;
-                    }
-                    else if (_currentOperation == GizmoOperation::Scale)
-                    {
-                        if (_activeAxis == Axis::Uniform)
-                        {
-                            float moveAmount = (delta.x + delta.y + delta.z) * 0.33f;
-                            _targetTransform->scale =
-                                _originalTransform.scale + Vector3{ moveAmount, moveAmount, moveAmount };
-                        }
-                        else
-                        {
-                            _targetTransform->scale = _originalTransform.scale + (axisDir * Dot(delta, axisDir));
-                        }
-                        _targetTransform->scale.x = std::max(_targetTransform->scale.x, 0.001f);
-                        _targetTransform->scale.y = std::max(_targetTransform->scale.y, 0.001f);
-                        _targetTransform->scale.z = std::max(_targetTransform->scale.z, 0.001f);
-
-                        modified = true;
-                    }
-                }
-
-                if (modified && _targetGameObject)
-                {
-                    if (auto* physicSystem = _scene->GetSystem<PhysicSystem>())
-                    {
-                        physicSystem->NotifyRigidBodyUpdate(*_scene, *_targetGameObject);
-                        FT_ENGINE_TRACE("RigidBody component on entity {} updated in Gizmo.",
-                                        (uint64_t)_targetGameObject->GetHandle());
-                    }
-                }
-            }
-        }
     }
 
     void Gizmo::_DrawScale(const Frost::Math::Matrix4x4& viewProjection,
@@ -605,21 +661,19 @@ namespace Editor
         ImU32 centerColor =
             isCenterHovered || isCenterActive ? IM_COL32(255, 255, 0, 255) : IM_COL32(200, 200, 200, 255);
 
-        float centerCubeSize = cubeSize * 0.75f;
-        Vector3 c_p0 = origin + Vector3{ -centerCubeSize, -centerCubeSize, 0 };
-        Vector3 c_p1 = origin + Vector3{ centerCubeSize, -centerCubeSize, 0 };
-        Vector3 c_p2 = origin + Vector3{ centerCubeSize, centerCubeSize, 0 };
-        Vector3 c_p3 = origin + Vector3{ -centerCubeSize, centerCubeSize, 0 };
-
         ImVec2 sOrigin = _WorldToScreen(origin, viewProjection, viewportPos, viewportSize);
-        float screenCenterSize = centerCubeSize * 50.0f;
 
-        ImVec2 s0 = { sOrigin.x - screenCenterSize, sOrigin.y - screenCenterSize };
-        ImVec2 s1 = { sOrigin.x + screenCenterSize, sOrigin.y - screenCenterSize };
-        ImVec2 s2 = { sOrigin.x + screenCenterSize, sOrigin.y + screenCenterSize };
-        ImVec2 s3 = { sOrigin.x - screenCenterSize, sOrigin.y + screenCenterSize };
+        if (sOrigin.x > -1000)
+        {
+            float fixedScreenSize = 12.0f;
 
-        drawList->AddQuadFilled(s0, s1, s2, s3, centerColor);
-        drawList->AddQuad(s0, s1, s2, s3, IM_COL32(0, 0, 0, 128), 1.0f);
+            ImVec2 s0 = { sOrigin.x - fixedScreenSize, sOrigin.y - fixedScreenSize };
+            ImVec2 s1 = { sOrigin.x + fixedScreenSize, sOrigin.y - fixedScreenSize };
+            ImVec2 s2 = { sOrigin.x + fixedScreenSize, sOrigin.y + fixedScreenSize };
+            ImVec2 s3 = { sOrigin.x - fixedScreenSize, sOrigin.y + fixedScreenSize };
+
+            drawList->AddQuadFilled(s0, s1, s2, s3, centerColor);
+            drawList->AddQuad(s0, s1, s2, s3, IM_COL32(0, 0, 0, 128), 1.0f);
+        }
     }
 } // namespace Editor

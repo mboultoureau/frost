@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Asset/Model.h"
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/ECS/Component.h"
 #include "Frost/Asset/MeshConfig.h"
 #include "Frost/Scene/Components/VirtualCamera.h"
@@ -29,7 +30,7 @@ namespace Frost::Component
         HeightMap = 5
     };
 
-    class StaticMesh : public Component
+    class FROST_API StaticMesh : public Component
     {
     public:
         StaticMesh();
@@ -38,6 +39,7 @@ namespace Frost::Component
 
         std::shared_ptr<Model>& GetModel() { return _model; }
         const std::shared_ptr<Model>& GetModel() const { return _model; }
+        void SetModel(const std::shared_ptr<Model>& newModel) { _model = newModel; }
 
         MeshConfig& GetMeshConfig() { return _config; }
         const MeshConfig& GetMeshConfig() const { return _config; }

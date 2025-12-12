@@ -9,8 +9,9 @@ namespace Frost::Component
 {
     struct LightDirectional
     {
-        bool castShadows = true;
-        float shadowBias = 0.005f;
+        float cascadeNear = 0;
+        float cascadeFar = 100;
+        float range = 10.f;
     };
 
     struct LightPoint
@@ -26,13 +27,18 @@ namespace Frost::Component
         Math::Angle<Math::Radian> outerConeAngle = Math::Angle<Math::Degree>(30.0f);
     };
 
-    using LightConfig = std::variant<LightDirectional, LightPoint, LightSpot>;
+    struct LightAmbiant
+    {
+    };
+
+    using LightConfig = std::variant<LightDirectional, LightPoint, LightSpot, LightAmbiant>;
 
     enum class LightType
     {
         Directional = 0,
         Point = 1,
-        Spot = 2
+        Spot = 2,
+        Ambiant = 3
     };
 
     struct Light

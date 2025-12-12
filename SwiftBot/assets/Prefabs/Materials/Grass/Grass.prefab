@@ -1,0 +1,18 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: Grass
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [1, -0, -0, -6.229855e-08]
+      Scale: [4, 2, 4]
+    StaticMesh:
+      Type: 3
+      Params:
+        Width: 1
+        Depth: 1
+    Scriptable:
+      Scripts:
+        - Grass

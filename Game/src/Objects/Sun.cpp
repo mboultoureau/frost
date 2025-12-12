@@ -13,8 +13,8 @@ Sun::Sun()
     auto sun = scene.CreateGameObject("Sun");
 
     // Transform component
-    sun.AddComponent<Transform>(Math::Vector3{ 0.0f, 500.0f, 0.0f },
-                                Math::EulerAngles{ 0.0f, 0.0f, 140.0_deg },
+    sun.AddComponent<Transform>(Math::Vector3{ -366.0f, 69.51f, -100.0f },
+                                Math::EulerAngles{ 0.0f, 0.0f, 90_deg },
                                 Math::Vector3{ 1.0f, 1.0f, 1.0f });
 
     sun.AddComponent<WorldTransform>();

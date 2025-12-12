@@ -1,0 +1,66 @@
+Prefab: FrostEngine
+Entities:
+  - LocalID: 0
+    ParentID: -1
+    Meta:
+      Name: Portal
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Scriptable:
+      Scripts:
+        []
+  - LocalID: 1
+    ParentID: 0
+    Meta:
+      Name: Light
+    Transform:
+      Position: [-7.6, 6.5, 0]
+      Rotation: [0, 0.6870753, 0, 0.7265862]
+      Scale: [1, 1, 1]
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: Mesh
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [0.01, 0.01, 0.01]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/Portal/portal.glb
+  - LocalID: 3
+    ParentID: 0
+    Meta:
+      Name: Trigger
+    Transform:
+      Position: [0, 4.171105, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 9.270784, 12.196728]
+    RigidBody:
+      MotionType: 0
+      IsSensor: true
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 7
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 0
+      ShapeParams:
+        HalfExtent: [0.5, 0.5, 0.5]
+        ConvexRadius: 0.05
+    Scriptable:
+      Scripts:
+        - Portal

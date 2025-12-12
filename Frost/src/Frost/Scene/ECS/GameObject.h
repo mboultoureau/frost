@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Frost/Core/Core.h"
 #include "Frost/Scene/Components/Scriptable.h"
+
 #include <entt/entt.hpp>
 
 namespace Frost
@@ -11,7 +13,7 @@ namespace Frost
         struct Scriptable;
     }
 
-    class GameObject
+    class FROST_API GameObject
     {
     public:
         using Id = entt::entity;
@@ -21,7 +23,7 @@ namespace Frost
         GameObject(entt::entity handle, Scene* scene);
 
         template<typename T, typename... Args>
-        T& AddComponent(Args&&... args)
+        decltype(auto) AddComponent(Args&&... args)
         {
             return _registry->emplace_or_replace<T>(_entityHandle, std::forward<Args>(args)...);
         }
@@ -36,6 +38,18 @@ namespace Frost
         const T& GetComponent() const
         {
             return _registry->get<T>(_entityHandle);
+        }
+
+        template<typename T>
+        T* TryGetComponent()
+        {
+            return _registry->try_get<T>(_entityHandle);
+        }
+
+        template<typename T>
+        const T* TryGetComponent() const
+        {
+            return _registry->try_get<T>(_entityHandle);
         }
 
         template<typename T>
@@ -58,6 +72,7 @@ namespace Frost
         void SetParent(GameObject parent);
         GameObject GetParent();
         std::vector<GameObject> GetChildren();
+        void DestroyAllChildren();
 
         operator bool() const { return _entityHandle != entt::null; }
         operator entt::entity() const { return _entityHandle; }
@@ -69,13 +84,14 @@ namespace Frost
 
         GameObject::Id GetId() const { return _entityHandle; }
         entt::entity GetHandle() const { return _entityHandle; }
-        Scene* GetScene() const { return _scene; }
+        Scene* GetScene() { return _scene; }
         const bool IsValid() const;
-
-        static const GameObject InvalidId;
 
         template<typename T, typename... Args>
         T& AddScript(Args&&... args);
+
+        std::vector<GameObject> GetChildrenByName(const std::string& name, bool recursive = false);
+        GameObject GetChildByName(const std::string& name, bool recursive = false);
 
     private:
         entt::entity _entityHandle{ entt::null };

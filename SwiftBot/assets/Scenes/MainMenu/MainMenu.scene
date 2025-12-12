@@ -1,0 +1,12 @@
+Scene: MainMenu
+Entities:
+  - Entity: 0
+    Meta:
+      Name: SplashScreen
+    Transform:
+      Position: [-16.712545, 0, 24.64017]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Prefab:
+      AssetPath: assets\HUD\SplashScreen.prefab
+    Parent: -1

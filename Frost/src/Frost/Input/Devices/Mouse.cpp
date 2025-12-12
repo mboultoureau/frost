@@ -144,7 +144,6 @@ namespace Frost
     void Mouse::Update()
     {
         _UpdatePosition();
-        _UpdateButtonStates();
         _ResetScroll();
     }
 
@@ -208,5 +207,10 @@ namespace Frost
     bool Mouse::_IsButtonPressed(int virtualKeyCode)
     {
         return (GetAsyncKeyState(virtualKeyCode) & 0x8000) != 0;
+    }
+
+    void Mouse::Reset()
+    {
+        _UpdateButtonStates();
     }
 } // namespace Frost

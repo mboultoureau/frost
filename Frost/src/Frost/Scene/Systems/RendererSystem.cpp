@@ -6,7 +6,6 @@
 #include "Frost/Renderer/Renderer.h"
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Scene/Components/RelativeView.h"
-#include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Utils/Math/Transform.h"
 #include "Frost/Renderer/Pipeline/JoltDebugRenderingPipeline.h"
 #include <Frost/Renderer/Sampler.h>
@@ -43,9 +42,7 @@ namespace Frost
         }
 
         auto cameraView = scene.ViewActive<Camera, WorldTransform>();
-        auto virtualCameraView = scene.ViewActive<VirtualCamera, WorldTransform>();
         auto lightView = scene.ViewActive<Light, WorldTransform>();
-        auto skyboxView = scene.ViewActive<Skybox>();
         auto meshView = scene.ViewActive<StaticMesh, WorldTransform>();
 
         std::vector<std::pair<Component::Light, Component::WorldTransform>> allLights;
@@ -53,323 +50,559 @@ namespace Frost
         lightView.each([&](const Component::Light& light, const Component::WorldTransform& transform)
                        { allLights.emplace_back(light, transform); });
 
-        std::shared_ptr<Texture> skyboxTexture{};
-        skyboxView.each(
-            [&](const Skybox& skybox)
+        std::vector<RenderCameraData> renderTargetCameras;
+        std::vector<RenderCameraData> mainCameras;
+
+        cameraView.each(
+            [&](entt::entity entity, const Camera& camera, const WorldTransform& transform)
             {
-                if (!skyboxTexture)
+                if (camera.renderTargetConfig.has_value())
                 {
-                    skyboxTexture = skybox.cubemapTexture;
+                    renderTargetCameras.push_back({ entity, &camera, &transform });
+                }
+                else
+                {
+                    mainCameras.push_back({ entity, &camera, &transform });
                 }
             });
 
-        std::vector<RenderCameraData> virtualCameras;
-        std::vector<RenderCameraData> classicCameras;
-        virtualCameras.reserve(virtualCameraView.size_hint());
-        classicCameras.reserve(cameraView.size_hint());
-
-        cameraView.each([&](entt::entity entity, const Camera& camera, const WorldTransform& transform)
-                        { classicCameras.push_back({ entity, &camera, &transform }); });
-
-        virtualCameraView.each(
-            [&](entt::entity entity, const VirtualCamera& virtualCamera, const WorldTransform& transform)
-            { virtualCameras.push_back({ entity, &virtualCamera, &transform }); });
-
         auto sortCam = [](const RenderCameraData& a, const RenderCameraData& b)
         { return a.camera->priority < b.camera->priority; };
-        std::sort(virtualCameras.begin(), virtualCameras.end(), sortCam);
-        std::sort(classicCameras.begin(), classicCameras.end(), sortCam);
+        std::sort(renderTargetCameras.begin(), renderTargetCameras.end(), sortCam);
+        std::sort(mainCameras.begin(), mainCameras.end(), sortCam);
 
-        JoltRenderingPipeline* joltDebugRenderer = static_cast<JoltRenderingPipeline*>(Physics::GetDebugRenderer());
-
-        for (const auto& camData : classicCameras)
+        const float mainAspectRatio = (currentHeight > 0) ? (currentWidth / currentHeight) : 1.0f;
+        for (const auto& camData : renderTargetCameras)
         {
-            if (!Debug::RendererConfig::display && !Debug::PhysicsConfig::display)
+            const auto& config = camData.camera->renderTargetConfig.value();
+
+            std::shared_ptr<Texture> renderTarget;
+            auto it = _renderTargetCache.find(camData.entity);
+            if (it != _renderTargetCache.end() && it->second->GetWidth() == config.width &&
+                it->second->GetHeight() == config.height)
             {
-                continue;
+                renderTarget = it->second;
+            }
+            else
+            {
+                TextureConfig texConfig = { .debugName = "CameraTarget",
+                                            .format = Format::RGBA8_UNORM,
+                                            .width = config.width,
+                                            .height = config.height,
+                                            .isRenderTarget = true,
+                                            .isShaderResource = true };
+                renderTarget = Texture::Create(texConfig);
+                _renderTargetCache[camData.entity] = renderTarget;
             }
 
-            std::unordered_map<entt::entity, std::shared_ptr<Texture>> virtualCameraTargets;
-            Viewport mainRenderViewport = { camData.camera->viewport.x * currentWidth,
-                                            camData.camera->viewport.y * currentHeight,
-                                            camData.camera->viewport.width * currentWidth,
-                                            camData.camera->viewport.height * currentHeight };
-            const float mainCameraAspectRatio =
-                (mainRenderViewport.height > 0) ? (mainRenderViewport.width / mainRenderViewport.height) : 1.0f;
+            float aspectRatioToUse = config.useScreenSpaceAspectRatio ? mainAspectRatio : 0.0f;
+            _RenderSceneToTexture(scene, camData, deltaTime, allLights, renderTarget, aspectRatioToUse);
+        }
 
-            for (const auto& virtualCamData : virtualCameras)
+        meshView.each(
+            [&](StaticMesh& staticMesh, const WorldTransform&)
             {
-                const VirtualCamera& virtualCam = static_cast<const VirtualCamera&>(*virtualCamData.camera);
-
-                float aspectRatioToUse = 0.0f;
-                if (virtualCam.useScreenSpaceAspectRatio)
+            if (staticMesh.GetModel())
+            {
+                for (auto& material : staticMesh.GetModel()->GetMaterials())
                 {
-                    aspectRatioToUse = mainCameraAspectRatio;
+                    /*const auto& referenceTransform =
+                        scene.GetRegistry().get<WorldTransform>(relativeView.referenceEntity);
+
+                    Math::Matrix4x4 matPlayer = Math::GetTransformMatrix(*camData.transform);
+                    Math::Matrix4x4 matRef = Math::GetTransformMatrix(referenceTransform);
+                    Math::Matrix4x4 matOut = Math::GetTransformMatrix(*virtualCamData.transform);
+
+                    Math::Matrix4x4 matRel = matPlayer * Math::Matrix4x4::Invert(matRef);
+                    Math::Matrix4x4 matNew = matRel * relativeView.modifier * matOut;
+
+                    // Modifier temporairement la transformation de la camera virtuelle
+                    auto& camTransform = scene.GetRegistry().get<WorldTransform>(virtualCamData.entity);
+                    Math::DecomposeTransform(
+                        matNew, camTransform.position, camTransform.rotation, camTransform.scale);*/
                 }
+            }
 
-                WorldTransform originalVirtualCamTransform = *virtualCamData.transform;
+            _RenderSceneToTexture(scene,
+                                  virtualCamData,
+                                  deltaTime,
+                                  allLights,
+                                  skyboxTexture,
+                                  aspectRatioToUse,
+                                  virtualCam.portalEntity,
+                                  virtualCam.linkedPortalEntity);
+            virtualCameraTargets[virtualCamData.entity] = virtualCam.GetRenderTarget();
 
-                if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
-                {
-                    const auto& relativeView = scene.GetRegistry().get<RelativeView>(virtualCamData.entity);
-                    if (scene.GetRegistry().valid(relativeView.referenceEntity))
-                    {
-                        /*const auto& referenceTransform =
-                            scene.GetRegistry().get<WorldTransform>(relativeView.referenceEntity);
-
-                        Math::Matrix4x4 matPlayer = Math::GetTransformMatrix(*camData.transform);
-                        Math::Matrix4x4 matRef = Math::GetTransformMatrix(referenceTransform);
-                        Math::Matrix4x4 matOut = Math::GetTransformMatrix(*virtualCamData.transform);
-
-                        Math::Matrix4x4 matRel = matPlayer * Math::Matrix4x4::Invert(matRef);
-                        Math::Matrix4x4 matNew = matRel * relativeView.modifier * matOut;
-
-                        // Modifier temporairement la transformation de la camera virtuelle
-                        auto& camTransform = scene.GetRegistry().get<WorldTransform>(virtualCamData.entity);
-                        Math::DecomposeTransform(
-                            matNew, camTransform.position, camTransform.rotation, camTransform.scale);*/
-                    }
-                }
-
-                _RenderSceneToTexture(scene,
-                                      virtualCamData,
-                                      deltaTime,
-                                      allLights,
-                                      skyboxTexture,
-                                      aspectRatioToUse,
-                                      virtualCam.portalEntity,
-                                      virtualCam.linkedPortalEntity);
-                virtualCameraTargets[virtualCamData.entity] = virtualCam.GetRenderTarget();
-
-                if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
-                {
-                    // scene.GetRegistry().get<WorldTransform>(virtualCamData.entity) = originalVirtualCamTransform;
-                }
+            if (scene.GetRegistry().all_of<RelativeView>(virtualCamData.entity))
+            {
+                // scene.GetRegistry().get<WorldTransform>(virtualCamData.entity) = originalVirtualCamTransform;
+            }
             }
 
             meshView.each(
                 [&](StaticMesh& staticMesh, const WorldTransform& /*unused*/)
                 {
+            if (staticMesh.GetModel())
+            {
+                for (auto& material : staticMesh.GetModel()->GetMaterials())
+                {
+                    auto it = _renderTargetCache.find(static_cast<entt::entity>(material.cameraRef));
+                    if (it != _renderTargetCache.end())
+                    {
+                        material.albedoTextures.clear();
+                        material.albedoTextures.push_back(it->second);
+                    }
+                }
+            }
+                }
+    });
+
+    JoltRenderingPipeline* joltDebugRenderer = static_cast<JoltRenderingPipeline*>(Physics::GetDebugRenderer());
+
+    for (const auto& camData : mainCameras)
+    {
+        if (!Debug::RendererConfig::display && !Debug::PhysicsConfig::IsDisplayEnabled())
+        {
+            continue;
+        }
+
+        const Camera& camera = *camData.camera;
+        const WorldTransform& cameraTransform = *camData.transform;
+
+        Texture* finalRenderTarget =
+            _externalRenderTarget ? _externalRenderTarget.get() : RendererAPI::GetRenderer()->GetBackBuffer();
+        Viewport mainRenderViewport = { camera.viewport.x * currentWidth,
+                                        camera.viewport.y * currentHeight,
+                                        camera.viewport.width * currentWidth,
+                                        camera.viewport.height * currentHeight };
+        if (mainRenderViewport.width == 0 || mainRenderViewport.height == 0)
+            continue;
+
+        const float mainCameraAspectRatio =
+            (mainRenderViewport.height > 0) ? (mainRenderViewport.width / mainRenderViewport.height) : 1.0f;
+        _deferredRendering.OnResize(static_cast<uint32_t>(mainRenderViewport.width),
+                                    static_cast<uint32_t>(mainRenderViewport.height));
+        _shadowPipeline.OnResize(static_cast<uint32_t>(mainRenderViewport.width),
+                                 static_cast<uint32_t>(mainRenderViewport.height));
+
+        Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
+        Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, mainCameraAspectRatio);
+        Math::Matrix4x4 viewProjectionMatrix = viewMatrix * projectionMatrix;
+
+        CommandList* commandList = _deferredRendering.GetCommandList();
+        commandList->BeginRecording();
+
+        std::shared_ptr<Texture> skyboxTexture = nullptr;
+        if (scene.GetRegistry().all_of<Skybox>(camData.entity))
+        {
+            const auto& skyboxComponent = scene.GetRegistry().get<Skybox>(camData.entity);
+            skyboxTexture = _GetOrCreateSkyboxTexture(skyboxComponent);
+        }
+
+        if (Debug::RendererConfig::display)
+        {
+            if (camera.frustumCulling)
+            {
+                DirectX::XMMATRIX viewProj = Math::LoadMatrix(viewMatrix) * Math::LoadMatrix(projectionMatrix);
+                _frustum.Extract(viewProj, camera.frustumPadding);
+            }
+
+            // Apply post-processing effects pre-render
+            for (auto& effect : camera.postEffects)
+            {
+                if (!effect->IsEnabled())
+                    continue;
+                FT_ENGINE_ASSERT(effect != nullptr, "PostEffect is null");
+                effect->OnPreRender(deltaTime, viewMatrix, projectionMatrix);
+            }
+
+            _deferredRendering.BeginFrame(camera, cameraTransform, viewMatrix, projectionMatrix, mainRenderViewport);
+
+            meshView.each(
+                [&](const entt::entity entity, const StaticMesh& staticMesh, const WorldTransform& meshTransform)
+                {
+                    // AJOUT : Skip les objets avec ScreenProjectedTexture si hideGeometry est true
+                    if (scene.GetRegistry().all_of<ScreenProjectedTexture>(entity))
+                    {
+                        const auto& projTex = scene.GetRegistry().get<ScreenProjectedTexture>(entity);
+                        if (projTex.hideGeometry)
+                            return; // Ne pas rendre ce mesh normalement
+                    }
+
                     if (staticMesh.GetModel())
                     {
-                        for (auto& material : staticMesh.GetModel()->GetMaterials())
+                        Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
+                        if (!camera.frustumCulling || staticMesh.overrideFrustumCulling ||
+                            _IsVisible(staticMesh, worldMatrix))
                         {
-                            if (material.cameraRef != entt::null)
-                            {
-                                auto it = virtualCameraTargets.find(static_cast<entt::entity>(material.cameraRef));
-                                if (it != virtualCameraTargets.end())
-                                {
-                                    material.albedoTextures.clear();
-                                    material.albedoTextures.push_back(it->second);
-                                }
-                            }
+                            _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
                         }
                     }
                 });
 
-            const Camera& camera = *camData.camera;
-            const WorldTransform& cameraTransform = *camData.transform;
+            _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
+            _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+            _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
 
-            Texture* finalRenderTarget =
-                _externalRenderTarget ? _externalRenderTarget.get() : RendererAPI::GetRenderer()->GetBackBuffer();
-            if (mainRenderViewport.width == 0 || mainRenderViewport.height == 0)
-                continue;
-
-            _deferredRendering.OnResize(static_cast<uint32_t>(mainRenderViewport.width),
-                                        static_cast<uint32_t>(mainRenderViewport.height));
-
-            Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
-            Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, mainCameraAspectRatio);
-            Math::Matrix4x4 viewProjectionMatrix = viewMatrix * projectionMatrix;
-
-            CommandList* commandList = _deferredRendering.GetCommandList();
-            commandList->BeginRecording();
-
-            if (Debug::RendererConfig::display)
+            // === RENDRE LA SKYBOX PRINCIPALE AVANT LES PORTAILS ===
+            if (skyboxTexture)
             {
-                if (camera.frustumCulling)
-                {
-                    DirectX::XMMATRIX viewProj = Math::LoadMatrix(viewMatrix) * Math::LoadMatrix(projectionMatrix);
-                    _frustum.Extract(viewProj, camera.frustumPadding);
-                }
+                Texture* finalTarget = _deferredRendering.GetFinalLitTexture();
+                commandList->SetRenderTargets(1, &finalTarget, _deferredRendering.GetDepthStencilTexture());
 
-                // Apply post-processing effects pre-render
-                for (auto& effect : camera.postEffects)
-                {
-                    if (!effect->IsEnabled())
-                        continue;
-                    FT_ENGINE_ASSERT(effect != nullptr, "PostEffect is null");
-                    effect->OnPreRender(deltaTime, viewMatrix, projectionMatrix);
-                }
-
-                _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, mainRenderViewport);
-
-                meshView.each(
-                    [&](const entt::entity entity, const StaticMesh& staticMesh, const WorldTransform& meshTransform)
-                    {
-                        // AJOUT : Skip les objets avec ScreenProjectedTexture si hideGeometry est true
-                        if (scene.GetRegistry().all_of<ScreenProjectedTexture>(entity))
-                        {
-                            const auto& projTex = scene.GetRegistry().get<ScreenProjectedTexture>(entity);
-                            if (projTex.hideGeometry)
-                                return; // Ne pas rendre ce mesh normalement
-                        }
-
-                        if (staticMesh.GetModel())
-                        {
-                            Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                            if (!camera.frustumCulling || staticMesh.overrideFrustumCulling ||
-                                _IsVisible(staticMesh, worldMatrix))
-                            {
-                                _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
-                            }
-                        }
-                    });
-
-                _deferredRendering.EndFrame(camera, cameraTransform, allLights, mainRenderViewport);
-
-                // === RENDRE LA SKYBOX PRINCIPALE AVANT LES PORTAILS ===
-                if (skyboxTexture)
-                {
-                    Texture* finalTarget = _deferredRendering.GetFinalLitTexture();
-                    commandList->SetRenderTargets(1, &finalTarget, _deferredRendering.GetDepthStencilTexture());
-
-                    _skyboxPipeline.Render(commandList,
-                                           _deferredRendering.GetFinalLitTexture(),
-                                           _deferredRendering.GetDepthStencilTexture(),
-                                           skyboxTexture.get(),
-                                           camera,
-                                           cameraTransform);
-                }
+                _skyboxPipeline.Render(commandList,
+                                       _shadowPipeline.GetFinalLitTexture(),
+                                       _deferredRendering.GetDepthStencilTexture().get(),
+                                       skyboxTexture.get(),
+                                       camera,
+                                       cameraTransform);
             }
-            else
-            {
-                _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, mainRenderViewport);
-                _deferredRendering.EndFrame(camera, cameraTransform, {}, mainRenderViewport);
-            }
+        }
+        else
+        {
+            _deferredRendering.BeginFrame(camera, cameraTransform, viewMatrix, projectionMatrix, mainRenderViewport);
+            _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
+            _shadowPipeline.ShadowPass(allLights, camera, cameraTransform, camera.viewport);
+            _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
+        }
 
-            Texture* sceneTexture = _deferredRendering.GetFinalLitTexture();
-            _ApplyPostProcessing(commandList, sceneTexture, finalRenderTarget, camera, deltaTime);
+        Texture* sceneTexture = _shadowPipeline.GetFinalLitTexture();
+        _ApplyPostProcessing(commandList, sceneTexture, finalRenderTarget, camera, deltaTime);
 
-            // === PUIS RENDRE LES PORTAILS PAR-DESSUS ===
-            _RenderScreenProjectedTexturesOnTarget(scene, camData, mainRenderViewport, finalRenderTarget);
+        // === PUIS RENDRE LES PORTAILS PAR-DESSUS ===
+        _RenderScreenProjectedTexturesOnTarget(scene, camData, mainRenderViewport, finalRenderTarget);
 
 #ifdef FT_DEBUG
-            if (Debug::PhysicsConfig::display && joltDebugRenderer)
-            {
-                joltDebugRenderer->Render(commandList,
-                                          mainRenderViewport,
-                                          viewProjectionMatrix,
-                                          camera,
-                                          finalRenderTarget,
-                                          _deferredRendering.GetDepthStencilTexture());
-            }
+        if (Debug::PhysicsConfig::IsDisplayEnabled() && joltDebugRenderer)
+        {
+            joltDebugRenderer->Render(commandList,
+                                      mainRenderViewport,
+                                      viewProjectionMatrix,
+                                      camera,
+                                      finalRenderTarget,
+                                      _deferredRendering.GetDepthStencilTexture().get());
+        }
 #endif
 
-            commandList->EndRecording();
-            commandList->Execute();
-        }
-
-        if (joltDebugRenderer)
-        {
-            joltDebugRenderer->Clear();
-        }
-
-        RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
+        commandList->EndRecording();
+        commandList->Execute();
     }
 
-    bool RendererSystem::_IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix)
+    if (joltDebugRenderer)
     {
-        bool renderModel = false;
-        DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
+        joltDebugRenderer->Clear();
+    }
 
-        for (auto& mesh : staticMesh.GetModel()->GetMeshes())
+    RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
+} // namespace Frost
+
+bool
+RendererSystem::_IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix)
+{
+    bool renderModel = false;
+    DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
+
+    for (auto& mesh : staticMesh.GetModel()->GetMeshes())
+    {
+        BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
+        bool renderMesh = _frustum.IsInside(worldBox);
+        if (renderMesh)
         {
-            BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
-            bool renderMesh = _frustum.IsInside(worldBox);
-            if (renderMesh)
+            renderModel = true;
+        }
+
+        // mesh.enabled = renderMesh;
+    }
+    return renderModel;
+}
+
+void
+RendererSystem::_RenderScreenProjectedTexturesOnTarget(Scene& scene,
+                                                       const RenderCameraData& camData,
+                                                       const Viewport& viewport,
+                                                       Texture* targetTexture)
+{
+    auto view = scene.ViewActive<ScreenProjectedTexture, StaticMesh, WorldTransform>();
+    if (view.size_hint() == 0)
+        return;
+
+    CommandList* commandList = _deferredRendering.GetCommandList();
+
+    // Bind la target finale (après post-process)
+    commandList->SetRenderTargets(1, &targetTexture, _deferredRendering.GetDepthStencilTexture());
+    commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
+
+    Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(*camData.transform);
+    Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(*camData.camera, viewport.width / viewport.height);
+
+    view.each(
+        [&](const entt::entity entity,
+            const ScreenProjectedTexture& projectedTex,
+            const StaticMesh& mesh,
+            const WorldTransform& transform)
+        {
+            if (!projectedTex.enabled || !projectedTex.texture)
+                return;
+
+            // Clear stencil
+            commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), false, 1.0f, true, 0);
+
+            // ecrire le mesh dans le stencil
+            commandList->SetColorWriteMask(false, false, false, false);
+            commandList->SetDepthStencilStateCustom(true,
+                                                    false,
+                                                    CompareFunction::LessEqual,
+                                                    true,
+                                                    CompareFunction::Always,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Replace,
+                                                    1,
+                                                    0xFF,
+                                                    0xFF);
+
+            if (mesh.GetModel())
             {
-                renderModel = true;
+                Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(transform);
+                _deferredRendering.SubmitModelStencilOnly(*mesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
             }
 
-            // mesh.enabled = renderMesh;
+            // Rendre la texture avec stencil test
+            commandList->SetColorWriteMask(true, true, true, true);
+            commandList->SetDepthStencilStateCustom(false,
+                                                    false,
+                                                    CompareFunction::Always,
+                                                    true,
+                                                    CompareFunction::Equal,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    StencilOp::Keep,
+                                                    1,
+                                                    0xFF,
+                                                    0x00);
+
+            commandList->SetBlendState(BlendMode::None);
+            _RenderFullscreenQuad(commandList, projectedTex.texture.get());
+        });
+
+    // Restaurer les etats
+    commandList->SetDepthStencilStateCustom(true,
+                                            true,
+                                            CompareFunction::Less,
+                                            false,
+                                            CompareFunction::Always,
+                                            StencilOp::Keep,
+                                            StencilOp::Keep,
+                                            StencilOp::Keep,
+                                            0,
+                                            0xFF,
+                                            0xFF);
+
+    commandList->SetColorWriteMask(true, true, true, true);
+    commandList->SetBlendState(BlendMode::None);
+}
+
+void
+RendererSystem::_RenderFullscreenQuad(CommandList* commandList, Texture* texture)
+{
+    // Utilisez un shader simple qui rend une texture en fullscreen
+    // Vous devrez creer ce shader s'il n'existe pas deja
+
+    commandList->UnbindShader(ShaderType::Geometry);
+    commandList->UnbindShader(ShaderType::Hull);
+    commandList->UnbindShader(ShaderType::Domain);
+    commandList->SetShader(_vsFullScreenQuad.get());
+    commandList->SetShader(_psFullScreenQuad.get());
+    commandList->SetTexture(texture, 0);
+    commandList->SetSampler(_sampler.get(), 0);
+    commandList->SetInputLayout(nullptr);
+    commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+    commandList->Draw(3, 0); // Triangle qui couvre l'ecran
+}
+
+void
+RendererSystem::_ApplyPostProcessing(CommandList* commandList,
+                                     Texture* sourceTexture,
+                                     Texture* destinationTarget,
+                                     const Camera& camera,
+                                     float deltaTime)
+{
+    std::vector<std::shared_ptr<PostEffect>> postProcessingPasses;
+    for (const auto& effect : camera.postEffects)
+    {
+        if (effect && effect->IsEnabled() && effect->IsPostProcessingPass())
+        {
+            postProcessingPasses.push_back(effect);
         }
-        return renderModel;
     }
 
-    void RendererSystem::_RenderScreenProjectedTexturesOnTarget(Scene& scene,
-                                                                const RenderCameraData& camData,
-                                                                const Viewport& viewport,
-                                                                Texture* targetTexture)
+    if (!postProcessingPasses.empty())
     {
-        auto view = scene.ViewActive<ScreenProjectedTexture, StaticMesh, WorldTransform>();
-        if (view.size_hint() == 0)
-            return;
+        uint32_t width = sourceTexture->GetWidth();
+        uint32_t height = sourceTexture->GetHeight();
+        if (!_source || _source->GetWidth() != width || _source->GetHeight() != height)
+        {
+            TextureConfig ppConfig = { .format = sourceTexture->GetFormat(),
+                                       .width = width,
+                                       .height = height,
+                                       .isRenderTarget = true,
+                                       .isShaderResource = true };
+            _source = Texture::Create(ppConfig);
+            _destination = Texture::Create(ppConfig);
+        }
 
-        CommandList* commandList = _deferredRendering.GetCommandList();
+        Texture* source = sourceTexture;
+        Texture* destination = nullptr;
 
-        // Bind la target finale (après post-process)
-        commandList->SetRenderTargets(1, &targetTexture, _deferredRendering.GetDepthStencilTexture());
-        commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
+        for (size_t i = 0; i < postProcessingPasses.size(); ++i)
+        {
+            destination = (i == postProcessingPasses.size() - 1) ? destinationTarget
+                                                                 : ((i % 2 == 0) ? _destination.get() : _source.get());
+            postProcessingPasses[i]->SetNormalTexture(_deferredRendering.GetNormalTexture().get());
+            postProcessingPasses[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture().get());
+            postProcessingPasses[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture().get());
+            postProcessingPasses[i]->OnPostRender(deltaTime, commandList, source, destination);
+            source = destination;
+        }
+    }
+    else
+    {
+        if (destinationTarget->GetWidth() == sourceTexture->GetWidth() &&
+            destinationTarget->GetHeight() == sourceTexture->GetHeight())
+        {
+            commandList->CopyResource(destinationTarget, sourceTexture);
+        }
+    }
+}
 
-        Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(*camData.transform);
-        Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(*camData.camera, viewport.width / viewport.height);
+void
+RendererSystem::_RenderSceneToTexture(
+    Scene& scene,
+    const RenderCameraData& camData,
+    float deltaTime,
+    const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
+    const std::shared_ptr<Texture>& skybox,
+    float overrideAspectRatio,
+    entt::entity exitPortalFrameEntity,
+    entt::entity entryPortalFrameEntity) // Portail a utiliser pour le masque
+{
+    // if (entryPortalFrameEntity == entt::null)
+    //     return;
 
-        view.each(
-            [&](const entt::entity entity,
-                const ScreenProjectedTexture& projectedTex,
-                const StaticMesh& mesh,
-                const WorldTransform& transform)
+    const VirtualCamera& camera = static_cast<const VirtualCamera&>(*camData.camera);
+    const WorldTransform& cameraTransform = *camData.transform;
+    Texture* renderTarget = scene.GetRegistry().get<ScreenProjectedTexture>(entryPortalFrameEntity).texture.get();
+    if (!renderTarget)
+        return;
+
+    auto meshView = scene.ViewActive<StaticMesh, WorldTransform>();
+    float targetWidth = static_cast<float>(renderTarget->GetWidth());
+    float targetHeight = static_cast<float>(renderTarget->GetHeight());
+    if (targetWidth == 0 || targetHeight == 0)
+        return;
+
+    Viewport renderViewport = { 0.0f, 0.0f, targetWidth, targetHeight };
+    _deferredRendering.OnResize(static_cast<uint32_t>(targetWidth), static_cast<uint32_t>(targetHeight));
+    _shadowPipeline.OnResize(static_cast<uint32_t>(targetWidth), static_cast<uint32_t>(targetHeight));
+
+    float aspectRatio = (renderViewport.height > 0) ? (renderViewport.width / renderViewport.height) : 1.0f;
+    if (overrideAspectRatio > 0.0f)
+    {
+        aspectRatio = overrideAspectRatio;
+    }
+
+    Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
+    Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, aspectRatio);
+
+    CommandList* commandList = _deferredRendering.GetCommandList();
+    commandList->BeginRecording();
+
+    commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), true, 1.0f, true, 0);
+
+    // === eTAPE 1 : Rendre le masque du portail dans le stencil ===
+    if (scene.GetRegistry().valid(exitPortalFrameEntity))
+    {
+        // IMPORTANT : Binder un render target dummy + le depth/stencil
+        Texture* dummyRT = _deferredRendering.GetAlbedoTexture(); // N'importe quel RT
+        commandList->SetRenderTargets(1, &dummyRT, _deferredRendering.GetDepthStencilTexture());
+
+        // Viewport
+        commandList->SetViewport(0, 0, targetWidth, targetHeight, 0.0f, 1.0f);
+
+        // Desactiver l'ecriture couleur
+        commandList->SetColorWriteMask(false, false, false, false);
+        commandList->SetDepthStencilStateCustom(false, // depthEnable
+                                                false, // depthWrite
+                                                CompareFunction::Always,
+                                                true, // stencilEnable
+                                                CompareFunction::Always,
+                                                StencilOp::Keep,
+                                                StencilOp::Keep,
+                                                StencilOp::Replace,
+                                                1,
+                                                0xFF,
+                                                0xFF);
+
+        if (scene.GetRegistry().all_of<StaticMesh, WorldTransform>(exitPortalFrameEntity))
+        {
+            const auto& portalMesh = scene.GetRegistry().get<StaticMesh>(exitPortalFrameEntity);
+            const auto& portalTransform = scene.GetRegistry().get<WorldTransform>(exitPortalFrameEntity);
+
+            if (portalMesh.GetModel())
             {
-                if (!projectedTex.enabled || !projectedTex.texture)
-                    return;
+                Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(portalTransform);
+                _deferredRendering.SubmitModelStencilOnly(
+                    *portalMesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
+            }
+        }
 
-                // Clear stencil
-                commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), false, 1.0f, true, 0);
+        // Reactiver l'ecriture couleur
+        commandList->SetColorWriteMask(true, true, true, true);
+    }
 
-                // ecrire le mesh dans le stencil
-                commandList->SetColorWriteMask(false, false, false, false);
-                commandList->SetDepthStencilStateCustom(true,
-                                                        false,
-                                                        CompareFunction::LessEqual,
-                                                        true,
-                                                        CompareFunction::Always,
-                                                        StencilOp::Keep,
-                                                        StencilOp::Keep,
-                                                        StencilOp::Replace,
-                                                        1,
-                                                        0xFF,
-                                                        0xFF);
+    // === eTAPE 2 : BeginFrame (va re-binder les render targets) ===
+    _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, renderViewport);
+    //_deferredRendering.BeginFrame(camera, viewMatrix, obliqueProjection, renderViewport);
+    // === eTAPE 3 : Configurer le stencil pour le GBuffer pass ===
+    if (scene.GetRegistry().valid(exitPortalFrameEntity))
+    {
+        commandList->SetDepthStencilStateCustom(true,                   // depthEnable
+                                                true,                   // depthWrite
+                                                CompareFunction::Less,  // depthFunc
+                                                true,                   // stencilEnable
+                                                CompareFunction::Equal, // REMIS a Equal : rendre où stencil == 1
+                                                StencilOp::Keep,
+                                                StencilOp::Keep,
+                                                StencilOp::Keep,
+                                                1, // stencilRef
+                                                0xFF,
+                                                0x00);
+    }
 
-                if (mesh.GetModel())
-                {
-                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(transform);
-                    _deferredRendering.SubmitModelStencilOnly(
-                        *mesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
-                }
+    // === ÉTAPE 4 : Rendre la geometrie ===
+    meshView.each(
+        [&](const entt::entity entity, const StaticMesh& staticMesh, const WorldTransform& meshTransform)
+        {
+            if (entity == exitPortalFrameEntity)
+                return;
 
-                // Rendre la texture avec stencil test
-                commandList->SetColorWriteMask(true, true, true, true);
-                commandList->SetDepthStencilStateCustom(false,
-                                                        false,
-                                                        CompareFunction::Always,
-                                                        true,
-                                                        CompareFunction::Equal,
-                                                        StencilOp::Keep,
-                                                        StencilOp::Keep,
-                                                        StencilOp::Keep,
-                                                        1,
-                                                        0xFF,
-                                                        0x00);
+            if (staticMesh.GetModel())
+            {
+                Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
+                _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
+            }
+        });
 
-                commandList->SetBlendState(BlendMode::None);
-                _RenderFullscreenQuad(commandList, projectedTex.texture.get());
-            });
+    // === eTAPE 5 : EndFrame SANS stencil ===
+    _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget);
 
-        // Restaurer les etats
-        commandList->SetDepthStencilStateCustom(true,
-                                                true,
-                                                CompareFunction::Less,
+    // === eTAPE 6 : Skybox - SANS stencil pour remplir toute la texture ===
+    if (skybox)
+    {
+        // Desactiver le stencil pour la skybox
+        commandList->SetDepthStencilStateCustom(true,                       // depthEnable
+                                                false,                      // depthWrite (skybox n'ecrit pas le depth)
+                                                CompareFunction::LessEqual, // depthFunc
                                                 false,
                                                 CompareFunction::Always,
                                                 StencilOp::Keep,
@@ -379,294 +612,146 @@ namespace Frost
                                                 0xFF,
                                                 0xFF);
 
-        commandList->SetColorWriteMask(true, true, true, true);
-        commandList->SetBlendState(BlendMode::None);
+        _skyboxPipeline.Render(commandList,
+                               renderTarget.get(),
+                               _deferredRendering.GetDepthStencilTexture().get(),
+                               skyboxTexture.get(),
+                               camera,
+                               cameraTransform);
     }
 
-    void RendererSystem::_RenderFullscreenQuad(CommandList* commandList, Texture* texture)
+    // === eTAPE 7 : Appliquer les post-effets de la camera virtuelle ===
+    if (!camera.postEffects.empty())
     {
-        // Utilisez un shader simple qui rend une texture en fullscreen
-        // Vous devrez creer ce shader s'il n'existe pas deja
+        // Creer une texture temporaire pour les post-effets du portail
+        uint32_t rtWidth = renderTarget->GetWidth();
+        uint32_t rtHeight = renderTarget->GetHeight();
 
-        commandList->UnbindShader(ShaderType::Geometry);
-        commandList->UnbindShader(ShaderType::Hull);
-        commandList->UnbindShader(ShaderType::Domain);
-        commandList->SetShader(_vsFullScreenQuad.get());
-        commandList->SetShader(_psFullScreenQuad.get());
-        commandList->SetTexture(texture, 0);
-        commandList->SetSampler(_sampler.get(), 0);
-        commandList->SetInputLayout(nullptr);
-        commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-        commandList->Draw(3, 0); // Triangle qui couvre l'ecran
+        // Reutiliser ou creer des textures temporaires
+        if (!_portalPostProcessSource || _portalPostProcessSource->GetWidth() != rtWidth ||
+            _portalPostProcessSource->GetHeight() != rtHeight)
+        {
+            TextureConfig ppConfig = { .format = renderTarget->GetFormat(),
+                                       .width = rtWidth,
+                                       .height = rtHeight,
+                                       .isRenderTarget = true,
+                                       .isShaderResource = true };
+            _portalPostProcessSource = Texture::Create(ppConfig);
+            _portalPostProcessDestination = Texture::Create(ppConfig);
+        }
+
+        // Copier le rendu actuel dans la source
+        commandList->CopyResource(_portalPostProcessSource.get(), renderTarget);
+
+        // Appliquer les post-effets
+        _ApplyVirtualCameraPostProcessing(commandList, _portalPostProcessSource.get(), renderTarget, camera, deltaTime);
     }
 
-    void RendererSystem::_ApplyPostProcessing(CommandList* commandList,
-                                              Texture* sourceTexture,
-                                              Texture* destinationTarget,
-                                              const Camera& camera,
-                                              float deltaTime)
+    commandList->EndRecording();
+    commandList->Execute();
+}
+
+void
+RendererSystem::_ApplyVirtualCameraPostProcessing(CommandList* commandList,
+                                                  Texture* sourceTexture,
+                                                  Texture* destinationTarget,
+                                                  const VirtualCamera& camera,
+                                                  float deltaTime)
+{
+    std::vector<std::shared_ptr<PostEffect>> activeEffects;
+    for (const auto& effect : camera.postEffects)
     {
-        std::vector<std::shared_ptr<PostEffect>> postProcessingPasses;
-        for (const auto& effect : camera.postEffects)
+        if (effect && effect->IsEnabled() && effect->IsPostProcessingPass())
         {
-            if (effect && effect->IsEnabled() && effect->IsPostProcessingPass())
-            {
-                postProcessingPasses.push_back(effect);
-            }
-        }
-
-        if (!postProcessingPasses.empty())
-        {
-            uint32_t width = sourceTexture->GetWidth();
-            uint32_t height = sourceTexture->GetHeight();
-            if (!_source || _source->GetWidth() != width || _source->GetHeight() != height)
-            {
-                TextureConfig ppConfig = { .format = sourceTexture->GetFormat(),
-                                           .width = width,
-                                           .height = height,
-                                           .isRenderTarget = true,
-                                           .isShaderResource = true };
-                _source = Texture::Create(ppConfig);
-                _destination = Texture::Create(ppConfig);
-            }
-
-            Texture* source = sourceTexture;
-            Texture* destination = nullptr;
-
-            for (size_t i = 0; i < postProcessingPasses.size(); ++i)
-            {
-                destination = (i == postProcessingPasses.size() - 1)
-                                  ? destinationTarget
-                                  : ((i % 2 == 0) ? _destination.get() : _source.get());
-                postProcessingPasses[i]->SetNormalTexture(_deferredRendering.GetNormalTexture());
-                postProcessingPasses[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture());
-                postProcessingPasses[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture());
-                postProcessingPasses[i]->OnPostRender(deltaTime, commandList, source, destination);
-                source = destination;
-            }
-        }
-        else
-        {
-            if (destinationTarget->GetWidth() == sourceTexture->GetWidth() &&
-                destinationTarget->GetHeight() == sourceTexture->GetHeight())
-            {
-                commandList->CopyResource(destinationTarget, sourceTexture);
-            }
+            activeEffects.push_back(effect);
         }
     }
 
-    void RendererSystem::_RenderSceneToTexture(
-        Scene& scene,
-        const RenderCameraData& camData,
-        float deltaTime,
-        const std::vector<std::pair<Component::Light, Component::WorldTransform>>& allLights,
-        const std::shared_ptr<Texture>& skybox,
-        float overrideAspectRatio,
-        entt::entity exitPortalFrameEntity,
-        entt::entity entryPortalFrameEntity) // Portail a utiliser pour le masque
+    if (activeEffects.empty())
+        return;
+
+    Texture* source = sourceTexture;
+    Texture* destination = nullptr;
+
+    for (size_t i = 0; i < activeEffects.size(); ++i)
     {
-        // if (entryPortalFrameEntity == entt::null)
-        //     return;
+        // La dernière passe va sur la destination finale
+        destination = (i == activeEffects.size() - 1)
+                          ? destinationTarget
+                          : ((i % 2 == 0) ? _portalPostProcessDestination.get() : _portalPostProcessSource.get());
 
-        const VirtualCamera& camera = static_cast<const VirtualCamera&>(*camData.camera);
-        const WorldTransform& cameraTransform = *camData.transform;
-        Texture* renderTarget = scene.GetRegistry().get<ScreenProjectedTexture>(entryPortalFrameEntity).texture.get();
-        if (!renderTarget)
-            return;
+        // Configurer les textures pour le post-effet
+        activeEffects[i]->SetNormalTexture(_deferredRendering.GetNormalTexture());
+        activeEffects[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture());
+        activeEffects[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture());
 
-        auto meshView = scene.ViewActive<StaticMesh, WorldTransform>();
-        float targetWidth = static_cast<float>(renderTarget->GetWidth());
-        float targetHeight = static_cast<float>(renderTarget->GetHeight());
-        if (targetWidth == 0 || targetHeight == 0)
-            return;
+        // Appliquer l'effet
+        activeEffects[i]->OnPostRender(deltaTime, commandList, source, destination);
 
-        Viewport renderViewport = { 0.0f, 0.0f, targetWidth, targetHeight };
-        _deferredRendering.OnResize(static_cast<uint32_t>(targetWidth), static_cast<uint32_t>(targetHeight));
+        source = destination;
+    }
+    std::shared_ptr<Texture> RendererSystem::_GetOrCreateSkyboxTexture(const Component::Skybox& skybox)
+    {
+        std::string cacheKey;
+        TextureConfig textureConfig;
+        textureConfig.layout = TextureLayout::CUBEMAP;
+        textureConfig.hasMipmaps = true;
 
-        float aspectRatio = (renderViewport.height > 0) ? (renderViewport.width / renderViewport.height) : 1.0f;
-        if (overrideAspectRatio > 0.0f)
-        {
-            aspectRatio = overrideAspectRatio;
-        }
+        bool isValid = false;
 
-        Math::Matrix4x4 viewMatrix = Math::GetViewMatrix(cameraTransform);
-        Math::Matrix4x4 projectionMatrix = Math::GetProjectionMatrix(camera, aspectRatio);
-
-        CommandList* commandList = _deferredRendering.GetCommandList();
-        commandList->BeginRecording();
-
-        commandList->ClearDepthStencil(_deferredRendering.GetDepthStencilTexture(), true, 1.0f, true, 0);
-
-        // === eTAPE 1 : Rendre le masque du portail dans le stencil ===
-        if (scene.GetRegistry().valid(exitPortalFrameEntity))
-        {
-            // IMPORTANT : Binder un render target dummy + le depth/stencil
-            Texture* dummyRT = _deferredRendering.GetAlbedoTexture(); // N'importe quel RT
-            commandList->SetRenderTargets(1, &dummyRT, _deferredRendering.GetDepthStencilTexture());
-
-            // Viewport
-            commandList->SetViewport(0, 0, targetWidth, targetHeight, 0.0f, 1.0f);
-
-            // Desactiver l'ecriture couleur
-            commandList->SetColorWriteMask(false, false, false, false);
-            commandList->SetDepthStencilStateCustom(false, // depthEnable
-                                                    false, // depthWrite
-                                                    CompareFunction::Always,
-                                                    true, // stencilEnable
-                                                    CompareFunction::Always,
-                                                    StencilOp::Keep,
-                                                    StencilOp::Keep,
-                                                    StencilOp::Replace,
-                                                    1,
-                                                    0xFF,
-                                                    0xFF);
-
-            if (scene.GetRegistry().all_of<StaticMesh, WorldTransform>(exitPortalFrameEntity))
+        std::visit(
+            [&](auto&& arg)
             {
-                const auto& portalMesh = scene.GetRegistry().get<StaticMesh>(exitPortalFrameEntity);
-                const auto& portalTransform = scene.GetRegistry().get<WorldTransform>(exitPortalFrameEntity);
-
-                if (portalMesh.GetModel())
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, SkyboxSourceCubemap>)
                 {
-                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(portalTransform);
-                    _deferredRendering.SubmitModelStencilOnly(
-                        *portalMesh.GetModel(), worldMatrix, viewMatrix, projectionMatrix);
+                    if (!arg.filepath.empty())
+                    {
+                        cacheKey = arg.filepath.generic_string();
+                        textureConfig.path = cacheKey;
+                        textureConfig.isUnfoldedCubemap = true;
+                        isValid = true;
+                    }
                 }
-            }
-
-            // Reactiver l'ecriture couleur
-            commandList->SetColorWriteMask(true, true, true, true);
-        }
-
-        // === eTAPE 2 : BeginFrame (va re-binder les render targets) ===
-        _deferredRendering.BeginFrame(camera, viewMatrix, projectionMatrix, renderViewport);
-        //_deferredRendering.BeginFrame(camera, viewMatrix, obliqueProjection, renderViewport);
-        // === eTAPE 3 : Configurer le stencil pour le GBuffer pass ===
-        if (scene.GetRegistry().valid(exitPortalFrameEntity))
-        {
-            commandList->SetDepthStencilStateCustom(true,                   // depthEnable
-                                                    true,                   // depthWrite
-                                                    CompareFunction::Less,  // depthFunc
-                                                    true,                   // stencilEnable
-                                                    CompareFunction::Equal, // REMIS a Equal : rendre où stencil == 1
-                                                    StencilOp::Keep,
-                                                    StencilOp::Keep,
-                                                    StencilOp::Keep,
-                                                    1, // stencilRef
-                                                    0xFF,
-                                                    0x00);
-        }
-
-        // === ÉTAPE 4 : Rendre la geometrie ===
-        meshView.each(
-            [&](const entt::entity entity, const StaticMesh& staticMesh, const WorldTransform& meshTransform)
-            {
-                if (entity == exitPortalFrameEntity)
-                    return;
-
-                if (staticMesh.GetModel())
+                else if constexpr (std::is_same_v<T, SkyboxSource6Files>)
                 {
-                    Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                    _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
+                    std::stringstream ss;
+                    bool allFacesSet = true;
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        if (arg.faceFilepaths[i].empty())
+                        {
+                            allFacesSet = false;
+                            textureConfig.isUnfoldedCubemap = false;
+                            break;
+                        }
+                        ss << arg.faceFilepaths[i].generic_string() << ";";
+                        textureConfig.faceFilePaths[i] = arg.faceFilepaths[i].generic_string();
+                    }
+
+                    if (allFacesSet)
+                    {
+                        cacheKey = ss.str();
+                        isValid = true;
+                    }
                 }
-            });
+            },
+            skybox.config);
 
-        // === eTAPE 5 : EndFrame SANS stencil ===
-        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget);
-
-        // === eTAPE 6 : Skybox - SANS stencil pour remplir toute la texture ===
-        if (skybox)
+        if (!isValid)
         {
-            // Desactiver le stencil pour la skybox
-            commandList->SetDepthStencilStateCustom(true,  // depthEnable
-                                                    false, // depthWrite (skybox n'ecrit pas le depth)
-                                                    CompareFunction::LessEqual, // depthFunc
-                                                    false,
-                                                    CompareFunction::Always,
-                                                    StencilOp::Keep,
-                                                    StencilOp::Keep,
-                                                    StencilOp::Keep,
-                                                    0,
-                                                    0xFF,
-                                                    0xFF);
-
-            _skyboxPipeline.Render(commandList,
-                                   renderTarget,
-                                   _deferredRendering.GetDepthStencilTexture(),
-                                   skybox.get(),
-                                   camera,
-                                   cameraTransform);
+            return nullptr;
         }
 
-        // === eTAPE 7 : Appliquer les post-effets de la camera virtuelle ===
-        if (!camera.postEffects.empty())
+        auto it = _skyboxTextureCache.find(cacheKey);
+        if (it != _skyboxTextureCache.end())
         {
-            // Creer une texture temporaire pour les post-effets du portail
-            uint32_t rtWidth = renderTarget->GetWidth();
-            uint32_t rtHeight = renderTarget->GetHeight();
-
-            // Reutiliser ou creer des textures temporaires
-            if (!_portalPostProcessSource || _portalPostProcessSource->GetWidth() != rtWidth ||
-                _portalPostProcessSource->GetHeight() != rtHeight)
-            {
-                TextureConfig ppConfig = { .format = renderTarget->GetFormat(),
-                                           .width = rtWidth,
-                                           .height = rtHeight,
-                                           .isRenderTarget = true,
-                                           .isShaderResource = true };
-                _portalPostProcessSource = Texture::Create(ppConfig);
-                _portalPostProcessDestination = Texture::Create(ppConfig);
-            }
-
-            // Copier le rendu actuel dans la source
-            commandList->CopyResource(_portalPostProcessSource.get(), renderTarget);
-
-            // Appliquer les post-effets
-            _ApplyVirtualCameraPostProcessing(
-                commandList, _portalPostProcessSource.get(), renderTarget, camera, deltaTime);
+            return it->second;
         }
 
-        commandList->EndRecording();
-        commandList->Execute();
-    }
-
-    void RendererSystem::_ApplyVirtualCameraPostProcessing(CommandList* commandList,
-                                                           Texture* sourceTexture,
-                                                           Texture* destinationTarget,
-                                                           const VirtualCamera& camera,
-                                                           float deltaTime)
-    {
-        std::vector<std::shared_ptr<PostEffect>> activeEffects;
-        for (const auto& effect : camera.postEffects)
-        {
-            if (effect && effect->IsEnabled() && effect->IsPostProcessingPass())
-            {
-                activeEffects.push_back(effect);
-            }
-        }
-
-        if (activeEffects.empty())
-            return;
-
-        Texture* source = sourceTexture;
-        Texture* destination = nullptr;
-
-        for (size_t i = 0; i < activeEffects.size(); ++i)
-        {
-            // La dernière passe va sur la destination finale
-            destination = (i == activeEffects.size() - 1)
-                              ? destinationTarget
-                              : ((i % 2 == 0) ? _portalPostProcessDestination.get() : _portalPostProcessSource.get());
-
-            // Configurer les textures pour le post-effet
-            activeEffects[i]->SetNormalTexture(_deferredRendering.GetNormalTexture());
-            activeEffects[i]->SetMaterialTexture(_deferredRendering.GetMaterialTexture());
-            activeEffects[i]->SetDepthTexture(_deferredRendering.GetDepthStencilTexture());
-
-            // Appliquer l'effet
-            activeEffects[i]->OnPostRender(deltaTime, commandList, source, destination);
-
-            source = destination;
-        }
+        FT_ENGINE_INFO("Creating new skybox texture from source: {0}", cacheKey);
+        std::shared_ptr<Texture> newTexture = Texture::Create(textureConfig);
+        _skyboxTextureCache[cacheKey] = newTexture;
+        return newTexture;
     }
 } // namespace Frost

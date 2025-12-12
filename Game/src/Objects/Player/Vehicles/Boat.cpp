@@ -52,12 +52,10 @@ Boat::Appear()
     using namespace JPH;
 
     RenderMesh(true);
-
-    _light.SetActive(true);
-    _player->SetIsInWater(false);
+    _playerController->SetIsInWater(false);
 
     // ----- Transform -----
-    auto tr = _scene->GetComponent<Transform>(_player->GetPlayerID());
+    auto tr = _scene->GetComponent<Transform>(_playerController->GetPlayerID());
     Vec3 pos = Math::vector_cast<Vec3>(tr->position);
     Quat rot = Math::vector_cast<Quat>(tr->rotation);
 
@@ -81,7 +79,7 @@ Boat::Appear()
     boat.mAngularDamping = 0.1f;
     // boat.mGravityFactor = 15.f;
     boat.mFriction = cBoatFriction;
-    _bodyId = Physics::CreateAndAddBody(boat, _player->GetPlayerID(), EActivation::Activate);
+    _bodyId = Physics::CreateAndAddBody(boat, _playerController->GetPlayerID(), EActivation::Activate);
 
     Boat::RegisterBoat(_bodyId, this);
     _isBodyValid = true;
@@ -91,13 +89,13 @@ Boat::Appear()
 void
 Boat::Disappear()
 {
-    if (!_player->GetPlayerID().IsValid())
+    if (!_playerController->GetPlayerID().IsValid())
         return;
 
     RenderMesh(false);
 
-    if (_player->GetPlayerID().HasComponent<RigidBody>())
-        _player->GetPlayerID().RemoveComponent<RigidBody>();
+    if (_playerController->GetPlayerID().HasComponent<RigidBody>())
+        _playerController->GetPlayerID().RemoveComponent<RigidBody>();
 
     Boat::UnregisterBoat(_bodyId);
     _isBodyValid = false;
@@ -143,19 +141,20 @@ Boat::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
 
     auto playerCamera = player->GetCamera();
 
-    playerCamera->Shake(cScreenShakeDuration,
-                        Physics::GetBodyInterface()
-                                .GetLinearVelocity(_player->GetPlayerID().GetComponent<RigidBody>().runtimeBodyID)
-                                .Length() *
-                            cScreenShakeSpeedMultiplier,
-                        ScreenShakeEffect::AttenuationType::EaseOut);
+    playerCamera->Shake(
+        cScreenShakeDuration,
+        Physics::GetBodyInterface()
+                .GetLinearVelocity(_playerController->GetPlayerID().GetComponent<RigidBody>().runtimeBodyID)
+                .Length() *
+            cScreenShakeSpeedMultiplier,
+        ScreenShakeEffect::AttenuationType::EaseOut);
 }
 
 void
 Boat::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
 {
     using namespace JPH;
-    if (!_isBodyValid || !_currentWater || !_player->IsInWater())
+    if (!_isBodyValid || !_currentWater || !_playerController->IsInWater())
         return;
     ProcessBoatInput(deltaTime);
 
@@ -163,7 +162,7 @@ Boat::OnCollisionStay(BodyOnContactParameters params, float deltaTime)
     if (_right != 0.0f || _forward != 0.0f)
         Physics::ActivateBody(_bodyId);
 
-    auto wTransform = _player->GetPlayerID().GetComponent<WorldTransform>();
+    auto wTransform = _playerController->GetPlayerID().GetComponent<WorldTransform>();
     Quat rot = vector_cast<Quat>(wTransform.rotation);
     Vec3 pos = vector_cast<Vec3>(wTransform.position);
 

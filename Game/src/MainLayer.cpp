@@ -34,9 +34,11 @@ MainLayer::OnAttach()
 
     _sun = std::make_unique<Sun>();
 
-    _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -14, 52, 78 }, _gamestate);
-    _checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -14, 61, 17 });
-    _checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -17, 61, -111 });
+    /* _checkPoint1 = std::make_shared<LapCheckPoint>(Vector3{ -365, 75, -32 }, _gamestate);
+     _checkPoint2 = std::make_shared<CheckPoint>(Vector3{ -230, 75, 239 });
+     _checkPoint3 = std::make_shared<CheckPoint>(Vector3{ -130, 75, 180 });
+     _checkPoint4 = std::make_shared<CheckPoint>(Vector3{ -147, 75, -82 });
+     _checkPoint5 = std::make_shared<CheckPoint>(Vector3{ 190, 75, -524 });*/
 
     auto arrow = Game::GetScene().CreateGameObject("Arrow Billboard");
     arrow.AddComponent<Billboard>(Vector3(-17, 50, -50), 5.0f, "resources/textures/arrow-up.png");
@@ -47,7 +49,7 @@ MainLayer::OnAttach()
         std::make_shared<Boost>(Vector3{ -13.0f, 61.7f, -10 }, EulerAngles(), Vector3(10, 2, 2), Vector3(0, 1, 0), 2);
 
     // link 1 / 2
-    _checkPoint1->AddChild(_checkPoint2);
+    /* _checkPoint1->AddChild(_checkPoint2);
     _checkPoint2->AddParent(_checkPoint1);
 
     // link 2 / 3
@@ -55,10 +57,32 @@ MainLayer::OnAttach()
     _checkPoint3->AddParent(_checkPoint2);
 
     // link 1 / 3
-    _checkPoint3->AddChild(_checkPoint1);
-    _checkPoint1->AddParent(_checkPoint3);
+    _checkPoint1->AddChild(_checkPoint3);
+    _checkPoint3->AddParent(_checkPoint1);
+
+    // DEBUG
+    // link 2 / 1
+        _checkPoint2->AddChild(_checkPoint1);
+        _checkPoint1->AddParent(_checkPoint2);
+
+    // link 2 / 4
+    _checkPoint2->AddChild(_checkPoint4);
+    _checkPoint4->AddParent(_checkPoint2);
+    // link 3 / 4
+    _checkPoint3->AddChild(_checkPoint4);
+    _checkPoint4->AddParent(_checkPoint3);
+
+    // link 4 / 5
+    _checkPoint4->AddChild(_checkPoint5);
+    _checkPoint5->AddParent(_checkPoint4);
+
+    // link 5 / 1
+    _checkPoint5->AddChild(_checkPoint1);
+    _checkPoint1->AddParent(_checkPoint5);
 
     _checkPoint1->ActivatePhysics();
+    */
+    logo = HUD_Logo();
 
     // LevelCamera levelCamera;
     auto _sky = std::make_unique<Sky>();
@@ -106,15 +130,15 @@ MainLayer::OnFixedUpdate(float deltaTime)
         if (!_paused)
         {
             _gamestate.StartGame();
-            _player = std::make_unique<Player>();
-            _portal1 = std::make_shared<Portal>(Vector3{ -18, 63, -110 },
-                                                EulerAngles{ 90_deg, 180_deg, 0_deg },
-                                                Vector3{ 0.05f, 0.05f, 0.05f },
-                                                _player.get());
-            _portal2 = std::make_shared<Portal>(Vector3{ -22, 54, 87 },
-                                                EulerAngles{ 90_deg, 135_deg, 0_deg },
-                                                Vector3{ 0.05f, 0.05f, 0.05f },
-                                                _player.get());
+            _playerController = std::make_unique<Player>();
+            _portal1 = std::make_shared<Portal>(Vector3{ -365, 68, -32 },
+                                                EulerAngles{ 0_deg, 0_deg, 0_deg },
+                                                Vector3{ 3.0f, 3.0f, 3.0f },
+                                                _playerController.get());
+            _portal2 = std::make_shared<Portal>(Vector3{ -130, 68, 180 },
+                                                EulerAngles{ 0_deg, 90_deg, 0_deg },
+                                                Vector3{ 3.0f, 3.0f, 3.0f },
+                                                _playerController.get());
 
             _portal1->SetupPortal(PortalType::Entry, _portal2.get());
             _portal2->SetupPortal(PortalType::Exit, _portal1.get());
@@ -122,11 +146,11 @@ MainLayer::OnFixedUpdate(float deltaTime)
             _portal3 = std::make_shared<Portal>(Vector3{ -23, 48, 29 },
                                                 EulerAngles{ 90_deg, 180_deg, 0_deg },
                                                 Vector3{ 0.05f, 0.05f, 0.05f },
-                                                _player.get());
+                                                _playerController.get());
             _portal4 = std::make_shared<Portal>(Vector3{ -23, 63, 23 },
                                                 EulerAngles{ 90_deg, 180_deg, 0_deg },
                                                 Vector3{ 0.05f, 0.05f, 0.05f },
-                                                _player.get());
+                                                _playerController.get());
 
             _portal3->SetupPortal(PortalType::Entry, _portal4.get());
             _portal4->SetupPortal(PortalType::Exit, _portal3.get());
