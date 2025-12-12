@@ -100,7 +100,7 @@ private:
     JPH::BodyID _cameraBodyID;
     JPH::BodyInterface* _bodyInter;
 
-    const float _maxRadialBlurStrength = 0.07f;
+    const float _maxRadialBlurStrength = 0.04f;
     const float _maxShakeAmplitude = 10.0f;
     const float _maxShakeDuration = 2.0f;
 };

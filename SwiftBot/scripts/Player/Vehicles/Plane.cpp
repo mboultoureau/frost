@@ -92,9 +92,17 @@ namespace GameLogic
     void Plane::Hide()
     {
         _vehicle.SetActive(false);
+
         if (_playerController.HasComponent<RigidBody>())
         {
             BodyID bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
+
+            BodyLockRead lock(Physics::GetBodyLockInterface(), bodyId);
+            if (lock.Succeeded())
+            {
+                _transferredSpeed = lock.GetBody().GetLinearVelocity().Length();
+            }
+
             _playerController.RemoveComponent<RigidBody>();
             Physics::RemoveAndDestroyBody(bodyId);
         }
@@ -135,6 +143,12 @@ namespace GameLogic
         auto& bodyInterface = Physics::GetBodyInterface();
 
         bool applyFlightModel = true;
+
+        if (_transferredSpeed > 0.0f)
+        {
+            _currentSpeed = std::max(_minForwardSpeed, _transferredSpeed);
+            _transferredSpeed = 0.0f;
+        }
 
         {
             BodyLockWrite lock(Physics::Get().physics_system.GetBodyLockInterface(), bodyId);
@@ -241,8 +255,23 @@ namespace GameLogic
         if (!_playerController.HasComponent<RigidBody>())
             return;
 
-        auto& camera = _camera.GetComponent<Camera>();
-        if (auto radialBlur = camera.GetEffect<RadialBlurEffect>())
-            radialBlur->SetStrength(_currentSpeed * _radialBlurSpeedFactor);
+        auto bodyId = _playerController.GetComponent<RigidBody>().runtimeBodyID;
+        auto& lockInterface = Physics::GetBodyLockInterface();
+
+        BodyLockRead lock(lockInterface, bodyId);
+        if (lock.Succeeded())
+        {
+            const auto& body = lock.GetBody();
+            float speed = body.GetLinearVelocity().Length();
+
+            auto& camera = _camera.GetComponent<Camera>();
+
+            if (auto radialBlur = camera.GetEffect<RadialBlurEffect>())
+            {
+                float strength = speed * _radialBlurSpeedFactor;
+
+                radialBlur->SetStrength(std::clamp(strength, 0.0f, 0.2f));
+            }
+        }
     }
 } // namespace GameLogic

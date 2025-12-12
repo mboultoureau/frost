@@ -38,6 +38,33 @@ namespace GameLogic
     void PlayerController::OnUpdate(float deltaTime)
     {
         _ProcessInput();
+        if (GameState::Get().IsInitialized())
+        {
+            if (GameState::Get().GetPlayerData(GetGameObject()).isAberation)
+            {
+                GameState::Get().GetPlayerData(GetGameObject()).isAberation = false;
+                OnPortalPass();
+            }
+        }
+
+        if (_isChromaticAberrationActive)
+        {
+            using Seconds = std::chrono::duration<float>;
+            float elapsed = _chromaticAberrationTimer.GetDurationAs<Seconds>().count();
+
+            if (elapsed >= cChromaticAberrationDuration)
+            {
+                _isChromaticAberrationActive = false;
+                _ApplyChromaticAberration(0.0f);
+                _chromaticAberrationTimer.Pause();
+            }
+            else
+            {
+                float normalizedTime = elapsed / cChromaticAberrationDuration;
+                float strength = cChromaticAberrationMaxStrength * (1.0f - normalizedTime);
+                _ApplyChromaticAberration(strength);
+            }
+        }
     }
 
     void PlayerController::OnFixedUpdate(float fixedDeltaTime)
@@ -62,8 +89,52 @@ namespace GameLogic
         }
     }
 
+    void PlayerController::_ApplyChromaticAberration(float strength)
+    {
+        Frost::GameObject cameraGO = GetGameObject().GetChildByName("Camera");
+        if (!cameraGO.IsValid())
+            cameraGO = GetGameObject().GetParent().GetChildByName("Camera");
+
+        if (cameraGO.IsValid() && cameraGO.HasComponent<Frost::Component::Camera>())
+        {
+            auto& camera = cameraGO.GetComponent<Frost::Component::Camera>();
+            if (auto caEffect = camera.GetEffect<Frost::ChromaticAberrationEffect>())
+            {
+                caEffect->SetStrength(strength);
+                caEffect->SetEnabled(true);
+            }
+        }
+    }
+
+    void PlayerController::OnPortalPass()
+    {
+        if (_isChromaticAberrationActive)
+            return;
+
+        _isChromaticAberrationActive = true;
+        _ApplyChromaticAberration(cChromaticAberrationMaxStrength);
+
+        _chromaticAberrationTimer.Resume();
+    }
+
     void PlayerController::OnPreFixedUpdate(float fixedDeltaTime)
     {
+        if (_transferVelocity)
+        {
+            Frost::GameObject playerControllerGO = GetGameObject().GetChildByName("PlayerController");
+            if (playerControllerGO.HasComponent<RigidBody>())
+            {
+                JPH::BodyID bodyId = playerControllerGO.GetComponent<RigidBody>().runtimeBodyID;
+                JPH::BodyInterface& bodyInterface = Physics::GetBodyInterface();
+
+                JPH::Vec3 newVelocity = Math::vector_cast<JPH::Vec3>(_savedLinearVelocity);
+
+                bodyInterface.SetLinearVelocity(bodyId, newVelocity);
+                bodyInterface.ActivateBody(bodyId);
+
+                _transferVelocity = false;
+            }
+        }
         if (!GameState::Get().IsInitialized())
             return;
 
@@ -90,6 +161,14 @@ namespace GameLogic
         if (!GameState::Get().IsInitialized())
             return;
 
+        JPH::BodyID currentBodyId =
+            GetGameObject().GetChildByName("PlayerController").GetComponent<RigidBody>().runtimeBodyID;
+        JPH::Vec3 currentVelocity = Physics::GetBodyInterface().GetLinearVelocity(currentBodyId);
+
+        _savedLinearVelocity = Math::vector_cast<Math::Vector3>(currentVelocity);
+
+        _transferVelocity = true;
+
         // Set GameState
         auto& playerData = GameState::Get().GetPlayerData(GetGameObject());
         playerData.currentVehicle = type;
@@ -99,6 +178,8 @@ namespace GameLogic
         _plane->Hide();
         _boat->Hide();
 
+        JPH::Vec3 newVelocity = Math::vector_cast<JPH::Vec3>(_savedLinearVelocity);
+        Physics::GetBodyInterface().SetLinearVelocity(currentBodyId, newVelocity);
         // Show selected vehicle
         switch (type)
         {

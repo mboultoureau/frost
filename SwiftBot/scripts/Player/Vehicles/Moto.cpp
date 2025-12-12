@@ -214,6 +214,15 @@ namespace GameLogic
         auto& rigidBody = _playerController.AddComponent<RigidBody>(bodyId);
         rigidBody.objectLayer = ObjectLayers::PLAYER;
         rigidBody.motionType = RigidBody::MotionType::Dynamic;
+
+        if (_camera.IsValid())
+        {
+            auto& camera = _camera.GetComponent<Camera>();
+            if (auto radialBlur = camera.GetEffect<Frost::RadialBlurEffect>())
+            {
+                radialBlur->SetStrength(0.0f);
+            }
+        }
     }
 
     void Moto::Hide()

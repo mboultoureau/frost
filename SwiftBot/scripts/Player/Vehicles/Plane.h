@@ -60,7 +60,10 @@ namespace GameLogic
         float _speedAcknowledgementThreshold = 1.0f;
 
         float _screenShakeSpeedMultiplier = 0.08f;
-        float _radialBlurSpeedFactor = 0.001f;
+        float _radialBlurSpeedFactor = 0.0005f;
+
+        float _transferredSpeed = 0.0f;
+        float _transferredForwardControl = 0.0f;
 
         std::chrono::milliseconds _collisionCoolDownDuration = 750ms;
     };
