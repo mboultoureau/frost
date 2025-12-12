@@ -347,7 +347,13 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
     mesh.overrideFrustumCulling = true;
     camera.portalEntity = _frameObject.GetId();
     camera.postEffects.push_back(std::make_shared<FogEffect>());
+    camera.postEffects.push_back(std::make_shared<ChromaticAberrationEffect>());
     camera.GetEffect<FogEffect>()->SetFog(skyFogMinDepth, skyFogStrength, skyFogColor);
+    auto chromaticAberration = camera.GetEffect<ChromaticAberrationEffect>().get();
+    chromaticAberration->SetCenterRed({ 0.292, 0.33 });
+    chromaticAberration->SetCenterGreen({ 0.708, 0.307 });
+    chromaticAberration->SetCenterBlue({ 0.51, 0.818 });
+    chromaticAberration->SetStrength(0.01f);
     // std::cout << "Portal mesh triangle count: " << (mesh.GetModel()->GetMeshes()[0].GetIndexCount() / 3) <<
     // std::endl;
 }

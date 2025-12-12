@@ -62,8 +62,6 @@ namespace Frost
                                                     const Viewport& viewport,
                                                     Texture* targetTexture);
 
-        void _RenderScreenProjectedTextures(Scene& scene, const RenderCameraData& camData, const Viewport& viewport);
-
         void _RenderFullscreenQuad(CommandList* commandList, Texture* texture);
 
     private:
