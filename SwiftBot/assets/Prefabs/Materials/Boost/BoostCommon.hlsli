@@ -19,8 +19,6 @@ cbuffer MaterialParams : register(b3)
     float Amplitude;
     float Frequency;
     float padding1;
-    float3 Direction;
-    float padding2;
 }
 
 struct VS_Input
@@ -36,4 +34,5 @@ struct VS_Output
     float3 WorldPos : TEXCOORD0;
     float3 Normal : TEXCOORD1;
     float2 TexCoord : TEXCOORD2;
+    float3 LocalPos : TEXCOORD3;
 };

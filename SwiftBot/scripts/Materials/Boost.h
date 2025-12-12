@@ -10,8 +10,6 @@ namespace GameLogic
         float Amplitude = 0.1f;
         float Frequency = 1.0f;
         float padding = 0;
-        Frost::Math::Vector3 Direction;
-        float padding2 = 0;
     };
 
     class Boost : public Frost::Scripting::Script
@@ -25,7 +23,7 @@ namespace GameLogic
         BoostMaterialParameters _shaderParams;
         float _waveAmplitude = 0.2f;
         float _waveFrequency = 1.0f;
-        Frost::Math::Vector3 _direction{ 0.0f, 1.0f, 0.0f };
-        float _impulse = 0.0f;
+        Frost::Math::Vector3 _direction{ 0.0f, 1.0f, 1.0f };
+        float _impulse = 5.0f;
     };
 } // namespace GameLogic
