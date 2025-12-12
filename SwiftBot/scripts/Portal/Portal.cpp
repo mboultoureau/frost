@@ -95,19 +95,7 @@ namespace GameLogic
             FT_ERROR("Objet 'PlayerController' non trouvé comme enfant de l'objet joueur. Téléportation annulée.");
             return;
         }
-        if (playerController.HasComponent<Frost::Component::Scriptable>())
-        {
-            auto& scriptable = playerController.GetComponent<Frost::Component::Scriptable>();
 
-            for (const auto& script : scriptable._scripts)
-            {
-                if (GameLogic::PlayerController* playerControllerScript =
-                        dynamic_cast<GameLogic::PlayerController*>(script.get()))
-                {
-                    playerControllerScript->OnPortalPass();
-                }
-            }
-        }
         auto camera = playerObject.GetChildByName("Camera", true);
         if (!camera.IsValid())
         {

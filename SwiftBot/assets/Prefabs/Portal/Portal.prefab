@@ -19,6 +19,14 @@ Entities:
       Position: [-7.6, 6.5, 0]
       Rotation: [0, 0.6870753, 0, 0.7265862]
       Scale: [1, 1, 1]
+    Light:
+      Type: 2
+      Color: [0.28235295, 0, 0.6509804]
+      Intensity: 5
+      Params:
+        Range: 16
+        InnerAngle: 19.999992
+        OuterAngle: 86.99999
   - LocalID: 2
     ParentID: 0
     Meta:
