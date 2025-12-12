@@ -644,7 +644,7 @@ namespace Frost
                                                     0x00);
         }
 
-        // === ÉTAPE 4 : Rendre la géométrie ===
+        // === ÉTAPE 4 : Rendre la geometrie ===
         meshView.each(
             [&](const entt::entity entity, const StaticMesh& staticMesh, const WorldTransform& meshTransform)
             {
@@ -658,17 +658,17 @@ namespace Frost
                 }
             });
 
-        // === ÉTAPE 5 : EndFrame SANS stencil (la géométrie est déjà masquée dans le GBuffer) ===
-        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget, false);
+        // === ÉTAPE 5 : EndFrame SANS stencil ===
+        _deferredRendering.EndFrame(camera, cameraTransform, allLights, renderViewport, renderTarget);
 
         // === ÉTAPE 6 : Skybox - SANS stencil pour remplir toute la texture ===
         if (skybox)
         {
             // Désactiver le stencil pour la skybox
             commandList->SetDepthStencilStateCustom(true,  // depthEnable
-                                                    false, // depthWrite (skybox n'écrit pas le depth)
+                                                    false, // depthWrite (skybox n'ecrit pas le depth)
                                                     CompareFunction::LessEqual, // depthFunc
-                                                    false,                      // stencilEnable - DÉSACTIVÉ
+                                                    false,
                                                     CompareFunction::Always,
                                                     StencilOp::Keep,
                                                     StencilOp::Keep,

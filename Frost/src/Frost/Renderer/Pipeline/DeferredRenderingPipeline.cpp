@@ -609,8 +609,7 @@ namespace Frost
         const Component::WorldTransform& cameraTransform,
         const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
         const Viewport& viewport,
-        Texture* overrideFinalLitTarget,
-        bool preserveStencil)
+        Texture* overrideFinalLitTarget)
     {
         if (!_albedoTexture)
             return;
@@ -683,29 +682,7 @@ namespace Frost
 
         Texture* finalTarget = overrideFinalLitTarget ? overrideFinalLitTarget : _finalLitTexture.get();
 
-        // MODIFICATION ICI : Binder le depth/stencil si on veut préserver le stencil
-        if (preserveStencil)
-        {
-            _commandList->SetRenderTargets(1, &finalTarget, _depthStencilTexture.get());
-
-            // Configurer le stencil pour la lighting pass
-            _commandList->SetDepthStencilStateCustom(false, // depthEnable (pas besoin pour fullscreen quad)
-                                                     false, // depthWrite
-                                                     CompareFunction::Always, // depthFunc
-                                                     true,                    // stencilEnable
-                                                     CompareFunction::Equal,  // ne lighter que où stencil == 1
-                                                     StencilOp::Keep,
-                                                     StencilOp::Keep,
-                                                     StencilOp::Keep,
-                                                     1, // stencilRef
-                                                     0xFF,
-                                                     0x00);
-        }
-        else
-        {
-            _commandList->SetRenderTargets(1, &finalTarget, nullptr);
-        }
-
+        _commandList->SetRenderTargets(1, &finalTarget, nullptr);
         _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
 
         _commandList->UnbindShader(ShaderType::Geometry);

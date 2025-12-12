@@ -43,8 +43,7 @@ namespace Frost
                       const Component::WorldTransform& cameraTransform,
                       const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
                       const Viewport& viewport,
-                      Texture* overrideFinalLitTarget = nullptr,
-                      bool preserveStencil = false);
+                      Texture* overrideFinalLitTarget = nullptr);
 
         void SubmitModelStencilOnly(const Model& model,
                                     const Math::Matrix4x4& worldMatrix,
