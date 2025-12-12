@@ -92,6 +92,8 @@ PortalScript::OnCollisionEnter(BodyOnContactParameters params, float deltaTime)
         return;
     if (portalType == PortalType::Exit)
         return;
+    if (portalType == PortalType::Inactive)
+        return;
 
     WarpPlayer();
 }
@@ -136,6 +138,10 @@ PortalScript::WarpPlayer()
                               cameraTransform->rotation.y,
                               cameraTransform->rotation.z,
                               cameraTransform->rotation.w };
+
+    // JPH::Quat rotY180 = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), JPH::DegreesToRadians(180.0f));
+
+    // JPH::Quat portal2Rotation = rotY180*portal2PreEditRotation;
 
     // Inverse rotation of portal 1
     JPH::Quat rotAInv = portal1Rotation.Conjugated();
@@ -304,14 +310,6 @@ PortalScript::UpdateCameraPos()
     JPH::Quat camLocalRot = rotAInv * cameraRotation;
     JPH::Quat newCamRot = portal2Rotation * camLocalRot;
 
-    /* player->Warp(Math::vector_cast<Vector3>(newPlayerPos),
-                 { newPlayerRot.GetX(), newPlayerRot.GetY(), newPlayerRot.GetZ(), newPlayerRot.GetW() },
-                 Math::vector_cast<Vector3>(newPlayerSpeed));
-
-    player->WarpCamera(Math::vector_cast<Vector3>(offsetWorld),
-                       { newCamRot.GetX(), newCamRot.GetY(), newCamRot.GetZ(), newCamRot.GetW() },
-                       Math::vector_cast<Vector3>(newCamVel));*/
-
     auto portalCamTransform = scene.GetComponent<Transform>(linkedPortal->_cameraObject);
 
     Vector3 newPortalCameraPos = Math::vector_cast<Vector3>(newPlayerPos) + Math::vector_cast<Vector3>(offsetWorld);
@@ -357,6 +355,8 @@ Portal::Portal(Vector3 position, EulerAngles rotation, Vector3 scale, Player* pl
 void
 Portal::SetupPortal(PortalType type, Portal* otherPortal)
 {
+    if (type == PortalType::Exit)
+        _frameObject.SetActive(false);
     auto camera = Game::GetScene().GetComponent<VirtualCamera>(_cameraObject);
     camera->linkedPortalEntity = otherPortal->_frameObject.GetId();
     Game::GetScene().AddScript<PortalScript>(_portal, type, otherPortal, this);

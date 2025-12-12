@@ -14,7 +14,8 @@ enum PortalType
 {
     Entry,
     Exit,
-    BothWays
+    BothWays,
+    Inactive
 };
 
 class Portal;
