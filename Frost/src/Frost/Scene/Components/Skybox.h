@@ -5,6 +5,8 @@
 #include <array>
 #include <filesystem>
 
+#include "Frost/Scene/ECS/Component.h"
+
 namespace Frost::Component
 {
     struct SkyboxSourceCubemap
@@ -26,7 +28,7 @@ namespace Frost::Component
         SixFiles = 1
     };
 
-    struct Skybox
+    struct Skybox : public Component
     {
         SkyboxConfig config = SkyboxSourceCubemap{};
         float intensity = 1.0f;

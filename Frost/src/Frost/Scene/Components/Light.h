@@ -27,11 +27,11 @@ namespace Frost::Component
         Math::Angle<Math::Radian> outerConeAngle = Math::Angle<Math::Degree>(30.0f);
     };
 
-    struct LightAmbiant
+    struct LightAmbient
     {
     };
 
-    using LightConfig = std::variant<LightDirectional, LightPoint, LightSpot, LightAmbiant>;
+    using LightConfig = std::variant<LightDirectional, LightPoint, LightSpot, LightAmbient>;
 
     enum class LightType
     {

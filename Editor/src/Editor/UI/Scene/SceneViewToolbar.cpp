@@ -254,6 +254,7 @@ namespace Editor
 
             ImGui::Checkbox("Show Editor Skybox", &settings.showEditorSkybox);
             ImGui::Checkbox("Show Editor Light", &settings.showEditorLight);
+            ImGui::Checkbox("Show Editor Environment", &settings.showEditorEnvironment);
 
             ImGui::Separator();
 

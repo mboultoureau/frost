@@ -520,6 +520,7 @@ namespace Editor
         }
 
         _editorLight.SetActive(_viewSettings.showEditorLight);
+        _editorEnvironment.SetActive(_viewSettings.showEditorEnvironment);
     }
 
     bool SceneView::_DrawVec3Control(const std::string& label, float* values, float resetValue, float columnWidth)

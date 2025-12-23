@@ -14,6 +14,7 @@ namespace Editor
     {
         bool showEditorSkybox = true;
         bool showEditorLight = true;
+        bool showEditorEnvironment = true;
         bool showWireframe = false;
         bool showGrid = true;
         bool enableLighting = true;

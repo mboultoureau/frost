@@ -20,7 +20,7 @@ namespace GameLogic
         menuButtonId = scene->CreateGameObject("Menu Button");
 
         auto ambientLight = scene->CreateGameObject("Ambient Light");
-        auto& light = ambientLight.AddComponent<Light>(LightAmbiant{});
+        auto& light = ambientLight.AddComponent<Light>(LightAmbient{});
         light.intensity = 0.15f;
         light.color = Math::Color3(182.0f / 255.0f, 205.0f / 255.0f, 248.0f / 255.0f);
 

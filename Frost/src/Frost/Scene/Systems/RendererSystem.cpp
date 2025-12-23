@@ -239,6 +239,21 @@ namespace Frost
                 _shadowPipeline.SetGBufferData(&_deferredRendering, &scene);
 
                 _shadowPipeline.ShadowPass(visibleLights, camera, cameraTransform, camera.viewport);
+                auto envView = scene.ViewActive<EnvironmentMap>();
+                if (envView.begin() != envView.end())
+                {
+                    const auto& envComponent = envView.get<EnvironmentMap>(*envView.begin());
+                    std::shared_ptr<Texture> envTexture = _GetOrCreateEnvironmentTexture(envComponent);
+                    if (envTexture)
+                    {
+                        _shadowPipeline.SetEnvironmentMap(envTexture, envComponent.intensity);
+                    }
+                }
+                else
+                {
+                    _shadowPipeline.SetEnvironmentMap(nullptr, 0.0f);
+                }
+
                 _shadowPipeline.LightPass(camera, cameraTransform, camera.viewport);
 
                 if (skyboxTexture)
@@ -285,6 +300,68 @@ namespace Frost
         }
 
         RendererAPI::GetRenderer()->RestoreBackBufferRenderTarget();
+    }
+
+    std::shared_ptr<Texture> RendererSystem::_GetOrCreateEnvironmentTexture(const Component::EnvironmentMap& envMap)
+    {
+        std::string cacheKey;
+        TextureConfig textureConfig;
+        textureConfig.layout = TextureLayout::CUBEMAP;
+        textureConfig.hasMipmaps = true;
+
+        bool isValid = false;
+
+        std::visit(
+            [&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, Component::EnvironmentMapSourceCubemap>)
+                {
+                    if (!arg.filepath.empty())
+                    {
+                        cacheKey = arg.filepath.generic_string();
+                        textureConfig.path = cacheKey;
+                        textureConfig.isUnfoldedCubemap = true;
+                        isValid = true;
+                    }
+                }
+                else if constexpr (std::is_same_v<T, Component::EnvironmentMapSource6Files>)
+                {
+                    std::stringstream ss;
+                    bool allFacesSet = true;
+                    for (int i = 0; i < 6; ++i)
+                    {
+                        if (arg.faceFilepaths[i].empty())
+                        {
+                            allFacesSet = false;
+                            textureConfig.isUnfoldedCubemap = false;
+                            break;
+                        }
+                        ss << arg.faceFilepaths[i].generic_string() << ";";
+                        textureConfig.faceFilePaths[i] = arg.faceFilepaths[i].generic_string();
+                    }
+
+                    if (allFacesSet)
+                    {
+                        cacheKey = ss.str();
+                        isValid = true;
+                    }
+                }
+            },
+            envMap.config);
+
+        if (!isValid)
+            return nullptr;
+
+        auto it = _skyboxTextureCache.find(cacheKey);
+        if (it != _skyboxTextureCache.end())
+        {
+            return it->second;
+        }
+
+        std::shared_ptr<Texture> newTexture = Texture::Create(textureConfig);
+        _skyboxTextureCache[cacheKey] = newTexture;
+        return newTexture;
     }
 
     bool RendererSystem::_IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix)
