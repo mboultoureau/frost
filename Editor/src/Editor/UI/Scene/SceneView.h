@@ -98,6 +98,7 @@ namespace Editor
 
         Frost::GameObject _editorCamera;
         Frost::GameObject _editorLight;
+        Frost::GameObject _editorEnvironment;
 
         std::filesystem::path _assetPath;
         bool _isPrefabView = false;

@@ -81,6 +81,12 @@ namespace Frost
         unsigned int shadowResolution;
     };
 
+    struct alignas(16) EnvironmentLightData
+    {
+        Math::Vector3 CameraPosition;
+        float Intensity;
+    };
+
     ShadowPipeline::ShadowPipeline()
     {
         Initialize();
@@ -159,6 +165,12 @@ namespace Frost
                    .filePath = "../Frost/resources/shaders/Light/PS_FinalLight.hlsl" };
         _finalLightVertexShader = Shader::Create(vsDesc);
         _finalLightPixelShader = Shader::Create(psDesc);
+
+        // Environment Light
+        psDesc = { .type = ShaderType::Pixel,
+                   .debugName = "PS_EnvironmentLight",
+                   .filePath = "../Frost/resources/shaders/Light/PS_EnvironmentLight.hlsl" };
+        _environmentLightPixelShader = Shader::Create(psDesc);
     }
 
     void ShadowPipeline::Initialize()
@@ -231,6 +243,8 @@ namespace Frost
         _initLightPixelShader.reset();
         _finalLightVertexShader.reset();
         _finalLightPixelShader.reset();
+        _environmentLightPixelShader.reset();
+        _currentEnvironmentMap.reset();
 
         for_each(
             _shadowMaps.begin(), _shadowMaps.end(), [](auto& shadowPair) { shadowPair.second.shadowTexture.reset(); });
@@ -245,6 +259,12 @@ namespace Frost
         _finalLitTexture.reset();
         _shadowInputLayout.reset();
         _commandList.reset();
+    }
+
+    void ShadowPipeline::SetEnvironmentMap(std::shared_ptr<Texture> envMap, float intensity)
+    {
+        _currentEnvironmentMap = envMap;
+        _currentEnvIntensity = intensity;
     }
 
     void ShadowPipeline::CreateTextures(uint32_t width, uint32_t height)
@@ -444,6 +464,12 @@ namespace Frost
                             viewport);
             }
         }
+
+        if (_currentEnvironmentMap)
+        {
+            EnvironmentPass(camera, cameraTransform, viewport);
+        }
+
         if (_virtualLightPairs.size() % 2 == 0)
         {
             DrawFinalLitTexture(_luminanceTexture1, viewport);
@@ -452,6 +478,62 @@ namespace Frost
         {
             DrawFinalLitTexture(_luminanceTexture2, viewport);
         }
+    }
+
+    void ShadowPipeline::EnvironmentPass(const Component::Camera& camera,
+                                         const Component::WorldTransform& cameraTransform,
+                                         const Viewport& viewport)
+    {
+        if (!_currentEnvironmentMap)
+            return;
+
+        bool isEven = (_virtualLightPairs.size() % 2 == 0);
+        auto source = isEven ? _luminanceTexture1 : _luminanceTexture2;
+        auto dest = isEven ? _luminanceTexture2 : _luminanceTexture1;
+
+        Texture* outPtr = dest.get();
+        _commandList->SetRenderTargets(1, &outPtr, nullptr);
+
+        EnvironmentLightData lightData;
+        lightData.CameraPosition = cameraTransform.position;
+        lightData.Intensity = _currentEnvIntensity;
+
+        _lightPassBuffer->UpdateData(_commandList.get(), &lightData, sizeof(lightData));
+
+        VS_ShadowConstants vsData;
+        vsData.World = DirectX::XMMatrixIdentity();
+        vsData.LightViewProj = DirectX::XMMatrixIdentity();
+        _vsShadowConstants->UpdateData(_commandList.get(), &vsData, sizeof(vsData));
+
+        _commandList->SetConstantBuffer(_lightPassBuffer.get(), 0);
+        _commandList->SetConstantBuffer(_vsShadowConstants.get(), 1);
+
+        _commandList->SetTexture(_albedoTexture.get(), 0);
+        _commandList->SetTexture(_normalTexture.get(), 1);
+        _commandList->SetTexture(_worldPositionTexture.get(), 2);
+        _commandList->SetTexture(_materialTexture.get(), 3);
+        _commandList->SetTexture(source.get(), 5);
+
+        _commandList->SetTexture(_currentEnvironmentMap.get(), 6);
+
+        _commandList->SetSampler(_gBufferSampler.get(), 0);
+        _commandList->SetSampler(_shadowSampler.get(), 1);
+
+        _commandList->SetShader(_ambiantLightVertexShader.get());
+        _commandList->SetShader(_environmentLightPixelShader.get());
+
+        _commandList->SetViewport(viewport.x * _currentWidth,
+                                  viewport.y * _currentHeight,
+                                  viewport.width * _currentWidth,
+                                  viewport.height * _currentHeight,
+                                  0.f,
+                                  1.f);
+
+        _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+        _commandList->Draw(3, 0);
+
+        std::pair<Component::Light, Component::WorldTransform> dummy;
+        _virtualLightPairs.push_back(dummy);
     }
 
     void ShadowPipeline::InitLightTexture(const Viewport& viewport)

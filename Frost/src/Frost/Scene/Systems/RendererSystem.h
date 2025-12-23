@@ -11,6 +11,7 @@
 #include "Frost/Scene/Components/Skybox.h"
 #include "Frost/Renderer/Frustum.h"
 #include "Frost/Scene/ECS/System.h"
+#include "Frost/Scene/Components/EnvironmentMap.h"
 
 #include <entt/entt.hpp>
 #include <memory>
@@ -49,6 +50,7 @@ namespace Frost
                                   float deltaTime);
 
         bool _IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix);
+        std::shared_ptr<Texture> _GetOrCreateEnvironmentTexture(const Component::EnvironmentMap& envMap);
 
     private:
         DeferredRenderingPipeline _deferredRendering;

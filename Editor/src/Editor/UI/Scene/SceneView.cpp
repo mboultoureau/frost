@@ -1,5 +1,6 @@
 ﻿#include "Editor/UI/Scene/SceneView.h"
 
+#include "Frost/Scene/Components/EnvironmentMap.h"
 #include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/Camera.h"
 #include "Frost/Scene/Components/StaticMesh.h"
@@ -162,11 +163,13 @@ namespace Editor
         _editorCamera.AddComponent<Skybox>(
             SkyboxSourceCubemap{ "./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png" });
 
-        _editorLight = _sceneContext->CreateGameObject("__EDITOR__DirectionalLight");
-        auto& lightTransform = _editorLight.AddComponent<Transform>();
-        _editorLight.AddComponent<Light>(LightDirectional{});
-        lightTransform.position = { 0.0f, 5.0f, -5.0f };
-        lightTransform.Rotate(EulerAngles{ -45.0f, 45.0f, 0.0f });
+        _editorLight = _sceneContext->CreateGameObject("__EDITOR__AmbientLight");
+        _editorLight.AddComponent<Light>(LightAmbient{});
+
+        _editorEnvironment = _sceneContext->CreateGameObject("__EDITOR__Environment");
+        auto& env = _editorEnvironment.AddComponent<EnvironmentMap>(
+            EnvironmentMapSourceCubemap{ "./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png" });
+        env.intensity = 1.0f;
 
         _cameraController.Initialize(tc);
         _toolbar.Init();

@@ -89,6 +89,10 @@ namespace Frost
                        const Viewport& viewport);
 
         void InitLightTexture(const Viewport& viewport);
+        void SetEnvironmentMap(std::shared_ptr<Texture> envMap, float intensity);
+        void EnvironmentPass(const Component::Camera& camera,
+                             const Component::WorldTransform& cameraTransform,
+                             const Viewport& viewport);
 
     private:
         void CreateTextures(uint32_t width, uint32_t height);
@@ -187,5 +191,9 @@ namespace Frost
         std::shared_ptr<Texture> _luminanceTexture2;
 
         std::unique_ptr<Texture> _finalLitTexture;
+
+        std::shared_ptr<Shader> _environmentLightPixelShader;
+        std::shared_ptr<Texture> _currentEnvironmentMap;
+        float _currentEnvIntensity = 1.0f;
     };
 } // namespace Frost

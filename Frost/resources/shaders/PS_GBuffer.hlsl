@@ -48,8 +48,8 @@ PS_Output main(PS_Input input)
 
     output.WorldPos = float4(input.WorldPos, 1.0f);
 
-    float metalness = MetallicMap.Sample(MaterialSampler, texCoord).r;
-    float roughness = RoughnessMap.Sample(MaterialSampler, texCoord).r;
+    float metalness = MetallicMap.Sample(MaterialSampler, texCoord).b;
+    float roughness = RoughnessMap.Sample(MaterialSampler, texCoord).g;
     float ao = AOMap.Sample(MaterialSampler, texCoord).r;
 
     output.Material = float4(metalness, roughness, ao, 1.0f);
