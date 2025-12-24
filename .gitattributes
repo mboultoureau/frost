@@ -1,46 +1,26 @@
 *.fbx filter=lfs diff=lfs merge=lfs -text
 *.glb filter=lfs diff=lfs merge=lfs -text
-*.gitignore filter=lfs diff=lfs merge=lfs -text
-*.cpp filter=lfs diff=lfs merge=lfs -text
-*.h filter=lfs diff=lfs merge=lfs -text
-*.md filter=lfs diff=lfs merge=lfs -text
-*.lua filter=lfs diff=lfs merge=lfs -text
-*.bat filter=lfs diff=lfs merge=lfs -text
-*.py filter=lfs diff=lfs merge=lfs -text
-*.hlsl filter=lfs diff=lfs merge=lfs -text
-*.gitmodules filter=lfs diff=lfs merge=lfs -text
-*.txt filter=lfs diff=lfs merge=lfs -text
-*.ini filter=lfs diff=lfs merge=lfs -text
-*.json filter=lfs diff=lfs merge=lfs -text
 *.png filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
-*.hlsli filter=lfs diff=lfs merge=lfs -text
-*.clang-format filter=lfs diff=lfs merge=lfs -text
-/scripts/pre-commit filter=lfs diff=lfs merge=lfs -text
-*.frost filter=lfs diff=lfs merge=lfs -text
-/scripts/post-checkout filter=lfs diff=lfs merge=lfs -text
-/scripts/post-commit filter=lfs diff=lfs merge=lfs -text
-/scripts/post-merge filter=lfs diff=lfs merge=lfs -text
-/scripts/pre-push filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
 *.ttf filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.ico filter=lfs diff=lfs merge=lfs -text
-*.prefab filter=lfs diff=lfs merge=lfs -text
-*.scene filter=lfs diff=lfs merge=lfs -text
-*.tif filter=lfs diff=lfs merge=lfs -text
-* !text !filter !merge !diff
-*.cpp !text !filter !merge !diff
-*.h !text !filter !merge !diff
-*.py !text !filter !merge !diff
-*.lua !text !filter !merge !diff
-*.txt !text !filter !merge !diff
-*.md !text !filter !merge !diff
-*.bat !text !filter !merge !diff
-*.hlsl !text !filter !merge !diff
-*.hlsli !text !filter !merge !diff
-*.json !text !filter !merge !diff
-*.gitmodules !text !filter !merge !diff
-*.gitignore !text !filter !merge !diff
-*.frost !text !filter !merge !diff
-*.prefab !text !filter !merge !diff
-*.scene !text !filter !merge !diff
+
+*.cpp text
+*.h text
+*.hlsl text
+*.hlsli text
+*.lua text
+*.py text
+*.json text
+*.yaml text
+*.txt text
+*.md text
+*.bat text
+*.gitignore text
+*.gitmodules text
+*.clang-format text
+*.frost text
+*.prefab text
+*.scene text
