@@ -23,27 +23,32 @@ echo [STEP 1/5] Checking and Initializing Git Repository
 set "FIRST_INIT=false"
 
 if not exist .git (
-    echo [INFO] Git repository not found. Initializing repository...
+    echo Git repository not found. Initializing repository...
     git init
     if errorlevel 1 (
         echo.
-        echo [ERROR] Git initialization failed. Ensure Git is installed and in your PATH.
+        echo %RED%[ERROR] Git initialization failed. Ensure Git is installed and in your PATH.%RESET%
         goto :end
     )
     set "FIRST_INIT=true"
     echo Repository initialized.
 ) else (
-    echo [INFO] Git repository already initialized.
+    echo Git repository already initialized.
 )
-
+echo.
 
 :: -----------------------------------------------------------
 echo [STEP 2/5] Initializing Git Submodules
 :: -----------------------------------------------------------
 
 if "%FIRST_INIT%"=="true" (
-    echo [INFO] Adding submodules for the first time...
+    echo Adding submodules for the first time...
     
+	if exist "Frost\vendor" (
+        rmdir /s /q "Frost\vendor"
+        mkdir "Frost\vendor"
+    )
+	
     git submodule add https://github.com/assimp/assimp.git Frost/vendor/assimp
     git submodule add https://github.com/jrouwe/JoltPhysics.git Frost/vendor/JoltPhysics
     git submodule add -b docking https://github.com/ocornut/imgui.git Frost/vendor/imgui
@@ -53,15 +58,15 @@ if "%FIRST_INIT%"=="true" (
     git submodule add https://github.com/jbeder/yaml-cpp.git Frost/vendor/yaml-cpp
 
     if errorlevel 1 (
-        echo [ERROR] Failed to add one or more submodules.
+        echo %RED%[ERROR] Failed to add one or more submodules.%RESET%
         goto :end
     )
 ) else (
-    echo [INFO] Updating existing submodules...
+    echo Updating existing submodules...
     git submodule update --init --recursive --depth 1
     
     if errorlevel 1 (
-        echo [ERROR] Submodule update failed.
+        echo %RED%[ERROR] Submodule update failed.%RESET%
         goto :end
     )
 )
