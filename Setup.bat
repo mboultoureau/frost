@@ -17,23 +17,60 @@ echo %BOLD%Initializing Project Environment...%RESET%
 echo.
 
 :: -----------------------------------------------------------
-echo [STEP 1/4] Initializing Git Submodules
+echo [STEP 1/5] Checking and Initializing Git Repository
 :: -----------------------------------------------------------
 
-git submodule update --init --recursive --depth 1
+set "FIRST_INIT=false"
 
-if errorlevel 1 (
-    echo.
-    echo %RED%[ERROR] Submodule update failed.%RESET%
-    echo Ensure Git is correctly installed and your .gitmodules file is configured.
-    goto :end
+if not exist .git (
+    echo [INFO] Git repository not found. Initializing repository...
+    git init
+    if errorlevel 1 (
+        echo.
+        echo [ERROR] Git initialization failed. Ensure Git is installed and in your PATH.
+        goto :end
+    )
+    set "FIRST_INIT=true"
+    echo Repository initialized.
+) else (
+    echo [INFO] Git repository already initialized.
+)
+
+
+:: -----------------------------------------------------------
+echo [STEP 2/5] Initializing Git Submodules
+:: -----------------------------------------------------------
+
+if "%FIRST_INIT%"=="true" (
+    echo [INFO] Adding submodules for the first time...
+    
+    git submodule add https://github.com/assimp/assimp.git Frost/vendor/assimp
+    git submodule add https://github.com/jrouwe/JoltPhysics.git Frost/vendor/JoltPhysics
+    git submodule add -b docking https://github.com/ocornut/imgui.git Frost/vendor/imgui
+    git submodule add https://github.com/gabime/spdlog.git Frost/vendor/spdlog
+    git submodule add https://github.com/nothings/stb Frost/vendor/stb
+    git submodule add https://github.com/skypjack/entt.git Frost/vendor/entt
+    git submodule add https://github.com/jbeder/yaml-cpp.git Frost/vendor/yaml-cpp
+
+    if errorlevel 1 (
+        echo [ERROR] Failed to add one or more submodules.
+        goto :end
+    )
+) else (
+    echo [INFO] Updating existing submodules...
+    git submodule update --init --recursive --depth 1
+    
+    if errorlevel 1 (
+        echo [ERROR] Submodule update failed.
+        goto :end
+    )
 )
 
 echo Submodules updated successfully.
 echo.
 
 :: -----------------------------------------------------------
-echo [STEP 2/4] Configuring Build System (CMake)
+echo [STEP 3/5] Configuring Build System (CMake)
 :: -----------------------------------------------------------
 
 cmake .
@@ -47,7 +84,7 @@ if errorlevel 1 (
 
 echo.
 :: -----------------------------------------------------------
-echo [STEP 3/4] Verifying Clang-Format Installation
+echo [STEP 4/5] Verifying Clang-Format Installation
 :: -----------------------------------------------------------
 
 where clang-format >nul 2>nul
@@ -80,7 +117,7 @@ if %errorlevel% neq 0 (
 
 echo.
 :: -----------------------------------------------------------
-echo [STEP 4/4] Installing Git Hooks
+echo [STEP 5/5] Installing Git Hooks
 :: -----------------------------------------------------------
 
 git config core.hooksPath scripts
