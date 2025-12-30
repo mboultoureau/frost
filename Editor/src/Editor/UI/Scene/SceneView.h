@@ -51,6 +51,9 @@ namespace Editor
         void _Init();
         void _ResizeViewportFramebuffer(uint32_t width, uint32_t height);
 
+        // Utils
+        std::vector<entt::entity> _GetSortedChildren(entt::entity parentID);
+
         // UI
         void _DrawToolbar();
         void _DrawEntityNode(entt::entity entityID);

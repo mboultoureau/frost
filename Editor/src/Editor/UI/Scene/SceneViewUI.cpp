@@ -188,12 +188,27 @@ namespace Editor
             ImGui::EndPopup();
         }
 
+        std::vector<entt::entity> roots;
         _sceneContext->GetRegistry().view<Relationship>().each(
             [&](auto entityID, auto& relation)
             {
                 if (relation.parent == entt::null)
-                    _DrawEntityNode(entityID);
+                    roots.push_back(entityID);
             });
+
+        std::sort(roots.begin(),
+                  roots.end(),
+                  [&](entt::entity a, entt::entity b)
+                  {
+                      auto* metaA = _sceneContext->GetRegistry().try_get<Meta>(a);
+                      auto* metaB = _sceneContext->GetRegistry().try_get<Meta>(b);
+                      return (metaA ? metaA->name : "") < (metaB ? metaB->name : "");
+                  });
+
+        for (auto entityID : roots)
+        {
+            _DrawEntityNode(entityID);
+        }
 
         if (!_isReadOnly &&
             ImGui::BeginDragDropTargetCustom(ImGui::GetCurrentWindow()->Rect(), ImGui::GetID("HierarchyContent")))
@@ -344,12 +359,10 @@ namespace Editor
         {
             if (relation && !isPrefabInstance)
             {
-                entt::entity currentChild = relation->firstChild;
-                while (registry.valid(currentChild))
+                auto sortedChildren = _GetSortedChildren(entityID);
+                for (auto childID : sortedChildren)
                 {
-                    _DrawEntityNode(currentChild);
-                    auto* childRel = registry.try_get<Relationship>(currentChild);
-                    currentChild = childRel ? childRel->nextSibling : entt::null;
+                    _DrawEntityNode(childID);
                 }
             }
             ImGui::TreePop();
@@ -568,5 +581,43 @@ namespace Editor
         ImGui::PopID();
 
         return changed;
+    }
+
+    std::vector<entt::entity> SceneView::_GetSortedChildren(entt::entity parentID)
+    {
+        auto& registry = _sceneContext->GetRegistry();
+        std::vector<entt::entity> children;
+
+        auto* relation = registry.try_get<Relationship>(parentID);
+        if (!relation)
+            return children;
+
+        entt::entity currentChild = relation->firstChild;
+        while (registry.valid(currentChild))
+        {
+            children.push_back(currentChild);
+            auto* childRel = registry.try_get<Relationship>(currentChild);
+            currentChild = childRel ? childRel->nextSibling : entt::null;
+        }
+
+        std::sort(children.begin(),
+                  children.end(),
+                  [&](entt::entity a, entt::entity b)
+                  {
+                      auto* metaA = registry.try_get<Meta>(a);
+                      auto* metaB = registry.try_get<Meta>(b);
+
+                      std::string nameA = metaA ? metaA->name : "Entity";
+                      std::string nameB = metaB ? metaB->name : "Entity";
+
+                      return std::lexicographical_compare(nameA.begin(),
+                                                          nameA.end(),
+                                                          nameB.begin(),
+                                                          nameB.end(),
+                                                          [](char c1, char c2)
+                                                          { return std::tolower(c1) < std::tolower(c2); });
+                  });
+
+        return children;
     }
 } // namespace Editor
