@@ -199,6 +199,9 @@ namespace Frost
 
     void RendererDX11::_CreateDevice()
     {
+        // Choose best GPU
+        ComPtr<IDXGIAdapter1> bestAdapter = _GetBestAdapter();
+
         // Use DirectX 11.1
         const std::array<D3D_FEATURE_LEVEL, 1> featuresLevels = { D3D_FEATURE_LEVEL_11_1 };
 
@@ -234,8 +237,8 @@ namespace Frost
 
         ID3D11Device* device = nullptr;
 
-        HRESULT hr = D3D11CreateDeviceAndSwapChain(NULL,
-                                                   D3D_DRIVER_TYPE_HARDWARE,
+        HRESULT hr = D3D11CreateDeviceAndSwapChain(bestAdapter.Get(),
+                                                   D3D_DRIVER_TYPE_UNKNOWN,
                                                    NULL,
                                                    flags,
                                                    featuresLevels.data(),
@@ -407,6 +410,35 @@ namespace Frost
 
         hr = _device->CreateBlendState(&blendDesc, &_blendStateAlpha);
         FT_ENGINE_ASSERT(SUCCEEDED(hr), "Failed to create alpha blend state!");
+    }
+
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> RendererDX11::_GetBestAdapter()
+    {
+        ComPtr<IDXGIFactory1> factory;
+        CreateDXGIFactory1(IID_PPV_ARGS(&factory));
+
+        ComPtr<IDXGIAdapter1> adapter;
+        ComPtr<IDXGIAdapter1> bestAdapter;
+        SIZE_T maxVideoMemory = 0;
+
+        for (UINT i = 0; factory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i)
+        {
+            DXGI_ADAPTER_DESC1 desc;
+            adapter->GetDesc1(&desc);
+
+            if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+            {
+                continue;
+            }
+
+            // Choose GPU with maximum dedicated video memory
+            if (desc.DedicatedVideoMemory > maxVideoMemory)
+            {
+                maxVideoMemory = desc.DedicatedVideoMemory;
+                bestAdapter = adapter;
+            }
+        }
+        return bestAdapter;
     }
 
     ID3D11BlendState* RendererDX11::GetBlendState(BlendMode mode) const

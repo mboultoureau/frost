@@ -61,5 +61,7 @@ namespace Frost
         void _CreateDepthStencilStates();
         void _CreateRasterizerStates();
         void _CreateBlendStates();
+
+        Microsoft::WRL::ComPtr<IDXGIAdapter1> _GetBestAdapter();
     };
 } // namespace Frost
