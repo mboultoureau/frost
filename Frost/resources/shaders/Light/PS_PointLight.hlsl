@@ -31,7 +31,7 @@ float4 main(PS_Input input) : SV_TARGET
         return float4(currentLight, 1.0f);
     }
 
-    float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb * 2.0f - 1.0f);
+    float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb);
     float4 mat = MaterialTexture.Sample(GBufferSampler, input.TexCoord);
     float metal = mat.r;
     float rough = mat.g;
