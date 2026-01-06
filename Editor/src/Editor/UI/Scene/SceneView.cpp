@@ -164,7 +164,8 @@ namespace Editor
             SkyboxSourceCubemap{ "./resources/editor/skyboxes/Cubemap_Sky_04-512x512.png" });
 
         _editorLight = _sceneContext->CreateGameObject("__EDITOR__AmbientLight");
-        _editorLight.AddComponent<Light>(LightAmbient{});
+        auto& light = _editorLight.AddComponent<Light>(LightAmbient{});
+        light.intensity = 0.3f;
 
         _editorEnvironment = _sceneContext->CreateGameObject("__EDITOR__Environment");
         auto& env = _editorEnvironment.AddComponent<EnvironmentMap>(
