@@ -50,7 +50,7 @@ float4 main(PS_Input input) : SV_TARGET
     }
 
     // 4. Calculs finaux (seulement si nécessaire)
-    float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb * 2.0f - 1.0f);
+    float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb);
     float4 material = MaterialTexture.Sample(GBufferSampler, input.TexCoord);
     float metalness = material.r;
     float roughness = material.g;

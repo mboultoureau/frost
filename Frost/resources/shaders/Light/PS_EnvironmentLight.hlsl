@@ -27,7 +27,7 @@ float4 main(PS_Input input) : SV_TARGET
     }
     
     float3 worldPos = WorldPosTexture.Sample(GBufferSampler, input.TexCoord).rgb;
-    float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb * 2.0f - 1.0f);
+    float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb);
     float4 material = MaterialTexture.Sample(GBufferSampler, input.TexCoord);
     float3 albedo = AlbedoTexture.Sample(GBufferSampler, input.TexCoord).rgb;
     float3 currentLight = LuminanceTexture.Sample(GBufferSampler, input.TexCoord).rgb;

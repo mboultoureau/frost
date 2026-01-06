@@ -46,7 +46,7 @@ PS_Output main(PS_Input input)
 
     float3 normalTangentSpace = NormalMap.Sample(MaterialSampler, texCoord).xyz * 2.0 - 1.0;
     float3 worldNormal = normalize(mul(normalTangentSpace, TBN));
-    output.Normal = float4(worldNormal * 0.5f + 0.5f, 1.0f);
+    output.Normal = float4(worldNormal, 1.0f);
 
     output.WorldPos = float4(input.WorldPos, 1.0f);
 
