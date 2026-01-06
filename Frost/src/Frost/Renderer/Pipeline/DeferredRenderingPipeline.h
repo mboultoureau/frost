@@ -53,7 +53,7 @@ namespace Frost
         std::shared_ptr<Texture> GetWorldPositionTexture() const { return _worldPositionTexture; }
         std::shared_ptr<Texture> GetMaterialTexture() const { return _materialTexture; }
         std::shared_ptr<Texture> GetDepthStencilTexture() const { return _depthStencilTexture; }
-        // Texture* GetFinalLitTexture() const { return _finalLitTexture.get(); }
+        std::shared_ptr<Texture> GetEmissionTexture() const { return _emissionTexture; }
 
         CommandList* GetCommandList() const { return _commandList.get(); }
         std::shared_ptr<CommandList> GetSharedCommandList() const { return _commandList; }
@@ -66,8 +66,8 @@ namespace Frost
         std::shared_ptr<Texture> _normalTexture;
         std::shared_ptr<Texture> _worldPositionTexture;
         std::shared_ptr<Texture> _materialTexture;
+        std::shared_ptr<Texture> _emissionTexture;
         std::shared_ptr<Texture> _depthStencilTexture;
-        // std::unique_ptr<Texture> _finalLitTexture;
 
         // G-Buffer Pass Resources
         std::shared_ptr<Shader> _gBufferVertexShader;
@@ -93,6 +93,7 @@ namespace Frost
         std::unique_ptr<Texture> _defaultMetallicTexture;
         std::unique_ptr<Texture> _defaultRoughnessTexture;
         std::unique_ptr<Texture> _defaultAOTexture;
+        std::unique_ptr<Texture> _defaultEmissionTexture;
 
         // Materials buffers
         std::shared_ptr<Buffer> _customMaterialConstantBuffer;

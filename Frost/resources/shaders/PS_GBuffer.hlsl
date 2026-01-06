@@ -4,6 +4,7 @@ Texture2D NormalMap : register(t1);
 Texture2D MetallicMap : register(t2);
 Texture2D RoughnessMap : register(t3);
 Texture2D AOMap : register(t4);
+Texture2D EmissionMap : register(t5);
 
 SamplerState MaterialSampler : register(s0);
 
@@ -29,6 +30,7 @@ struct PS_Output
     float4 Normal           : SV_Target1; // RGB: Normal
     float4 WorldPos         : SV_Target2; // RGB: World Position
     float4 Material         : SV_Target3; // R: Metalness, G: Roughness, B: Ambient Occlusion
+    float4 Emission         : SV_Target4; // RGB: Emission
 };
 
 PS_Output main(PS_Input input)
@@ -53,6 +55,7 @@ PS_Output main(PS_Input input)
     float ao = AOMap.Sample(MaterialSampler, texCoord).r;
 
     output.Material = float4(metalness, roughness, ao, 1.0f);
-
+    output.Emission = EmissionMap.Sample(MaterialSampler, texCoord);
+    
     return output;
 }

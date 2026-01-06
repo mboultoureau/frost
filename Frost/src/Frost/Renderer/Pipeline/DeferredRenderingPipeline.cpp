@@ -175,12 +175,14 @@ namespace Frost
         _worldPositionTexture.reset();
         _normalTexture.reset();
         _albedoTexture.reset();
+        _emissionTexture.reset();
 
         _defaultNormalTexture.reset();
         _defaultAlbedoTexture.reset();
         _defaultMetallicTexture.reset();
         _defaultRoughnessTexture.reset();
         _defaultAOTexture.reset();
+        _defaultEmissionTexture.reset();
 
         _commandList.reset();
 
@@ -216,6 +218,10 @@ namespace Frost
         uint8_t defaultAOPixel[4] = { 255, 255, 255, 255 };
         _defaultAOTexture =
             std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, defaultAOPixel, "DefaultAOTexture");
+
+        uint8_t blackPixel[4] = { 0, 0, 0, 255 };
+        _defaultEmissionTexture =
+            std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, blackPixel, "DefaultEmissionTexture");
 #endif
     }
 
@@ -283,7 +289,7 @@ namespace Frost
         _worldPositionTexture.reset();
         _materialTexture.reset();
         _depthStencilTexture.reset();
-        //_finalLitTexture.reset();
+        _emissionTexture.reset();
 
         TextureConfig textureConfig = {
             .width = width, .height = height, .isRenderTarget = true, .isShaderResource = true, .hasMipmaps = false
@@ -300,6 +306,9 @@ namespace Frost
 
         textureConfig.format = Format::RGBA8_UNORM;
         _materialTexture = std::make_shared<TextureDX11>(textureConfig);
+
+        textureConfig.format = Format::RGBA16_FLOAT;
+        _emissionTexture = std::make_shared<TextureDX11>(textureConfig);
 
         TextureConfig depthConfig = { .format = Format::R24G8_TYPELESS,
                                       .width = width,
@@ -342,9 +351,11 @@ namespace Frost
         vsPerFrameData.CameraPosition = cameraTransform.position;
         _vsPerFrameConstants->UpdateData(_commandList.get(), &vsPerFrameData, sizeof(VS_PerFrameConstants));
 
-        Texture* gBufferRTs[] = {
-            _albedoTexture.get(), _normalTexture.get(), _worldPositionTexture.get(), _materialTexture.get()
-        };
+        Texture* gBufferRTs[] = { _albedoTexture.get(),
+                                  _normalTexture.get(),
+                                  _worldPositionTexture.get(),
+                                  _materialTexture.get(),
+                                  _emissionTexture.get() };
         _commandList->SetRenderTargets(ARRAYSIZE(gBufferRTs), gBufferRTs, _depthStencilTexture.get());
 
         _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);
@@ -521,6 +532,15 @@ namespace Frost
             else
             {
                 _commandList->SetTexture(_defaultAOTexture.get(), 4);
+            }
+
+            if (!material.emissiveTextures.empty() && material.emissiveTextures[0]->IsLoaded())
+            {
+                _commandList->SetTexture(material.emissiveTextures[0].get(), 5);
+            }
+            else
+            {
+                _commandList->SetTexture(_defaultEmissionTexture.get(), 5);
             }
 
             _commandList->SetVertexBuffer(mesh.GetVertexBuffer(), mesh.GetVertexStride(), 0);
