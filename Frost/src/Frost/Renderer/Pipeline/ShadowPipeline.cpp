@@ -1,4 +1,4 @@
-#include "ShadowPipeline.h"
+ï»¿#include "ShadowPipeline.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Format.h"
@@ -254,6 +254,7 @@ namespace Frost
         _normalTexture.reset();
         _worldPositionTexture.reset();
         _materialTexture.reset();
+        _emissionTexture.reset();
         _luminanceTexture1.reset();
         _luminanceTexture2.reset();
         _finalLitTexture.reset();
@@ -276,6 +277,7 @@ namespace Frost
         _normalTexture.reset();
         _worldPositionTexture.reset();
         _materialTexture.reset();
+        _emissionTexture.reset();
         _luminanceTexture1.reset();
         _luminanceTexture2.reset();
         _finalLitTexture.reset();
@@ -337,6 +339,7 @@ namespace Frost
         _normalTexture = deferredPipeline->GetNormalTexture();
         _worldPositionTexture = deferredPipeline->GetWorldPositionTexture();
         _materialTexture = deferredPipeline->GetMaterialTexture();
+        _emissionTexture = deferredPipeline->GetEmissionTexture();
         _commandList = deferredPipeline->GetSharedCommandList();
         _scene = scene;
     }
@@ -386,8 +389,8 @@ namespace Frost
         {
             if (lightPairs[i].first.GetType() == Component::LightType::Point)
             {
-                // Note : Optimisation possible ici -> Ne générer que les faces visibles si on avait un système de
-                // culling avancé
+                // Note : Optimisation possible ici -> Ne gÃ©nÃ©rer que les faces visibles si on avait un systÃ¨me de
+                // culling avancÃ©
                 MakePointDirectionalLight(Math::EulerAngles(0, 0, 0), lightPairs[i]);
                 MakePointDirectionalLight(Math::EulerAngles(0.0_deg, 0.0_deg, 90.0_deg), lightPairs[i]);
                 MakePointDirectionalLight(Math::EulerAngles(0.0_deg, 0.0_deg, -90.0_deg), lightPairs[i]);
@@ -609,7 +612,7 @@ namespace Frost
 
         shadowData.lightViewProj = lightView * lightProj;
 
-        // --- OPTIMISATION : Calcul du Frustum de la Lumière ---
+        // --- OPTIMISATION : Calcul du Frustum de la LumiÃ¨re ---
         shadowData.lightFrustum.Extract(LoadMatrix(shadowData.lightViewProj), 0.0f);
 
         Texture* depthPtr = shadowData.shadowTexture.get();
@@ -625,7 +628,7 @@ namespace Frost
 
         auto meshView = _scene->ViewActive<Component::StaticMesh, Component::WorldTransform>();
 
-        // On itère sur tous les objets, mais DrawDepthOnly fera le tri fin
+        // On itÃ¨re sur tous les objets, mais DrawDepthOnly fera le tri fin
         meshView.each(
             [&](const Component::StaticMesh& staticMesh, const Component::WorldTransform& meshTransform)
             {
@@ -799,13 +802,13 @@ namespace Frost
 
         bool isFirstDraw = true;
 
-        // 1. Matrice pour le CPU (Calcul de BoundingBox) -> NON TRANSPOSÉE
+        // 1. Matrice pour le CPU (Calcul de BoundingBox) -> NON TRANSPOSÃ‰E
         DirectX::XMMATRIX matWorldCPU = LoadMatrix(worldMatrix);
 
-        // 2. Matrice pour le GPU (Constant Buffer) -> TRANSPOSÉE
+        // 2. Matrice pour le GPU (Constant Buffer) -> TRANSPOSÃ‰E
         DirectX::XMMATRIX matWorldGPU = LoadMatrix(Math::Matrix4x4::CreateTranspose(worldMatrix));
 
-        // Optim: On prépare la matrice ViewProj GPU une seule fois
+        // Optim: On prÃ©pare la matrice ViewProj GPU une seule fois
         DirectX::XMMATRIX lightViewProjGPU = LoadMatrix(Math::Matrix4x4::CreateTranspose(_currentLightViewProj));
 
         for (const auto& mesh : staticMesh.GetModel()->GetMeshes())
@@ -824,7 +827,7 @@ namespace Frost
                     _vsShadowConstants->UpdateData(cmd, &vsData, sizeof(vsData));
                     cmd->SetConstantBuffer(_vsShadowConstants.get(), 0);
 
-                    // Setup pipeline state (inchangé)
+                    // Setup pipeline state (inchangÃ©)
                     cmd->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
                     cmd->SetShader(_shadowVertexShader.get());
                     _commandList->UnbindShader(ShaderType::Geometry);
@@ -988,6 +991,7 @@ namespace Frost
 
         _commandList->SetTexture(_albedoTexture.get(), 0);
         _commandList->SetTexture(luminanceTexture.get(), 1);
+        _commandList->SetTexture(_emissionTexture.get(), 2);
         _commandList->SetSampler(_gBufferSampler.get(), 0);
 
         _commandList->SetShader(_finalLightVertexShader.get());

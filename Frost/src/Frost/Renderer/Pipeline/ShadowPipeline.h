@@ -186,6 +186,7 @@ namespace Frost
         std::shared_ptr<Texture> _normalTexture;
         std::shared_ptr<Texture> _worldPositionTexture;
         std::shared_ptr<Texture> _materialTexture;
+        std::shared_ptr<Texture> _emissionTexture;
 
         std::shared_ptr<Texture> _luminanceTexture1;
         std::shared_ptr<Texture> _luminanceTexture2;
