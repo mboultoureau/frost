@@ -81,16 +81,9 @@ namespace Editor
 
         _HandleTransformation(rayOrigin, rayDir);
 
-        ImGui::SetNextWindowPos(viewportPos);
-        ImGui::SetNextWindowSize(viewportSize);
-        ImGui::Begin("GizmoOverlay",
-                     nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs |
-                         ImGuiWindowFlags_NoDocking);
-
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         drawList->PushClipRect(
-            viewportPos, ImVec2(viewportPos.x + viewportSize.x, viewportPos.y + viewportSize.y), false);
+            viewportPos, ImVec2(viewportPos.x + viewportSize.x, viewportPos.y + viewportSize.y), true);
 
         switch (_currentOperation)
         {
@@ -108,7 +101,6 @@ namespace Editor
         }
 
         drawList->PopClipRect();
-        ImGui::End();
     }
 
     float Gizmo::_GetGizmoScale(const Frost::Math::Vector3& cameraPos, const Frost::Math::Vector3& cameraForward)
