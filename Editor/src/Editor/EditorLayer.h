@@ -58,6 +58,7 @@ namespace Editor
         std::vector<std::unique_ptr<SceneView>> _views;
 
         bool _projectSettingsNeedsDocking = false;
+        bool _isLayoutInitialized = false;
 
         ProjectInfo _projectInfo;
         std::unique_ptr<Frost::Scene> _activeScene;

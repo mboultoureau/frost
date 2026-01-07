@@ -199,7 +199,7 @@ namespace Editor
         _views.push_back(std::make_unique<SceneView>(path));
         auto& newView = _views.back();
 
-        if (_dockMainID != 0)
+        if (_isLayoutInitialized && _dockMainID != 0)
         {
             ImGui::DockBuilderDockWindow(newView->GetTitle().c_str(), _dockMainID);
         }
@@ -227,7 +227,7 @@ namespace Editor
 
         auto newView = std::make_unique<SceneView>(path, SceneView::SceneTag{});
 
-        if (_dockMainID != 0)
+        if (_isLayoutInitialized && _dockMainID != 0)
         {
             ImGui::DockBuilderDockWindow(newView->GetTitle().c_str(), _dockMainID);
         }
@@ -249,7 +249,7 @@ namespace Editor
 
         _views.push_back(std::make_unique<SceneView>(path, SceneView::MeshPreviewTag{}));
         auto& newView = _views.back();
-        if (_dockMainID != 0)
+        if (_isLayoutInitialized && _dockMainID != 0)
         {
             ImGui::DockBuilderDockWindow(newView->GetTitle().c_str(), _dockMainID);
         }
@@ -266,10 +266,9 @@ namespace Editor
 
         ImGui::DockSpaceOverViewport(dockspaceID, viewport);
 
-        static bool firstTime = true;
-        if (firstTime)
+        if (!_isLayoutInitialized)
         {
-            firstTime = false;
+            _isLayoutInitialized = true;
 
             ImGui::DockBuilderRemoveNode(dockspaceID);
             ImGui::DockBuilderAddNode(dockspaceID, ImGuiDockNodeFlags_DockSpace);
