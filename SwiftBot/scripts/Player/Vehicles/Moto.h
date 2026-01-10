@@ -70,5 +70,9 @@ namespace GameLogic
 
         // Radial Blur
         float _radialBlurSpeedFactor = 0.001f;
+
+        // Wheels
+        Frost::GameObject _frontWheel;
+        Frost::GameObject _backWheel;
     };
 } // namespace GameLogic
