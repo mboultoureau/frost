@@ -45,11 +45,15 @@ namespace GameLogic
     Moto::Moto(GameObject player) : Vehicle(player)
     {
         _vehicle = player.GetChildByName("Moto", true);
+        _frontWheel = _vehicle.GetChildByName("FrontWheel", true);
+        _backWheel = _vehicle.GetChildByName("BackWheel", true);
     }
 
     void Moto::Show()
     {
         _vehicle.SetActive(true);
+        _frontWheel.SetActive(true);
+        _backWheel.SetActive(true);
 
         const auto& transform = _playerController.GetComponent<Transform>();
         Vec3 position = Math::vector_cast<Vec3>(transform.position);
@@ -229,6 +233,8 @@ namespace GameLogic
     {
         // Hide static mesh
         _vehicle.SetActive(false);
+        _frontWheel.SetActive(false);
+        _backWheel.SetActive(false);
 
         // Remove physics
         if (_constraint)
@@ -419,6 +425,17 @@ namespace GameLogic
                 body.SetLinearVelocity(body.GetLinearVelocity() * (1.0f - fixedDeltaTime));
             }
         }
+
+        // Get meshes
+        auto& staticMesh = _vehicle.GetComponent<StaticMesh>();
+
+        auto rotation = _constraint->GetWheel(1)->GetRotationAngle();
+
+        auto& frontWheelTransform = _frontWheel.GetComponent<Transform>();
+        frontWheelTransform.SetRotation(EulerAngles{ 0.0f, 0.0f, -rotation });
+
+        auto& backWheelTransform = _backWheel.GetComponent<Transform>();
+        backWheelTransform.SetRotation(EulerAngles{ 0.0f, 0.0f, -rotation });
     }
 
     void Moto::OnBrake(bool brake)
