@@ -1,6 +1,8 @@
 # Frost Engine
 
-Frost is a game engine created by the Uno team ([Elias Del Pozo](https://depot.dinf.usherbrooke.ca/dele5830), [Mathis Boultoureau](https://depot.dinf.usherbrooke.ca/boum6233), [Simon Le Floch](https://depot.dinf.usherbrooke.ca/lefs1934) and [Thomas Vanwalleghem](https://depot.dinf.usherbrooke.ca/vant2523)) for DDJV courses.
+![Frost Engine Logo](docs/frost.png)
+
+Frost is a game engine created by the Uno team ([Mathis Boultoureau](https://depot.dinf.usherbrooke.ca/boum6233), [Elias Del Pozo](https://depot.dinf.usherbrooke.ca/dele5830), [Simon Le Floch](https://depot.dinf.usherbrooke.ca/lefs1934) and [Thomas Vanwalleghem](https://depot.dinf.usherbrooke.ca/vant2523)) for DDJV courses.
 
 ## Constraints
 
@@ -9,12 +11,16 @@ For the purposes of the course, we were not allowed to use any external librarie
 ## Features
 
 - [x] ECS
-- [x] Rendering (DirectX 11)
+- [x] Rendering (Deferred Rendering with DirectX 11)
+- [x] Event System
+- [x] Asset Manager (with multi-threading)
 - [x] Model loading (assimp)
 - [x] Physics (Jolt)
 - [x] Input (mouse, keyboard, gamepad)
+- [x] Editor
 - [x] Debugging (logger, debugging interface)
 - [x] Easily extensible
+- [x] Game Sample (SwiftBot)
 
 ## Installation
 
@@ -31,15 +37,19 @@ We use `clang-format` to format the code. Be sure it is included in your PATH (e
 - [Game Engine Architecture](https://www.gameenginebook.com/)
 - [h-deb - Patrice Roy](https://h-deb.ca/)
 - [Game Engine Series - The Cherno](https://youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)
+- [Event Queue - Game Programming Patterns](https://gameprogrammingpatterns.com/event-queue.html)
+- [Event System - Denys Kryvytskyi](https://denyskryvytskyi.github.io/event-system)
 
 ## Dependencies
 
 Here are the dependencies present in the engine:
 - [assimp](https://github.com/assimp/assimp): importing 3D models
+- [entt](https://github.com/skypjack/entt) : entity component system
 - [imgui](https://github.com/ocornut/imgui): debug interface
 - [JoltPhysics](https://github.com/jrouwe/JoltPhysics): physics engine
 - [spdlog](https://github.com/gabime/spdlog): logging
 - [stb](https://github.com/nothings/stb): image loading
+- [yaml-cpp](https://github.com/jbeder/yaml-cpp): YAML parser
 
 The various dependencies are located in Frost/vendor for dependencies specific to the engine and Lab/vendor for dependencies specific to the Lab using git submodule.
 
@@ -87,12 +97,7 @@ FT_ASSERT(_buttonStates[i] != ButtonState::Pressed, "Button state should be Pres
 
 ### Entity Component System
 
-### Event System
-
-Sources :
-
-- [Event Queue - Game Programming Patterns](https://gameprogrammingpatterns.com/event-queue.html)
-- [Event System - Denys Kryvytskyi](https://denyskryvytskyi.github.io/event-system)
+In the latest version, we now use `entt` as the basis for our ECS system. An abstraction layer is provided by the scene and GameObjects.
 
 ### Utils
 
@@ -100,8 +105,3 @@ Here are the different utility classes included in the project:
 - NoCopy: can be used as inheritance to block the copy constructor and public assignment operator.
 - UUID: allows you to generate a unique identifier.
 - Maths utilities: function to manage angle conversion or approximation between two floats.
-
-Sources :
-
-- [Code de grande personne – bloquer la copie - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Incopiable.html)
-- [Implémenter des conversions de référentiels - Patrice Roy](https://h-deb.ca/Sujets/Divers--cplusplus/Implementer-changement-referentiel.html)
