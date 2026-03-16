@@ -157,7 +157,7 @@ namespace Editor
         auto& cam = _editorCamera.AddComponent<Camera>();
         cam.priority = 100;
         cam.viewport = { 0.0f, 0.0f, 1.0f, 1.0f };
-        cam.farClip = 1000.0f;
+        cam.farClip = 10000.0f;
         cam.nearClip = 0.1f;
 
         _editorCamera.AddComponent<Skybox>(

@@ -226,7 +226,7 @@ namespace Editor
             ImGui::Text("Camera Controller");
             ImGui::Separator();
 
-            ImGui::DragFloat("Speed", &cam.moveSpeed, 0.1f, 0.1f, 100.0f);
+            ImGui::DragFloat("Speed", &cam.moveSpeed, 0.1f, 0.1f, 1000.0f);
             ImGui::DragFloat("Turbo Multiplier", &cam.turboMultiplier, 0.1f, 1.0f, 10.0f);
             ImGui::DragFloat("Sensitivity", &cam.mouseSensitivity, 0.0001f, 0.0001f, 0.01f, "%.4f");
             ImGui::DragFloat("Damping", &cam.damping, 0.1f, 0.0f, 20.0f);

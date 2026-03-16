@@ -232,6 +232,9 @@ namespace Editor
                 fs::rename(targetDir / "template.frost", projectFile);
             }
 
+            fs::create_directory(targetDir / "assets");
+            fs::create_directory(targetDir / "src");
+
             ProjectConfig config;
 
             config.name = name;
@@ -298,6 +301,7 @@ namespace Editor
                 out << YAML::Key << "start_scene" << YAML::Value << config.startScene;
                 out << YAML::Key << "asset_directory" << YAML::Value << config.assetDirectory;
                 out << YAML::Key << "source_directory" << YAML::Value << config.sourceDirectory;
+                out << YAML::Key << "scripting_module" << YAML::Value << config.sourceDirectory;
 
                 // Serialize Physics Settings
                 out << YAML::Key << "physics" << YAML::Value << YAML::BeginMap;
