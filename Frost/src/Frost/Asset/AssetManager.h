@@ -22,6 +22,11 @@ namespace Frost
         static void Update();
         static void PruneUnused();
 
+        static void SetUseMultiThreading(bool useMultiThreading) { _useMultiThreading = useMultiThreading; }
+        static bool GetUseMultiThreading() { return _useMultiThreading; }
+
+        static int GetActiveLoadingThreads() { return _activeLoadingThreads.load(); }
+
         template<typename T, typename... Args>
         static std::shared_ptr<T> LoadAsset(const Asset::Path& path, Args&&... args)
             requires(!std::is_same_v<T, Texture>)
@@ -53,23 +58,32 @@ namespace Frost
         {
             RegisterAsset(path, asset);
 
-            std::thread(
-                [asset, path, args...]() mutable
+            auto loadJob = [asset, path, args...]() mutable
+            {
+                _activeLoadingThreads++;
+                try
                 {
-                    try
-                    {
-                        asset->SetStatus(AssetStatus::Loading);
-                        asset->LoadCPU(path, std::forward<Args>(args)...);
+                    asset->SetStatus(AssetStatus::Loading);
+                    asset->LoadCPU(path, std::forward<Args>(args)...);
 
-                        AddToUploadQueue([asset]() { asset->UploadGPU(); });
-                    }
-                    catch (const std::exception& e)
-                    {
-                        asset->SetStatus(AssetStatus::Failed);
-                        FT_ENGINE_ERROR("Async load exception '{}': {}", path, e.what());
-                    }
-                })
-                .detach();
+                    AddToUploadQueue([asset]() { asset->UploadGPU(); });
+                }
+                catch (const std::exception& e)
+                {
+                    asset->SetStatus(AssetStatus::Failed);
+                    FT_ENGINE_ERROR("Async load exception '{}': {}", path, e.what());
+                }
+                _activeLoadingThreads--;
+            };
+
+            if (_useMultiThreading)
+            {
+                std::thread(loadJob).detach();
+            }
+            else
+            {
+                loadJob();
+            }
         }
 
     private:
@@ -80,5 +94,8 @@ namespace Frost
         static std::deque<std::function<void()>> _uploadQueue;
 
         static constexpr int _timeBudget = 5;
+
+        static bool _useMultiThreading;
+        static std::atomic<int> _activeLoadingThreads;
     };
 } // namespace Frost

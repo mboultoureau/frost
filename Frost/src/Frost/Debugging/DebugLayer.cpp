@@ -126,7 +126,10 @@ namespace Frost
             if (auto debugScenePanel = dynamic_cast<DebugScene*>(panel.get()))
             {
                 debugScenePanel->AddScene(scene);
-                return;
+            }
+            else if (auto debugPerfPanel = dynamic_cast<DebugPerformance*>(panel.get()))
+            {
+                debugPerfPanel->AddScene(scene);
             }
         }
     }
@@ -138,7 +141,10 @@ namespace Frost
             if (auto debugScenePanel = dynamic_cast<DebugScene*>(panel.get()))
             {
                 debugScenePanel->RemoveScene(scene);
-                return;
+            }
+            else if (auto debugPerfPanel = dynamic_cast<DebugPerformance*>(panel.get()))
+            {
+                debugPerfPanel->RemoveScene(scene);
             }
         }
     }

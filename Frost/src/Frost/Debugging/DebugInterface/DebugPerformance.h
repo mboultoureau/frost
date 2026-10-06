@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Frost/Debugging/DebugInterface/DebugPanel.h"
+#include "Frost/Scene/Scene.h"
+#include <vector>
 
 namespace Frost
 {
@@ -14,6 +16,9 @@ namespace Frost
         virtual void OnFixedUpdate(float fixedDeltaTime) override;
         virtual const char* GetName() const override { return "Performance"; }
 
+        void AddScene(Scene* scene);
+        void RemoveScene(Scene* scene);
+
     private:
         static constexpr int FRAME_TIME_HISTORY_SIZE = 100;
 
@@ -26,5 +31,7 @@ namespace Frost
         float _fixedUpdateTimes[FRAME_TIME_HISTORY_SIZE] = {};
         int _fixedUpdateTimeHistoryIndex = 0;
         float _maxFixedUpdateTime = 0.0f;
+
+        std::vector<Scene*> _scenes;
     };
 } // namespace Frost

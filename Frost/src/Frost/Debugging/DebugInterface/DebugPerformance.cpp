@@ -1,10 +1,24 @@
 #include "Frost/Debugging/DebugInterface/DebugPerformance.h"
+#include "Frost/Asset/AssetManager.h"
 
 #include <imgui.h>
 #include <string>
 
 namespace Frost
 {
+    void DebugPerformance::AddScene(Scene* scene)
+    {
+        if (std::find(_scenes.begin(), _scenes.end(), scene) == _scenes.end())
+        {
+            _scenes.push_back(scene);
+        }
+    }
+
+    void DebugPerformance::RemoveScene(Scene* scene)
+    {
+        _scenes.erase(std::remove(_scenes.begin(), _scenes.end(), scene), _scenes.end());
+    }
+
     void DebugPerformance::OnImGuiRender(float deltaTime)
     {
         if (ImGui::CollapsingHeader("Performance"))
@@ -14,6 +28,16 @@ namespace Frost
             float fps = (currentFrameTime > 0.0f) ? (1000.0f / currentFrameTime) : 0.0f;
 
             ImGui::Text("Frame Time (Total): %.2f ms (FPS: %.0f)", currentFrameTime, fps);
+
+            size_t totalEntityCount = 0;
+            for (Scene* scene : _scenes)
+            {
+                if (scene)
+                {
+                    totalEntityCount += scene->GetEntityCount();
+                }
+            }
+            ImGui::Text("Total Entities: %zu", totalEntityCount);
 
             float averageFrameTime = 0.0f;
             for (int i = 0; i < FRAME_TIME_HISTORY_SIZE; ++i)
@@ -56,6 +80,15 @@ namespace Frost
                              0.0f,
                              _maxFixedUpdateTime * 1.2f,
                              ImVec2(0, 80.0f));
+
+            ImGui::Separator();
+
+            bool useMulti = AssetManager::GetUseMultiThreading();
+            if (ImGui::Checkbox("AssetManager Multi-Threading", &useMulti))
+            {
+                AssetManager::SetUseMultiThreading(useMulti);
+            }
+            ImGui::Text("Active Loading Threads: %d", AssetManager::GetActiveLoadingThreads());
         }
     }
 

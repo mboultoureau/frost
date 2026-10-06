@@ -7,6 +7,8 @@ namespace Frost
     FROST_API std::mutex AssetManager::_mutex;
     FROST_API std::deque<std::function<void()>> AssetManager::_uploadQueue;
     FROST_API std::mutex AssetManager::_queueMutex;
+    bool AssetManager::_useMultiThreading = true;
+    std::atomic<int> AssetManager::_activeLoadingThreads = 0;
 
     std::shared_ptr<Asset> AssetManager::FindAsset(const Asset::Path& path)
     {
@@ -96,16 +98,25 @@ namespace Frost
             _loadedAssets[path] = texture;
         }
 
-        std::thread(
-            [texture, path, config]() mutable
+        auto loadJob = [texture, path, config]() mutable
+        {
+            _activeLoadingThreads++;
+            texture->LoadCPU(path, config);
             {
-                texture->LoadCPU(path, config);
-                {
-                    std::lock_guard<std::mutex> queueLock(_queueMutex);
-                    _uploadQueue.push_back([texture]() { texture->UploadGPU(); });
-                }
-            })
-            .detach();
+                std::lock_guard<std::mutex> queueLock(_queueMutex);
+                _uploadQueue.push_back([texture]() { texture->UploadGPU(); });
+            }
+            _activeLoadingThreads--;
+        };
+
+        if (_useMultiThreading)
+        {
+            std::thread(loadJob).detach();
+        }
+        else
+        {
+            loadJob();
+        }
 
         auto format = texture->GetFormat();
         FT_INFO("Texture {}", static_cast<int>(format));
