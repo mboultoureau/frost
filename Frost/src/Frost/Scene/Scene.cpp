@@ -9,6 +9,7 @@
 #include "Frost/Scene/Systems/WorldTransformSystem.h"
 #include "Frost/Scene/Systems/BillboardSystem.h"
 #include "Frost/Scene/Serializers/SerializationSystem.h"
+#include "Frost/Scene/Components/StaticMesh.h"
 
 using namespace Frost::Component;
 
@@ -280,5 +281,44 @@ namespace Frost
             auto* childRel = registry.try_get<Relationship>(currentChildHandle);
             currentChildHandle = childRel ? childRel->nextSibling : entt::null;
         }
+    }
+
+    size_t Scene::GetPolygonCount() const
+    {
+        size_t count = 0;
+        auto view = const_cast<entt::registry&>(_registry).view<Component::StaticMesh>();
+        for (auto entity : view)
+        {
+            const auto& staticMesh = view.get<Component::StaticMesh>(entity);
+            if (staticMesh.GetModel() && staticMesh.GetModel()->IsLoaded())
+            {
+                for (const auto& mesh : staticMesh.GetModel()->GetMeshes())
+                {
+                    count += mesh.GetIndexCount() / 3;
+                }
+            }
+        }
+        return count;
+    }
+
+    size_t Scene::GetVertexCount() const
+    {
+        size_t count = 0;
+        auto view = const_cast<entt::registry&>(_registry).view<Component::StaticMesh>();
+        for (auto entity : view)
+        {
+            const auto& staticMesh = view.get<Component::StaticMesh>(entity);
+            if (staticMesh.GetModel() && staticMesh.GetModel()->IsLoaded())
+            {
+                for (const auto& mesh : staticMesh.GetModel()->GetMeshes())
+                {
+                    if (mesh.GetVertexStride() > 0 && mesh.GetVertexBuffer())
+                    {
+                        count += mesh.GetVertexBuffer()->GetSize() / mesh.GetVertexStride();
+                    }
+                }
+            }
+        }
+        return count;
     }
 } // namespace Frost

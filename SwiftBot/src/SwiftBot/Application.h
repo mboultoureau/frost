@@ -24,10 +24,11 @@ namespace Game
 
         std::string _currentLevelPath;
 
-        constexpr static const char* MAIN_MENU_PATH = "assets/Scenes/MainMenu/MainMenu.bin";
-        constexpr static const char* MAIN_SCENE_PATH = "assets/Scenes/Island/Island.bin";
-        constexpr static const char* HUD_SCENE_PATH = "assets/Scenes/HUD/HUD.bin";
-        constexpr static const char* MAIN_MENU_SCENE_PATH = "assets/Scenes/MainMenu/MainMenu.bin";
+        constexpr static const char* MAIN_MENU_PATH = "assets/Scenes/MainMenu/MainMenu.scene";
+        constexpr static const char* MAIN_SCENE_PATH = "assets/Scenes/Island/Island.scene";
+        constexpr static const char* HUD_SCENE_PATH = "assets/Scenes/HUD/HUD.scene";
+        constexpr static const char* MAIN_MENU_SCENE_PATH = "assets/Scenes/MainMenu/MainMenu.scene";
+        constexpr static const char* RAINBOW_ROAD_SCENE_PATH = "assets/Scenes/RainbowRoad/RainbowRoad.scene";
 
         Frost::EventHandlerId _loadLevelEventHandlerId;
         Frost::EventHandlerId _resetEventHandlerId;
