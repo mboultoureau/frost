@@ -34,7 +34,7 @@ namespace Frost
     class FROST_API DebugPerformance : public DebugPanel
     {
     public:
-        DebugPerformance(bool autoBenchmark = true);
+        DebugPerformance(bool autoBenchmark = false);
         virtual ~DebugPerformance() override = default;
         virtual void OnImGuiRender(float deltaTime) override;
         virtual void OnLateUpdate(float deltaTime) override;

@@ -1,4 +1,4 @@
-﻿#include "Frost/Debugging/DebugLayer.h"
+#include "Frost/Debugging/DebugLayer.h"
 
 #include "Frost/Core/Application.h"
 #include "Frost/Core/Windows/WindowWin.h"
@@ -70,8 +70,6 @@ namespace Frost
         {
             _displayDebug = !_displayDebug;
         }
-
-        _displayDebug = true;
 
         if (!_displayDebug)
             return;

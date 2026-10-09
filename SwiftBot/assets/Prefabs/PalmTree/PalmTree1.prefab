@@ -11,18 +11,6 @@ Entities:
   - LocalID: 1
     ParentID: 0
     Meta:
-      Name: Mesh
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [0.01, 0.01, 0.01]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Prefabs/PalmTree/PalmTree1.glb
-  - LocalID: 2
-    ParentID: 0
-    Meta:
       Name: RigidBody
     Transform:
       Position: [0.9885769, 9.841709, 0]
@@ -50,3 +38,15 @@ Entities:
       ShapeParams:
         HalfExtent: [6.1, 10.9, 8.1]
         ConvexRadius: 0.05
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: Mesh
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [0.01, 0.01, 0.01]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/PalmTree/PalmTree1.glb

@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/ContentBrowser/ContentBrowser.h"
+#include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Editor/Utils/FileWatcher.h"
 #include "Editor/UI/ContentBrowser/AssetIconManager.h"
 #include "Editor/UI/ContentBrowser/AssetMetadata.h"
@@ -12,6 +12,9 @@
 #include <imgui.h>
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
 #endif
 #include <Windows.h>
 #include <shellapi.h>

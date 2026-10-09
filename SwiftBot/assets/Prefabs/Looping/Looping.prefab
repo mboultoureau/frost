@@ -33,6 +33,39 @@ Entities:
   - LocalID: 1
     ParentID: 0
     Meta:
+      Name: looping
+    Transform:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    StaticMesh:
+      Type: 0
+      Params:
+        Path: assets/Prefabs/Looping/looping.glb
+    RigidBody:
+      MotionType: 0
+      IsSensor: false
+      AllowSleeping: true
+      Friction: 0.2
+      Restitution: 0
+      LinearDamping: 0.05
+      AngularDamping: 0.05
+      GravityFactor: 1
+      ObjectLayer: 0
+      OverrideMassProperties: 0
+      Mass: 1
+      LockPositionX: false
+      LockPositionY: false
+      LockPositionZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      ShapeType: 4
+      ShapeParams:
+        Path: assets\Prefabs\Looping\looping.glb
+  - LocalID: 2
+    ParentID: 0
+    Meta:
       Name: Light
     Transform:
       Position: [0.3863353, 0.33456117, 0]
@@ -45,7 +78,7 @@ Entities:
       Params:
         Radius: 59.7
         Falloff: 1
-  - LocalID: 2
+  - LocalID: 3
     ParentID: 0
     Meta:
       Name: Collider
@@ -78,7 +111,7 @@ Entities:
     Scriptable:
       Scripts:
         - Antigravity
-  - LocalID: 3
+  - LocalID: 4
     ParentID: 0
     Meta:
       Name: Light
@@ -93,36 +126,3 @@ Entities:
       Params:
         Radius: 59.7
         Falloff: 1
-  - LocalID: 4
-    ParentID: 0
-    Meta:
-      Name: looping
-    Transform:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    StaticMesh:
-      Type: 0
-      Params:
-        Path: assets/Prefabs/Looping/looping.glb
-    RigidBody:
-      MotionType: 0
-      IsSensor: false
-      AllowSleeping: true
-      Friction: 0.2
-      Restitution: 0
-      LinearDamping: 0.05
-      AngularDamping: 0.05
-      GravityFactor: 1
-      ObjectLayer: 0
-      OverrideMassProperties: 0
-      Mass: 1
-      LockPositionX: false
-      LockPositionY: false
-      LockPositionZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      ShapeType: 4
-      ShapeParams:
-        Path: assets\Prefabs\Looping\looping.glb

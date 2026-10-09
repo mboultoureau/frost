@@ -6,6 +6,7 @@
 
 #include <filesystem>
 #include <string>
+#include <set>
 
 namespace Frost
 {

@@ -4,6 +4,12 @@
 #include "Frost/Event/EventManager.h"
 #include "Frost/Event/Events/Window/WindowResizeEvent.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 
 namespace Frost

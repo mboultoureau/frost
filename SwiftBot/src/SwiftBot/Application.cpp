@@ -37,13 +37,7 @@ namespace Game
                 return true;
             });
 
-        std::string scenePath = RAINBOW_ROAD_SCENE_PATH;
-        if (!std::filesystem::exists(scenePath) && std::filesystem::exists("SwiftBot/" + scenePath))
-        {
-            scenePath = "SwiftBot/" + scenePath;
-        }
-
-        LoadLevel(scenePath);
+        ShowMainMenu();
 
         Frost::FT_INFO("Application is ready.");
     }
@@ -67,8 +61,10 @@ namespace Game
 
             _currentLevelPath = resolvedPath;
 
+#ifdef FT_DEBUG
             auto debugLayer = Frost::Application::PushLayer<Frost::DebugLayer>();
             debugLayer->AddScene(levelScene.get());
+#endif
         }
     }
 
@@ -105,8 +101,10 @@ namespace Game
         {
             Frost::Application::PushLayer<Frost::SceneLayer>(mainMenuScene, "MainMenuLayer");
 
+#ifdef FT_DEBUG
             auto* debugLayer = Frost::Application::PushLayer<Frost::DebugLayer>();
             debugLayer->AddScene(mainMenuScene.get());
+#endif
         }
     }
 

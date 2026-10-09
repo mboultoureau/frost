@@ -20,7 +20,7 @@ namespace Frost
         file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%f] [%l] [%n]: %v");
 
         std::vector<spdlog::sink_ptr> engine_sinks = { console_sink, file_sink };
-        std::vector<spdlog::sink_ptr> game_sinks = { console_sink };
+        std::vector<spdlog::sink_ptr> game_sinks = { console_sink, file_sink };
 
         _engineLogger = std::make_shared<spdlog::logger>(ENGINE_LOGGER_NAME, begin(engine_sinks), end(engine_sinks));
         spdlog::register_logger(_engineLogger);

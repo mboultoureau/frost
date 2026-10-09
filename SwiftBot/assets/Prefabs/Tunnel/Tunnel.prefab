@@ -11,6 +11,54 @@ Entities:
   - LocalID: 1
     ParentID: 0
     Meta:
+      Name: Light
+    Transform:
+      Position: [-2.3110073, 2.42, 3.128099]
+      Rotation: [0.70710677, 0, 0, 0.70710677]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 2
+      Color: [0.91150445, 0.85503954, 0.85503954]
+      Intensity: 11.1
+      Params:
+        Range: 22.2
+        InnerAngle: 19.999992
+        OuterAngle: 87.999985
+  - LocalID: 2
+    ParentID: 0
+    Meta:
+      Name: Light
+    Transform:
+      Position: [-2.3110073, 2.42, -4.8108697]
+      Rotation: [0, 0, 0.7071067, 0.7071068]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 2
+      Color: [0.76106197, 0.71391654, 0.71391654]
+      Intensity: 10.5
+      Params:
+        Range: 25.7
+        InnerAngle: 27.999996
+        OuterAngle: 75.5
+  - LocalID: 3
+    ParentID: 0
+    Meta:
+      Name: Light
+    Transform:
+      Position: [-2.3901453, 2.42, -9.191023]
+      Rotation: [0, 0, 0, 1]
+      Scale: [1, 1, 1]
+    Light:
+      Type: 2
+      Color: [0.82300884, 0.7501762, 0.7501762]
+      Intensity: 12.3
+      Params:
+        Range: 23.4
+        InnerAngle: 24.49999
+        OuterAngle: 78.499985
+  - LocalID: 4
+    ParentID: 0
+    Meta:
       Name: TunnelEgout
     Transform:
       Position: [-2.4039917, 2.2161863, -0.18957996]
@@ -41,51 +89,3 @@ Entities:
       ShapeType: 4
       ShapeParams:
         Path: assets\Prefabs\Tunnel\TunnelEgout.glb
-  - LocalID: 2
-    ParentID: 0
-    Meta:
-      Name: Light
-    Transform:
-      Position: [-2.3901453, 2.42, -9.191023]
-      Rotation: [0, 0, 0, 1]
-      Scale: [1, 1, 1]
-    Light:
-      Type: 2
-      Color: [0.82300884, 0.7501762, 0.7501762]
-      Intensity: 12.3
-      Params:
-        Range: 23.4
-        InnerAngle: 24.49999
-        OuterAngle: 78.499985
-  - LocalID: 3
-    ParentID: 0
-    Meta:
-      Name: Light
-    Transform:
-      Position: [-2.3110073, 2.42, -4.8108697]
-      Rotation: [0, 0, 0.7071067, 0.7071068]
-      Scale: [1, 1, 1]
-    Light:
-      Type: 2
-      Color: [0.76106197, 0.71391654, 0.71391654]
-      Intensity: 10.5
-      Params:
-        Range: 25.7
-        InnerAngle: 27.999996
-        OuterAngle: 75.5
-  - LocalID: 4
-    ParentID: 0
-    Meta:
-      Name: Light
-    Transform:
-      Position: [-2.3110073, 2.42, 3.128099]
-      Rotation: [0.70710677, 0, 0, 0.70710677]
-      Scale: [1, 1, 1]
-    Light:
-      Type: 2
-      Color: [0.91150445, 0.85503954, 0.85503954]
-      Intensity: 11.1
-      Params:
-        Range: 22.2
-        InnerAngle: 19.999992
-        OuterAngle: 87.999985
