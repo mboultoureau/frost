@@ -461,3 +461,5 @@ editor_recents.yaml
 *.bin
 *.meta
 .frost/
+projects/
+build/

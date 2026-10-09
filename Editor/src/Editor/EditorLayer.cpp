@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorLayer.h"
+#include "Editor/EditorLayer.h"
 #include "Editor/EditorApp.h"
 #include "Editor/UI/EditorTheme.h"
 #include "Frost/Core/Application.h"
@@ -67,12 +67,14 @@ namespace Editor
         _mainMenuBar = std::make_unique<MainMenuBar>(_projectInfo);
         _contentBrowser = std::make_unique<ContentBrowser>(_projectInfo);
         _statusBar = std::make_unique<StatusBar>();
+        _debugPerformance = std::make_unique<Frost::DebugPerformance>(false);
 
         _SetupScriptingWatcher();
     }
 
     void EditorLayer::OnDetach()
     {
+        _debugPerformance.reset();
         _scriptingWatcher.Stop();
 
         EventManager::Unsubscribe<OpenProjectSettingsEvent>(_openProjectSettingsHandlerId);
@@ -117,6 +119,19 @@ namespace Editor
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
+        if (_debugPerformance)
+        {
+            _debugPerformance->ClearScenes();
+            for (const auto& view : _views)
+            {
+                if (view && view->IsOpen())
+                {
+                    _debugPerformance->AddScene(&view->GetScene());
+                }
+            }
+            _debugPerformance->OnLateUpdate(deltaTime);
+        }
+
         _RenderUI(deltaTime);
 
         ImGui::Render();
@@ -144,6 +159,11 @@ namespace Editor
                 }
                 ++it;
             }
+        }
+
+        if (_debugPerformance)
+        {
+            _debugPerformance->OnFixedUpdate(fixedDeltaTime);
         }
     }
 
@@ -338,6 +358,16 @@ namespace Editor
             ImGui::TextDisabled("No active scene.");
         }
         ImGui::End();
+
+        if (_showPerformanceWindow && _debugPerformance)
+        {
+            ImGui::SetNextWindowSize(ImVec2(450, 520), ImGuiCond_FirstUseEver);
+            if (ImGui::Begin("Performance & Statistics", &_showPerformanceWindow))
+            {
+                _debugPerformance->OnImGuiRender(deltaTime);
+            }
+            ImGui::End();
+        }
     }
 
     bool EditorLayer::_OnOpenProjectSettings(const OpenProjectSettingsEvent& e)

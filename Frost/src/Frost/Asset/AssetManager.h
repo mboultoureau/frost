@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Asset/Asset.h"
 #include "Frost/Asset/Texture.h"
@@ -21,6 +21,11 @@ namespace Frost
         static void Shutdown();
         static void Update();
         static void PruneUnused();
+
+        static void SetUseMultiThreading(bool useMultiThreading);
+        static bool GetUseMultiThreading();
+
+        static int GetActiveLoadingThreads();
 
         template<typename T, typename... Args>
         static std::shared_ptr<T> LoadAsset(const Asset::Path& path, Args&&... args)
@@ -47,29 +52,30 @@ namespace Frost
         static void RegisterAsset(const Asset::Path& path, std::shared_ptr<Asset> asset);
 
         static void AddToUploadQueue(std::function<void()>&& job);
+        static void DispatchLoadJob(std::function<void()> job);
 
         template<typename T, typename... Args>
         static void QueueLoad(const Asset::Path& path, std::shared_ptr<T> asset, Args&&... args)
         {
             RegisterAsset(path, asset);
 
-            std::thread(
-                [asset, path, args...]() mutable
+            auto loadJob = [asset, path, args...]() mutable
+            {
+                try
                 {
-                    try
-                    {
-                        asset->SetStatus(AssetStatus::Loading);
-                        asset->LoadCPU(path, std::forward<Args>(args)...);
+                    asset->SetStatus(AssetStatus::Loading);
+                    asset->LoadCPU(path, std::forward<Args>(args)...);
 
-                        AddToUploadQueue([asset]() { asset->UploadGPU(); });
-                    }
-                    catch (const std::exception& e)
-                    {
-                        asset->SetStatus(AssetStatus::Failed);
-                        FT_ENGINE_ERROR("Async load exception '{}': {}", path, e.what());
-                    }
-                })
-                .detach();
+                    AddToUploadQueue([asset]() { asset->UploadGPU(); });
+                }
+                catch (const std::exception& e)
+                {
+                    asset->SetStatus(AssetStatus::Failed);
+                    FT_ENGINE_ERROR("Async load exception '{}': {}", path, e.what());
+                }
+            };
+
+            DispatchLoadJob(std::move(loadJob));
         }
 
     private:
@@ -80,5 +86,8 @@ namespace Frost
         static std::deque<std::function<void()>> _uploadQueue;
 
         static constexpr int _timeBudget = 5;
+
+        static bool _useMultiThreading;
+        static std::atomic<int> _activeLoadingThreads;
     };
 } // namespace Frost

@@ -1,4 +1,5 @@
 #include "Editor/UI/MainMenuBar.h"
+#include "Editor/EditorLayer.h"
 #include "Frost/Event/EventManager.h"
 #include "Frost/Event/Events/Window/WindowCloseEvent.h"
 #include "Editor/UI/ProjectSettingsWindow.h"
@@ -26,6 +27,7 @@ namespace Editor
         {
             _RenderFileMenu();
             _RenderEditMenu();
+            _RenderViewMenu();
             _RenderBuildMenu();
             _RenderProjectName();
             ImGui::EndMainMenuBar();
@@ -65,6 +67,19 @@ namespace Editor
             if (ImGui::MenuItem("Project Settings..."))
             {
                 EventManager::Emit<OpenProjectSettingsEvent>();
+            }
+            ImGui::EndMenu();
+        }
+    }
+
+    void MainMenuBar::_RenderViewMenu()
+    {
+        if (ImGui::BeginMenu("View"))
+        {
+            bool isPerfOpen = EditorLayer::Get().IsPerformanceWindowOpen();
+            if (ImGui::MenuItem("Performance & Statistics", nullptr, isPerfOpen))
+            {
+                EditorLayer::Get().TogglePerformanceWindow();
             }
             ImGui::EndMenu();
         }

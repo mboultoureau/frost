@@ -39,6 +39,9 @@ namespace Frost
         void SetEditorRenderTarget(std::shared_ptr<Texture> target);
 
         entt::registry& GetRegistry() { return _registry; }
+        size_t GetEntityCount() const { return _registry.storage<entt::entity>()->size(); }
+        size_t GetPolygonCount() const;
+        size_t GetVertexCount() const;
 
         const std::string& GetName() const { return _name; }
         void SetName(const std::string& name) { _name = name; }
