@@ -2,6 +2,12 @@
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/Logger.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <Windows.h>
 #include <WinUser.h>
 #include <cassert>

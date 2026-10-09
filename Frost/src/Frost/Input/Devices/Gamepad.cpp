@@ -1,11 +1,7 @@
 #include "Frost/Input/Devices/Gamepad.h"
 #include "Frost/Event/EventManager.h"
-
-// Fix for Windows macro conflict
-#undef min
-
-#include <Frost/Event/Events/Input/GamepadConnectedEvent.h>
-#include <Frost/Event/Events/Input/GamepadDisconnectedEvent.h>
+#include "Frost/Event/Events/Input/GamepadConnectedEvent.h"
+#include "Frost/Event/Events/Input/GamepadDisconnectedEvent.h"
 #include <algorithm>
 
 namespace Frost

@@ -808,36 +808,54 @@ namespace Frost
                         }
                     }
 
-                    ImGui::PushID((void*)&scriptable);
-                    static int currentItem = 0;
+                    ImGui::PushID(&scriptable);
 
-                    ImGui::BeginDisabled(scriptsToAdd.empty());
+                    static int selectedScriptIndex = 0;
+                    const bool hasScriptsToAdd = !scriptsToAdd.empty();
+
+                    if (selectedScriptIndex >= static_cast<int>(scriptsToAdd.size()))
                     {
-                        auto items_getter = [](void* data, int idx, const char** out_text)
+                        selectedScriptIndex = 0;
+                    }
+
+                    ImGui::BeginDisabled(!hasScriptsToAdd);
+                    {
+                        const char* previewText = hasScriptsToAdd ? scriptsToAdd[selectedScriptIndex].c_str() : "";
+
+                        if (ImGui::BeginCombo("##ScriptToAdd", previewText))
                         {
-                            auto* items = static_cast<std::vector<std::string>*>(data);
-                            *out_text = (*items)[idx].c_str();
-                            return true;
-                        };
-                        ImGui::Combo("##ScriptToAdd", &currentItem, items_getter, &scriptsToAdd, scriptsToAdd.size());
+                            for (size_t i = 0; i < scriptsToAdd.size(); ++i)
+                            {
+                                const bool isSelected = (selectedScriptIndex == static_cast<int>(i));
+
+                                if (ImGui::Selectable(scriptsToAdd[i].c_str(), isSelected))
+                                {
+                                    selectedScriptIndex = static_cast<int>(i);
+                                }
+
+                                if (isSelected)
+                                {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
 
                         ImGui::SameLine();
 
-                        if (ImGui::Button("Add Script"))
+                        if (ImGui::Button("Add Script") && hasScriptsToAdd)
                         {
-                            if (currentItem >= 0 && currentItem < scriptsToAdd.size())
-                            {
-                                scriptable.scriptNames.push_back(scriptsToAdd[currentItem]);
-                                currentItem = 0;
-                            }
+                            scriptable.scriptNames.push_back(scriptsToAdd[selectedScriptIndex]);
+                            selectedScriptIndex = 0;
                         }
                     }
                     ImGui::EndDisabled();
 
-                    if (scriptsToAdd.empty())
+                    if (!hasScriptsToAdd)
                     {
                         ImGui::TextDisabled("No more scripts to add.");
                     }
+
                     ImGui::PopID();
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetItemRectSize().y -
