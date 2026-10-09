@@ -37,7 +37,13 @@ namespace Game
                 return true;
             });
 
-        ShowMainMenu();
+        std::string scenePath = RAINBOW_ROAD_SCENE_PATH;
+        if (!std::filesystem::exists(scenePath) && std::filesystem::exists("SwiftBot/" + scenePath))
+        {
+            scenePath = "SwiftBot/" + scenePath;
+        }
+
+        LoadLevel(scenePath);
 
         Frost::FT_INFO("Application is ready.");
     }
@@ -46,17 +52,24 @@ namespace Game
     {
         _Clean();
 
-        Frost::FT_INFO("Loading level from path: {}", levelPath);
+        std::string resolvedPath = levelPath;
+        if (!std::filesystem::exists(resolvedPath) && std::filesystem::exists("SwiftBot/" + resolvedPath))
+        {
+            resolvedPath = "SwiftBot/" + resolvedPath;
+        }
 
-        std::shared_ptr<Frost::Scene> levelScene = Frost::SceneManager::LoadSceneFromFile(levelPath);
-        Frost::Application::PushLayer<Frost::SceneLayer>(levelScene, "LevelLayer");
+        Frost::FT_INFO("Loading level from path: {}", resolvedPath);
 
-        _currentLevelPath = levelPath;
+        std::shared_ptr<Frost::Scene> levelScene = Frost::SceneManager::LoadSceneFromFile(resolvedPath);
+        if (levelScene)
+        {
+            Frost::Application::PushLayer<Frost::SceneLayer>(levelScene, "LevelLayer");
 
-#ifdef FT_DEBUG
-        auto debugLayer = Frost::Application::PushLayer<Frost::DebugLayer>();
-        debugLayer->AddScene(levelScene.get());
-#endif
+            _currentLevelPath = resolvedPath;
+
+            auto debugLayer = Frost::Application::PushLayer<Frost::DebugLayer>();
+            debugLayer->AddScene(levelScene.get());
+        }
     }
 
     void Application::RestartLevel()
@@ -81,13 +94,20 @@ namespace Game
 
         _Clean();
 
-        std::shared_ptr<Frost::Scene> mainMenuScene = Frost::SceneManager::LoadSceneFromFile(MAIN_MENU_SCENE_PATH);
-        Frost::Application::PushLayer<Frost::SceneLayer>(mainMenuScene, "MainMenuLayer");
+        std::string scenePath = MAIN_MENU_SCENE_PATH;
+        if (!std::filesystem::exists(scenePath) && std::filesystem::exists("SwiftBot/" + scenePath))
+        {
+            scenePath = "SwiftBot/" + scenePath;
+        }
 
-#ifdef FT_DEBUG
-        auto* debugLayer = Frost::Application::PushLayer<Frost::DebugLayer>();
-        debugLayer->AddScene(mainMenuScene.get());
-#endif
+        std::shared_ptr<Frost::Scene> mainMenuScene = Frost::SceneManager::LoadSceneFromFile(scenePath);
+        if (mainMenuScene)
+        {
+            Frost::Application::PushLayer<Frost::SceneLayer>(mainMenuScene, "MainMenuLayer");
+
+            auto* debugLayer = Frost::Application::PushLayer<Frost::DebugLayer>();
+            debugLayer->AddScene(mainMenuScene.get());
+        }
     }
 
     void Application::_Clean()
@@ -105,7 +125,7 @@ Frost::CreateApplication(ApplicationSpecification entryPoint)
     entryPoint.windowHeight = 720;
     entryPoint.iconPath = "assets/icons/game_icon.ico";
     entryPoint.consoleIconPath = "assets/icons/console_icon.ico";
-    entryPoint.scriptPath = "bin/Debug-Windows-x64/SwiftBot/SwiftBotLogic.dll";
+    entryPoint.scriptPath = "SwiftBotLogic.dll";
 
     return new Game::Application(entryPoint);
 }

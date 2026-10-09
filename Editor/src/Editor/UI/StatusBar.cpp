@@ -41,8 +41,16 @@ namespace Editor
 
             ImGui::SameLine();
             float fps = ImGui::GetIO().Framerate;
+            float btnWidth = ImGui::CalcTextSize("Performance & Stats").x + 16.0f;
             float textWidth = ImGui::CalcTextSize("FPS: 999.9").x;
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() - textWidth - 10);
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() - textWidth - btnWidth - 20);
+            if (ImGui::SmallButton("Performance & Stats"))
+            {
+                EditorLayer::Get().TogglePerformanceWindow();
+            }
+            ImGui::SameLine();
+            ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+            ImGui::SameLine();
             ImGui::Text("FPS: %.1f", fps);
         }
         ImGui::End();

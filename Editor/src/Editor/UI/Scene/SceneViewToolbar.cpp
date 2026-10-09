@@ -1,4 +1,5 @@
 #include "Editor/UI/Scene/SceneViewToolbar.h"
+#include "Editor/EditorLayer.h"
 #include "Frost/Asset/AssetManager.h"
 #include "Frost/Debugging/DebugInterface/DebugPhysics.h"
 
@@ -259,6 +260,11 @@ namespace Editor
             ImGui::Separator();
 
             ImGui::Checkbox("Show Physics Debug", &Frost::Debug::PhysicsConfig::IsDisplayEnabled());
+            ImGui::Separator();
+            if (ImGui::MenuItem("Performance & Statistics"))
+            {
+                EditorLayer::Get().TogglePerformanceWindow();
+            }
             // ImGui::Checkbox("Show Grid", &settings.showGrid);
             // ImGui::Checkbox("Wireframe Mode", &settings.showWireframe);
             // ImGui::Checkbox("Enable Lighting", &settings.enableLighting);

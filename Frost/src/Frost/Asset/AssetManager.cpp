@@ -1,4 +1,4 @@
-﻿#include "Frost/Asset/AssetManager.h"
+#include "Frost/Asset/AssetManager.h"
 #include <assimp/texture.h>
 
 namespace Frost
@@ -9,6 +9,40 @@ namespace Frost
     FROST_API std::mutex AssetManager::_queueMutex;
     bool AssetManager::_useMultiThreading = true;
     std::atomic<int> AssetManager::_activeLoadingThreads = 0;
+
+    void AssetManager::SetUseMultiThreading(bool useMultiThreading)
+    {
+        _useMultiThreading = useMultiThreading;
+    }
+
+    bool AssetManager::GetUseMultiThreading()
+    {
+        return _useMultiThreading;
+    }
+
+    int AssetManager::GetActiveLoadingThreads()
+    {
+        return _activeLoadingThreads.load();
+    }
+
+    void AssetManager::DispatchLoadJob(std::function<void()> job)
+    {
+        auto wrappedJob = [job = std::move(job)]()
+        {
+            _activeLoadingThreads++;
+            job();
+            _activeLoadingThreads--;
+        };
+
+        if (_useMultiThreading)
+        {
+            std::thread(std::move(wrappedJob)).detach();
+        }
+        else
+        {
+            wrappedJob();
+        }
+    }
 
     std::shared_ptr<Asset> AssetManager::FindAsset(const Asset::Path& path)
     {

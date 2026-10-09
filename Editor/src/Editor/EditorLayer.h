@@ -14,6 +14,7 @@
 
 #include "Frost/Event/EventManager.h"
 #include "Frost/Scene/Scene.h"
+#include "Frost/Debugging/DebugInterface/DebugPerformance.h"
 
 #include <imgui.h>
 
@@ -38,6 +39,11 @@ namespace Editor
         static EditorLayer& Get();
 
         void TriggerHotReload();
+
+        bool IsPerformanceWindowOpen() const { return _showPerformanceWindow; }
+        void SetPerformanceWindowOpen(bool open) { _showPerformanceWindow = open; }
+        void TogglePerformanceWindow() { _showPerformanceWindow = !_showPerformanceWindow; }
+        Frost::DebugPerformance* GetDebugPerformance() { return _debugPerformance.get(); }
 
     private:
         void _RenderUI(float deltaTime);
@@ -68,5 +74,7 @@ namespace Editor
         ImGuiID _dockRightID = 0;
 
         ScriptingWatcher _scriptingWatcher;
+        std::unique_ptr<Frost::DebugPerformance> _debugPerformance;
+        bool _showPerformanceWindow = false;
     };
 } // namespace Editor

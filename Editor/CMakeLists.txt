@@ -29,6 +29,7 @@ target_link_libraries(Editor PRIVATE
     ImGui
     Jolt
     yaml-cpp
+    stb
 )
 
 if(WIN32)

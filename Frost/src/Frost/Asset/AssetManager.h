@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Asset/Asset.h"
 #include "Frost/Asset/Texture.h"
@@ -22,10 +22,10 @@ namespace Frost
         static void Update();
         static void PruneUnused();
 
-        static void SetUseMultiThreading(bool useMultiThreading) { _useMultiThreading = useMultiThreading; }
-        static bool GetUseMultiThreading() { return _useMultiThreading; }
+        static void SetUseMultiThreading(bool useMultiThreading);
+        static bool GetUseMultiThreading();
 
-        static int GetActiveLoadingThreads() { return _activeLoadingThreads.load(); }
+        static int GetActiveLoadingThreads();
 
         template<typename T, typename... Args>
         static std::shared_ptr<T> LoadAsset(const Asset::Path& path, Args&&... args)
@@ -52,6 +52,7 @@ namespace Frost
         static void RegisterAsset(const Asset::Path& path, std::shared_ptr<Asset> asset);
 
         static void AddToUploadQueue(std::function<void()>&& job);
+        static void DispatchLoadJob(std::function<void()> job);
 
         template<typename T, typename... Args>
         static void QueueLoad(const Asset::Path& path, std::shared_ptr<T> asset, Args&&... args)
@@ -60,7 +61,6 @@ namespace Frost
 
             auto loadJob = [asset, path, args...]() mutable
             {
-                _activeLoadingThreads++;
                 try
                 {
                     asset->SetStatus(AssetStatus::Loading);
@@ -73,17 +73,9 @@ namespace Frost
                     asset->SetStatus(AssetStatus::Failed);
                     FT_ENGINE_ERROR("Async load exception '{}': {}", path, e.what());
                 }
-                _activeLoadingThreads--;
             };
 
-            if (_useMultiThreading)
-            {
-                std::thread(loadJob).detach();
-            }
-            else
-            {
-                loadJob();
-            }
+            DispatchLoadJob(std::move(loadJob));
         }
 
     private:

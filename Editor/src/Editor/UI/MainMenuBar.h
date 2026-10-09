@@ -16,6 +16,7 @@ namespace Editor
     private:
         void _RenderFileMenu();
         void _RenderEditMenu();
+        void _RenderViewMenu();
         void _RenderBuildMenu();
 
         void _RenderProjectName();
