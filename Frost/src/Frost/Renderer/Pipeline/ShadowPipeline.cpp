@@ -1,4 +1,4 @@
-﻿#include "ShadowPipeline.h"
+#include "ShadowPipeline.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Format.h"
@@ -835,10 +835,13 @@ namespace Frost
                     _commandList->UnbindShader(ShaderType::Domain);
                     cmd->UnbindShader(ShaderType::Pixel);
                     cmd->SetInputLayout(_shadowInputLayout.get());
-                    cmd->SetRasterizerState(RasterizerMode::SolidCullBack);
 
                     isFirstDraw = false;
                 }
+
+                auto& material = staticMesh.GetModel()->GetMaterials()[mesh.GetMaterialIndex()];
+                cmd->SetRasterizerState(material.backFaceCulling ? RasterizerMode::SolidCullBack
+                                                                 : RasterizerMode::SolidCullNone);
 
                 cmd->SetVertexBuffer(mesh.GetVertexBuffer(), mesh.GetVertexStride(), 0);
                 cmd->SetIndexBuffer(mesh.GetIndexBuffer(), 0);

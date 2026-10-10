@@ -1,4 +1,4 @@
-﻿#include "Frost/Renderer/Pipeline/DeferredRenderingPipeline.h"
+#include "Frost/Renderer/Pipeline/DeferredRenderingPipeline.h"
 #include "Frost/Asset/Model.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/Buffer.h"
@@ -49,6 +49,11 @@ namespace Frost
     {
         Math::Vector2 UVTiling;
         Math::Vector2 UVOffset;
+        Math::Color4 AlbedoFactor;
+        Math::Color4 EmissiveFactor;
+        float MetallicFactor;
+        float RoughnessFactor;
+        float Padding[2];
     };
 
     DeferredRenderingPipeline::DeferredRenderingPipeline()
@@ -207,7 +212,7 @@ namespace Frost
         _defaultNormalTexture =
             std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, flatNormalPixel, "DefaultNormalTexture");
 
-        uint8_t defaultMetallicPixel[4] = { 0, 255, 255, 255 };
+        uint8_t defaultMetallicPixel[4] = { 255, 255, 255, 255 };
         _defaultMetallicTexture =
             std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, defaultMetallicPixel, "DefaultMetallicTexture");
 
@@ -219,9 +224,9 @@ namespace Frost
         _defaultAOTexture =
             std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, defaultAOPixel, "DefaultAOTexture");
 
-        uint8_t blackPixel[4] = { 0, 0, 0, 255 };
+        uint8_t whiteEmissionPixel[4] = { 255, 255, 255, 255 };
         _defaultEmissionTexture =
-            std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, blackPixel, "DefaultEmissionTexture");
+            std::make_unique<TextureDX11>(1, 1, Format::RGBA8_UNORM, whiteEmissionPixel, "DefaultEmissionTexture");
 #endif
     }
 
@@ -466,6 +471,10 @@ namespace Frost
             PS_MaterialConstants psMaterialData;
             psMaterialData.UVTiling = material.uvTiling;
             psMaterialData.UVOffset = material.uvOffset;
+            psMaterialData.AlbedoFactor = material.albedo;
+            psMaterialData.EmissiveFactor = material.emissiveColor;
+            psMaterialData.MetallicFactor = material.metalness;
+            psMaterialData.RoughnessFactor = material.roughness;
             _psMaterialConstants->UpdateData(_commandList.get(), &psMaterialData, sizeof(PS_MaterialConstants));
             _commandList->SetConstantBuffer(_psMaterialConstants.get(), 2);
 

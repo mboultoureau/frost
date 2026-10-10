@@ -1,4 +1,4 @@
-﻿#include "Frost/Asset/Model.h"
+#include "Frost/Asset/Model.h"
 #include "Frost/Asset/AssetManager.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/Logger.h"
@@ -157,6 +157,31 @@ namespace Frost
             LoadMaterialTextures(scene, ai_material, aiTextureType_AMBIENT_OCCLUSION, material.aoTextures);
             LoadMaterialTextures(scene, ai_material, aiTextureType_EMISSIVE, material.emissiveTextures);
 
+            if (!material.metallicTextures.empty())
+            {
+                float mf = 1.0f;
+                if (ai_material->Get(AI_MATKEY_METALLIC_FACTOR, mf) != AI_SUCCESS)
+                {
+                    material.metalness = 1.0f;
+                }
+            }
+            if (!material.roughnessTextures.empty())
+            {
+                float rf = 1.0f;
+                if (ai_material->Get(AI_MATKEY_ROUGHNESS_FACTOR, rf) != AI_SUCCESS)
+                {
+                    material.roughness = 1.0f;
+                }
+            }
+            if (!material.emissiveTextures.empty())
+            {
+                aiColor3D ec;
+                if (ai_material->Get(AI_MATKEY_COLOR_EMISSIVE, ec) != AI_SUCCESS)
+                {
+                    material.emissiveColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+                }
+            }
+
             _materials.emplace_back(material);
         }
     }
@@ -175,6 +200,12 @@ namespace Frost
             material.albedo = { diffuseColor.r, diffuseColor.g, diffuseColor.b, 1.0f };
         }
 
+        float opacity = 1.0f;
+        if (ai_material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
+        {
+            material.albedo.a = opacity;
+        }
+
         aiColor3D emissiveColor;
         if (ai_material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == AI_SUCCESS)
         {
@@ -191,6 +222,17 @@ namespace Frost
         if (ai_material->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughnessFactor) == AI_SUCCESS)
         {
             material.roughness = roughnessFactor;
+        }
+
+        int twoSidedInt = 0;
+        bool twoSidedBool = false;
+        if (ai_material->Get(AI_MATKEY_TWOSIDED, twoSidedInt) == AI_SUCCESS)
+        {
+            material.backFaceCulling = (twoSidedInt == 0);
+        }
+        else if (ai_material->Get(AI_MATKEY_TWOSIDED, twoSidedBool) == AI_SUCCESS)
+        {
+            material.backFaceCulling = !twoSidedBool;
         }
 
         aiUVTransform uvTransform;

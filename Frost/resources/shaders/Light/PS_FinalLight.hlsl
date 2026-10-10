@@ -17,9 +17,8 @@ float4 main(PS_Input input) : SV_TARGET
     float3 light = LightTexture.Sample(GBufferSampler, input.TexCoord).rgb;
     float3 emission = EmissionTexture.Sample(GBufferSampler, input.TexCoord).rgb;
 
-    float3 finalColor = float3(0.0f, 0.0f, 0.0f);
-    
-    finalColor += (albedo * light) + emission;
+    float3 effectiveAlbedo = max(albedo, 0.06f);
+    float3 finalColor = (effectiveAlbedo * light) + emission;
     
     return float4(finalColor, 1.0f);
 }

@@ -12,6 +12,11 @@ cbuffer MaterialConstants : register(b2)
 {
     float2 UVTiling;
     float2 UVOffset;
+    float4 AlbedoFactor;
+    float4 EmissiveFactor;
+    float MetallicFactor;
+    float RoughnessFactor;
+    float2 Padding;
 };
 
 struct PS_Input
@@ -39,7 +44,7 @@ PS_Output main(PS_Input input)
 
     float2 texCoord = input.TexCoord * UVTiling + UVOffset;
 
-    output.Albedo.rgb = AlbedoMap.Sample(MaterialSampler, texCoord).rgb;
+    output.Albedo.rgb = AlbedoMap.Sample(MaterialSampler, texCoord).rgb * AlbedoFactor.rgb;
     output.Albedo.a = 1.0f;
 
     float3x3 TBN = float3x3(normalize(input.Tangent), normalize(input.Bitangent), normalize(input.Normal));
@@ -50,12 +55,12 @@ PS_Output main(PS_Input input)
 
     output.WorldPos = float4(input.WorldPos, 1.0f);
 
-    float metalness = MetallicMap.Sample(MaterialSampler, texCoord).b;
-    float roughness = RoughnessMap.Sample(MaterialSampler, texCoord).g;
+    float metalness = MetallicMap.Sample(MaterialSampler, texCoord).b * MetallicFactor;
+    float roughness = RoughnessMap.Sample(MaterialSampler, texCoord).g * RoughnessFactor;
     float ao = AOMap.Sample(MaterialSampler, texCoord).r;
 
     output.Material = float4(metalness, roughness, ao, 1.0f);
-    output.Emission = EmissionMap.Sample(MaterialSampler, texCoord);
+    output.Emission = float4(EmissionMap.Sample(MaterialSampler, texCoord).rgb * EmissiveFactor.rgb, 1.0f);
     
     return output;
 }
