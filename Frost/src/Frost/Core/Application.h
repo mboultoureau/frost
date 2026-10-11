@@ -38,6 +38,8 @@ namespace Frost
         std::filesystem::path iconPath;
         std::filesystem::path consoleIconPath;
         std::filesystem::path scriptPath;
+        uint32_t targetFPS = 0;   // 0 = uncapped
+        uint32_t physicsFPS = 60; // Fixed timestep update frequency in Hz
     };
 
     class FROST_API Application : NoCopy
@@ -62,6 +64,21 @@ namespace Frost
 
         void Reset();
         virtual void OnApplicationReady() {};
+
+        void SetTargetFPS(uint32_t targetFPS);
+        uint32_t GetTargetFPS() const { return _targetFPS; }
+
+        void SetPhysicsFPS(uint32_t physicsFPS);
+        uint32_t GetPhysicsFPS() const { return _physicsFPS; }
+
+        float GetFixedDeltaTime() const { return _fixedDeltaTime; }
+        Timer::Duration GetFixedStepDuration() const { return _fixedStepDuration; }
+
+        void SetMaxPhysicsSubSteps(uint32_t maxSubSteps) { _maxPhysicsSubSteps = maxSubSteps; }
+        uint32_t GetMaxPhysicsSubSteps() const { return _maxPhysicsSubSteps; }
+
+        void SetMaxFrameDuration(Timer::Duration maxDuration) { _maxDuration = maxDuration; }
+        Timer::Duration GetMaxFrameDuration() const { return _maxDuration; }
 
         static Application& Get();
 
@@ -94,8 +111,15 @@ namespace Frost
         Timer _renderTimer;
         Timer _physicsTimer;
 
-        Timer::Duration _renderRefreshDuration = 16ms;
-        Timer::Duration _physicsRefreshDuration = 16ms;
+        uint32_t _targetFPS = 0;
+        uint32_t _physicsFPS = 60;
+        float _fixedDeltaTime = 1.0f / 60.0f;
+        Timer::Duration _fixedStepDuration =
+            std::chrono::duration_cast<Timer::Duration>(std::chrono::duration<double>(1.0 / 60.0));
+        Timer::Duration _targetFrameDuration = Timer::Duration::zero();
+
+        Timer::Duration _maxDuration{ 250ms };
+        uint32_t _maxPhysicsSubSteps = 5;
 
         static Application* _singleton;
 

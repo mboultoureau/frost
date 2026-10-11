@@ -1,4 +1,4 @@
-﻿#include "Frost/Physics/Physics.h"
+#include "Frost/Physics/Physics.h"
 
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
@@ -131,7 +131,7 @@ namespace Frost
 
     void Physics::UpdatePhysics(float fixedDeltaTime)
     {
-        physics_system.Update(1.0f / 60.0f, cCollisionSteps, &temp_allocator, &job_system);
+        physics_system.Update(fixedDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
     }
 
 #ifdef FT_DEBUG

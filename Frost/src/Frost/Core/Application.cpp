@@ -15,6 +15,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <thread>
 
 namespace Frost
 {
@@ -38,6 +39,9 @@ namespace Frost
 #error "Platform not supported!"
 #endif
         _closeEventHandlerId = EventManager::Subscribe<WindowCloseEvent>(FROST_BIND_EVENT_FN(_OnWindowClose));
+
+        SetTargetFPS(entryPoint.targetFPS);
+        SetPhysicsFPS(entryPoint.physicsFPS > 0 ? entryPoint.physicsFPS : 60);
 
         if (!entryPoint.scriptPath.empty())
         {
@@ -104,13 +108,43 @@ namespace Frost
         _physicsConfigured = true;
     }
 
+    void Application::SetTargetFPS(uint32_t targetFPS)
+    {
+        _targetFPS = targetFPS;
+        if (_targetFPS > 0)
+        {
+            _targetFrameDuration = std::chrono::duration_cast<Timer::Duration>(
+                std::chrono::duration<double>(1.0 / static_cast<double>(_targetFPS)));
+        }
+        else
+        {
+            _targetFrameDuration = Timer::Duration::zero();
+        }
+    }
+
+    void Application::SetPhysicsFPS(uint32_t physicsFPS)
+    {
+        FT_ENGINE_ASSERT(physicsFPS > 0, "Physics FPS must be greater than zero!");
+        _physicsFPS = physicsFPS;
+        _fixedDeltaTime = 1.0f / static_cast<float>(_physicsFPS);
+        _fixedStepDuration = std::chrono::duration_cast<Timer::Duration>(
+            std::chrono::duration<double>(1.0 / static_cast<double>(_physicsFPS)));
+    }
+
     void Application::Run()
     {
         _renderTimer.Start();
         _physicsTimer.Start();
 
+        Timer::Duration accumulator = Timer::Duration::zero();
+
         while (_running)
         {
+            Timer frameTimer;
+            frameTimer.Start();
+
+            _window->MainLoop();
+
             Input::Update();
             EventManager::ProcessEvents();
 
@@ -119,43 +153,74 @@ namespace Frost
                 break;
             }
 
-            Timer::Duration _physicsDuration = _physicsTimer.GetDuration();
-            if (_physicsDuration >= _physicsRefreshDuration)
+            Timer::Duration elapsed = _physicsTimer.GetDuration();
+            _physicsTimer.Start();
+
+            if (elapsed > _maxDuration)
             {
-                _physicsTimer.Start();
-                _window->MainLoop();
-
-                for (const auto& layer : _layerStack)
-                {
-                    float fixedDeltaTime =
-                        std::chrono::duration<float, std::chrono::seconds::period>(_physicsDuration).count();
-
-                    if (!layer->isPaused())
-                    {
-                        layer->OnPreFixedUpdate(fixedDeltaTime);
-                        layer->OnFixedUpdate(fixedDeltaTime);
-                    }
-                }
+                elapsed = _maxDuration;
             }
 
-            Timer::Duration _renderDuration = _renderTimer.GetDuration();
-            if (_renderDuration >= _renderRefreshDuration)
-            {
-                _renderTimer.Start();
-                AssetManager::Update();
-                RendererAPI::BeginFrame();
+            accumulator += elapsed;
 
+            uint32_t subSteps = 0;
+            while (accumulator >= _fixedStepDuration && subSteps < _maxPhysicsSubSteps)
+            {
                 for (const auto& layer : _layerStack)
                 {
-                    float deltaTime =
-                        std::chrono::duration<float, std::chrono::seconds::period>(_renderDuration).count();
-
-                    layer->OnUpdate(deltaTime);
-                    layer->OnLateUpdate(deltaTime);
+                    if (!layer->isPaused())
+                    {
+                        layer->OnPreFixedUpdate(_fixedDeltaTime);
+                        layer->OnFixedUpdate(_fixedDeltaTime);
+                    }
                 }
+                accumulator -= _fixedStepDuration;
+                ++subSteps;
+            }
 
-                RendererAPI::EndFrame();
-                Input::Reset();
+            if (subSteps >= _maxPhysicsSubSteps)
+            {
+                accumulator = Timer::Duration::zero();
+            }
+
+            Timer::Duration renderDuration = _renderTimer.GetDuration();
+            _renderTimer.Start();
+
+            AssetManager::Update();
+            RendererAPI::BeginFrame();
+
+            float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(renderDuration).count();
+
+            constexpr float maxDeltaTime = 0.25f;
+            if (deltaTime > maxDeltaTime)
+            {
+                deltaTime = maxDeltaTime;
+            }
+
+            for (const auto& layer : _layerStack)
+            {
+                layer->OnUpdate(deltaTime);
+                layer->OnLateUpdate(deltaTime);
+            }
+
+            RendererAPI::EndFrame();
+            Input::Reset();
+
+            // Handle frame rate limiter and idle sleeping
+            Window* window = Application::GetWindow();
+            bool isMinimized = window && (window->GetWidth() == 0 || window->GetHeight() == 0);
+
+            if (isMinimized)
+            {
+                std::this_thread::sleep_for(16ms);
+            }
+            else if (_targetFPS > 0)
+            {
+                Timer::Duration frameElapsed = frameTimer.GetDuration();
+                if (frameElapsed < _targetFrameDuration)
+                {
+                    std::this_thread::sleep_for(_targetFrameDuration - frameElapsed);
+                }
             }
         }
     }
