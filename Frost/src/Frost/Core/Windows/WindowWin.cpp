@@ -1,4 +1,4 @@
-﻿#include "Frost/Core/Windows/WindowWin.h"
+#include "Frost/Core/Windows/WindowWin.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Event/EventManager.h"
@@ -11,6 +11,8 @@
 #include "imgui_impl_win32.h"
 
 #include <iostream>
+#include <timeapi.h>
+#pragma comment(lib, "winmm.lib")
 
 extern IMGUI_IMPL_API LRESULT
 ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -50,6 +52,9 @@ namespace Frost
 
     WindowWin::WindowWin(const ApplicationSpecification& spec) : Window(spec)
     {
+        // Request 1 ms timer to prevent Windows scheduler to oversleep.
+        timeBeginPeriod(1);
+
         _width = spec.windowWidth;
         _height = spec.windowHeight;
 
@@ -149,6 +154,7 @@ namespace Frost
     WindowWin::~WindowWin()
     {
         EventManager::Unsubscribe<WindowResizeEvent>(_resizeEventHandlerId);
+        timeEndPeriod(1);
     }
 
     void WindowWin::SetFullscreen(const bool isFullscreen)

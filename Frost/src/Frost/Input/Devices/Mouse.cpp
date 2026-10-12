@@ -150,7 +150,6 @@ namespace Frost
     void Mouse::Update()
     {
         _UpdatePosition();
-        _ResetScroll();
     }
 
     void Mouse::_UpdatePosition()
@@ -218,5 +217,6 @@ namespace Frost
     void Mouse::Reset()
     {
         _UpdateButtonStates();
+        _ResetScroll();
     }
 } // namespace Frost
