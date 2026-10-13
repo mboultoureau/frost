@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Core/Core.h"
 #include "Frost/Renderer/Pipeline.h"
@@ -41,7 +41,7 @@ namespace Frost
                         const Math::Matrix4x4& viewMatrix,
                         const Math::Matrix4x4& projectionMatrix,
                         const Viewport& viewport);
-        void SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix);
+        void SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix, const Frustum* frustum = nullptr);
         /* void EndFrame(const Component::Camera& camera,
                       const Component::WorldTransform& cameraTransform,
                       const std::vector<std::pair<Component::Light, Component::WorldTransform>>& lights,
