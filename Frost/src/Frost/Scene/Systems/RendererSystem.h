@@ -49,7 +49,6 @@ namespace Frost
                                   const Component::Camera& camera,
                                   float deltaTime);
 
-        bool _IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix);
         std::shared_ptr<Texture> _GetOrCreateEnvironmentTexture(const Component::EnvironmentMap& envMap);
 
     private:

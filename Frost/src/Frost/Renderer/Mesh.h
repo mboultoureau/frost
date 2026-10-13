@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Renderer/BoundingBox.h"
 #include "Frost/Renderer/Buffer.h"
@@ -26,8 +26,6 @@ namespace Frost
 
         void SetMaterialIndex(uint32_t index) { _materialIndex = index; }
         BoundingBox GetBoundingBox() const { return _boundingBox; }
-
-        bool enabled = true;
 
     private:
         std::shared_ptr<Buffer> _vertexBuffer;

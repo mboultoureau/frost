@@ -1,4 +1,4 @@
-﻿#include "Frost/Scene/Systems/RendererSystem.h"
+#include "Frost/Scene/Systems/RendererSystem.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Debugging/DebugInterface/DebugRendering.h"
 #include "Frost/Debugging/DebugInterface/DebugPhysics.h"
@@ -229,10 +229,8 @@ namespace Frost
                         if (staticMesh.GetModel())
                         {
                             Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                            if (!camera.frustumCulling || _IsVisible(staticMesh, worldMatrix))
-                            {
-                                _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
-                            }
+                            const Frustum* frustum = camera.frustumCulling ? &_frustum : nullptr;
+                            _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix, frustum);
                         }
                     });
 
@@ -362,25 +360,6 @@ namespace Frost
         std::shared_ptr<Texture> newTexture = Texture::Create(textureConfig);
         _skyboxTextureCache[cacheKey] = newTexture;
         return newTexture;
-    }
-
-    bool RendererSystem::_IsVisible(const Component::StaticMesh& staticMesh, const Math::Matrix4x4& worldMatrix)
-    {
-        bool renderModel = false;
-        DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
-
-        for (auto& mesh : staticMesh.GetModel()->GetMeshes())
-        {
-            BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
-            bool renderMesh = _frustum.IsInside(worldBox);
-            if (renderMesh)
-            {
-                renderModel = true;
-            }
-
-            mesh.enabled = renderMesh;
-        }
-        return renderModel;
     }
 
     void RendererSystem::_ApplyPostProcessing(CommandList* commandList,
@@ -536,7 +515,8 @@ namespace Frost
                 if (staticMesh.GetModel())
                 {
                     Math::Matrix4x4 worldMatrix = Math::GetTransformMatrix(meshTransform);
-                    _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix);
+                    const Frustum* frustum = camera.frustumCulling ? &localFrustum : nullptr;
+                    _deferredRendering.SubmitModel(*staticMesh.GetModel(), worldMatrix, frustum);
                 }
             });
 

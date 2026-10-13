@@ -385,29 +385,37 @@ namespace Frost
         _commandList->SetConstantBuffer(_vsPerFrameConstants.get(), 0);
     }
 
-    void DeferredRenderingPipeline::SubmitModel(const Model& model, const Math::Matrix4x4& worldMatrix)
+    void DeferredRenderingPipeline::SubmitModel(const Model& model,
+                                                const Math::Matrix4x4& worldMatrix,
+                                                const Frustum* frustum)
     {
         if (!model.IsLoaded())
             return;
 
-        VS_PerObjectConstants vsPerObjectData;
-        vsPerObjectData.World = Math::Matrix4x4::CreateTranspose(worldMatrix);
-        _vsPerObjectConstants->UpdateData(_commandList.get(), &vsPerObjectData, sizeof(VS_PerObjectConstants));
-        _commandList->SetConstantBuffer(_vsPerObjectConstants.get(), 1);
-
-        _commandList->SetSampler(_materialSampler.get(), 0);
-
-        _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-
-        Frustum frustum{};
+        bool isFirstDraw = true;
         DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
 
         for (const auto& mesh : model.GetMeshes())
         {
-            BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
-            if (!frustum.IsInside(worldBox))
+            if (frustum)
             {
-                continue;
+                BoundingBox worldBox = BoundingBox::TransformAABB(mesh.GetBoundingBox(), matWorld);
+                if (!frustum->IsInside(worldBox))
+                {
+                    continue;
+                }
+            }
+
+            if (isFirstDraw)
+            {
+                VS_PerObjectConstants vsPerObjectData;
+                vsPerObjectData.World = Math::Matrix4x4::CreateTranspose(worldMatrix);
+                _vsPerObjectConstants->UpdateData(_commandList.get(), &vsPerObjectData, sizeof(VS_PerObjectConstants));
+                _commandList->SetConstantBuffer(_vsPerObjectConstants.get(), 1);
+
+                _commandList->SetSampler(_materialSampler.get(), 0);
+
+                isFirstDraw = false;
             }
 
             auto& material = model.GetMaterials()[mesh.GetMaterialIndex()];
