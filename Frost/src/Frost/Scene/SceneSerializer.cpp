@@ -1,4 +1,4 @@
-﻿#include "Frost/Scene/SceneSerializer.h"
+#include "Frost/Scene/SceneSerializer.h"
 #include "Frost/Scene/Serializers/SerializationSystem.h"
 #include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Utils/SerializerUtils.h"
@@ -259,6 +259,11 @@ namespace Frost
                                    assetPath.string());
                 }
             }
+        }
+
+        if (auto* scriptSystem = m_Scene->GetSystem<ScriptableSystem>())
+        {
+            scriptSystem->OnScriptsReloaded();
         }
 
         return true;

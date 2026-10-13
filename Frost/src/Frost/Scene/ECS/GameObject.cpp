@@ -2,6 +2,7 @@
 #include "Frost/Debugging/Logger.h"
 #include "Frost/Scene/Components/Disabled.h"
 #include "Frost/Scene/Components/Relationship.h"
+#include "Frost/Scene/Components/Transform.h"
 #include "Frost/Scene/Components/Scriptable.h"
 #include "Frost/Scene/Components/Meta.h"
 #include "Frost/Scene/Scene.h"
@@ -131,6 +132,11 @@ namespace Frost
         if (parentHandle != entt::null)
         {
             AttachToParent(*_registry, _entityHandle, parentHandle);
+        }
+
+        if (auto* transform = _registry->try_get<Component::Transform>(_entityHandle))
+        {
+            transform->isDirty = true;
         }
     }
 

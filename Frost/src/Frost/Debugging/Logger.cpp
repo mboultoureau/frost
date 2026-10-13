@@ -16,11 +16,19 @@ namespace Frost
         auto console_sink = std::make_shared<spdlog::sinks::wincolor_stdout_sink_mt>();
         console_sink->set_pattern("%^[%H:%M:%S.%e] [%n]: %v%$");
 
-        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(LOG_FILE_NAME, true);
-        file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%f] [%l] [%n]: %v");
+        std::vector<spdlog::sink_ptr> engine_sinks = { console_sink };
+        std::vector<spdlog::sink_ptr> game_sinks = { console_sink };
 
-        std::vector<spdlog::sink_ptr> engine_sinks = { console_sink, file_sink };
-        std::vector<spdlog::sink_ptr> game_sinks = { console_sink, file_sink };
+        try
+        {
+            auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(LOG_FILE_NAME, true);
+            file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%f] [%l] [%n]: %v");
+            engine_sinks.push_back(file_sink);
+            game_sinks.push_back(file_sink);
+        }
+        catch (...)
+        {
+        }
 
         _engineLogger = std::make_shared<spdlog::logger>(ENGINE_LOGGER_NAME, begin(engine_sinks), end(engine_sinks));
         spdlog::register_logger(_engineLogger);

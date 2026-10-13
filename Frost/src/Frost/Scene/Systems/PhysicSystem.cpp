@@ -1,4 +1,5 @@
 #include "Frost/Scene/Systems/PhysicSystem.h"
+#include "Frost/Scene/Systems/WorldTransformSystem.h"
 #include "Frost/Scene/Components/RigidBody.h"
 #include "Frost/Scene/Components/Relationship.h"
 #include "Frost/Physics/Physics.h"
@@ -235,6 +236,11 @@ namespace Frost
             _DestroyBodyForEntity(scene, entity.GetHandle());
         }
 
+        if (auto* wts = scene.GetSystem<WorldTransformSystem>())
+        {
+            wts->SynchronizeWorldTransforms(scene);
+        }
+
         _CreateBodyForEntity(scene, entity.GetHandle());
 
         /*
@@ -401,12 +407,14 @@ namespace Frost
 
                         localTransform.position = newLocalPosition;
                         localTransform.rotation = newLocalRotation;
+                        localTransform.isDirty = true;
                     }
                 }
                 else
                 {
                     localTransform.position = newWorldPosition;
                     localTransform.rotation = newWorldRotation;
+                    localTransform.isDirty = true;
                 }
             });
     }
