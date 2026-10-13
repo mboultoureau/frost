@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/Scene/Gizmo.h"
+#include "Editor/UI/Scene/Gizmo.h"
 #include "Frost/Input/Input.h"
 #include "Frost/Utils/Math/Intersection.h"
 #include "Frost/Utils/Math/Transform.h"
@@ -463,6 +463,8 @@ namespace Editor
                             currentTransform.scale.y = std::max(currentTransform.scale.y, 0.001f);
                             currentTransform.scale.z = std::max(currentTransform.scale.z, 0.001f);
                         }
+
+                        currentTransform.isDirty = true;
 
                         if (auto* physicSystem = _scene->GetSystem<PhysicSystem>())
                         {

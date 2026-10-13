@@ -13,6 +13,21 @@ namespace Frost
 
     void WorldTransformSystem::PreFixedUpdate(Scene& scene, float deltaTime)
     {
+        SynchronizeWorldTransforms(scene);
+    }
+
+    void WorldTransformSystem::Update(Scene& scene, float deltaTime)
+    {
+        SynchronizeWorldTransforms(scene);
+    }
+
+    void WorldTransformSystem::LateUpdate(Scene& scene, float deltaTime)
+    {
+        SynchronizeWorldTransforms(scene);
+    }
+
+    void WorldTransformSystem::SynchronizeWorldTransforms(Scene& scene)
+    {
         auto& registry = scene.GetRegistry();
         auto view = scene.ViewActive<Transform, WorldTransform, Relationship>();
 
@@ -25,17 +40,30 @@ namespace Frost
             {
                 if (relationship.parent == entt::null)
                 {
-                    _UpdateHierarchy(registry, entity, rootPos, rootRot, rootScale);
+                    _UpdateHierarchy(registry, entity, rootPos, rootRot, rootScale, false);
                 }
             });
 
         auto flatView = registry.view<Transform, WorldTransform>(entt::exclude<Relationship>);
         flatView.each(
-            [&](const Transform& local, WorldTransform& world)
+            [&](Transform& local, WorldTransform& world)
             {
-                world.position = local.position;
-                world.rotation = local.rotation;
-                world.scale = local.scale;
+                bool localDirty = local.isDirty || (local.position != world._lastLocalPosition) ||
+                                  (local.rotation != world._lastLocalRotation) ||
+                                  (local.scale != world._lastLocalScale);
+
+                if (localDirty)
+                {
+                    world.position = local.position;
+                    world.rotation = local.rotation;
+                    world.scale = local.scale;
+
+                    world._lastLocalPosition = local.position;
+                    world._lastLocalRotation = local.rotation;
+                    world._lastLocalScale = local.scale;
+
+                    local.isDirty = false;
+                }
             });
     }
 
@@ -43,7 +71,8 @@ namespace Frost
                                                 entt::entity entity,
                                                 DirectX::XMVECTOR parentPosition,
                                                 DirectX::XMVECTOR parentRotation,
-                                                DirectX::XMVECTOR parentScale)
+                                                DirectX::XMVECTOR parentScale,
+                                                bool parentChanged)
     {
         auto* localTransform = registry.try_get<Transform>(entity);
         auto* worldTransform = registry.try_get<WorldTransform>(entity);
@@ -52,22 +81,59 @@ namespace Frost
         if (!localTransform || !worldTransform)
             return;
 
+        bool localDirty = localTransform->isDirty || (localTransform->position != worldTransform->_lastLocalPosition) ||
+                          (localTransform->rotation != worldTransform->_lastLocalRotation) ||
+                          (localTransform->scale != worldTransform->_lastLocalScale);
+
+        bool transformChanged = parentChanged || localDirty;
+
         using namespace DirectX;
 
-        XMVECTOR localPosition = Math::vector_cast<XMVECTOR>(localTransform->position);
-        XMVECTOR localRotation = Math::vector_cast<XMVECTOR>(localTransform->rotation);
-        XMVECTOR localScale = Math::vector_cast<XMVECTOR>(localTransform->scale);
+        XMVECTOR newWorldPosition;
+        XMVECTOR newWorldRotation;
+        XMVECTOR newWorldScale;
 
-        XMVECTOR newWorldScale = XMVectorMultiply(parentScale, localScale);
-        XMVECTOR newWorldRotation = XMQuaternionMultiply(localRotation, parentRotation);
+        if (transformChanged)
+        {
+            if (relationship && relationship->parent == entt::null)
+            {
+                worldTransform->position = localTransform->position;
+                worldTransform->rotation = localTransform->rotation;
+                worldTransform->scale = localTransform->scale;
 
-        XMVECTOR scaledLocalPosition = XMVectorMultiply(localPosition, parentScale);
-        XMVECTOR rotatedLocalPosition = XMVector3Rotate(scaledLocalPosition, parentRotation);
-        XMVECTOR newWorldPosition = XMVectorAdd(parentPosition, rotatedLocalPosition);
+                newWorldPosition = Math::vector_cast<XMVECTOR>(worldTransform->position);
+                newWorldRotation = Math::vector_cast<XMVECTOR>(worldTransform->rotation);
+                newWorldScale = Math::vector_cast<XMVECTOR>(worldTransform->scale);
+            }
+            else
+            {
+                XMVECTOR localPosition = Math::vector_cast<XMVECTOR>(localTransform->position);
+                XMVECTOR localRotation = Math::vector_cast<XMVECTOR>(localTransform->rotation);
+                XMVECTOR localScale = Math::vector_cast<XMVECTOR>(localTransform->scale);
 
-        worldTransform->position = Math::vector_cast<Math::Vector3>(newWorldPosition);
-        worldTransform->rotation = Math::vector_cast<Math::Vector4>(newWorldRotation);
-        worldTransform->scale = Math::vector_cast<Math::Vector3>(newWorldScale);
+                newWorldScale = XMVectorMultiply(parentScale, localScale);
+                newWorldRotation = XMQuaternionMultiply(localRotation, parentRotation);
+
+                XMVECTOR scaledLocalPosition = XMVectorMultiply(localPosition, parentScale);
+                XMVECTOR rotatedLocalPosition = XMVector3Rotate(scaledLocalPosition, parentRotation);
+                newWorldPosition = XMVectorAdd(parentPosition, rotatedLocalPosition);
+
+                worldTransform->position = Math::vector_cast<Math::Vector3>(newWorldPosition);
+                worldTransform->rotation = Math::vector_cast<Math::Vector4>(newWorldRotation);
+                worldTransform->scale = Math::vector_cast<Math::Vector3>(newWorldScale);
+            }
+
+            worldTransform->_lastLocalPosition = localTransform->position;
+            worldTransform->_lastLocalRotation = localTransform->rotation;
+            worldTransform->_lastLocalScale = localTransform->scale;
+            localTransform->isDirty = false;
+        }
+        else
+        {
+            newWorldPosition = Math::vector_cast<XMVECTOR>(worldTransform->position);
+            newWorldRotation = Math::vector_cast<XMVECTOR>(worldTransform->rotation);
+            newWorldScale = Math::vector_cast<XMVECTOR>(worldTransform->scale);
+        }
 
         if (relationship && relationship->firstChild != entt::null)
         {
@@ -75,7 +141,8 @@ namespace Frost
             while (currentChild != entt::null)
             {
                 // Update children
-                _UpdateHierarchy(registry, currentChild, newWorldPosition, newWorldRotation, newWorldScale);
+                _UpdateHierarchy(
+                    registry, currentChild, newWorldPosition, newWorldRotation, newWorldScale, transformChanged);
 
                 // Update sibling
                 auto& childRel = registry.get<Relationship>(currentChild);

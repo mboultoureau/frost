@@ -21,7 +21,13 @@ namespace Frost
 {
     void _CreateConsoleWindow(const ApplicationSpecification& spec)
     {
-        FT_ENGINE_ASSERT(AllocConsole(), "Can't allocate new console");
+        if (GetConsoleWindow() == NULL)
+        {
+            if (!AllocConsole())
+            {
+                return;
+            }
+        }
         FILE* consoleStdout = nullptr;
         FILE* consoleStderr = nullptr;
 

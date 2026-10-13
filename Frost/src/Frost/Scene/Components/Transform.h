@@ -14,24 +14,61 @@ namespace Frost::Component
         Math::Vector3 position;
         Math::Vector4 rotation;
         Math::Vector3 scale;
+        bool isDirty = true;
 
-        Transform() noexcept : position(0.0f, 0.0f, 0.0f), rotation(0.0f, 0.0f, 0.0f, 1.0f), scale(1.0f, 1.0f, 1.0f) {}
+        Transform() noexcept :
+            position(0.0f, 0.0f, 0.0f), rotation(0.0f, 0.0f, 0.0f, 1.0f), scale(1.0f, 1.0f, 1.0f), isDirty(true)
+        {
+        }
 
         Transform(const Math::Vector3& pos, const Math::Vector4& rot, const Math::Vector3& scl) noexcept :
-            position(pos), rotation(rot), scale(scl)
+            position(pos), rotation(rot), scale(scl), isDirty(true)
         {
         }
 
         Transform(const Math::Vector3& pos) noexcept :
-            position(pos), rotation(0.0f, 0.0f, 0.0f, 1.0f), scale(1.0f, 1.0f, 1.0f)
+            position(pos), rotation(0.0f, 0.0f, 0.0f, 1.0f), scale(1.0f, 1.0f, 1.0f), isDirty(true)
         {
         }
 
         Transform(const Math::Vector3& pos, const Math::EulerAngles& angles, const Math::Vector3& scl) noexcept :
-            position(pos), scale(scl)
+            position(pos), scale(scl), isDirty(true)
         {
             SetRotation(angles);
         }
+
+        Transform& operator=(const Transform& other) noexcept
+        {
+            if (this != &other)
+            {
+                position = other.position;
+                rotation = other.rotation;
+                scale = other.scale;
+                isDirty = true;
+            }
+            return *this;
+        }
+
+        void SetPosition(const Math::Vector3& pos)
+        {
+            position = pos;
+            isDirty = true;
+        }
+
+        void SetRotation(const Math::Vector4& rot)
+        {
+            rotation = rot;
+            isDirty = true;
+        }
+
+        void SetScale(const Math::Vector3& scl)
+        {
+            scale = scl;
+            isDirty = true;
+        }
+
+        void SetDirty(bool dirty = true) { isDirty = dirty; }
+        bool IsDirty() const { return isDirty; }
 
         void SetRotation(const Math::EulerAngles& eulerAngles)
         {
@@ -39,6 +76,7 @@ namespace Frost::Component
             XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(
                 eulerAngles.Pitch.value(), eulerAngles.Yaw.value(), eulerAngles.Roll.value());
             rotation = Math::vector_cast<Math::Vector4>(quaternion);
+            isDirty = true;
         }
 
         void Rotate(const Math::EulerAngles& eulerAngles)
@@ -50,6 +88,7 @@ namespace Frost::Component
 
             XMVECTOR newRotation = XMQuaternionMultiply(deltaRotation, currentRotation);
             rotation = Math::vector_cast<Math::Vector4>(newRotation);
+            isDirty = true;
         }
 
         Math::EulerAngles GetEulerAngles() const { return Math::QuaternionToEulerAngles(rotation); }
@@ -120,6 +159,7 @@ namespace Frost::Component
 
             XMVECTOR quaternion = XMQuaternionRotationMatrix(worldMatrix);
             rotation = Math::vector_cast<Math::Vector4>(quaternion);
+            isDirty = true;
         }
     };
 } // namespace Frost::Component

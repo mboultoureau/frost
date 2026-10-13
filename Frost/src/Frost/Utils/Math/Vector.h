@@ -576,4 +576,34 @@ namespace Frost::Math
     {
         return { lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z };
     }
+
+    constexpr bool operator==(const Vector2& lhs, const Vector2& rhs) noexcept
+    {
+        return lhs.x == rhs.x && lhs.y == rhs.y;
+    }
+
+    constexpr bool operator!=(const Vector2& lhs, const Vector2& rhs) noexcept
+    {
+        return !(lhs == rhs);
+    }
+
+    constexpr bool operator==(const Vector3& lhs, const Vector3& rhs) noexcept
+    {
+        return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+    }
+
+    constexpr bool operator!=(const Vector3& lhs, const Vector3& rhs) noexcept
+    {
+        return !(lhs == rhs);
+    }
+
+    constexpr bool operator==(const Vector4& lhs, const Vector4& rhs) noexcept
+    {
+        return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
+    }
+
+    constexpr bool operator!=(const Vector4& lhs, const Vector4& rhs) noexcept
+    {
+        return !(lhs == rhs);
+    }
 } // namespace Frost::Math
