@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Asset/Asset.h"
 #include "Frost/Core/Core.h"
@@ -26,7 +26,10 @@ namespace Frost
         Model(const std::string& filepath);
 
         void LoadCPU(const std::string& filepath);
-        void UploadGPU();
+        virtual void UploadGPU() override;
+        virtual bool UploadGPUChunk() override;
+        bool UploadGPUChunk(size_t maxMeshes, uint32_t maxTimeMs);
+        virtual void Cancel() override;
 
         const std::string& GetFilepath() const { return _filepath; }
         const std::vector<Mesh>& GetMeshes() const { return _meshes; }
@@ -58,6 +61,7 @@ namespace Frost
             std::vector<Vertex> vertices;
             std::vector<uint32_t> indices;
             uint32_t materialIndex;
+            BoundingBox boundingBox;
         };
 
         std::string _filepath;
@@ -65,5 +69,6 @@ namespace Frost
         std::vector<Mesh> _meshes;
         std::vector<Material> _materials;
         std::vector<CpuMeshData> _cpuMeshes;
+        size_t _uploadedMeshIndex = 0;
     };
 } // namespace Frost

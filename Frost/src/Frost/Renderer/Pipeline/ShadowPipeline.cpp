@@ -226,6 +226,8 @@ namespace Frost
 
     void ShadowPipeline::Shutdown()
     {
+        _currentWidth = 0;
+        _currentHeight = 0;
         _vsShadowConstants.reset();
         _lightPassBuffer.reset();
         _shadowSampler.reset();
@@ -270,6 +272,9 @@ namespace Frost
 
     void ShadowPipeline::CreateTextures(uint32_t width, uint32_t height)
     {
+        if (width == 0 || height == 0)
+            return;
+
         for_each(
             _shadowMaps.begin(), _shadowMaps.end(), [](auto& shadowPair) { shadowPair.second.shadowTexture.reset(); });
 
@@ -305,7 +310,8 @@ namespace Frost
         if (width == 0 || height == 0)
             return;
 
-        if (_currentWidth != width || _currentHeight != height)
+        if (_currentWidth != width || _currentHeight != height || !_luminanceTexture1 || !_luminanceTexture2 ||
+            !_finalLitTexture || !_vsShadowConstants || !_lightPassBuffer)
         {
             _currentWidth = width;
             _currentHeight = height;
@@ -383,6 +389,9 @@ namespace Frost
                                     const Component::WorldTransform& cameraTransform,
                                     const Viewport& viewport)
     {
+        if (!_commandList || !_scene)
+            return;
+
         _virtualLightPairs.clear();
         int i = 0;
         for (; i < lightPairs.size(); i++)
@@ -444,6 +453,9 @@ namespace Frost
                                    const Component::WorldTransform& cameraTransform,
                                    const Viewport& viewport)
     {
+        if (!_luminanceTexture1 || !_luminanceTexture2 || !_finalLitTexture || !_commandList)
+            return;
+
         InitLightTexture(viewport);
 
         for (int j = 0; j < _virtualLightPairs.size(); j++)
@@ -487,7 +499,8 @@ namespace Frost
                                          const Component::WorldTransform& cameraTransform,
                                          const Viewport& viewport)
     {
-        if (!_currentEnvironmentMap)
+        if (!_currentEnvironmentMap || !_luminanceTexture1 || !_luminanceTexture2 || !_commandList ||
+            !_lightPassBuffer || !_vsShadowConstants)
             return;
 
         bool isEven = (_virtualLightPairs.size() % 2 == 0);
@@ -541,6 +554,9 @@ namespace Frost
 
     void ShadowPipeline::InitLightTexture(const Viewport& viewport)
     {
+        if (!_luminanceTexture1 || !_commandList)
+            return;
+
         Texture* outPtr = _luminanceTexture1.get();
         _commandList->SetRenderTargets(1, &outPtr, nullptr);
 
@@ -562,6 +578,9 @@ namespace Frost
                                           const Component::WorldTransform& cameraTransform,
                                           const Viewport& viewport)
     {
+        if (!_commandList || !_scene)
+            return;
+
         const auto& light = lightObj.light;
         const auto& transform = lightObj.wt;
 
@@ -646,6 +665,9 @@ namespace Frost
                                                      const Component::WorldTransform& cameraTransform,
                                                      const Viewport& viewport)
     {
+        if (!_commandList || !_scene)
+            return;
+
         const auto& light = lightObj.light;
         const auto& transform = lightObj.wt;
 
@@ -950,6 +972,9 @@ namespace Frost
                                    std::shared_ptr<Texture> source,
                                    const Viewport& viewport)
     {
+        if (!destination || !_commandList || !_lightPassBuffer || !_vsShadowConstants)
+            return;
+
         Texture* outPtr = destination.get();
         _commandList->SetRenderTargets(1, &outPtr, nullptr);
 
@@ -989,6 +1014,9 @@ namespace Frost
 
     void ShadowPipeline::DrawFinalLitTexture(std::shared_ptr<Texture> luminanceTexture, const Viewport& viewport)
     {
+        if (!_finalLitTexture || !luminanceTexture || !_commandList)
+            return;
+
         Texture* outPtr = _finalLitTexture.get();
         _commandList->SetRenderTargets(1, &outPtr, nullptr);
 

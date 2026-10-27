@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Asset/Texture.h"
 #include "Frost/Utils/File/MemoryMappedFile.h"
@@ -28,6 +28,7 @@ namespace Frost
         // Async API
         virtual void LoadCPU(const std::string& path, const TextureConfig& config) override;
         virtual void UploadGPU() override;
+        virtual void Cancel() override;
 
         virtual void Bind(Slot slot) const override;
         virtual void* GetRendererID() const override { return _srv.Get(); }

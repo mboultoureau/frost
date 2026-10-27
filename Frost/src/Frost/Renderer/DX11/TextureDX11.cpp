@@ -1,4 +1,4 @@
-﻿#include "Frost/Renderer/DX11/TextureDX11.h"
+#include "Frost/Renderer/DX11/TextureDX11.h"
 #include "Frost/Renderer/DX11/FormatDX11.h"
 #include "Frost/Debugging/Assert.h"
 #include "Frost/Debugging/Logger.h"
@@ -115,8 +115,24 @@ namespace Frost
         UploadGPU();
     }
 
+    void TextureDX11::Cancel()
+    {
+        SetStatus(AssetStatus::Cancelled);
+        _ReleaseCPUData();
+        _texture.Reset();
+        _srv.Reset();
+        _rtv.Reset();
+        _dsv.Reset();
+    }
+
     void TextureDX11::LoadCPU(const std::string& path, const TextureConfig& config)
     {
+        if (IsCancelled())
+        {
+            _ReleaseCPUData();
+            return;
+        }
+
         _config = config;
 
         if (_config.layout == TextureLayout::CUBEMAP)
@@ -474,7 +490,7 @@ namespace Frost
 
     void TextureDX11::UploadGPU()
     {
-        if (GetStatus() == AssetStatus::Loaded || GetStatus() == AssetStatus::Failed)
+        if (IsCancelled() || GetStatus() == AssetStatus::Loaded || GetStatus() == AssetStatus::Failed)
         {
             _ReleaseCPUData();
             return;

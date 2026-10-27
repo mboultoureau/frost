@@ -1,4 +1,4 @@
-﻿#include "Frost/Asset/Font.h"
+#include "Frost/Asset/Font.h"
 #include "Frost/Asset/Texture.h"
 #include "Frost/Renderer/Format.h"
 #include "Frost/Debugging/Logger.h"
@@ -25,8 +25,22 @@ namespace Frost
 
     Font::~Font() {}
 
+    void Font::Cancel()
+    {
+        SetStatus(AssetStatus::Cancelled);
+        _stagingPixels.clear();
+        _stagingPixels.shrink_to_fit();
+        _atlasTexture.reset();
+        _metrics.clear();
+    }
+
     void Font::LoadCPU(const std::string& path)
     {
+        if (IsCancelled())
+        {
+            return;
+        }
+
         _filePath = path;
 
         std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -48,6 +62,11 @@ namespace Frost
             return;
         }
 
+        if (IsCancelled())
+        {
+            return;
+        }
+
         _stagingPixels.resize(ATLAS_SIZE * ATLAS_SIZE);
 
         stbtt_bakedchar char_data[CHAR_COUNT];
@@ -66,6 +85,13 @@ namespace Frost
         {
             FT_ENGINE_ERROR("stbtt_BakeFontBitmap failed for font: {}", path);
             SetStatus(AssetStatus::Failed);
+            return;
+        }
+
+        if (IsCancelled())
+        {
+            _stagingPixels.clear();
+            _stagingPixels.shrink_to_fit();
             return;
         }
 
@@ -95,8 +121,10 @@ namespace Frost
 
     void Font::UploadGPU()
     {
-        if (GetStatus() == AssetStatus::Failed)
+        if (IsCancelled() || GetStatus() == AssetStatus::Failed)
         {
+            _stagingPixels.clear();
+            _stagingPixels.shrink_to_fit();
             return;
         }
 

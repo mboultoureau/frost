@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include <string>
 #include <chrono>
+#include <future>
 #include <thread>
 #include <fstream>
 #include <filesystem>
@@ -144,21 +145,42 @@ namespace Frost
 
             // Multi-threaded loading
             auto multiStart = std::chrono::high_resolution_clock::now();
-            std::vector<std::thread> workers;
-            workers.reserve(validModels.size());
-            for (const auto& path : validModels)
+            if (Application::HasInstance() && !Application::GetJobScheduler().IsCurrentThreadWorker())
             {
-                workers.emplace_back(
-                    [path]()
-                    {
-                        Model model;
-                        model.LoadCPU(path);
-                    });
+                std::vector<std::future<void>> futures;
+                futures.reserve(validModels.size());
+                for (const auto& path : validModels)
+                {
+                    futures.push_back(Application::GetJobScheduler().Submit(
+                        [path]()
+                        {
+                            Model model;
+                            model.LoadCPU(path);
+                        }));
+                }
+                for (auto& f : futures)
+                {
+                    f.get();
+                }
             }
-            for (auto& w : workers)
+            else
             {
-                if (w.joinable())
-                    w.join();
+                std::vector<std::thread> workers;
+                workers.reserve(validModels.size());
+                for (const auto& path : validModels)
+                {
+                    workers.emplace_back(
+                        [path]()
+                        {
+                            Model model;
+                            model.LoadCPU(path);
+                        });
+                }
+                for (auto& w : workers)
+                {
+                    if (w.joinable())
+                        w.join();
+                }
             }
             auto multiEnd = std::chrono::high_resolution_clock::now();
             _benchmarkStats.assetLoadMultiMs = std::chrono::duration<float, std::milli>(multiEnd - multiStart).count();

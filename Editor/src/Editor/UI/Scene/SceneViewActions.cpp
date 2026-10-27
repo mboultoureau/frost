@@ -9,6 +9,7 @@
 #include "Frost/Scene/PrefabSerializer.h"
 #include "Frost/Utils/Math/Angle.h"
 #include "Frost/Scene/SceneSerializer.h"
+#include "Frost/Asset/AssetManager.h"
 #include "Editor/Utils/FileDialogs.h"
 
 #include <imgui.h>
@@ -170,6 +171,7 @@ namespace Editor
             {
                 _selection = {};
                 _title = _sceneContext->GetName();
+                Frost::AssetManager::PruneUnused();
                 FT_ENGINE_INFO("Scene loaded from: {}", *filepath);
             }
             else

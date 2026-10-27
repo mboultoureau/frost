@@ -231,6 +231,16 @@ namespace Frost
         return *_singleton;
     }
 
+    bool Application::HasInstance()
+    {
+        return _singleton != nullptr;
+    }
+
+    JobScheduler& Application::GetJobScheduler()
+    {
+        return Get()._jobScheduler;
+    }
+
     bool Application::_OnWindowClose(WindowCloseEvent& e)
     {
         _running = false;

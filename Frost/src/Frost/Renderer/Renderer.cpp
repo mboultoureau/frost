@@ -10,6 +10,11 @@ namespace Frost
         _resizeEventHandlerId = EventManager::Subscribe<WindowResizeEvent>(
             [this](auto& e)
             {
+                if (e.GetWidth() == 0 || e.GetHeight() == 0)
+                {
+                    return false;
+                }
+
                 for (Pipeline* pipeline : _pipelines)
                 {
                     pipeline->Shutdown();

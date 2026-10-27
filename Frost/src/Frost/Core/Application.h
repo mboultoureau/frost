@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frost/Core/Core.h"
+#include "Frost/Core/JobScheduler.h"
 #include "Frost/Core/LayerStack.h"
 #include "Frost/Core/Timer.h"
 #include "Frost/Core/Window.h"
@@ -81,6 +82,8 @@ namespace Frost
         Timer::Duration GetMaxFrameDuration() const { return _maxDuration; }
 
         static Application& Get();
+        static bool HasInstance();
+        static JobScheduler& GetJobScheduler();
 
         LayerStack& GetLayerStack() { return _layerStack; }
         const LayerStack& GetLayerStack() const { return _layerStack; }
@@ -103,6 +106,7 @@ namespace Frost
         ApplicationSpecification _specification;
 
         static std::filesystem::path _projectDirectory;
+        JobScheduler _jobScheduler;
 
         LayerStack _layerStack;
         PhysicsConfig _physicsConfig;

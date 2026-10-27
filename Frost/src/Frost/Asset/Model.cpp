@@ -25,10 +25,27 @@ namespace Frost
         UploadGPU();
     }
 
+    void Model::Cancel()
+    {
+        SetStatus(AssetStatus::Cancelled);
+        _cpuMeshes.clear();
+        _cpuMeshes.shrink_to_fit();
+        _meshes.clear();
+        _materials.clear();
+    }
+
     void Model::LoadCPU(const std::string& filepath)
     {
+        if (IsCancelled())
+        {
+            return;
+        }
+
         _filepath = filepath;
         _directory = std::filesystem::path(filepath).parent_path().string();
+        _uploadedMeshIndex = 0;
+        _meshes.clear();
+        _cpuMeshes.clear();
 
         FT_ENGINE_INFO("Async Loading model: {}", filepath);
 
@@ -38,6 +55,13 @@ namespace Frost
                              aiProcess_PreTransformVertices;
 
         const aiScene* scene = importer.ReadFile(filepath, flags);
+
+        if (IsCancelled())
+        {
+            _cpuMeshes.clear();
+            _cpuMeshes.shrink_to_fit();
+            return;
+        }
 
         // If you load glb2 ou gltf2 an exception is throw but the model is loaded
         // See: https://github.com/assimp/assimp/issues/2778
@@ -49,37 +73,114 @@ namespace Frost
         }
 
         LoadMaterials(scene);
+
+        if (IsCancelled())
+        {
+            _cpuMeshes.clear();
+            _cpuMeshes.shrink_to_fit();
+            _materials.clear();
+            return;
+        }
+
         ProcessNode(scene->mRootNode, scene);
 
-        FT_ENGINE_INFO("Model loaded successfully: {} meshes, {} materials", _meshes.size(), _materials.size());
+        if (IsCancelled())
+        {
+            _cpuMeshes.clear();
+            _cpuMeshes.shrink_to_fit();
+            _materials.clear();
+            return;
+        }
+
+        FT_ENGINE_INFO("Model loaded successfully: {} meshes, {} materials", _cpuMeshes.size(), _materials.size());
+    }
+
+    bool Model::UploadGPUChunk()
+    {
+        return UploadGPUChunk(8, 2);
+    }
+
+    bool Model::UploadGPUChunk(size_t maxMeshes, uint32_t maxTimeMs)
+    {
+        if (IsCancelled() || GetStatus() == AssetStatus::Failed)
+        {
+            _cpuMeshes.clear();
+            _cpuMeshes.shrink_to_fit();
+            return false;
+        }
+
+        if (_cpuMeshes.empty())
+        {
+            SetStatus(AssetStatus::Loaded);
+            return false;
+        }
+
+        if (_meshes.empty() && !_cpuMeshes.empty())
+        {
+            _meshes.reserve(_cpuMeshes.size());
+        }
+
+        auto startTime = std::chrono::high_resolution_clock::now();
+        size_t processed = 0;
+
+        while (_uploadedMeshIndex < _cpuMeshes.size() && processed < maxMeshes)
+        {
+            auto& cpuMesh = _cpuMeshes[_uploadedMeshIndex];
+            auto vertexData = std::as_bytes(std::span(cpuMesh.vertices));
+            _meshes.emplace_back(
+                vertexData, static_cast<uint32_t>(sizeof(Vertex)), cpuMesh.indices, cpuMesh.boundingBox);
+            _meshes.back().SetMaterialIndex(cpuMesh.materialIndex);
+
+            // Free CPU vertex & index data for this mesh immediately to keep memory usage minimal
+            cpuMesh.vertices.clear();
+            cpuMesh.vertices.shrink_to_fit();
+            cpuMesh.indices.clear();
+            cpuMesh.indices.shrink_to_fit();
+
+            _uploadedMeshIndex++;
+            processed++;
+
+            auto now = std::chrono::high_resolution_clock::now();
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count() >= maxTimeMs)
+            {
+                break;
+            }
+        }
+
+        if (_uploadedMeshIndex < _cpuMeshes.size())
+        {
+            return true;
+        }
+
+        _cpuMeshes.clear();
+        _cpuMeshes.shrink_to_fit();
+
+        FT_ENGINE_INFO("Model uploaded to GPU: {}", _filepath);
+        SetStatus(AssetStatus::Loaded);
+        return false;
     }
 
     void Model::UploadGPU()
     {
-        if (GetStatus() == AssetStatus::Failed)
+        while (UploadGPUChunk(50, 1000))
         {
-            return;
         }
-
-        _meshes.reserve(_cpuMeshes.size());
-        for (auto& cpuMesh : _cpuMeshes)
-        {
-            auto vertexData = std::as_bytes(std::span(cpuMesh.vertices));
-            _meshes.emplace_back(vertexData, static_cast<uint32_t>(sizeof(Vertex)), cpuMesh.indices);
-            _meshes.back().SetMaterialIndex(cpuMesh.materialIndex);
-        }
-
-        _cpuMeshes.clear();
-
-        FT_ENGINE_INFO("Model uploaded to GPU: {}", _filepath);
-        SetStatus(AssetStatus::Loaded);
     }
 
     void Model::ProcessNode(aiNode* aNode, const aiScene* aScene)
     {
+        if (IsCancelled())
+        {
+            return;
+        }
+
         // Process all meshes of the current node
         for (unsigned int i = 0; i < aNode->mNumMeshes; i++)
         {
+            if (IsCancelled())
+            {
+                return;
+            }
             aiMesh* mesh = aScene->mMeshes[aNode->mMeshes[i]];
             ProcessMesh(mesh, aScene);
         }
@@ -87,6 +188,10 @@ namespace Frost
         // Repeat the process for all child nodes
         for (unsigned int i = 0; i < aNode->mNumChildren; i++)
         {
+            if (IsCancelled())
+            {
+                return;
+            }
             ProcessNode(aNode->mChildren[i], aScene);
         }
     }
@@ -96,10 +201,20 @@ namespace Frost
         std::vector<Vertex> vertices;
         vertices.reserve(aMesh->mNumVertices);
 
+        DirectX::XMFLOAT3 minPos = { FLT_MAX, FLT_MAX, FLT_MAX };
+        DirectX::XMFLOAT3 maxPos = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
         for (unsigned int i = 0; i < aMesh->mNumVertices; i++)
         {
             Vertex vertex{};
             vertex.position = { aMesh->mVertices[i].x, aMesh->mVertices[i].y, aMesh->mVertices[i].z };
+
+            minPos.x = std::min(minPos.x, vertex.position.x);
+            minPos.y = std::min(minPos.y, vertex.position.y);
+            minPos.z = std::min(minPos.z, vertex.position.z);
+            maxPos.x = std::max(maxPos.x, vertex.position.x);
+            maxPos.y = std::max(maxPos.y, vertex.position.y);
+            maxPos.z = std::max(maxPos.z, vertex.position.z);
 
             if (aMesh->HasNormals())
             {
@@ -130,9 +245,8 @@ namespace Frost
             }
         }
 
-        auto vertexData = std::as_bytes(std::span(vertices));
-
-        _cpuMeshes.emplace_back(std::move(vertices), std::move(indices), aMesh->mMaterialIndex);
+        BoundingBox bounds = { minPos, maxPos };
+        _cpuMeshes.emplace_back(std::move(vertices), std::move(indices), aMesh->mMaterialIndex, bounds);
     }
 
     void Model::LoadMaterials(const aiScene* scene)
@@ -250,6 +364,9 @@ namespace Frost
                                      aiTextureType type,
                                      std::vector<std::shared_ptr<Texture>>& outTextures)
     {
+        if (IsCancelled())
+            return;
+
         unsigned int textureCount = ai_material->GetTextureCount(type);
         if (textureCount == 0)
             return;
@@ -258,6 +375,9 @@ namespace Frost
 
         for (unsigned int i = 0; i < textureCount; i++)
         {
+            if (IsCancelled())
+                break;
+
             aiString str;
             if (ai_material->GetTexture(type, i, &str) != AI_SUCCESS)
                 continue;
@@ -334,7 +454,7 @@ namespace Frost
             {
                 std::filesystem::path texturePath =
                     std::filesystem::path(_directory) / std::filesystem::path(textureIdentifier);
-                assetId = texturePath.string();
+                assetId = texturePath.lexically_normal().generic_string();
                 config.path = assetId;
             }
 

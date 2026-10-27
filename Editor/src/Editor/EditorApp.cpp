@@ -4,6 +4,7 @@
 #include "Frost/Core/Layer.h"
 #include "Frost/Scripting/ScriptingEngine.h"
 #include "Frost/Physics/Physics.h"
+#include "Frost/Asset/AssetManager.h"
 
 using namespace Frost;
 
@@ -95,6 +96,8 @@ namespace Editor
             PopLayer(_editorLayer);
             _editorLayer = nullptr;
         }
+
+        Frost::AssetManager::PruneUnused();
 
         _projectInfo.Clear();
         Frost::Physics::SetLayerNames({});

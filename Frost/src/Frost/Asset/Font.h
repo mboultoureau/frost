@@ -28,6 +28,7 @@ namespace Frost
 
         void LoadCPU(const std::string& path);
         void UploadGPU();
+        virtual void Cancel() override;
 
         const CharacterMetric& GetCharacterMetric(char c) const;
         std::shared_ptr<Texture> GetAtlasTexture() const { return _atlasTexture; }
