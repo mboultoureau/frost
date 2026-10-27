@@ -1,7 +1,7 @@
 // Lighting Pass: Pixel Shader
 Texture2D AlbedoTexture : register(t0);
 Texture2D NormalTexture : register(t1);
-Texture2D WorldPosTexture : register(t2);
+Texture2D DepthTexture : register(t2);
 Texture2D MaterialTexture : register(t3); // R: Metalness, G: Roughness, B: AO
 Texture2D ShadowMap : register(t4);
 Texture2D LuminanceTexture : register(t5);
@@ -11,6 +11,7 @@ cbuffer ShadowMatrix : register(b1)
 {
     column_major float4x4 World;
     column_major float4x4 LightViewProj;
+    column_major float4x4 InvViewProj;
 }
 
 struct PS_Input
@@ -18,6 +19,19 @@ struct PS_Input
     float4 Position : SV_POSITION;
     float2 TexCoord : TEXCOORD0;
 };
+
+float3 ReconstructWorldPos(float2 texCoord, float depth)
+{
+    float4 clipPos = float4(texCoord.x * 2.0f - 1.0f, (1.0f - texCoord.y) * 2.0f - 1.0f, depth, 1.0f);
+    float4 worldPosH = mul(clipPos, InvViewProj);
+    return worldPosH.xyz / worldPosH.w;
+}
+
+float3 ReconstructWorldPos(float2 texCoord)
+{
+    float depth = DepthTexture.Sample(GBufferSampler, texCoord).r;
+    return ReconstructWorldPos(texCoord, depth);
+}
 
 
 float ComputeShadowBias(float3 normal, float3 lightDir, float shadowResolution)

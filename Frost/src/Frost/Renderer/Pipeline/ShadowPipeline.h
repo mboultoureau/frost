@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Frost/Renderer/Pipeline.h"
 #include "Frost/Scene/Components/Camera.h"
@@ -184,9 +184,10 @@ namespace Frost
         // G-Buffer textures
         std::shared_ptr<Texture> _albedoTexture;
         std::shared_ptr<Texture> _normalTexture;
-        std::shared_ptr<Texture> _worldPositionTexture;
+        std::shared_ptr<Texture> _depthTexture;
         std::shared_ptr<Texture> _materialTexture;
         std::shared_ptr<Texture> _emissionTexture;
+        Math::Matrix4x4 _invViewProj;
 
         std::shared_ptr<Texture> _luminanceTexture1;
         std::shared_ptr<Texture> _luminanceTexture2;

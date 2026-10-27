@@ -21,11 +21,10 @@ struct VS_Input
 struct PS_Input
 {
     float4 Position : SV_POSITION;
-    float3 WorldPos : TEXCOORD0;
-    float3 Normal : TEXCOORD1;
-    float3 Tangent : TEXCOORD2;
-    float3 Bitangent : TEXCOORD3;
-    float2 TexCoord : TEXCOORD4;
+    float3 Normal : TEXCOORD0;
+    float3 Tangent : TEXCOORD1;
+    float3 Bitangent : TEXCOORD2;
+    float2 TexCoord : TEXCOORD3;
 };
 
 PS_Input main(VS_Input input)
@@ -35,7 +34,6 @@ PS_Input main(VS_Input input)
     float4x4 worldViewProjection = mul(mul(World, ViewMatrix), ProjectionMatrix);
     
     output.Position = mul(float4(input.Position, 1.0f), worldViewProjection);
-    output.WorldPos = mul(float4(input.Position, 1.0f), World).xyz;
     output.Normal = normalize(mul(float4(input.Normal, 0.0f), World).xyz);
     output.Tangent = normalize(mul(float4(input.Tangent.xyz, 0.0f), World).xyz);
     output.Bitangent = normalize(cross(output.Normal, output.Tangent) * input.Tangent.w);

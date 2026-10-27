@@ -15,8 +15,13 @@ cbuffer LightConstants : register(b0)
 
 float4 main(PS_Input input) : SV_TARGET
 {
-    float3 worldPos = WorldPosTexture.Sample(GBufferSampler, input.TexCoord).rgb;
     float3 currentLight = LuminanceTexture.Sample(GBufferSampler, input.TexCoord).rgb;
+    float depth = DepthTexture.Sample(GBufferSampler, input.TexCoord).r;
+    if (depth >= 1.0f)
+    {
+        return float4(currentLight, 1.0f);
+    }
+    float3 worldPos = ReconstructWorldPos(input.TexCoord, depth);
    
     // 1. Distance check
     float3 toLight = Position - worldPos;
@@ -29,7 +34,7 @@ float4 main(PS_Input input) : SV_TARGET
 
     // 2. Spot Angle Check
     float3 lightDir = normalize(toLight);
-    // Le dot product renvoie 1.0 si aligné, < 1.0 si écarté.
+    // Le dot product renvoie 1.0 si alignÃ©, < 1.0 si Ã©cartÃ©.
     // OuterConeAngle est le cosinus de l'angle max.
     float spotAngle = dot(lightDir, -normalize(Direction));
 
@@ -39,17 +44,17 @@ float4 main(PS_Input input) : SV_TARGET
     }
 
     // 3. Shadow Frustum Check (Optimisation)
-    // Vérifie si le pixel est vu par la caméra d'ombre du Spot
+    // VÃ©rifie si le pixel est vu par la camÃ©ra d'ombre du Spot
     float2 shadowUV;
     float shadowDepth;
     
     if (!IsInsideShadowFrustum(worldPos, shadowUV, shadowDepth))
     {
-        // Si on est dans le cone théorique mais hors de la shadow map (ex: derrière le plan near), on n'éclaire pas
+        // Si on est dans le cone thÃ©orique mais hors de la shadow map (ex: derriÃ¨re le plan near), on n'Ã©claire pas
         return float4(currentLight, 1.0f);
     }
 
-    // 4. Calculs finaux (seulement si nécessaire)
+    // 4. Calculs finaux (seulement si nÃ©cessaire)
     float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb);
     float4 material = MaterialTexture.Sample(GBufferSampler, input.TexCoord);
     float metalness = material.r;
@@ -61,7 +66,7 @@ float4 main(PS_Input input) : SV_TARGET
     float coneFalloff = smoothstep(OuterConeAngle, InnerConeAngle, spotAngle);
     attenuation *= coneFalloff;
 
-    // 5. Shadow Sampling Corrigé
+    // 5. Shadow Sampling CorrigÃ©
     // On utilise SampleShadowPCF_Merged (au lieu de Optimized) 
     // et on passe 'normal' et 'lightDir' pour le calcul du Slope-Scaled Bias.
     float shadowFactor = SampleShadowPCF_Merged(shadowUV, shadowDepth, normal, lightDir, shadowResolution);

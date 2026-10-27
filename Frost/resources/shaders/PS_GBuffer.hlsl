@@ -22,20 +22,18 @@ cbuffer MaterialConstants : register(b2)
 struct PS_Input
 {
     float4 Position : SV_POSITION;
-    float3 WorldPos : TEXCOORD0;
-    float3 Normal : TEXCOORD1;
-    float3 Tangent : TEXCOORD2;
-    float3 Bitangent : TEXCOORD3;
-    float2 TexCoord : TEXCOORD4;
+    float3 Normal : TEXCOORD0;
+    float3 Tangent : TEXCOORD1;
+    float3 Bitangent : TEXCOORD2;
+    float2 TexCoord : TEXCOORD3;
 };
 
 struct PS_Output
 {
     float4 Albedo           : SV_Target0; // RGB: Albedo
     float4 Normal           : SV_Target1; // RGB: Normal
-    float4 WorldPos         : SV_Target2; // RGB: World Position
-    float4 Material         : SV_Target3; // R: Metalness, G: Roughness, B: Ambient Occlusion
-    float4 Emission         : SV_Target4; // RGB: Emission
+    float4 Material         : SV_Target2; // R: Metalness, G: Roughness, B: Ambient Occlusion
+    float4 Emission         : SV_Target3; // RGB: Emission
 };
 
 PS_Output main(PS_Input input)
@@ -52,8 +50,6 @@ PS_Output main(PS_Input input)
     float3 normalTangentSpace = NormalMap.Sample(MaterialSampler, texCoord).xyz * 2.0 - 1.0;
     float3 worldNormal = normalize(mul(normalTangentSpace, TBN));
     output.Normal = float4(worldNormal, 1.0f);
-
-    output.WorldPos = float4(input.WorldPos, 1.0f);
 
     float metalness = MetallicMap.Sample(MaterialSampler, texCoord).b * MetallicFactor;
     float roughness = RoughnessMap.Sample(MaterialSampler, texCoord).g * RoughnessFactor;

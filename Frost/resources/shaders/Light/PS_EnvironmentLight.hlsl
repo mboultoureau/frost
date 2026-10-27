@@ -19,18 +19,23 @@ float3 fresnelSchlick(float cosTheta, float3 F0)
 
 float4 main(PS_Input input) : SV_TARGET
 {
+    float3 currentLight = LuminanceTexture.Sample(GBufferSampler, input.TexCoord).rgb;
+    float depth = DepthTexture.Sample(GBufferSampler, input.TexCoord).r;
+    if (depth >= 1.0f)
+    {
+        return float4(currentLight, 1.0f);
+    }
+
     float4 normalData = NormalTexture.Sample(GBufferSampler, input.TexCoord);
     if (normalData.a < 0.5f)
     {
-        float3 existingColor = LuminanceTexture.Sample(GBufferSampler, input.TexCoord).rgb;
-        return float4(existingColor, 1.0f);
+        return float4(currentLight, 1.0f);
     }
     
-    float3 worldPos = WorldPosTexture.Sample(GBufferSampler, input.TexCoord).rgb;
+    float3 worldPos = ReconstructWorldPos(input.TexCoord, depth);
     float3 normal = normalize(NormalTexture.Sample(GBufferSampler, input.TexCoord).rgb);
     float4 material = MaterialTexture.Sample(GBufferSampler, input.TexCoord);
     float3 albedo = AlbedoTexture.Sample(GBufferSampler, input.TexCoord).rgb;
-    float3 currentLight = LuminanceTexture.Sample(GBufferSampler, input.TexCoord).rgb;
 
     float metalness = material.r;
     float roughness = material.g;
