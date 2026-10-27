@@ -2,6 +2,7 @@ cbuffer VS_ShadowConstants : register(b0)
 {
     float4x4 World;
     float4x4 LightViewProj;
+    float4x4 InvViewProj;
 };
 
 struct VSInput

@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/Scene/SceneView.h"
+#include "Editor/UI/Scene/SceneView.h"
 
 #include "Frost/Asset/MeshConfig.h"
 #include "Frost/Scene/Components/Transform.h"
@@ -136,12 +136,6 @@ namespace Editor
                                viewportMinRegion,
                                viewportPanelSize);
             }
-        }
-
-        if (_editorCamera && _editorCamera.HasComponent<Transform>())
-        {
-            auto& tc = _editorCamera.GetComponent<Transform>();
-            _cameraController.OnUpdate(deltaTime, tc, _isHovered && !_gizmo->IsManipulating());
         }
 
         ImGui::End();

@@ -1,5 +1,7 @@
 #include "Editor/Utils/EditorCameraController.h"
 #include "Frost/Utils/Math/Vector.h"
+#include "Frost/Core/Application.h"
+#include "Frost/Core/Window.h"
 
 using namespace DirectX;
 using namespace Frost;
@@ -22,18 +24,31 @@ namespace Editor
         if (isViewportFocused && anyClick && !_isActive)
         {
             _isActive = true;
-            _lastMousePos = mouse.GetPosition();
+            _originalMousePos = mouse.GetPosition();
+
+            Window* window = Application::GetWindow();
+            if (window && window->GetWidth() > 0 && window->GetHeight() > 0)
+            {
+                _lastMousePos = { window->GetWidth() / 2, window->GetHeight() / 2 };
+            }
+            else
+            {
+                _lastMousePos = _originalMousePos;
+            }
+
+            mouse.SetPosition(_lastMousePos);
             mouse.HideCursor();
             mouse.LockCursor();
         }
         else if (!anyClick && _isActive)
         {
             _isActive = false;
+            mouse.SetPosition(_originalMousePos);
             mouse.ShowCursor();
             mouse.UnlockCursor();
         }
 
-        if (!_isActive || !isViewportFocused)
+        if (!_isActive)
             return;
 
         // Rotation and Movement
@@ -41,7 +56,10 @@ namespace Editor
         float deltaX = (float)((int)currentMousePos.x - (int)_lastMousePos.x);
         float deltaY = (float)((int)currentMousePos.y - (int)_lastMousePos.y);
 
-        mouse.SetPosition(_lastMousePos);
+        if (deltaX != 0.0f || deltaY != 0.0f)
+        {
+            mouse.SetPosition(_lastMousePos);
+        }
 
         float currentSpeed = moveSpeed;
         if (keyboard.IsKeyDown(K_SHIFT))

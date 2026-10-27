@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/Scene/SceneView.h"
+#include "Editor/UI/Scene/SceneView.h"
 
 #include "Frost/Scene/Components/EnvironmentMap.h"
 #include "Frost/Scene/Components/Transform.h"
@@ -178,6 +178,12 @@ namespace Editor
 
     void SceneView::OnUpdate(float deltaTime)
     {
+        if (_editorCamera && _editorCamera.HasComponent<Frost::Component::Transform>())
+        {
+            auto& tc = _editorCamera.GetComponent<Frost::Component::Transform>();
+            _cameraController.OnUpdate(deltaTime, tc, _isHovered && !_gizmo->IsManipulating());
+        }
+
         if (_sceneContext && _viewportTexture)
         {
             _sceneContext->SetEditorRenderTarget(_viewportTexture);

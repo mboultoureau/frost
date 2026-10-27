@@ -18,7 +18,7 @@ namespace Editor
     public:
         float moveSpeed = 10.0f;
         float turboMultiplier = 3.0f;
-        float mouseSensitivity = 0.003f;
+        float mouseSensitivity = 0.006f;
         float damping = 5.0f;
 
     private:
@@ -26,6 +26,7 @@ namespace Editor
         float _pitch = 0.0f;
 
         MousePos _lastMousePos;
+        MousePos _originalMousePos;
         bool _isActive = false;
 
     public:

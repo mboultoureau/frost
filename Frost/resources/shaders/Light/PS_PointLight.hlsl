@@ -15,7 +15,12 @@ float4 main(PS_Input input) : SV_TARGET
 {
     // 1. Accumulation
     float3 currentLight = LuminanceTexture.Sample(GBufferSampler, input.TexCoord).rgb;
-    float3 worldPos = WorldPosTexture.Sample(GBufferSampler, input.TexCoord).rgb;
+    float depth = DepthTexture.Sample(GBufferSampler, input.TexCoord).r;
+    if (depth >= 1.0f)
+    {
+        return float4(currentLight, 1.0f);
+    }
+    float3 worldPos = ReconstructWorldPos(input.TexCoord, depth);
     
     
     float dist = distance(Position, worldPos);

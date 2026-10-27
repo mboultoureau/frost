@@ -180,7 +180,6 @@ namespace Frost
 
         _depthStencilTexture.reset();
         _materialTexture.reset();
-        _worldPositionTexture.reset();
         _normalTexture.reset();
         _albedoTexture.reset();
         _emissionTexture.reset();
@@ -283,7 +282,7 @@ namespace Frost
             return;
 
         if (_currentWidth != width || _currentHeight != height || !_albedoTexture || !_normalTexture ||
-            !_depthStencilTexture || !_worldPositionTexture || !_materialTexture || !_emissionTexture)
+            !_depthStencilTexture || !_materialTexture || !_emissionTexture)
         {
             _CreateGBufferTextures(width, height);
             _currentWidth = width;
@@ -295,7 +294,6 @@ namespace Frost
     {
         _albedoTexture.reset();
         _normalTexture.reset();
-        _worldPositionTexture.reset();
         _materialTexture.reset();
         _depthStencilTexture.reset();
         _emissionTexture.reset();
@@ -309,9 +307,6 @@ namespace Frost
 
         textureConfig.format = Format::RGBA16_FLOAT;
         _normalTexture = std::make_shared<TextureDX11>(textureConfig);
-
-        textureConfig.format = Format::RGBA32_FLOAT;
-        _worldPositionTexture = std::make_shared<TextureDX11>(textureConfig);
 
         textureConfig.format = Format::RGBA8_UNORM;
         _materialTexture = std::make_shared<TextureDX11>(textureConfig);
@@ -360,11 +355,12 @@ namespace Frost
         vsPerFrameData.CameraPosition = cameraTransform.position;
         _vsPerFrameConstants->UpdateData(_commandList.get(), &vsPerFrameData, sizeof(VS_PerFrameConstants));
 
-        Texture* gBufferRTs[] = { _albedoTexture.get(),
-                                  _normalTexture.get(),
-                                  _worldPositionTexture.get(),
-                                  _materialTexture.get(),
-                                  _emissionTexture.get() };
+        Math::Matrix4x4 viewProj = viewMatrix * projectionMatrix;
+        _invViewProj = Math::Matrix4x4::Invert(viewProj);
+
+        Texture* gBufferRTs[] = {
+            _albedoTexture.get(), _normalTexture.get(), _materialTexture.get(), _emissionTexture.get()
+        };
         _commandList->SetRenderTargets(ARRAYSIZE(gBufferRTs), gBufferRTs, _depthStencilTexture.get());
 
         _commandList->SetViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0f, 1.0f);

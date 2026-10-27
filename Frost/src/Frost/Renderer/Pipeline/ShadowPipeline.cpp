@@ -34,6 +34,7 @@ namespace Frost
     {
         DirectX::XMMATRIX World;
         DirectX::XMMATRIX LightViewProj;
+        DirectX::XMMATRIX InvViewProj;
     };
 
     struct alignas(16) DirectionalLightData : public LightData
@@ -254,7 +255,7 @@ namespace Frost
 
         _albedoTexture.reset();
         _normalTexture.reset();
-        _worldPositionTexture.reset();
+        _depthTexture.reset();
         _materialTexture.reset();
         _emissionTexture.reset();
         _luminanceTexture1.reset();
@@ -280,7 +281,7 @@ namespace Frost
 
         _albedoTexture.reset();
         _normalTexture.reset();
-        _worldPositionTexture.reset();
+        _depthTexture.reset();
         _materialTexture.reset();
         _emissionTexture.reset();
         _luminanceTexture1.reset();
@@ -343,9 +344,10 @@ namespace Frost
     {
         _albedoTexture = deferredPipeline->GetAlbedoTexture();
         _normalTexture = deferredPipeline->GetNormalTexture();
-        _worldPositionTexture = deferredPipeline->GetWorldPositionTexture();
+        _depthTexture = deferredPipeline->GetDepthStencilTexture();
         _materialTexture = deferredPipeline->GetMaterialTexture();
         _emissionTexture = deferredPipeline->GetEmissionTexture();
+        _invViewProj = deferredPipeline->GetInvViewProjMatrix();
         _commandList = deferredPipeline->GetSharedCommandList();
         _scene = scene;
     }
@@ -519,6 +521,7 @@ namespace Frost
         VS_ShadowConstants vsData;
         vsData.World = DirectX::XMMatrixIdentity();
         vsData.LightViewProj = DirectX::XMMatrixIdentity();
+        vsData.InvViewProj = LoadMatrix(Math::Matrix4x4::CreateTranspose(_invViewProj));
         _vsShadowConstants->UpdateData(_commandList.get(), &vsData, sizeof(vsData));
 
         _commandList->SetConstantBuffer(_lightPassBuffer.get(), 0);
@@ -526,7 +529,7 @@ namespace Frost
 
         _commandList->SetTexture(_albedoTexture.get(), 0);
         _commandList->SetTexture(_normalTexture.get(), 1);
-        _commandList->SetTexture(_worldPositionTexture.get(), 2);
+        _commandList->SetTexture(_depthTexture.get(), 2);
         _commandList->SetTexture(_materialTexture.get(), 3);
         _commandList->SetTexture(source.get(), 5);
 
@@ -846,6 +849,7 @@ namespace Frost
                     VS_ShadowConstants vsData;
                     vsData.World = matWorldGPU;
                     vsData.LightViewProj = lightViewProjGPU;
+                    vsData.InvViewProj = DirectX::XMMatrixIdentity();
 
                     _vsShadowConstants->UpdateData(cmd, &vsData, sizeof(vsData));
                     cmd->SetConstantBuffer(_vsShadowConstants.get(), 0);
@@ -987,6 +991,7 @@ namespace Frost
         VS_ShadowConstants vsData;
         vsData.World = DirectX::XMMatrixIdentity();
         vsData.LightViewProj = LoadMatrix(Math::Matrix4x4::CreateTranspose(shadow.lightViewProj));
+        vsData.InvViewProj = LoadMatrix(Math::Matrix4x4::CreateTranspose(_invViewProj));
         _vsShadowConstants->UpdateData(_commandList.get(), &vsData, sizeof(vsData));
 
         _commandList->SetConstantBuffer(_lightPassBuffer.get(), 0);
@@ -994,7 +999,7 @@ namespace Frost
 
         _commandList->SetTexture(_albedoTexture.get(), 0);
         _commandList->SetTexture(_normalTexture.get(), 1);
-        _commandList->SetTexture(_worldPositionTexture.get(), 2);
+        _commandList->SetTexture(_depthTexture.get(), 2);
         _commandList->SetTexture(_materialTexture.get(), 3);
 
         _commandList->SetTexture(shadow.shadowTexture.get(), 4);
@@ -1029,6 +1034,9 @@ namespace Frost
         _commandList->SetTexture(_albedoTexture.get(), 0);
         _commandList->SetTexture(luminanceTexture.get(), 1);
         _commandList->SetTexture(_emissionTexture.get(), 2);
+        _commandList->SetTexture(nullptr, 3);
+        _commandList->SetTexture(nullptr, 4);
+        _commandList->SetTexture(nullptr, 5);
         _commandList->SetSampler(_gBufferSampler.get(), 0);
 
         _commandList->SetShader(_finalLightVertexShader.get());

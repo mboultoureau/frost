@@ -50,7 +50,7 @@ namespace Frost
 
         std::shared_ptr<Texture> GetAlbedoTexture() const { return _albedoTexture; }
         std::shared_ptr<Texture> GetNormalTexture() const { return _normalTexture; }
-        std::shared_ptr<Texture> GetWorldPositionTexture() const { return _worldPositionTexture; }
+        const Math::Matrix4x4& GetInvViewProjMatrix() const { return _invViewProj; }
         std::shared_ptr<Texture> GetMaterialTexture() const { return _materialTexture; }
         std::shared_ptr<Texture> GetDepthStencilTexture() const { return _depthStencilTexture; }
         std::shared_ptr<Texture> GetEmissionTexture() const { return _emissionTexture; }
@@ -64,7 +64,7 @@ namespace Frost
         // G-Buffer Textures
         std::shared_ptr<Texture> _albedoTexture;
         std::shared_ptr<Texture> _normalTexture;
-        std::shared_ptr<Texture> _worldPositionTexture;
+        Math::Matrix4x4 _invViewProj;
         std::shared_ptr<Texture> _materialTexture;
         std::shared_ptr<Texture> _emissionTexture;
         std::shared_ptr<Texture> _depthStencilTexture;
