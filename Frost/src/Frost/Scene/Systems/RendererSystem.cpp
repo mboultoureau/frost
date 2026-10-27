@@ -368,6 +368,11 @@ namespace Frost
                                               const Camera& camera,
                                               float deltaTime)
     {
+        if (!commandList || !sourceTexture || !destinationTarget)
+        {
+            return;
+        }
+
         std::vector<std::shared_ptr<PostEffect>> postProcessingPasses;
         for (const auto& effect : camera.postEffects)
         {

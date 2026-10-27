@@ -7,6 +7,7 @@
 #include "Frost/Renderer/RendererAPI.h"
 #include "Frost/Scripting/ScriptingEngine.h"
 #include "Frost/Scene/Systems/ScriptableSystem.h"
+#include "Frost/Asset/AssetManager.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -74,10 +75,14 @@ namespace Editor
 
     void EditorLayer::OnDetach()
     {
+        _views.clear();
+        Frost::AssetManager::PruneUnused();
+
         _debugPerformance.reset();
         _scriptingWatcher.Stop();
 
         EventManager::Unsubscribe<OpenProjectSettingsEvent>(_openProjectSettingsHandlerId);
+        EventManager::Unsubscribe<NewSceneEvent>(_newSceneHandlerId);
 
         ImGui_ImplDX11_Shutdown();
         ImGui_ImplWin32_Shutdown();
@@ -94,6 +99,7 @@ namespace Editor
 
     void EditorLayer::OnLateUpdate(float deltaTime)
     {
+        bool anyClosed = false;
         for (auto it = _views.begin(); it != _views.end();)
         {
             if (!(*it)->IsOpen())
@@ -102,6 +108,7 @@ namespace Editor
                     _activeSceneView = nullptr;
 
                 it = _views.erase(it);
+                anyClosed = true;
             }
             else
             {
@@ -113,6 +120,11 @@ namespace Editor
                 }
                 ++it;
             }
+        }
+
+        if (anyClosed)
+        {
+            Frost::AssetManager::PruneUnused();
         }
 
         ImGui_ImplDX11_NewFrame();
@@ -140,6 +152,7 @@ namespace Editor
 
     void EditorLayer::OnFixedUpdate(float fixedDeltaTime)
     {
+        bool anyClosed = false;
         for (auto it = _views.begin(); it != _views.end();)
         {
             if (!(*it)->IsOpen())
@@ -148,6 +161,7 @@ namespace Editor
                     _activeSceneView = nullptr;
 
                 it = _views.erase(it);
+                anyClosed = true;
             }
             else
             {
@@ -159,6 +173,11 @@ namespace Editor
                 }
                 ++it;
             }
+        }
+
+        if (anyClosed)
+        {
+            Frost::AssetManager::PruneUnused();
         }
 
         if (_debugPerformance)

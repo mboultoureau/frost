@@ -164,6 +164,9 @@ namespace Frost
 
     void DeferredRenderingPipeline::Shutdown()
     {
+        _currentWidth = 0;
+        _currentHeight = 0;
+
         _vsPerObjectConstants.reset();
         _vsPerFrameConstants.reset();
         _psMaterialConstants.reset();
@@ -279,7 +282,8 @@ namespace Frost
         if (width == 0 || height == 0)
             return;
 
-        if (_currentWidth != width || _currentHeight != height)
+        if (_currentWidth != width || _currentHeight != height || !_albedoTexture || !_normalTexture ||
+            !_depthStencilTexture || !_worldPositionTexture || !_materialTexture || !_emissionTexture)
         {
             _CreateGBufferTextures(width, height);
             _currentWidth = width;
@@ -330,7 +334,7 @@ namespace Frost
                                                const Math::Matrix4x4& projectionMatrix,
                                                const Viewport& viewport)
     {
-        if (!_albedoTexture)
+        if (!_albedoTexture || !_commandList)
             return;
         _enabled = true;
 

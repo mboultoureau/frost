@@ -4,6 +4,7 @@
 
 #include <DirectXMath.h>
 #include <algorithm>
+#include <cfloat>
 
 #undef min
 #undef max

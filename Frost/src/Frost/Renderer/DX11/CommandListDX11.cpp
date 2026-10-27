@@ -1,4 +1,4 @@
-﻿#include "Frost/Renderer/DX11/CommandListDX11.h"
+#include "Frost/Renderer/DX11/CommandListDX11.h"
 #include "Frost/Renderer/DX11/BufferDX11.h"
 #include "Frost/Renderer/DX11/InputLayoutDX11.h"
 #include "Frost/Renderer/DX11/RendererDX11.h"
@@ -63,27 +63,40 @@ namespace Frost
 
     void CommandListDX11::SetRenderTargets(uint32_t count, Texture** renderTargets, Texture* depthStencil)
     {
-        std::vector<ID3D11RenderTargetView*> rtvs(count);
+        std::vector<ID3D11RenderTargetView*> rtvs(count, nullptr);
         for (uint32_t i = 0; i < count; ++i)
         {
-            rtvs[i] = static_cast<TextureDX11*>(renderTargets[i])->GetRTV();
+            if (renderTargets && renderTargets[i])
+            {
+                rtvs[i] = static_cast<TextureDX11*>(renderTargets[i])->GetRTV();
+            }
         }
 
         ID3D11DepthStencilView* dsv = depthStencil ? static_cast<TextureDX11*>(depthStencil)->GetDSV() : nullptr;
 
-        _context->OMSetRenderTargets(count, rtvs.data(), dsv);
+        _context->OMSetRenderTargets(count, rtvs.empty() ? nullptr : rtvs.data(), dsv);
     }
 
     void CommandListDX11::ClearRenderTarget(Texture* renderTarget, const float color[4])
     {
-        FT_ENGINE_ASSERT(renderTarget, "Render target cannot be null.");
+        if (!renderTarget)
+        {
+            return;
+        }
         ID3D11RenderTargetView* rtv = static_cast<TextureDX11*>(renderTarget)->GetRTV();
+        if (!rtv)
+        {
+            return;
+        }
         _context->ClearRenderTargetView(rtv, color);
     }
 
     void CommandListDX11::ClearRenderTarget(Texture* renderTarget, const float color[4], const Viewport viewport)
     {
-        FT_ENGINE_ASSERT(renderTarget, "Render target cannot be null.");
+        if (!renderTarget)
+        {
+            return;
+        }
         auto* dxTexture = static_cast<TextureDX11*>(renderTarget);
         ID3D11RenderTargetView* rtv = dxTexture->GetRTV();
 
@@ -112,8 +125,15 @@ namespace Frost
                                             bool clearStencil,
                                             uint8_t stencilValue)
     {
-        FT_ENGINE_ASSERT(depthStencil, "Depth stencil cannot be null.");
+        if (!depthStencil)
+        {
+            return;
+        }
         ID3D11DepthStencilView* dsv = static_cast<TextureDX11*>(depthStencil)->GetDSV();
+        if (!dsv)
+        {
+            return;
+        }
 
         UINT clearFlags = 0;
         if (clearDepth)
@@ -274,8 +294,7 @@ namespace Frost
 
     void CommandListDX11::SetSampler(const Sampler* sampler, uint32_t slot)
     {
-        FT_ENGINE_ASSERT(sampler, "Sampler cannot be null.");
-        ID3D11SamplerState* ss = static_cast<const SamplerDX11*>(sampler)->GetSamplerState();
+        ID3D11SamplerState* ss = sampler ? static_cast<const SamplerDX11*>(sampler)->GetSamplerState() : nullptr;
         _context->VSSetSamplers(slot, 1, &ss);
         _context->PSSetSamplers(slot, 1, &ss);
     }

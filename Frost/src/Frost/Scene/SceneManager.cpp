@@ -1,4 +1,5 @@
 #include "Frost/Scene/SceneManager.h"
+#include "Frost/Asset/AssetManager.h"
 #include "Frost/Debugging/Logger.h"
 #include "Frost/Scene/SceneSerializer.h"
 
@@ -28,13 +29,18 @@ namespace Frost
         if (serializer.Deserialize(filepath))
         {
             const std::string& sceneName = newScene->GetName();
-            if (_loadedScenes.count(sceneName))
+            bool existed = _loadedScenes.count(sceneName) > 0;
+            if (existed)
             {
                 FT_ENGINE_INFO("SceneManager: Unloading existing scene named '{0}' to reload.", sceneName);
             }
 
             FT_ENGINE_INFO("Scene '{0}' loaded successfully from {1}", sceneName, filepath);
             _loadedScenes[sceneName] = newScene;
+            if (existed)
+            {
+                AssetManager::PruneUnused();
+            }
             return newScene;
         }
         else
@@ -61,6 +67,7 @@ namespace Frost
         if (it != _loadedScenes.end())
         {
             _loadedScenes.erase(it);
+            AssetManager::PruneUnused();
             FT_ENGINE_INFO("Scene '{0}' has been unloaded.", name);
         }
     }
@@ -68,5 +75,6 @@ namespace Frost
     void SceneManager::Shutdown()
     {
         _loadedScenes.clear();
+        AssetManager::PruneUnused();
     }
 } // namespace Frost

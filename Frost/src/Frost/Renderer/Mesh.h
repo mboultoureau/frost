@@ -4,6 +4,7 @@
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Vertex.h"
 
+#include <cfloat>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -15,7 +16,10 @@ namespace Frost
     class Mesh
     {
     public:
-        Mesh(std::span<const std::byte> vertices, uint32_t vertexStride, std::span<const uint32_t> indices);
+        Mesh(std::span<const std::byte> vertices,
+             uint32_t vertexStride,
+             std::span<const uint32_t> indices,
+             const BoundingBox& boundingBox = { { FLT_MAX, FLT_MAX, FLT_MAX }, { -FLT_MAX, -FLT_MAX, -FLT_MAX } });
 
         const Buffer* GetVertexBuffer() const { return _vertexBuffer.get(); }
         const Buffer* GetIndexBuffer() const { return _indexBuffer.get(); }

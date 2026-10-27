@@ -1,4 +1,4 @@
-﻿#include "SkyboxPipeline.h"
+#include "SkyboxPipeline.h"
 #include "Frost/Core/Application.h"
 #include "Frost/Renderer/Buffer.h"
 #include "Frost/Renderer/Format.h"
@@ -115,7 +115,8 @@ namespace Frost
                                 const Component::WorldTransform& cameraTransform)
     {
         // Check if texture is loaded
-        if (!skyboxTexture || !gbufferDepth || !renderTarget || !commandList)
+        if (!skyboxTexture || !gbufferDepth || !renderTarget || !commandList || !_vsSkyboxConstants ||
+            !_skyboxVertexShader || !_skyboxPixelShader || !_cubeVertexBuffer || !_cubeIndexBuffer)
             return;
 
         commandList->SetRenderTargets(1, &renderTarget, gbufferDepth);
