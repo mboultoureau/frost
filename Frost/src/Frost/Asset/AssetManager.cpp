@@ -251,10 +251,22 @@ namespace Frost
     {
         auto startTime = std::chrono::high_resolution_clock::now();
 
+        size_t pendingCount = 0;
+        {
+            std::scoped_lock lock(_queueMutex);
+            pendingCount = _uploadQueue.size();
+        }
+
+        int activeBudget = _timeBudget;
+        if (pendingCount > 4)
+        {
+            activeBudget = std::max(activeBudget, 12);
+        }
+
         while (true)
         {
             auto now = std::chrono::high_resolution_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count() >= _timeBudget)
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count() >= activeBudget)
             {
                 break;
             }

@@ -833,6 +833,7 @@ namespace Frost
         // Optim: On prépare la matrice ViewProj GPU une seule fois
         DirectX::XMMATRIX lightViewProjGPU = LoadMatrix(Math::Matrix4x4::CreateTranspose(_currentLightViewProj));
 
+        RasterizerMode lastRasterizerMode = static_cast<RasterizerMode>(-1);
         for (const auto& mesh : staticMesh.GetModel()->GetMeshes())
         {
             // UTILISER LA MATRICE CPU ICI
@@ -862,8 +863,13 @@ namespace Frost
                 }
 
                 auto& material = staticMesh.GetModel()->GetMaterials()[mesh.GetMaterialIndex()];
-                cmd->SetRasterizerState(material.backFaceCulling ? RasterizerMode::SolidCullBack
-                                                                 : RasterizerMode::SolidCullNone);
+                RasterizerMode desiredRasterizer =
+                    material.backFaceCulling ? RasterizerMode::SolidCullBack : RasterizerMode::SolidCullNone;
+                if (desiredRasterizer != lastRasterizerMode)
+                {
+                    cmd->SetRasterizerState(desiredRasterizer);
+                    lastRasterizerMode = desiredRasterizer;
+                }
 
                 cmd->SetVertexBuffer(mesh.GetVertexBuffer(), mesh.GetVertexStride(), 0);
                 cmd->SetIndexBuffer(mesh.GetIndexBuffer(), 0);

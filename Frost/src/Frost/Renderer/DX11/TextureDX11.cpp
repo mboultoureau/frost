@@ -11,6 +11,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#define STB_IMAGE_RESIZE_STATIC
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include <stb_image_resize2.h>
+
 #include <assimp/texture.h>
 #include <filesystem>
 
@@ -223,56 +227,126 @@ namespace Frost
 
         if (data)
         {
-            _config.width = width;
-            _config.height = height;
-
-            if (_config.channels == 3)
+            if (_config.maxDimension > 0 &&
+                (width > static_cast<int>(_config.maxDimension) || height > static_cast<int>(_config.maxDimension)))
             {
-                _config.format = Format::RGBA8_UNORM;
+                float scale = static_cast<float>(_config.maxDimension) / static_cast<float>(std::max(width, height));
+                int newWidth = std::max(1, static_cast<int>(width * scale));
+                int newHeight = std::max(1, static_cast<int>(height * scale));
 
-                size_t numPixels = (size_t)width * height;
-                _cpuData.resize(numPixels * 4);
+                std::vector<uint8_t> resized(static_cast<size_t>(newWidth) * newHeight * _config.channels);
+                stbir_pixel_layout layout = static_cast<stbir_pixel_layout>(_config.channels);
 
-                uint8_t* dest = _cpuData.data();
-                const uint8_t* src = data;
-
-                // Conversion RGB -> RGBA
-                for (size_t i = 0; i < numPixels; ++i)
+                if (stbir_resize_uint8_linear(data, width, height, 0, resized.data(), newWidth, newHeight, 0, layout))
                 {
-                    dest[i * 4 + 0] = src[i * 3 + 0];
-                    dest[i * 4 + 1] = src[i * 3 + 1];
-                    dest[i * 4 + 2] = src[i * 3 + 2];
-                    dest[i * 4 + 3] = 255;
+                    width = newWidth;
+                    height = newHeight;
+                    if (shouldFreeSTB)
+                    {
+                        stbi_image_free(data);
+                        shouldFreeSTB = false;
+                    }
+                    data = nullptr;
+
+                    _config.width = width;
+                    _config.height = height;
+
+                    if (_config.channels == 3)
+                    {
+                        _config.format = Format::RGBA8_UNORM;
+
+                        size_t numPixels = static_cast<size_t>(width) * height;
+                        _cpuData.resize(numPixels * 4);
+
+                        uint8_t* dest = _cpuData.data();
+                        const uint8_t* src = resized.data();
+
+                        for (size_t i = 0; i < numPixels; ++i)
+                        {
+                            dest[i * 4 + 0] = src[i * 3 + 0];
+                            dest[i * 4 + 1] = src[i * 3 + 1];
+                            dest[i * 4 + 2] = src[i * 3 + 2];
+                            dest[i * 4 + 3] = 255;
+                        }
+                    }
+                    else
+                    {
+                        switch (_config.channels)
+                        {
+                            case 1:
+                                _config.format = Format::R8_UNORM;
+                                break;
+                            case 2:
+                                _config.format = Format::RG8_UNORM;
+                                break;
+                            case 4:
+                            default:
+                                _config.format = Format::RGBA8_UNORM;
+                                break;
+                        }
+
+                        _cpuData = std::move(resized);
+                    }
                 }
             }
-            else
-            {
-                switch (_config.channels)
-                {
-                    case 1:
-                        _config.format = Format::R8_UNORM;
-                        break;
-                    case 2:
-                        _config.format = Format::RG8_UNORM;
-                        break;
-                    case 4:
-                        _config.format = Format::RGBA8_UNORM;
-                        break;
-                    default:
-                        _config.format = Format::RGBA8_UNORM;
-                        break;
-                }
 
-                size_t srcSize = width * height * _config.channels;
-                _cpuData.resize(srcSize);
-                std::memcpy(_cpuData.data(), data, srcSize);
+            if (data)
+            {
+                _config.width = width;
+                _config.height = height;
+
+                if (_config.channels == 3)
+                {
+                    _config.format = Format::RGBA8_UNORM;
+
+                    size_t numPixels = (size_t)width * height;
+                    _cpuData.resize(numPixels * 4);
+
+                    uint8_t* dest = _cpuData.data();
+                    const uint8_t* src = data;
+
+                    // Conversion RGB -> RGBA
+                    for (size_t i = 0; i < numPixels; ++i)
+                    {
+                        dest[i * 4 + 0] = src[i * 3 + 0];
+                        dest[i * 4 + 1] = src[i * 3 + 1];
+                        dest[i * 4 + 2] = src[i * 3 + 2];
+                        dest[i * 4 + 3] = 255;
+                    }
+                }
+                else
+                {
+                    switch (_config.channels)
+                    {
+                        case 1:
+                            _config.format = Format::R8_UNORM;
+                            break;
+                        case 2:
+                            _config.format = Format::RG8_UNORM;
+                            break;
+                        case 4:
+                            _config.format = Format::RGBA8_UNORM;
+                            break;
+                        default:
+                            _config.format = Format::RGBA8_UNORM;
+                            break;
+                    }
+
+                    size_t srcSize = width * height * _config.channels;
+                    _cpuData.resize(srcSize);
+                    std::memcpy(_cpuData.data(), data, srcSize);
+                }
             }
         }
 
         if (shouldFreeSTB && data)
         {
-            SetStatus(AssetStatus::Loading);
             stbi_image_free(data);
+        }
+
+        if (GetStatus() != AssetStatus::Failed)
+        {
+            SetStatus(AssetStatus::Loading);
         }
     }
 

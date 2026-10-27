@@ -87,6 +87,7 @@ namespace Frost
         std::array<std::string, 6> faceFilePaths;
         bool isUnfoldedCubemap = false;
         bool loadImmediately = true;
+        uint32_t maxDimension = 2048;
     };
 
     class FROST_API Texture : public Asset, GPUResource
