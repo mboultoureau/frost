@@ -52,7 +52,8 @@ namespace Frost
         Assimp::Importer importer;
         unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
                              aiProcess_CalcTangentSpace | aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder |
-                             aiProcess_PreTransformVertices;
+                             aiProcess_PreTransformVertices | aiProcess_JoinIdenticalVertices |
+                             aiProcess_ImproveCacheLocality;
 
         const aiScene* scene = importer.ReadFile(filepath, flags);
 
@@ -84,6 +85,10 @@ namespace Frost
 
         ProcessNode(scene->mRootNode, scene);
 
+        std::stable_sort(_cpuMeshes.begin(),
+                         _cpuMeshes.end(),
+                         [](const CpuMeshData& a, const CpuMeshData& b) { return a.materialIndex < b.materialIndex; });
+
         if (IsCancelled())
         {
             _cpuMeshes.clear();
@@ -97,7 +102,7 @@ namespace Frost
 
     bool Model::UploadGPUChunk()
     {
-        return UploadGPUChunk(8, 2);
+        return UploadGPUChunk(32, 6);
     }
 
     bool Model::UploadGPUChunk(size_t maxMeshes, uint32_t maxTimeMs)

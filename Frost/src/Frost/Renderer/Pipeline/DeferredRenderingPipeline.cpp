@@ -399,6 +399,11 @@ namespace Frost
         bool isFirstDraw = true;
         DirectX::XMMATRIX matWorld = Math::LoadMatrix(worldMatrix);
 
+        int32_t lastMaterialIndex = -1;
+        RasterizerMode lastRasterizerMode = static_cast<RasterizerMode>(-1);
+        Shader* lastVS = nullptr;
+        Shader* lastPS = nullptr;
+
         for (const auto& mesh : model.GetMeshes())
         {
             if (frustum)
@@ -422,146 +427,161 @@ namespace Frost
                 isFirstDraw = false;
             }
 
-            auto& material = model.GetMaterials()[mesh.GetMaterialIndex()];
+            uint32_t matIndex = mesh.GetMaterialIndex();
+            if (static_cast<int32_t>(matIndex) != lastMaterialIndex)
+            {
+                lastMaterialIndex = static_cast<int32_t>(matIndex);
+                auto& material = model.GetMaterials()[matIndex];
 
+                RasterizerMode desiredRasterizer =
+                    material.backFaceCulling ? RasterizerMode::Solid : RasterizerMode::SolidCullNone;
 #ifdef FT_DEBUG
-            if (Debug::RendererConfig::wireframeMode)
-            {
-                _commandList->SetRasterizerState(RasterizerMode::Wireframe);
-            }
-            else
-                _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid
-                                                                          : RasterizerMode::SolidCullNone);
-#else
-            _commandList->SetRasterizerState(material.backFaceCulling ? RasterizerMode::Solid
-                                                                      : RasterizerMode::SolidCullNone);
-#endif
-
-            // Vertex and pixel shader
-            Shader* vs = material.customVertexShader ? material.customVertexShader.get() : _gBufferVertexShader.get();
-            Shader* ps = material.customPixelShader ? material.customPixelShader.get() : _gBufferPixelShader.get();
-
-            _commandList->SetShader(vs);
-            _commandList->SetShader(ps);
-
-            if (material.customVertexShader)
-            {
-                InputLayout* layout = _GetOrCreateInputLayout(vs);
-                _commandList->SetInputLayout(layout);
-            }
-            else
-            {
-                _commandList->SetInputLayout(_gBufferInputLayout.get());
-            }
-
-            // Geometry Shader
-            if (material.geometryShader)
-            {
-                _commandList->SetShader(material.geometryShader.get());
-            }
-            else
-            {
-                _commandList->UnbindShader(ShaderType::Geometry);
-            }
-
-            // Hull & Domain
-            if (material.hullShader && material.domainShader)
-            {
-                _commandList->SetShader(material.hullShader.get());
-                _commandList->SetShader(material.domainShader.get());
-
-                _commandList->SetPrimitiveTopology(PrimitiveTopology::PATCHLIST_3);
-            }
-            else
-            {
-                _commandList->UnbindShader(ShaderType::Hull);
-                _commandList->UnbindShader(ShaderType::Domain);
-
-                _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-            }
-
-            PS_MaterialConstants psMaterialData;
-            psMaterialData.UVTiling = material.uvTiling;
-            psMaterialData.UVOffset = material.uvOffset;
-            psMaterialData.AlbedoFactor = material.albedo;
-            psMaterialData.EmissiveFactor = material.emissiveColor;
-            psMaterialData.MetallicFactor = material.metalness;
-            psMaterialData.RoughnessFactor = material.roughness;
-            _psMaterialConstants->UpdateData(_commandList.get(), &psMaterialData, sizeof(PS_MaterialConstants));
-            _commandList->SetConstantBuffer(_psMaterialConstants.get(), 2);
-
-            if (!material.parameters.empty())
-            {
-                if (_customMaterialConstantBuffer->GetConfig().size < material.parameters.size())
+                if (Debug::RendererConfig::wireframeMode)
                 {
-                    int32_t requiredSize = static_cast<uint32_t>(material.parameters.size());
-                    uint32_t alignedSize = (requiredSize + 15) & ~15;
-
-                    BufferConfig config = { .usage = BufferUsage::CONSTANT_BUFFER,
-                                            .size = alignedSize,
-                                            .dynamic = true,
-                                            .debugName = "DS_CustomMaterial_Resized" };
-
-                    _customMaterialConstantBuffer = RendererAPI::GetRenderer()->CreateBuffer(config);
+                    desiredRasterizer = RasterizerMode::Wireframe;
+                }
+#endif
+                if (desiredRasterizer != lastRasterizerMode)
+                {
+                    _commandList->SetRasterizerState(desiredRasterizer);
+                    lastRasterizerMode = desiredRasterizer;
                 }
 
-                _customMaterialConstantBuffer->UpdateData(
-                    _commandList.get(), material.parameters.data(), material.parameters.size());
-                _commandList->SetConstantBuffer(_customMaterialConstantBuffer.get(), 3);
-            }
+                // Vertex and pixel shader
+                Shader* vs =
+                    material.customVertexShader ? material.customVertexShader.get() : _gBufferVertexShader.get();
+                Shader* ps = material.customPixelShader ? material.customPixelShader.get() : _gBufferPixelShader.get();
 
-            if (!material.albedoTextures.empty() && material.albedoTextures[0]->IsLoaded())
-            {
-                _commandList->SetTexture(material.albedoTextures[0].get(), 0);
-            }
-            else
-            {
-                _commandList->SetTexture(_defaultAlbedoTexture.get(), 0);
-            }
+                if (vs != lastVS)
+                {
+                    _commandList->SetShader(vs);
+                    if (material.customVertexShader)
+                    {
+                        InputLayout* layout = _GetOrCreateInputLayout(vs);
+                        _commandList->SetInputLayout(layout);
+                    }
+                    else
+                    {
+                        _commandList->SetInputLayout(_gBufferInputLayout.get());
+                    }
+                    lastVS = vs;
+                }
 
-            if (!material.normalTextures.empty() && material.normalTextures[0]->IsLoaded())
-            {
-                _commandList->SetTexture(material.normalTextures[0].get(), 1);
-            }
-            else
-            {
-                _commandList->SetTexture(_defaultNormalTexture.get(), 1);
-            }
+                if (ps != lastPS)
+                {
+                    _commandList->SetShader(ps);
+                    lastPS = ps;
+                }
 
-            if (!material.metallicTextures.empty() && material.metallicTextures[0]->IsLoaded())
-            {
-                _commandList->SetTexture(material.metallicTextures[0].get(), 2);
-            }
-            else
-            {
-                _commandList->SetTexture(_defaultMetallicTexture.get(), 2);
-            }
+                // Geometry Shader
+                if (material.geometryShader)
+                {
+                    _commandList->SetShader(material.geometryShader.get());
+                }
+                else
+                {
+                    _commandList->UnbindShader(ShaderType::Geometry);
+                }
 
-            if (!material.roughnessTextures.empty() && material.roughnessTextures[0]->IsLoaded())
-            {
-                _commandList->SetTexture(material.roughnessTextures[0].get(), 3);
-            }
-            else
-            {
-                _commandList->SetTexture(_defaultRoughnessTexture.get(), 3);
-            }
+                // Hull & Domain
+                if (material.hullShader && material.domainShader)
+                {
+                    _commandList->SetShader(material.hullShader.get());
+                    _commandList->SetShader(material.domainShader.get());
 
-            if (!material.aoTextures.empty() && material.aoTextures[0]->IsLoaded())
-            {
-                _commandList->SetTexture(material.aoTextures[0].get(), 4);
-            }
-            else
-            {
-                _commandList->SetTexture(_defaultAOTexture.get(), 4);
-            }
+                    _commandList->SetPrimitiveTopology(PrimitiveTopology::PATCHLIST_3);
+                }
+                else
+                {
+                    _commandList->UnbindShader(ShaderType::Hull);
+                    _commandList->UnbindShader(ShaderType::Domain);
 
-            if (!material.emissiveTextures.empty() && material.emissiveTextures[0]->IsLoaded())
-            {
-                _commandList->SetTexture(material.emissiveTextures[0].get(), 5);
-            }
-            else
-            {
-                _commandList->SetTexture(_defaultEmissionTexture.get(), 5);
+                    _commandList->SetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
+                }
+
+                PS_MaterialConstants psMaterialData;
+                psMaterialData.UVTiling = material.uvTiling;
+                psMaterialData.UVOffset = material.uvOffset;
+                psMaterialData.AlbedoFactor = material.albedo;
+                psMaterialData.EmissiveFactor = material.emissiveColor;
+                psMaterialData.MetallicFactor = material.metalness;
+                psMaterialData.RoughnessFactor = material.roughness;
+                _psMaterialConstants->UpdateData(_commandList.get(), &psMaterialData, sizeof(PS_MaterialConstants));
+                _commandList->SetConstantBuffer(_psMaterialConstants.get(), 2);
+
+                if (!material.parameters.empty())
+                {
+                    if (_customMaterialConstantBuffer->GetConfig().size < material.parameters.size())
+                    {
+                        int32_t requiredSize = static_cast<uint32_t>(material.parameters.size());
+                        uint32_t alignedSize = (requiredSize + 15) & ~15;
+
+                        BufferConfig config = { .usage = BufferUsage::CONSTANT_BUFFER,
+                                                .size = alignedSize,
+                                                .dynamic = true,
+                                                .debugName = "DS_CustomMaterial_Resized" };
+
+                        _customMaterialConstantBuffer = RendererAPI::GetRenderer()->CreateBuffer(config);
+                    }
+
+                    _customMaterialConstantBuffer->UpdateData(
+                        _commandList.get(), material.parameters.data(), material.parameters.size());
+                    _commandList->SetConstantBuffer(_customMaterialConstantBuffer.get(), 3);
+                }
+
+                if (!material.albedoTextures.empty() && material.albedoTextures[0]->IsLoaded())
+                {
+                    _commandList->SetTexture(material.albedoTextures[0].get(), 0);
+                }
+                else
+                {
+                    _commandList->SetTexture(_defaultAlbedoTexture.get(), 0);
+                }
+
+                if (!material.normalTextures.empty() && material.normalTextures[0]->IsLoaded())
+                {
+                    _commandList->SetTexture(material.normalTextures[0].get(), 1);
+                }
+                else
+                {
+                    _commandList->SetTexture(_defaultNormalTexture.get(), 1);
+                }
+
+                if (!material.metallicTextures.empty() && material.metallicTextures[0]->IsLoaded())
+                {
+                    _commandList->SetTexture(material.metallicTextures[0].get(), 2);
+                }
+                else
+                {
+                    _commandList->SetTexture(_defaultMetallicTexture.get(), 2);
+                }
+
+                if (!material.roughnessTextures.empty() && material.roughnessTextures[0]->IsLoaded())
+                {
+                    _commandList->SetTexture(material.roughnessTextures[0].get(), 3);
+                }
+                else
+                {
+                    _commandList->SetTexture(_defaultRoughnessTexture.get(), 3);
+                }
+
+                if (!material.aoTextures.empty() && material.aoTextures[0]->IsLoaded())
+                {
+                    _commandList->SetTexture(material.aoTextures[0].get(), 4);
+                }
+                else
+                {
+                    _commandList->SetTexture(_defaultAOTexture.get(), 4);
+                }
+
+                if (!material.emissiveTextures.empty() && material.emissiveTextures[0]->IsLoaded())
+                {
+                    _commandList->SetTexture(material.emissiveTextures[0].get(), 5);
+                }
+                else
+                {
+                    _commandList->SetTexture(_defaultEmissionTexture.get(), 5);
+                }
             }
 
             _commandList->SetVertexBuffer(mesh.GetVertexBuffer(), mesh.GetVertexStride(), 0);
